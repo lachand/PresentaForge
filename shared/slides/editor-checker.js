@@ -87,14 +87,14 @@ function _checkerElementA11yIssues(el, slideBg) {
         issues.push({ level: 'info', msg: `${type === 'video' ? 'Vidéo' : 'Iframe'} sans titre explicite`, fix: 'add-title' });
     }
 
-    if (['text', 'list', 'definition', 'quote'].includes(type)) {
+    if (['text', 'list', 'definition', 'code-example', 'quote'].includes(type)) {
         const fontSize = Number(el.style?.fontSize) || 0;
         if (fontSize > 0 && fontSize < 16) {
             issues.push({ level: 'warning', msg: `Texte trop petit (${fontSize}px)`, fix: 'bump-font-size' });
         }
     }
 
-    if (['heading', 'text', 'list', 'definition', 'quote', 'card'].includes(type)) {
+    if (['heading', 'text', 'list', 'definition', 'code-example', 'quote', 'card'].includes(type)) {
         const fg = el.style?.color || 'var(--sl-text)';
         const ratio = _checkerContrastRatio(fg, slideBg);
         if (ratio != null) {

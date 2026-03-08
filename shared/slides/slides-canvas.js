@@ -32,6 +32,7 @@ class CanvasEditor {
         { id: 'shape',      icon: '□',   label: 'Forme',      w: 200, h: 150 },
         { id: 'widget',     icon: 'W',   label: 'Widget',     w: 800, h: 420 },
         { id: 'definition', icon: 'DEF', label: 'Définition', w: 700, h: 200 },
+        { id: 'code-example', icon: 'EX', label: 'Exemple code', w: 760, h: 360 },
         { id: 'quote',      icon: '"',   label: 'Citation',   w: 900, h: 340 },
         { id: 'card',       icon: '▤',   label: 'Carte',      w: 540, h: 380 },
         { id: 'video',      icon: '▶',   label: 'Vidéo',      w: 560, h: 315 },
@@ -98,6 +99,22 @@ class CanvasEditor {
                 return { ...base, data: { widget: 'workflow-trigger-simulator', config: {} } };
             case 'definition':
                 return { ...base, data: { term: 'Terme', definition: 'La définition complète du terme.', example: '' } };
+            case 'code-example':
+                return {
+                    ...base,
+                    data: {
+                        text: 'Décrivez le cas d’usage ou la logique attendue.',
+                        widgetType: 'terminal',
+                        language: 'python',
+                        code: '# Exemple\nfor i in range(3):\n    print(i)',
+                        stepperTitle: 'Exécution pas à pas',
+                        stepperSteps: [
+                            { title: 'Initialisation', detail: 'Préparer les variables utiles.', code: 'i = 0' },
+                            { title: 'Traitement', detail: 'Appliquer la logique principale.', code: 'i += 1' },
+                            { title: 'Affichage', detail: 'Afficher le résultat final.', code: 'print(i)' },
+                        ],
+                    },
+                };
             case 'quote':
                 return { ...base, data: { text: 'Votre citation ici.', author: '' }, style: { fontSize: 26, color: 'var(--sl-heading)' } };
             case 'card':
@@ -443,6 +460,125 @@ class CanvasEditor {
 .cel-def-term { font-family: var(--sl-font-mono, monospace); font-weight: 700; color: var(--sl-primary, #818cf8); margin-bottom: 0.35rem; font-size: 1em; }
 .cel-def-body { color: var(--sl-text, #cbd5e1); font-size: 0.9em; line-height: 1.5; }
 .cel-def-example { margin-top: 0.5rem; font-size: 0.82em; color: var(--sl-muted, #64748b); }
+.cel-code-example-content {
+    width: 100%;
+    height: 100%;
+    background: color-mix(in srgb, var(--sl-primary, #818cf8) 8%, var(--sl-slide-bg, #1a1d27));
+    border-left: 4px solid var(--sl-primary, #818cf8);
+    border-radius: 0 8px 8px 0;
+    padding: 0.75rem 1rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    overflow: hidden;
+}
+.cel-code-example-label {
+    font-family: var(--sl-font-mono, monospace);
+    font-weight: 700;
+    color: var(--sl-primary, #818cf8);
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.cel-code-example-text {
+    color: var(--sl-text, #cbd5e1);
+    font-size: 0.88em;
+    line-height: 1.45;
+    max-height: 36%;
+    overflow: auto;
+}
+.cel-code-example-widget {
+    flex: 1;
+    min-height: 110px;
+    border: 1px solid var(--sl-border, #2d3347);
+    border-radius: 8px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--sl-slide-bg, #1a1d27) 82%, #000);
+}
+.cel-code-example-widget .cel-code-terminal {
+    height: 100%;
+    border: none;
+    border-radius: 0;
+}
+.cel-codeexample-live,
+.cel-codeexample-stepper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.cel-codeexample-live-head,
+.cel-codeexample-stepper-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--sl-border, #2d3347);
+    background: color-mix(in srgb, var(--sl-surface, #1e2130) 88%, #000);
+    font-size: 0.66rem;
+}
+.cel-codeexample-live-lang {
+    font-family: var(--sl-font-mono, monospace);
+    color: var(--sl-muted, #64748b);
+    text-transform: uppercase;
+}
+.cel-codeexample-live-tag,
+.cel-codeexample-stepper-tag {
+    margin-left: auto;
+    color: var(--sl-primary, #818cf8);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.cel-codeexample-live-code {
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 0.72rem;
+    font-family: var(--sl-font-mono, monospace);
+    color: var(--sl-text, #e2e8f0);
+    white-space: pre;
+    overflow: auto;
+    flex: 1;
+}
+.cel-codeexample-live-code code,
+.cel-codeexample-stepper-code code {
+    display: block;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    white-space: pre;
+}
+.cel-codeexample-stepper-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    min-height: 0;
+    overflow: auto;
+}
+.cel-codeexample-stepper-title {
+    font-size: 0.74rem;
+    color: var(--sl-heading, #f1f5f9);
+    font-weight: 600;
+}
+.cel-codeexample-stepper-detail {
+    font-size: 0.69rem;
+    color: var(--sl-muted, #64748b);
+}
+.cel-codeexample-stepper-code {
+    margin: 0;
+    margin-top: auto;
+    padding: 7px 8px;
+    border: 1px solid var(--sl-border, #2d3347);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--sl-slide-bg, #1a1d27) 80%, #000);
+    font-size: 0.66rem;
+    font-family: var(--sl-font-mono, monospace);
+    color: var(--sl-text, #e2e8f0);
+    white-space: pre;
+    overflow: auto;
+}
 /* ── Table element ── */
 .cel-table-content { width:100%; height:100%; overflow:auto; box-sizing:border-box; }
 .cel-table-content table { width:100%; border-collapse:collapse; table-layout:fixed; }
@@ -940,7 +1076,7 @@ class CanvasEditor {
         const guide = this.container.querySelector('.canvas-guide-layer');
         this.container.insertBefore(div, guide);
         if (el.type === 'widget') this._mountWidget(div, el);
-        if (el.type === 'code' || el.type === 'highlight') this._highlightCodeBlock(div);
+        if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example') this._highlightCodeBlock(div);
         this._postRenderElement(el);
         return div;
     }
@@ -1000,7 +1136,7 @@ class CanvasEditor {
                     s.background    ? `background:${s.background};`        : '',
                 ].join('');
                 // Use rich HTML if available, otherwise escape plain text
-                let body = el.data?.html || escHtml(el.data?.text || '');
+                let body = el.data?.html || SlidesShared.autoFormatText(el.data?.text || '');
                 // Replace template variables
                 body = body.replace(/\{\{slideNumber\}\}/g, String((this.slideIndex || 0) + 1));
                 // Resolve cross-references
@@ -1038,6 +1174,17 @@ class CanvasEditor {
                     <div class="cel-def-term">${escHtml(el.data?.term||'')}</div>
                     <div class="cel-def-body">${el.data?.definition||''}</div>
                     ${el.data?.example ? `<div class="cel-def-example">Exemple : ${escHtml(el.data.example)}</div>` : ''}
+                </div>`;
+            }
+            case 'code-example': {
+                const data = el.data || {};
+                const body = data.text || '';
+                const widgetMode = data.widgetType || 'terminal';
+                const widgetHtml = CanvasEditor._renderCodeExampleWidget(data, widgetMode);
+                return `<div class="cel-code-example-content">
+                    <div class="cel-code-example-label">Exemple</div>
+                    <div class="cel-code-example-text">${body}</div>
+                    <div class="cel-code-example-widget">${widgetHtml}</div>
                 </div>`;
             }
             case 'quote': {
@@ -1479,6 +1626,41 @@ class CanvasEditor {
         }
     }
 
+    static _normalizeCodeExampleMode(mode) {
+        return ['terminal', 'live', 'stepper'].includes(mode) ? mode : 'terminal';
+    }
+
+    static _renderCodeExampleWidget(data, mode) {
+        const resolvedMode = CanvasEditor._normalizeCodeExampleMode(mode);
+        const lang = data.language || 'python';
+        const code = data.code || '';
+        if (resolvedMode === 'live') {
+            return `<div class="cel-codeexample-live">
+                <div class="cel-codeexample-live-head">
+                    <span class="cel-codeexample-live-lang">${escHtml(lang)}</span>
+                    <span class="cel-codeexample-live-tag">Live</span>
+                </div>
+                <pre class="cel-codeexample-live-code"><code class="language-${escHtml(lang)}">${escHtml(code)}</code></pre>
+            </div>`;
+        }
+        if (resolvedMode === 'stepper') {
+            const steps = Array.isArray(data.stepperSteps) ? data.stepperSteps : [];
+            const first = steps[0] || {};
+            return `<div class="cel-codeexample-stepper">
+                <div class="cel-codeexample-stepper-head">
+                    <span>${escHtml(data.stepperTitle || 'Exécution pas à pas')}</span>
+                    <span class="cel-codeexample-stepper-tag">Stepper</span>
+                </div>
+                <div class="cel-codeexample-stepper-body">
+                    <div class="cel-codeexample-stepper-title">${escHtml(first.title || 'Étape 1')}</div>
+                    <div class="cel-codeexample-stepper-detail">${escHtml(first.detail || '')}</div>
+                    <pre class="cel-codeexample-stepper-code"><code class="language-${escHtml(lang)}">${escHtml(first.code || '')}</code></pre>
+                </div>
+            </div>`;
+        }
+        return SlidesShared.codeTerminal(code, lang, 'cel');
+    }
+
     /* ── Mermaid / KaTeX / QR lazy rendering ──────────────── */
 
     _renderMermaidElements() {
@@ -1863,7 +2045,7 @@ class CanvasEditor {
         const inner = div.querySelector('.cel-inner');
         if (inner) inner.innerHTML = this._renderContent(el);
         if (el.type === 'widget') this._mountWidget(div, el);
-        if (el.type === 'code' || el.type === 'highlight') this._highlightCodeBlock(div);
+        if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example') this._highlightCodeBlock(div);
         this._postRenderElement(el);
         // Animation badge
         let badge = div.querySelector('.cel-anim-badge');
@@ -1928,15 +2110,18 @@ class CanvasEditor {
     /* ── Syntax highlighting ──────────────────────────────── */
 
     _highlightCodeBlock(div) {
-        const codeEl = div?.querySelector('.cel-code-scroll code');
-        if (!codeEl || codeEl.dataset.highlighted) return;
-
         // For 'highlight' type, apply per-line highlighting to preserve wrapper spans
         const isHighlight = div.dataset.type === 'highlight';
+        const codeEls = isHighlight
+            ? [div?.querySelector('.cel-code-scroll code')].filter(Boolean)
+            : Array.from(div?.querySelectorAll('.cel-code-scroll code, .cel-codeexample-live-code code, .cel-codeexample-stepper-code code') || []);
+        if (!codeEls.length || codeEls.every(node => node.dataset.highlighted)) return;
 
         const apply = () => {
             if (!window.hljs) return;
             if (isHighlight) {
+                const codeEl = codeEls[0];
+                if (!codeEl) return;
                 // Highlight each line span individually to preserve .cel-hl-wrap wrappers
                 const lang = codeEl.className.replace('language-', '').trim();
                 codeEl.querySelectorAll('.cel-hl-wrap').forEach(span => {
@@ -1950,10 +2135,16 @@ class CanvasEditor {
                         // keep original content on error
                     }
                 });
+                codeEl.dataset.highlighted = '1';
             } else {
-                window.hljs.highlightElement(codeEl);
+                codeEls.forEach(codeEl => {
+                    if (!codeEl || codeEl.dataset.highlighted) return;
+                    try {
+                        window.hljs.highlightElement(codeEl);
+                    } catch (_) {}
+                    codeEl.dataset.highlighted = '1';
+                });
             }
-            codeEl.dataset.highlighted = '1';
         };
         if (window.hljs) {
             apply();
@@ -2053,6 +2244,7 @@ class CanvasEditor {
             if (['heading', 'text'].includes(el.type)) this._startInlineEdit(div, el, e);
             else if (el.type === 'code')       this._startInlineEditCode(div, el);
             else if (el.type === 'definition') this._startInlineEditDefinition(div, el);
+            else if (el.type === 'code-example') this._startInlineEditCodeExample(div, el);
             else if (el.type === 'list')       this._startInlineEditList(div, el);
             else if (el.type === 'table')      this._startInlineEditTable(div, el);
             else if (this.onDblClick) this.onDblClick(el, e);
@@ -2199,8 +2391,11 @@ class CanvasEditor {
             const plainText = editable.textContent;
             // Store both html (rich) and text (plain fallback)
             const dataUpdate = { text: plainText };
-            // Only store html if it differs from plain text (has actual formatting)
-            if (rawHtml !== escHtml(plainText) && rawHtml !== plainText) {
+            // Keep html only when real rich formatting is present.
+            // Plain line wrappers (<div>/<br>) are discarded so text auto-formatting
+            // can transform "- item" + tabulations into bullet rows at render time.
+            const hasRichFormatting = /<(?:b|strong|i|em|u|s|strike|code|a|span|font|mark|sub|sup|ul|ol|li|blockquote|h[1-6])\b/i.test(rawHtml);
+            if (hasRichFormatting) {
                 dataUpdate.html = rawHtml;
             } else {
                 dataUpdate.html = ''; // clear previous rich formatting
@@ -2217,7 +2412,11 @@ class CanvasEditor {
         };
 
         editable.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); editable.blur(); }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                document.execCommand('insertText', false, '\t');
+            }
+            if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); editable.blur(); }
             if (e.key === 'Escape') { e.preventDefault(); revert(); }
             e.stopPropagation(); // prevent editor keyboard shortcuts
         });
@@ -2349,6 +2548,68 @@ class CanvasEditor {
             });
             field.addEventListener('blur', commit);
         });
+    }
+
+    _startInlineEditCodeExample(div, el) {
+        if (div.classList.contains('editing')) return;
+        div.classList.add('editing');
+        const inner = div.querySelector('.cel-inner');
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cel-code-example-content';
+        wrapper.style.cursor = 'text';
+
+        const label = document.createElement('div');
+        label.className = 'cel-code-example-label';
+        label.textContent = 'Exemple';
+
+        const body = document.createElement('div');
+        body.className = 'cel-code-example-text cel-def-edit-field';
+        body.contentEditable = 'true';
+        body.textContent = el.data?.text || '';
+
+        const hint = document.createElement('div');
+        hint.className = 'cel-codeexample-stepper-detail';
+        hint.textContent = 'Le widget de code se règle dans le panneau de droite.';
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(body);
+        wrapper.appendChild(hint);
+        inner.innerHTML = '';
+        inner.appendChild(wrapper);
+        body.focus();
+
+        let committed = false;
+
+        const commit = () => {
+            if (committed || !div.classList.contains('editing')) return;
+            requestAnimationFrame(() => {
+                if (wrapper.contains(document.activeElement)) return;
+                committed = true;
+                div.classList.remove('editing');
+                this.updateData(el.id, { data: { text: body.textContent } });
+            });
+        };
+
+        const revert = () => {
+            if (committed) return;
+            committed = true;
+            div.classList.remove('editing');
+            this._refreshDOM(el.id);
+        };
+
+        body.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                revert();
+            }
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                body.blur();
+            }
+            e.stopPropagation();
+        });
+        body.addEventListener('blur', commit);
     }
 
     _startInlineEditList(div, el) {

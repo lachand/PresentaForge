@@ -24,6 +24,45 @@ class SlidesShared {
     static esc(t) { return String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     /**
+     * Auto-format plain text bullets:
+     * - lines starting with "-" (or "*" / "+") become bullet rows
+     * - leading tabs/spaces control visual nesting
+     * Returns escaped HTML safe for direct insertion.
+     */
+    static autoFormatText(text) {
+        const raw = String(text ?? '');
+        if (!raw) return '';
+        const lines = raw.replace(/\r\n?/g, '\n').split('\n');
+        const bulletRe = /^([ \t]*)([-*+])\s+(.*)$/;
+        let hasBullet = false;
+        const rows = [];
+        for (const line of lines) {
+            const match = line.match(bulletRe);
+            if (match) {
+                hasBullet = true;
+                const indentRaw = match[1] || '';
+                const tabCount = (indentRaw.match(/\t/g) || []).length;
+                const spaceCount = indentRaw.replace(/\t/g, '').length;
+                const level = Math.max(0, tabCount + Math.floor(spaceCount / 2));
+                rows.push(
+                    `<div style="display:flex;align-items:flex-start;gap:0.45em;margin-left:${level * 1.1}em;">` +
+                    `<span style="color:var(--sl-primary,#818cf8);line-height:1.35;">•</span>` +
+                    `<span>${SlidesShared.esc(match[3] || '')}</span>` +
+                    `</div>`
+                );
+                continue;
+            }
+            if (!line.trim()) {
+                rows.push('<div style="height:0.55em"></div>');
+                continue;
+            }
+            rows.push(`<div>${SlidesShared.esc(line)}</div>`);
+        }
+        if (!hasBullet) return SlidesShared.esc(raw);
+        return rows.join('');
+    }
+
+    /**
      * Generate SVG inner markup for a shape element.
      * @returns {{ svgInner: string, opacity: number, textHtml: string }}
      */
@@ -3419,12 +3458,12 @@ class SlidesRenderer {
                     s.opacity != null ? `opacity:${s.opacity};`            : '',
                     s.background    ? `background:${s.background};`        : '',
                 ].join('');
-                let body = el.data?.html || SlidesRenderer.esc(el.data?.text || '');
+                let body = el.data?.html || SlidesShared.autoFormatText(el.data?.text || '');
                 // Replace template variables
                 body = body.replace(/\{\{slideNumber\}\}/g, String(slideIndex + 1));
                 // Resolve cross-references
                 if (opts.captionRegistry) body = SlidesShared.resolveRefs(body, opts.captionRegistry);
-                content = `<div style="width:100%;height:100%;padding:8px 10px;font-size:${s.fontSize||22}px;font-weight:${s.fontWeight||400};color:${s.color||'var(--sl-text)'};text-align:${s.textAlign||'left'};font-family:${s.fontFamily||'var(--sl-font-body)'};line-height:${s.lineHeight||1.35};overflow:hidden;box-sizing:border-box;${vAlignCSS}${extras}">${body}</div>`;
+                content = `<div style="width:100%;height:100%;padding:8px 10px;font-size:${s.fontSize||22}px;font-weight:${s.fontWeight||400};color:${s.color||'var(--sl-text)'};text-align:${s.textAlign||'left'};font-family:${s.fontFamily||'var(--sl-font-body)'};line-height:${s.lineHeight||1.35};white-space:pre-wrap;word-break:break-word;overflow:hidden;box-sizing:border-box;${vAlignCSS}${extras}">${body}</div>`;
                 break;
             }
             case 'code': {
@@ -3458,6 +3497,41 @@ class SlidesRenderer {
                     <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);margin-bottom:0.35rem;">${SlidesRenderer.esc(el.data?.term||'')}</div>
                     <div style="color:var(--sl-text);line-height:1.5;">${el.data?.definition||''}</div>
                     ${el.data?.example ? `<div style="margin-top:0.5rem;font-size:0.85em;color:var(--sl-muted);">Exemple : ${SlidesRenderer.esc(el.data.example)}</div>` : ''}
+                </div>`;
+                break;
+            }
+            case 'code-example': {
+                const mode = ['terminal', 'live', 'stepper'].includes(el.data?.widgetType) ? el.data.widgetType : 'terminal';
+                const lang = el.data?.language || 'python';
+                const code = el.data?.code || '';
+                let widget = SlidesShared.codeTerminal(code, lang, 'sl');
+                if (mode === 'live') {
+                    widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
+                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:0.66rem;">
+                            <span style="font-family:var(--sl-font-mono);color:var(--sl-muted);text-transform:uppercase;">${SlidesRenderer.esc(lang)}</span>
+                            <span style="margin-left:auto;color:var(--sl-primary);font-weight:700;text-transform:uppercase;">Live</span>
+                        </div>
+                        <pre style="margin:0;padding:8px 10px;font-size:0.72rem;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;flex:1;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(code)}</code></pre>
+                    </div>`;
+                } else if (mode === 'stepper') {
+                    const steps = Array.isArray(el.data?.stepperSteps) ? el.data.stepperSteps : [];
+                    const first = steps[0] || {};
+                    widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
+                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:0.66rem;">
+                            <span>${SlidesRenderer.esc(el.data?.stepperTitle || 'Exécution pas à pas')}</span>
+                            <span style="margin-left:auto;color:var(--sl-primary);font-weight:700;text-transform:uppercase;">Stepper</span>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:6px;padding:8px 10px;min-height:0;overflow:auto;">
+                            <div style="font-size:0.74rem;color:var(--sl-heading);font-weight:600;">${SlidesRenderer.esc(first.title || 'Étape 1')}</div>
+                            <div style="font-size:0.69rem;color:var(--sl-muted);">${SlidesRenderer.esc(first.detail || '')}</div>
+                            <pre style="margin:0;margin-top:auto;padding:7px 8px;border:1px solid var(--sl-border);border-radius:7px;background:color-mix(in srgb,var(--sl-slide-bg) 80%,#000);font-size:0.66rem;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(first.code || '')}</code></pre>
+                        </div>
+                    </div>`;
+                }
+                content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 8%,var(--sl-slide-bg));border-left:4px solid var(--sl-primary);border-radius:0 8px 8px 0;padding:0.75rem 1rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;overflow:hidden;">
+                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);font-size:1em;text-transform:uppercase;letter-spacing:0.03em;">Exemple</div>
+                    <div style="color:var(--sl-text);font-size:0.88em;line-height:1.45;max-height:36%;overflow:auto;">${el.data?.text || ''}</div>
+                    <div style="flex:1;min-height:110px;border:1px solid var(--sl-border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-slide-bg) 82%,#000);">${widget}</div>
                 </div>`;
                 break;
             }

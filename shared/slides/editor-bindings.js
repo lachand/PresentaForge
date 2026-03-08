@@ -508,6 +508,7 @@ function initInsertionGroupFilter() {
         'timeline-vertical': 'diagram',
         highlight: 'code',
         'code-live': 'code',
+        'code-example': 'code',
         latex: 'code',
         'code-compare': 'code',
         'algo-stepper': 'code',

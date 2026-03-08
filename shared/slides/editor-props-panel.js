@@ -64,6 +64,7 @@ function updatePropsPanel() {
         widget: 'Widget',
         list: 'Liste',
         definition: 'Définition',
+        'code-example': 'Exemple code',
         video: 'Vidéo',
         mermaid: 'Diagramme',
         latex: 'Équation',
@@ -114,6 +115,34 @@ function updatePropsPanel() {
                 <span>Éditez directement<br>sur le canvas</span>
             </div>`;
             break;
+
+        case 'code-example': {
+            const mode = ['terminal', 'live', 'stepper'].includes(d.widgetType) ? d.widgetType : 'terminal';
+            const steps = Array.isArray(d.stepperSteps) ? d.stepperSteps : [];
+            html = `<div class="props-section">
+                <div class="props-section-title">Exemple</div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Texte</label>
+                <textarea id="sp-ce-text" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.text || '')}</textarea>
+                <div class="props-row" style="margin-top:6px"><label>Widget</label><select id="sp-ce-mode"><option value="terminal"${mode === 'terminal' ? ' selected' : ''}>Code/Terminal</option><option value="live"${mode === 'live' ? ' selected' : ''}>Code Live</option><option value="stepper"${mode === 'stepper' ? ' selected' : ''}>Algo stepper</option></select></div>
+            </div>`;
+            if (mode === 'stepper') {
+                html += `<div class="props-section">
+                    <div class="props-section-title">Stepper</div>
+                    <div class="props-row"><label>Titre</label><input type="text" id="sp-ce-stepper-title" value="${escAttr(d.stepperTitle || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                    <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Étapes JSON</label>
+                    <textarea id="sp-ce-stepper-steps" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(JSON.stringify(steps, null, 2))}</textarea>
+                    <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"title":"...","detail":"...","code":"..."}]</div>
+                </div>`;
+            } else {
+                html += `<div class="props-section">
+                    <div class="props-section-title">${mode === 'live' ? 'Code Live' : 'Code / Terminal'}</div>
+                    <div class="props-row"><label>Langage</label><select id="sp-ce-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
+                    <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code</label>
+                    <textarea id="sp-ce-code" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
+                </div>`;
+            }
+            break;
+        }
 
         case 'image':
             html = `<div class="props-section">
@@ -898,6 +927,23 @@ function _bindPropsPanel(el) {
                 const fallback = canvasEditor.getSelected()?.data?.cards || [];
                 const cards = parseJsonArrayOr(inp.value, fallback);
                 canvasEditor.updateData(id, { data: { cards } });
+            });
+            break;
+
+        case 'code-example':
+            bind('sp-ce-text', inp => canvasEditor.updateData(id, { data: { text: inp.value } }));
+            bindChange('sp-ce-mode', inp => {
+                const mode = ['terminal', 'live', 'stepper'].includes(inp.value) ? inp.value : 'terminal';
+                canvasEditor.updateData(id, { data: { widgetType: mode } });
+                updatePropsPanel();
+            });
+            bindChange('sp-ce-lang', inp => canvasEditor.updateData(id, { data: { language: inp.value } }));
+            bind('sp-ce-code', inp => canvasEditor.updateData(id, { data: { code: inp.value } }));
+            bind('sp-ce-stepper-title', inp => canvasEditor.updateData(id, { data: { stepperTitle: inp.value } }));
+            bind('sp-ce-stepper-steps', inp => {
+                const fallback = canvasEditor.getSelected()?.data?.stepperSteps || [];
+                const stepperSteps = parseJsonArrayOr(inp.value, fallback);
+                canvasEditor.updateData(id, { data: { stepperSteps } });
             });
             break;
     }

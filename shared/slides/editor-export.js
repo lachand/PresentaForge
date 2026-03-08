@@ -1563,6 +1563,26 @@ function _mdCanvasSlide(slide, lines, idx) {
                 if (el.data?.term) lines.push(`**${el.data.term}**`);
                 if (el.data?.definition) lines.push(`> ${_mdStripHtml(el.data.definition)}`);
                 break;
+            case 'code-example': {
+                lines.push('**Exemple**');
+                if (el.data?.text) lines.push(_mdStripHtml(el.data.text));
+                if ((el.data?.widgetType || 'terminal') === 'stepper') {
+                    const steps = Array.isArray(el.data?.stepperSteps) ? el.data.stepperSteps : [];
+                    const first = steps[0] || {};
+                    if (first.title) lines.push(`- ${_mdStripHtml(first.title)}`);
+                    if (first.detail) lines.push(`  - ${_mdStripHtml(first.detail)}`);
+                    if (first.code) {
+                        lines.push('```' + (el.data?.language || ''));
+                        lines.push(first.code);
+                        lines.push('```');
+                    }
+                } else if (el.data?.code) {
+                    lines.push('```' + (el.data?.language || ''));
+                    lines.push(el.data.code || '');
+                    lines.push('```');
+                }
+                break;
+            }
             case 'quote':
                 if (el.data?.text) lines.push(`> ${_mdStripHtml(el.data.text)}`);
                 if (el.data?.attribution) lines.push(`> — *${el.data.attribution}*`);
@@ -1819,6 +1839,27 @@ function _pptxExportCanvasSlide(pptSlide, slideData, dims, tc) {
                     { text: term + '\n', options: { bold: true, fontSize: (s.fontSize || 22) + 4 } },
                     { text: def, options: { fontSize: s.fontSize || 18 } }
                 ], { x, y, w, h, color: _pptxExportColor(s.color) || _pptxExportColor(tc.text) || '333333', valign: 'top', wrap: true });
+                break;
+            }
+            case 'code-example': {
+                const text = el.data?.text || '';
+                const mode = el.data?.widgetType || 'terminal';
+                let code = el.data?.code || '';
+                if (mode === 'stepper') {
+                    const steps = Array.isArray(el.data?.stepperSteps) ? el.data.stepperSteps : [];
+                    code = steps[0]?.code || code;
+                }
+                const block = `Exemple\n\n${text}${code ? `\n\n${code}` : ''}`;
+                pptSlide.addText(block, {
+                    x, y, w, h,
+                    fontSize: s.fontSize || 16,
+                    color: _pptxExportColor(s.color) || _pptxExportColor(tc.text) || '333333',
+                    valign: 'top',
+                    wrap: true,
+                    fill: { color: 'F8FAFC', transparency: 12 },
+                    line: { color: _pptxExportColor(tc.primary) || '4F46E5', pt: 1.25 },
+                    margin: { left: 6, right: 6, top: 6, bottom: 6 },
+                });
                 break;
             }
             case 'quote': {

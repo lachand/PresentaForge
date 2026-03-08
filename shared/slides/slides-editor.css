@@ -522,6 +522,7 @@ html, body {
 .el-type-btn[data-el="shape"] { --el-color: #94a3b8; }
 .el-type-btn[data-el="widget"] { --el-color: #fbbf24; }
 .el-type-btn[data-el="definition"] { --el-color: #2dd4bf; }
+.el-type-btn[data-el="code-example"] { --el-color: #22c55e; }
 .el-type-btn[data-el="quote"] { --el-color: #c084fc; }
 .el-type-btn[data-el="card"] { --el-color: #38bdf8; }
 .el-color-connector { --el-color: #f97316; }

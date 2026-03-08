@@ -15,14 +15,14 @@
 
 const _quickInsertItems = [
     { id: 'heading', label: 'Titre', keywords: 'heading titre h1 titre principal', iconSelector: '#ribbon-insertion .el-type-btn[data-el="heading"] .el-icon', iconKey: 'text' },
-    { id: 'text', label: 'Texte', keywords: 'text texte paragraphe body', iconSelector: '#ribbon-insertion .el-type-btn[data-el="text"] .el-icon', iconKey: 'text' },
+    { id: 'text', label: 'Texte', keywords: 'text texte paragraphe body liste puces bullets - tabulation', iconSelector: '#ribbon-insertion .el-type-btn[data-el="text"] .el-icon', iconKey: 'text' },
     { id: 'highlight', label: 'Code / Terminal', keywords: 'code source programme bloc highlight terminal bash shell console', iconSelector: '#ribbon-insertion .el-type-btn[data-el="highlight"] .el-icon', iconKey: 'code' },
-    { id: 'list', label: 'Liste', keywords: 'list liste puces bullets items', iconSelector: '#ribbon-insertion .el-type-btn[data-el="list"] .el-icon', iconKey: 'list' },
     { id: 'image', label: 'Image', keywords: 'image photo picture illustration', iconSelector: '#ribbon-insertion .el-type-btn[data-el="image"] .el-icon', iconKey: 'media' },
     { id: 'table', label: 'Tableau', keywords: 'table tableau grille grid cells', iconSelector: '#btn-insert-table .el-icon', iconKey: 'grid' },
     { id: 'shape', label: 'Forme', keywords: 'shape forme rectangle cercle ellipse triangle', iconSelector: '#btn-shape-gallery .el-icon', iconKey: 'diagram' },
     { id: 'widget', label: 'Widget', keywords: 'widget plugin composant interactif', iconSelector: '#ribbon-insertion .el-type-btn[data-el="widget"] .el-icon', iconKey: 'settings' },
     { id: 'definition', label: 'Définition', keywords: 'definition glossaire terme définition', iconSelector: '#ribbon-insertion .el-type-btn[data-el="definition"] .el-icon', iconKey: 'book' },
+    { id: 'code-example', label: 'Exemple de code', keywords: 'exemple code terminal live stepper widget', iconSelector: '#ribbon-insertion .el-type-btn[data-el="code-example"] .el-icon', iconKey: 'code' },
     { id: 'quote', label: 'Citation', keywords: 'citation quote blockquote', iconSelector: '#ribbon-insertion .el-type-btn[data-el="quote"] .el-icon', iconKey: 'quote' },
     { id: 'card', label: 'Carte', keywords: 'card carte panneau callout', iconSelector: '#ribbon-insertion .el-type-btn[data-el="card"] .el-icon', iconKey: 'grid' },
     { id: 'connector', label: 'Connecteur', keywords: 'connector connecteur ligne flèche arrow line', iconSelector: '#btn-add-connector .el-icon', iconKey: 'diagram' },
@@ -200,6 +200,7 @@ function _doQuickInsert(id) {
         case 'image':
         case 'widget':
         case 'definition':
+        case 'code-example':
         case 'quote':
         case 'card':
         case 'mermaid':
