@@ -478,6 +478,8 @@ class SlidesThemes {
         const contentPaddingX = Number.isFinite(+lt.contentPaddingX) ? +lt.contentPaddingX : 48;
         const contentPaddingY = Number.isFinite(+lt.contentPaddingY) ? +lt.contentPaddingY : 40;
         const bodyLineHeight = Number.isFinite(+lt.bodyLineHeight) ? +lt.bodyLineHeight : 1.45;
+        const typo = SlidesShared.resolveTypographyDefaults(null);
+        const codeSize = SlidesShared.resolveElementFontSize('code', {}, typo, 16);
         return `
 :root {
     --sl-bg: ${c.bg}; --sl-slide-bg: ${c.slideBg}; --sl-heading: ${c.heading};
@@ -492,6 +494,9 @@ class SlidesThemes {
     --sl-content-padding-x: ${contentPaddingX};
     --sl-content-padding-y: ${contentPaddingY};
     --sl-body-line-height: ${bodyLineHeight};
+    --sl-heading-size: ${typo.heading}px;
+    --sl-text-size: ${typo.text}px;
+    --sl-code-size: ${codeSize}px;
 }
 body { background: var(--sl-bg); }
 .reveal { font-family: var(--sl-font-body); color: var(--sl-text); line-height: var(--sl-body-line-height, 1.45); }
@@ -500,6 +505,9 @@ body { background: var(--sl-bg); }
     background: var(--sl-slide-bg);
     border-radius: var(--sl-radius, 12px);
     padding: calc(var(--sl-content-padding-y, 40) * 1px) calc(var(--sl-content-padding-x, 48) * 1px);
+    --sl-code-font-size: var(--sl-code-size, 16px);
+    --sl-code-gutter-size: var(--sl-code-size, 16px);
+    --sl-code-lang-size: calc(var(--sl-code-size, 16px) * 0.8);
     box-sizing: border-box;
     height: 100%;
     display: flex;
@@ -514,16 +522,16 @@ body { background: var(--sl-bg); }
     text-transform: none;
     letter-spacing: -0.02em;
 }
-.reveal h1 { font-size: clamp(2rem,4vw,3rem); font-weight: 800; }
-.reveal h2 { font-size: clamp(1.4rem,2.8vw,2rem); font-weight: 700; border-bottom: 2px solid var(--sl-primary); padding-bottom: 0.35em; margin-bottom: 0.7em; }
-.reveal h3 { font-size: clamp(1rem,2vw,1.4rem); font-weight: 600; color: var(--sl-primary); }
-.reveal p, .reveal li { font-size: clamp(0.9rem,1.8vw,1.15rem); line-height: 1.6; }
+.reveal h1 { font-size: var(--sl-heading-size, 52px); font-weight: 800; }
+.reveal h2 { font-size: calc(var(--sl-heading-size, 52px) * 0.62); font-weight: 700; border-bottom: 2px solid var(--sl-primary); padding-bottom: 0.35em; margin-bottom: 0.7em; }
+.reveal h3 { font-size: calc(var(--sl-heading-size, 52px) * 0.46); font-weight: 600; color: var(--sl-primary); }
+.reveal p, .reveal li { font-size: var(--sl-text-size, 22px); line-height: 1.6; }
 .reveal ul, .reveal ol { margin: 0; padding-left: 1.4em; text-align: left; }
 .reveal li { margin-bottom: 0.5em; }
 .reveal li::marker { color: var(--sl-primary); }
 .reveal pre { width: 100%; margin: 0; background: var(--sl-code-bg); border-radius: 8px; border: 1px solid var(--sl-border); }
 .reveal code { font-family: var(--sl-font-mono); font-size: 0.85em; }
-.reveal pre code { font-size: clamp(0.65rem,1.4vw,0.9rem); padding: 1rem 1.2rem; line-height: 1.6; color: var(--sl-code-text); background: transparent; }
+.reveal pre code { font-size: var(--sl-code-size, 16px); padding: 1rem 1.2rem; line-height: 1.6; color: var(--sl-code-text); background: transparent; }
 .reveal a { color: var(--sl-primary); }
 .reveal .sl-muted { color: var(--sl-muted); font-size: 0.85em; }
 .reveal .sl-accent { color: var(--sl-accent); }
@@ -537,7 +545,7 @@ body { background: var(--sl-bg); }
 
 /* Title */
 .sl-title { text-align: center; align-items: center; }
-.sl-title h1 { font-size: clamp(2.2rem,5vw,3.5rem); }
+.sl-title h1 { font-size: calc(var(--sl-heading-size, 52px) * 1.12); }
 .sl-title-eyebrow { font-size: 0.8em; font-family: var(--sl-font-mono); color: var(--sl-primary); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
 .sl-title-sub { font-size: clamp(1rem,2.2vw,1.4rem); color: var(--sl-muted); margin-top: 0.5rem; }
 .sl-title-meta { display: flex; gap: 1.5rem; margin-top: 2rem; font-size: 0.8em; color: var(--sl-muted); justify-content: center; }
@@ -545,7 +553,7 @@ body { background: var(--sl-bg); }
 /* Chapter */
 .sl-chapter { text-align: center; align-items: center; background: linear-gradient(135deg, var(--sl-slide-bg) 0%, color-mix(in srgb, var(--sl-primary) 15%, var(--sl-slide-bg)) 100%) !important; }
 .sl-chapter-num { font-size: clamp(3rem,8vw,6rem); font-weight: 900; color: var(--sl-primary); opacity: 0.25; line-height: 1; font-family: var(--sl-font-heading); }
-.sl-chapter h2 { border: none; font-size: clamp(1.8rem,4vw,3rem); margin-top: 0; }
+.sl-chapter h2 { border: none; font-size: calc(var(--sl-heading-size, 52px) * 1.05); margin-top: 0; }
 .sl-chapter-sub { color: var(--sl-muted); font-size: 1.1em; }
 
 /* Bullets */
@@ -589,7 +597,7 @@ body { background: var(--sl-bg); }
 
 /* Quote */
 .sl-quote { text-align: center; align-items: center; }
-.sl-quote blockquote { border: none; margin: 0; padding: 0; background: transparent; font-size: clamp(1.1rem,2.5vw,1.6rem); font-style: italic; color: var(--sl-heading); line-height: 1.5; }
+.sl-quote blockquote { border: none; margin: 0; padding: 0; background: transparent; font-size: calc(var(--sl-text-size, 22px) * 1.2); font-style: italic; color: var(--sl-heading); line-height: 1.5; }
 .sl-quote blockquote::before { content: '"'; font-size: 4em; color: var(--sl-primary); line-height: 0.5; vertical-align: -0.4em; opacity: 0.4; }
 .sl-quote-author { margin-top: 1.5rem; font-size: 0.9em; color: var(--sl-primary); font-weight: 600; }
 .sl-quote-author::before { content: '— '; }
@@ -877,6 +885,12 @@ class SlidesRenderer {
         return parts.join('');
     }
 
+    static _typographyInlineStyle(opts = {}) {
+        const typography = SlidesShared.resolveTypographyDefaults(opts?.typography);
+        const codeSize = SlidesShared.resolveElementFontSize('code', {}, typography, 16);
+        return `--sl-heading-size:${typography.heading}px;--sl-text-size:${typography.text}px;--sl-code-size:${codeSize}px;`;
+    }
+
     static _bgSize(size) {
         const utils = window.OEIBackgroundUtils;
         if (utils?.cssSize) return utils.cssSize(size);
@@ -952,7 +966,7 @@ class SlidesRenderer {
         const bg = SlidesRenderer._slideBackground(slide);
         const transitionAttr = slide.transition ? ` data-transition="${SlidesRenderer.esc(slide.transition)}"` : '';
         const themeVars = SlidesRenderer._themeOverrideStyle(slide);
-        const combinedStyle = `${themeVars ? `${themeVars};` : ''}${bg.style}`;
+        const combinedStyle = `${SlidesRenderer._typographyInlineStyle(opts)}${themeVars ? `${themeVars};` : ''}${bg.style}`;
         const styleAttr = combinedStyle ? ` style="${combinedStyle}"` : '';
         return `<section class="${typeClass}" data-slide-index="${index}"${bg.attrs}${transitionAttr}${styleAttr}>${inner}${overlay}${notes}</section>`;
     }
@@ -3376,7 +3390,7 @@ class SlidesRenderer {
         const connSvg = SlidesRenderer._renderConnectors(s.connectors || [], elements);
         const overlay = SlidesRenderer._slideOverlay(index, opts);
         const themeVars = SlidesRenderer._themeOverrideStyle(s);
-        const combinedStyle = `${themeVars ? `${themeVars};` : ''}${bg.style}`;
+        const combinedStyle = `${SlidesRenderer._typographyInlineStyle(opts)}${themeVars ? `${themeVars};` : ''}${bg.style}`;
         return `<section class="sl-canvas" data-slide-index="${index}"${bg.attrs}${transitionAttr} style="${combinedStyle}">
             <div style="position:absolute;inset:0;">${els}${connSvg}</div>
             ${overlay}${notes}
