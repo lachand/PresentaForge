@@ -54,7 +54,8 @@ class SlidesShared {
     }
 
     static resolveElementFontSize(type = '', style = {}, typography = null, fallback = 16) {
-        const explicit = Number(style?.fontSize);
+        const raw = style?.fontSize;
+        const explicit = typeof raw === 'string' ? parseFloat(raw) : Number(raw);
         if (Number.isFinite(explicit)) return Math.max(8, explicit);
         const t = SlidesShared.resolveTypographyDefaults(typography);
         const map = SlidesShared.FONT_BASE_MAP[type];

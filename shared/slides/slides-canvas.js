@@ -749,6 +749,15 @@ class CanvasEditor {
 
     setScale(s) { this.scale = s; }
 
+    setTypography(typography = null) {
+        const prev = this.typography || SlidesShared.resolveTypographyDefaults(null);
+        const next = SlidesShared.resolveTypographyDefaults(typography);
+        if (prev.heading === next.heading && prev.text === next.text) return;
+        this.typography = next;
+        for (const el of this.elements) this._refreshDOM(el.id);
+        this._refreshConnectors();
+    }
+
     /* ── Grid ──────────────────────────────────────────────── */
     setGrid(size, show) {
         this._gridSize = size || 0;

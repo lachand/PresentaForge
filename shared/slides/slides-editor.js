@@ -242,6 +242,7 @@ class SlidesEditor {
 
     setTypographyDefaults(patch = {}) {
         this._ensureTypographyDefaults();
+        this._normalizeLegacyCanvasFontSizes();
         const next = { ...this.data.typography };
         if (Object.prototype.hasOwnProperty.call(patch, 'heading')) {
             const n = Number(patch.heading);
@@ -292,7 +293,8 @@ class SlidesEditor {
                 if (!el || typeof el !== 'object' || !el.style || typeof el.style !== 'object') continue;
                 const legacy = legacyDefaults[el.type];
                 if (!Number.isFinite(legacy)) continue;
-                const fs = Number(el.style.fontSize);
+                const raw = el.style.fontSize;
+                const fs = typeof raw === 'string' ? parseFloat(raw) : Number(raw);
                 if (!Number.isFinite(fs)) continue;
                 if (Math.round(fs) === legacy) {
                     delete el.style.fontSize;

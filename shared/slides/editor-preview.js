@@ -213,6 +213,8 @@ function mountCanvasEditor(slide) {
         // Build caption registry from all slides for cross-references
         canvasEditor.setCaptionRegistry(SlidesShared.buildCaptionRegistry(editor.data?.slides || []));
         _canvasLoadedIndex = currentIndex;
+    } else {
+        canvasEditor.setTypography(SlidesShared.resolveTypographyDefaults(editor.data?.typography));
     }
     canvasEditor.setScale(previewScale);
 }
