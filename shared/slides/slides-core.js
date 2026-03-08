@@ -33,10 +33,11 @@ class SlidesShared {
         const raw = String(text ?? '');
         if (!raw) return '';
         const lines = raw.replace(/\r\n?/g, '\n').split('\n');
-        const bulletRe = /^([ \t]*)([-*+])\s+(.*)$/;
+        const bulletRe = /^([ \t]*)([-*+•–—−])(?:[ \t]+(.*))?$/;
         let hasBullet = false;
         const rows = [];
-        for (const line of lines) {
+        for (const rawLine of lines) {
+            const line = String(rawLine || '').replace(/\u00a0/g, ' ');
             const match = line.match(bulletRe);
             if (match) {
                 hasBullet = true;

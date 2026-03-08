@@ -2388,7 +2388,11 @@ class CanvasEditor {
             div.classList.remove('editing');
             toolbar.remove();
             const rawHtml = editable.innerHTML;
-            const plainText = editable.textContent;
+            // Prefer innerText to preserve visual line breaks from contentEditable
+            // (<div>/<p>/<br>) so bullet auto-formatting can reliably parse "-" lines.
+            const plainText = String(editable.innerText || editable.textContent || '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\r\n?/g, '\n');
             // Store both html (rich) and text (plain fallback)
             const dataUpdate = { text: plainText };
             // Keep html only when real rich formatting is present.
