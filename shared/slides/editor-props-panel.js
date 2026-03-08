@@ -12,6 +12,12 @@
  */
 /* editor-props-panel.js — Properties panel for canvas element and connector editing */
 
+const CODE_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Correction', 'Solution', 'Astuce', 'Demo', 'Synthese'];
+const CODE_LABEL_PRESETS = ['Code', 'Snippet', 'Correction', 'Analyse'];
+const DEFINITION_LABEL_PRESETS = ['Definition', 'Theoreme', 'Propriete', 'Rappel'];
+const DEFINITION_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Contre-exemple', 'Remarque', 'Application'];
+const ASSESSMENT_LABEL_PRESETS = ['Quiz', 'Exercice', 'Evaluation', 'Correction'];
+
 function updatePropsPanel() {
     const panel = document.getElementById('props-content');
     const propsPanel = document.getElementById('props-panel');
@@ -109,18 +115,46 @@ function updatePropsPanel() {
         case 'text':
         case 'heading':
         case 'list':
-        case 'definition':
             html = `<div class="props-empty" style="gap:6px;padding:16px">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 <span>Éditez directement<br>sur le canvas</span>
             </div>`;
             break;
 
+        case 'definition': {
+            const blockLabel = String(d.label ?? d.blockLabel ?? 'Definition').trim() || 'Definition';
+            const exampleLabel = String(d.exampleLabel ?? 'Exemple').trim() || 'Exemple';
+            const selectedBlockPreset = DEFINITION_LABEL_PRESETS.includes(blockLabel) ? blockLabel : '__custom__';
+            const selectedExamplePreset = DEFINITION_EXAMPLE_LABEL_PRESETS.includes(exampleLabel) ? exampleLabel : '__custom__';
+            const blockOptions = DEFINITION_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedBlockPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            const exampleOptions = DEFINITION_EXAMPLE_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedExamplePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            html = `<div class="props-section">
+                <div class="props-section-title">Definition</div>
+                <div class="props-row"><label>Label bloc</label><select id="sp-def-label-preset">${blockOptions}<option value="__custom__"${selectedBlockPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte bloc</label><input type="text" id="sp-def-label" value="${escAttr(blockLabel)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row" style="margin-top:6px"><label>Label exemple</label><select id="sp-def-example-label-preset">${exampleOptions}<option value="__custom__"${selectedExamplePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte exemple</label><input type="text" id="sp-def-example-label" value="${escAttr(exampleLabel)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div style="font-size:0.6rem;color:var(--muted);margin-top:6px;line-height:1.4">Le terme, la definition et l'exemple se modifient directement sur le canvas.</div>
+            </div>`;
+            break;
+        }
+
         case 'code-example': {
             const mode = ['terminal', 'live', 'stepper'].includes(d.widgetType) ? d.widgetType : 'terminal';
             const steps = Array.isArray(d.stepperSteps) ? d.stepperSteps : [];
+            const labelValue = String(d.label ?? d.blockTitle ?? 'Exemple').trim() || 'Exemple';
+            const selectedPreset = CODE_EXAMPLE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const labelOptions = CODE_EXAMPLE_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">Exemple</div>
+                <div class="props-row"><label>Titre</label><select id="sp-ce-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ce-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Texte</label>
                 <textarea id="sp-ce-text" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.text || '')}</textarea>
                 <div class="props-row" style="margin-top:6px"><label>Widget</label><select id="sp-ce-mode"><option value="terminal"${mode === 'terminal' ? ' selected' : ''}>Code/Terminal</option><option value="live"${mode === 'live' ? ' selected' : ''}>Code Live</option><option value="stepper"${mode === 'stepper' ? ' selected' : ''}>Algo stepper</option></select></div>
@@ -152,12 +186,20 @@ function updatePropsPanel() {
             </div>`;
             break;
 
-        case 'code':
+        case 'code': {
+            const labelValue = String(d.label ?? 'Code').trim() || 'Code';
+            const selectedPreset = CODE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const labelOptions = CODE_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">Code</div>
+                <div class="props-row"><label>Label</label><select id="sp-code-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-code-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <div class="props-row"><label>Lang</label><select id="sp-code-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JS</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
             </div>`;
             break;
+        }
 
         case 'widget': {
             const currentLabel = (window.OEI_WIDGET_REGISTRY?.[d.widget]?.label) || SlidesEditor.WIDGET_OPTIONS.find(w => w.id === d.widget)?.label || d.widget || '—';
@@ -260,8 +302,15 @@ function updatePropsPanel() {
 
         case 'highlight': {
             const hls = d.highlights || [];
+            const labelValue = String(d.label ?? 'Code').trim() || 'Code';
+            const selectedPreset = CODE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const labelOptions = CODE_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">Code</div>
+                <div class="props-row"><label>Label</label><select id="sp-hl-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-hl-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <div class="props-row"><label>Lang</label><select id="sp-hl-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash / Terminal</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="json"${d.language === 'json' ? ' selected' : ''}>JSON</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code</label>
                 <textarea id="sp-hl-code" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
@@ -321,8 +370,15 @@ function updatePropsPanel() {
 
         case 'quiz-live': {
             const qlOpts = d.options || [];
+            const labelValue = String(d.label ?? 'Quiz').trim() || 'Quiz';
+            const selectedPreset = ASSESSMENT_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const labelOptions = ASSESSMENT_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">Quiz</div>
+                <div class="props-row"><label>Label</label><select id="sp-ql-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-ql-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Question</label>
                 <textarea id="sp-ql-question" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.question || '')}</textarea>
                 <div class="props-row" style="margin-top:6px"><label>Durée (s)</label><input type="number" id="sp-ql-duration" value="${d.duration || 30}" min="5" max="300" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
@@ -353,9 +409,16 @@ function updatePropsPanel() {
             </div>`;
             break;
 
-        case 'mcq-single':
+        case 'mcq-single': {
+            const labelValue = String(d.label ?? 'QCM simple').trim() || 'QCM simple';
+            const selectedPreset = ASSESSMENT_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const labelOptions = ASSESSMENT_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">QCM simple</div>
+                <div class="props-row"><label>Label</label><select id="sp-mcqs-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-mcqs-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Question</label>
                 <textarea id="sp-mcqs-question" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.question || '')}</textarea>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Options (1 par ligne)</label>
@@ -364,6 +427,7 @@ function updatePropsPanel() {
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Index de la bonne réponse (0 = première option).</div>
             </div>`;
             break;
+        }
 
         case 'drag-drop':
             html = `<div class="props-section">
@@ -376,9 +440,16 @@ function updatePropsPanel() {
             </div>`;
             break;
 
-        case 'mcq-multi':
+        case 'mcq-multi': {
+            const labelValue = String(d.label ?? 'QCM multi').trim() || 'QCM multi';
+            const selectedPreset = ASSESSMENT_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const labelOptions = ASSESSMENT_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">QCM multi</div>
+                <div class="props-row"><label>Label</label><select id="sp-mcqm-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-mcqm-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Question</label>
                 <textarea id="sp-mcqm-question" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.question || '')}</textarea>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Options (1 par ligne)</label>
@@ -387,6 +458,7 @@ function updatePropsPanel() {
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Indices des réponses correctes, à partir de 0.</div>
             </div>`;
             break;
+        }
 
         case 'poll-likert':
         case 'debate-mode':
@@ -583,12 +655,72 @@ function _bindPropsPanel(el) {
     };
 
     switch (type) {
+        case 'definition':
+            bind('sp-def-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-def-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Definition';
+                    presetSelect.value = DEFINITION_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-def-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-def-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-def-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
+            bind('sp-def-example-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { exampleLabel: value } });
+                const presetSelect = document.getElementById('sp-def-example-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Exemple';
+                    presetSelect.value = DEFINITION_EXAMPLE_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-def-example-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-def-example-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-def-example-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { exampleLabel: inp.value } });
+            });
+            break;
+
         case 'image':
             bind('sp-img-src', inp => canvasEditor.updateData(id, { data: { src: inp.value } }));
             bind('sp-img-alt', inp => canvasEditor.updateData(id, { data: { alt: inp.value } }));
             break;
 
         case 'code':
+            bind('sp-code-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-code-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Code';
+                    presetSelect.value = CODE_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-code-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-code-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-code-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
             bindChange('sp-code-lang', inp => canvasEditor.updateData(id, { data: { language: inp.value } }));
             break;
 
@@ -704,6 +836,25 @@ function _bindPropsPanel(el) {
             break;
 
         case 'highlight': {
+            bind('sp-hl-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-hl-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Code';
+                    presetSelect.value = CODE_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-hl-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-hl-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-hl-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
             bindChange('sp-hl-lang', inp => canvasEditor.updateData(id, { data: { language: inp.value } }));
             bind('sp-hl-code', inp => canvasEditor.updateData(id, { data: { code: inp.value } }));
             const getHls = () => Array.from(document.querySelectorAll('[data-hl-lines]')).map((inp, i) => ({
@@ -768,6 +919,25 @@ function _bindPropsPanel(el) {
             break;
 
         case 'quiz-live': {
+            bind('sp-ql-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-ql-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Quiz';
+                    presetSelect.value = ASSESSMENT_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-ql-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-ql-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-ql-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
             bind('sp-ql-question', inp => canvasEditor.updateData(id, { data: { question: inp.value } }));
             bind('sp-ql-duration', inp => canvasEditor.updateData(id, { data: { duration: +inp.value || 30 } }));
             bindChange('sp-ql-answer', inp => canvasEditor.updateData(id, { data: { answer: +inp.value } }));
@@ -804,6 +974,25 @@ function _bindPropsPanel(el) {
             break;
 
         case 'mcq-single':
+            bind('sp-mcqs-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-mcqs-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'QCM simple';
+                    presetSelect.value = ASSESSMENT_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-mcqs-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-mcqs-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-mcqs-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
             bind('sp-mcqs-question', inp => canvasEditor.updateData(id, { data: { question: inp.value } }));
             bind('sp-mcqs-options', inp => canvasEditor.updateData(id, { data: { options: parseLines(inp.value) } }));
             bind('sp-mcqs-answer', inp => canvasEditor.updateData(id, { data: { answer: Math.max(0, Number(inp.value) || 0) } }));
@@ -816,6 +1005,25 @@ function _bindPropsPanel(el) {
             break;
 
         case 'mcq-multi':
+            bind('sp-mcqm-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-mcqm-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'QCM multi';
+                    presetSelect.value = ASSESSMENT_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-mcqm-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-mcqm-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-mcqm-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
             bind('sp-mcqm-question', inp => canvasEditor.updateData(id, { data: { question: inp.value } }));
             bind('sp-mcqm-options', inp => canvasEditor.updateData(id, { data: { options: parseLines(inp.value) } }));
             bind('sp-mcqm-answers', inp => canvasEditor.updateData(id, { data: { answers: parseCsvNumbers(inp.value) } }));
@@ -931,6 +1139,25 @@ function _bindPropsPanel(el) {
             break;
 
         case 'code-example':
+            bind('sp-ce-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-ce-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Exemple';
+                    presetSelect.value = CODE_EXAMPLE_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-ce-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-ce-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-ce-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
             bind('sp-ce-text', inp => canvasEditor.updateData(id, { data: { text: inp.value } }));
             bindChange('sp-ce-mode', inp => {
                 const mode = ['terminal', 'live', 'stepper'].includes(inp.value) ? inp.value : 'terminal';

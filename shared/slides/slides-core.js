@@ -1009,6 +1009,7 @@ class SlidesRenderer {
 
     static _code(s) {
         const lang    = SlidesRenderer.esc(s.language || 'text');
+        const label   = SlidesRenderer.esc(String(s.label ?? 'Code').trim() || 'Code');
         const rawCode = s.code || '';
         const gutter  = rawCode.split('\n').map((_, i) => i + 1).join('\n');
         const code    = SlidesRenderer.esc(rawCode);
@@ -1018,6 +1019,7 @@ class SlidesRenderer {
                 <div class="sl-code-dot sl-code-dot-y"></div>
                 <div class="sl-code-dot sl-code-dot-g"></div>
                 <span class="sl-code-tbar-lang">${lang}</span>
+                <span style="margin-left:auto;font-size:0.68rem;font-weight:700;color:var(--sl-primary);text-transform:uppercase;letter-spacing:0.04em;">${label}</span>
             </div>
             <div class="sl-code-scroll" style="max-height:100%;overflow:auto;">
                 <div class="sl-code-gutter">${gutter}</div>
@@ -1064,10 +1066,12 @@ class SlidesRenderer {
 
     static _definition(s) {
         const title = s.title ? `<h2>${SlidesRenderer.esc(s.title)}</h2>` : '';
+        const label = SlidesRenderer.esc(String(s.label ?? s.blockLabel ?? 'Definition').trim() || 'Definition');
+        const exampleLabel = SlidesRenderer.esc(String(s.exampleLabel ?? 'Exemple').trim() || 'Exemple');
         const term = s.term ? `<div class="sl-def-term">${SlidesRenderer.esc(s.term)}</div>` : '';
         const body = s.definition ? `<div class="sl-def-body">${s.definition}</div>` : '';
-        const example = s.example ? `<div class="sl-def-example"><strong>Exemple :</strong> ${s.example}</div>` : '';
-        return `${title}<div class="sl-def-box">${term}${body}${example}</div>`;
+        const example = s.example ? `<div class="sl-def-example"><strong>${exampleLabel} :</strong> ${s.example}</div>` : '';
+        return `${title}<div class="sl-def-box"><div style="font-size:0.72rem;font-weight:700;color:var(--sl-primary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.25rem;">${label}</div>${term}${body}${example}</div>`;
     }
 
     static _comparison(s) {
@@ -3542,7 +3546,11 @@ class SlidesRenderer {
                 const base = SlidesShared.resolveElementFontSize('code', s, opts.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
-                content = `<div style="width:100%;height:100%;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'sl')}</div>`;
+                const label = String(el.data?.label ?? 'Code').trim() || 'Code';
+                content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
+                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;">${SlidesRenderer.esc(label)}</div>
+                    <div style="flex:1;min-height:0;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'sl')}</div>
+                </div>`;
                 break;
             }
             case 'list': {
@@ -3573,13 +3581,16 @@ class SlidesRenderer {
             case 'definition': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('definition', s, opts.typography, 16);
+                const label = String(el.data?.label ?? el.data?.blockLabel ?? 'Definition').trim() || 'Definition';
+                const exampleLabel = String(el.data?.exampleLabel ?? 'Exemple').trim() || 'Exemple';
                 const termSize = Math.round(base * 1.06);
                 const bodySize = Math.round(base);
                 const exampleSize = Math.round(base * 0.78);
                 content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 8%,var(--sl-slide-bg));border-left:4px solid var(--sl-primary);border-radius:0 8px 8px 0;padding:0.75rem 1rem;overflow:auto;box-sizing:border-box;">
+                    <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${SlidesRenderer.esc(label)}</div>
                     <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);margin-bottom:0.35rem;font-size:${termSize}px;">${SlidesRenderer.esc(el.data?.term||'')}</div>
                     <div style="color:var(--sl-text);line-height:1.5;font-size:${bodySize}px;">${el.data?.definition||''}</div>
-                    ${el.data?.example ? `<div style="margin-top:0.5rem;font-size:${exampleSize}px;color:var(--sl-muted);">Exemple : ${SlidesRenderer.esc(el.data.example)}</div>` : ''}
+                    ${el.data?.example ? `<div style="margin-top:0.5rem;font-size:${exampleSize}px;color:var(--sl-muted);">${SlidesRenderer.esc(exampleLabel)} : ${SlidesRenderer.esc(el.data.example)}</div>` : ''}
                 </div>`;
                 break;
             }
@@ -3587,6 +3598,7 @@ class SlidesRenderer {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('code-example', s, opts.typography, 16);
                 const mode = ['terminal', 'live', 'stepper'].includes(el.data?.widgetType) ? el.data.widgetType : 'terminal';
+                const label = String(el.data?.label ?? el.data?.blockTitle ?? 'Exemple').trim() || 'Exemple';
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
                 let widget = `<div style="height:100%;--sl-code-font-size:${Math.round(base * 0.82)}px;--sl-code-gutter-size:${Math.round(base * 0.82)}px;--sl-code-lang-size:${Math.round(base * 0.64)}px;">${SlidesShared.codeTerminal(code, lang, 'sl')}</div>`;
@@ -3614,7 +3626,7 @@ class SlidesRenderer {
                     </div>`;
                 }
                 content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 8%,var(--sl-slide-bg));border-left:4px solid var(--sl-primary);border-radius:0 8px 8px 0;padding:0.75rem 1rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;overflow:hidden;">
-                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);font-size:${Math.round(base * 1.02)}px;text-transform:uppercase;letter-spacing:0.03em;">Exemple</div>
+                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);font-size:${Math.round(base * 1.02)}px;text-transform:uppercase;letter-spacing:0.03em;">${SlidesRenderer.esc(label)}</div>
                     <div style="color:var(--sl-text);font-size:${Math.round(base * 0.92)}px;line-height:1.45;max-height:36%;overflow:auto;">${el.data?.text || ''}</div>
                     <div style="flex:1;min-height:110px;border:1px solid var(--sl-border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-slide-bg) 82%,#000);">${widget}</div>
                 </div>`;
@@ -3731,12 +3743,13 @@ class SlidesRenderer {
                 const langSize = Math.round(base * 0.64);
                 const lang = SlidesRenderer.esc(el.data?.language || 'python');
                 const code = SlidesRenderer.esc(el.data?.code || '');
+                const label = SlidesRenderer.esc(String(el.data?.label ?? 'Code').trim() || 'Code');
                 const highlights = (el.data?.highlights || []).map(h => h.lines).join('|');
                 // Use Reveal.js native <pre><code> (no sl-code-terminal wrapper)
                 // to avoid flex layout conflicts with Reveal's fragment cloning.
                 // Wrap in .sl-highlight-block to apply terminal-like styling.
                 content = `<div class="sl-highlight-block" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">
-                    <div class="sl-code-tbar"><div class="sl-code-dot sl-code-dot-r"></div><div class="sl-code-dot sl-code-dot-y"></div><div class="sl-code-dot sl-code-dot-g"></div><span class="sl-code-tbar-lang">${lang}</span></div>
+                    <div class="sl-code-tbar"><div class="sl-code-dot sl-code-dot-r"></div><div class="sl-code-dot sl-code-dot-y"></div><div class="sl-code-dot sl-code-dot-g"></div><span class="sl-code-tbar-lang">${lang}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;">${label}</span></div>
                     <pre><code class="language-${lang}" data-line-numbers="${highlights}">${code}</code></pre>
                 </div>`;
                 break;
@@ -3810,6 +3823,7 @@ class SlidesRenderer {
                 const opts = el.data?.options || [];
                 const answer = el.data?.answer ?? 0;
                 const duration = el.data?.duration || 30;
+                const label = SlidesRenderer.esc(String(el.data?.label ?? 'Quiz').trim() || 'Quiz');
                 const roomId = 'ql-' + (el.id || Math.random().toString(36).slice(2, 9));
                 const optsHtml = opts.map((o, i) =>
                     `<div class="sl-quizlive-option" data-idx="${i}" style="padding:10px 16px;border:2px solid var(--sl-border,#2d3347);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s;pointer-events:auto;">
@@ -3820,7 +3834,7 @@ class SlidesRenderer {
                 content = `<div class="sl-quizlive-pending" data-room="${SlidesRenderer.esc(roomId)}" data-answer="${answer}" data-duration="${duration}" style="width:100%;height:100%;display:flex;flex-direction:column;padding:16px;box-sizing:border-box;gap:12px;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span style="display:inline-flex;width:18px;height:18px;color:var(--sl-primary,#818cf8);" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg></span>
-                        <span style="font-size:0.8rem;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.05em;">Quiz</span>
+                        <span style="font-size:0.8rem;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.05em;">${label}</span>
                         <span style="flex:1"></span>
                         <span class="sl-quizlive-timer" style="font-family:var(--sl-font-mono,monospace);font-size:1rem;color:var(--sl-muted,#64748b);">${duration}s</span>
                         <button class="sl-quizlive-start" style="pointer-events:auto;padding:5px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;">Lancer</button>
@@ -3847,8 +3861,9 @@ class SlidesRenderer {
                 const q = SlidesRenderer.esc(el.data?.question || '');
                 const opts = JSON.stringify(el.data?.options || []).replace(/"/g, '&quot;');
                 const answer = Number(el.data?.answer ?? 0);
+                const label = SlidesRenderer.esc(String(el.data?.label ?? 'QCM simple').trim() || 'QCM simple');
                 content = `<div class="sl-mcqsingle-pending" data-options="${opts}" data-answer="${answer}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
-                    <div style="font-size:0.75rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;">QCM simple</div>
+                    <div style="font-size:0.75rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;">${label}</div>
                     <div class="sl-mcq-question" style="font-size:0.9rem;color:var(--sl-heading,#f1f5f9);">${q}</div>
                     <div class="sl-mcqsingle-options" style="display:flex;flex-direction:column;gap:6px;overflow:auto;"></div>
                     <div style="display:flex;gap:8px;margin-top:auto;">
@@ -3874,8 +3889,9 @@ class SlidesRenderer {
                 const q = SlidesRenderer.esc(el.data?.question || '');
                 const opts = JSON.stringify(el.data?.options || []).replace(/"/g, '&quot;');
                 const answers = JSON.stringify(el.data?.answers || []).replace(/"/g, '&quot;');
+                const label = SlidesRenderer.esc(String(el.data?.label ?? 'QCM multi').trim() || 'QCM multi');
                 content = `<div class="sl-mcqmulti-pending" data-options="${opts}" data-answers="${answers}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
-                    <div style="font-size:0.75rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;">QCM multi</div>
+                    <div style="font-size:0.75rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;">${label}</div>
                     <div class="sl-mcq-question" style="font-size:0.9rem;color:var(--sl-heading,#f1f5f9);">${q}</div>
                     <div class="sl-mcqmulti-options" style="display:flex;flex-direction:column;gap:6px;overflow:auto;"></div>
                     <div style="display:flex;gap:8px;margin-top:auto;">

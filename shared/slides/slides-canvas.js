@@ -88,7 +88,7 @@ class CanvasEditor {
             case 'text':
                 return { ...base, data: { text: 'Votre texte ici.' }, style: { fontWeight: 400, color: 'var(--sl-text)', textAlign: 'left', fontFamily: 'var(--sl-font-body)' } };
             case 'code':
-                return { ...base, data: { language: 'python', code: '# Code ici\nprint("Hello, World!")' } };
+                return { ...base, data: { label: 'Code', language: 'python', code: '# Code ici\nprint("Hello, World!")' } };
             case 'list':
                 return { ...base, data: { items: ['Premier point', 'Deuxième point', 'Troisième point'] }, style: { color: 'var(--sl-text)' } };
             case 'image':
@@ -98,11 +98,12 @@ class CanvasEditor {
             case 'widget':
                 return { ...base, data: { widget: 'workflow-trigger-simulator', config: {} } };
             case 'definition':
-                return { ...base, data: { term: 'Terme', definition: 'La définition complète du terme.', example: '' }, style: {} };
+                return { ...base, data: { label: 'Definition', term: 'Terme', definition: 'La définition complète du terme.', exampleLabel: 'Exemple', example: '' }, style: {} };
             case 'code-example':
                 return {
                     ...base,
                     data: {
+                        label: 'Exemple',
                         text: 'Décrivez le cas d’usage ou la logique attendue.',
                         widgetType: 'terminal',
                         language: 'python',
@@ -139,7 +140,7 @@ class CanvasEditor {
             case 'iframe':
                 return { ...base, data: { url: '', title: 'Contenu embarqué' } };
             case 'highlight':
-                return { ...base, data: { language: 'python', code: '# Code\ndef hello():\n    print("Hello!")\n\nhello()', highlights: [] } };
+                return { ...base, data: { label: 'Code', language: 'python', code: '# Code\ndef hello():\n    print("Hello!")\n\nhello()', highlights: [] } };
             case 'qrcode':
                 return { ...base, data: { value: 'https://example.com', label: '', alt: '' } };
             case 'smartart':
@@ -147,15 +148,15 @@ class CanvasEditor {
             case 'code-live':
                 return { ...base, data: { language: 'python', code: '# Code ici\nprint("Hello, World!")', autoRun: false }, style: {} };
             case 'quiz-live':
-                return { ...base, data: { question: 'Quelle est la bonne réponse ?', options: ['Réponse A', 'Réponse B', 'Réponse C', 'Réponse D'], answer: 0, duration: 30 }, style: {} };
+                return { ...base, data: { label: 'Quiz', question: 'Quelle est la bonne réponse ?', options: ['Réponse A', 'Réponse B', 'Réponse C', 'Réponse D'], answer: 0, duration: 30 }, style: {} };
             case 'cloze':
                 return { ...base, data: { title: 'Texte à trous', sentence: 'Le protocole ____ garantit la livraison des paquets.', blanks: ['TCP'] }, style: {} };
             case 'mcq-single':
-                return { ...base, data: { question: 'Quelle est la bonne réponse ?', options: ['Option A', 'Option B', 'Option C', 'Option D'], answer: 1 }, style: {} };
+                return { ...base, data: { label: 'QCM simple', question: 'Quelle est la bonne réponse ?', options: ['Option A', 'Option B', 'Option C', 'Option D'], answer: 1 }, style: {} };
             case 'drag-drop':
                 return { ...base, data: { title: 'Classez les éléments', items: ['Cache L1', 'RAM', 'SSD'], targets: ['Très rapide', 'Moyen', 'Plus lent'] }, style: {} };
             case 'mcq-multi':
-                return { ...base, data: { question: 'Quelles propositions sont exactes ?', options: ['Option A', 'Option B', 'Option C', 'Option D'], answers: [0, 2] }, style: {} };
+                return { ...base, data: { label: 'QCM multi', question: 'Quelles propositions sont exactes ?', options: ['Option A', 'Option B', 'Option C', 'Option D'], answers: [0, 2] }, style: {} };
             case 'poll-likert':
                 return { ...base, data: { prompt: 'Votre niveau de confiance (1 à 5) ?' }, style: {} };
             case 'debate-mode':
@@ -1183,7 +1184,11 @@ class CanvasEditor {
                 const base = SlidesShared.resolveElementFontSize('code', s, this.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
-                return `<div style="width:100%;height:100%;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'cel')}</div>`;
+                const label = String(el.data?.label ?? 'Code').trim() || 'Code';
+                return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
+                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</div>
+                    <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'cel')}</div>
+                </div>`;
             }
             case 'list': {
                 const s = el.style || {};
@@ -1212,24 +1217,28 @@ class CanvasEditor {
             case 'definition': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('definition', s, this.typography, 16);
+                const blockLabel = String(el.data?.label ?? el.data?.blockLabel ?? 'Definition').trim() || 'Definition';
+                const exampleLabel = String(el.data?.exampleLabel ?? 'Exemple').trim() || 'Exemple';
                 const termSize = Math.round(base * 1.06);
                 const bodySize = Math.round(base);
                 const exampleSize = Math.round(base * 0.78);
                 return `<div class="cel-def-content">
+                    <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${escHtml(blockLabel)}</div>
                     <div class="cel-def-term" style="font-size:${termSize}px;">${escHtml(el.data?.term||'')}</div>
                     <div class="cel-def-body" style="font-size:${bodySize}px;">${el.data?.definition||''}</div>
-                    ${el.data?.example ? `<div class="cel-def-example" style="font-size:${exampleSize}px;">Exemple : ${escHtml(el.data.example)}</div>` : ''}
+                    ${el.data?.example ? `<div class="cel-def-example" style="font-size:${exampleSize}px;">${escHtml(exampleLabel)} : ${escHtml(el.data.example)}</div>` : ''}
                 </div>`;
             }
             case 'code-example': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('code-example', s, this.typography, 16);
                 const data = el.data || {};
+                const label = String(data.label ?? data.blockTitle ?? 'Exemple').trim() || 'Exemple';
                 const body = data.text || '';
                 const widgetMode = data.widgetType || 'terminal';
                 const widgetHtml = CanvasEditor._renderCodeExampleWidget(data, widgetMode, s, base);
                 return `<div class="cel-code-example-content" style="font-size:${base}px;">
-                    <div class="cel-code-example-label" style="font-size:${Math.round(base * 1.02)}px;">Exemple</div>
+                    <div class="cel-code-example-label" style="font-size:${Math.round(base * 1.02)}px;">${escHtml(label)}</div>
                     <div class="cel-code-example-text" style="font-size:${Math.round(base * 0.92)}px;">${body}</div>
                     <div class="cel-code-example-widget" style="--ce-code-font-size:${Math.round(base * 0.82)}px;--ce-code-gutter-size:${Math.round(base * 0.82)}px;--ce-code-lang-size:${Math.round(base * 0.64)}px;">${widgetHtml}</div>
                 </div>`;
@@ -1334,9 +1343,10 @@ class CanvasEditor {
                 const langSize = Math.round(base * 0.64);
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
+                const label = String(el.data?.label ?? 'Code').trim() || 'Code';
                 const highlights = el.data?.highlights || [];
                 const lines = code.split('\n');
-                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal" style="--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
+                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal" style="--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
                 lines.forEach((line, i) => {
                     const ln = i + 1;
                     const cls = highlights.some(h => CanvasEditor._lineInRange(ln, h.lines)) ? ' cel-hl-line' : '';
@@ -1386,11 +1396,12 @@ class CanvasEditor {
                 const q = el.data?.question || '';
                 const opts = el.data?.options || [];
                 const dur = el.data?.duration || 30;
+                const label = String(el.data?.label ?? 'Quiz').trim() || 'Quiz';
                 const optHtml = opts.map((o, i) => `<div class="cel-quizlive-option"><span class="cel-quizlive-letter">${String.fromCharCode(65 + i)}</span>${escHtml(o)}</div>`).join('');
                 return `<div class="cel-quizlive-content">
                     <div class="cel-quizlive-header">
                         <span class="cel-quizlive-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg></span>
-                        <span>Quiz</span>
+                        <span>${escHtml(label)}</span>
                         <span class="cel-quizlive-timer">${dur}s</span>
                     </div>
                     <div class="cel-quizlive-question">${escHtml(q)}</div>
@@ -1413,9 +1424,10 @@ class CanvasEditor {
             case 'mcq-single': {
                 const q = el.data?.question || '';
                 const opts = Array.isArray(el.data?.options) ? el.data.options : [];
+                const label = String(el.data?.label ?? 'QCM simple').trim() || 'QCM simple';
                 const optHtml = opts.slice(0, 5).map((o, i) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:7px;font-size:0.75rem;"><span style="width:14px;height:14px;border:1px solid var(--sl-border,#2d3347);border-radius:50%;"></span>${escHtml(o || `Option ${i + 1}`)}</div>`).join('');
                 return `<div style="width:100%;height:100%;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
-                    <div style="font-size:0.74rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;">QCM simple</div>
+                    <div style="font-size:0.74rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;">${escHtml(label)}</div>
                     <div style="font-size:0.85rem;color:var(--sl-heading,#f1f5f9);">${escHtml(q)}</div>
                     <div style="display:flex;flex-direction:column;gap:5px;overflow:auto;">${optHtml}</div>
                 </div>`;
@@ -1434,9 +1446,10 @@ class CanvasEditor {
             case 'mcq-multi': {
                 const q = el.data?.question || '';
                 const opts = Array.isArray(el.data?.options) ? el.data.options : [];
+                const label = String(el.data?.label ?? 'QCM multi').trim() || 'QCM multi';
                 const optHtml = opts.slice(0, 5).map((o, i) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:7px;font-size:0.75rem;"><span style="width:14px;height:14px;border:1px solid var(--sl-border,#2d3347);border-radius:3px;"></span>${escHtml(o || `Option ${i+1}`)}</div>`).join('');
                 return `<div style="width:100%;height:100%;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
-                    <div style="font-size:0.74rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;">QCM multi</div>
+                    <div style="font-size:0.74rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;">${escHtml(label)}</div>
                     <div style="font-size:0.85rem;color:var(--sl-heading,#f1f5f9);">${escHtml(q)}</div>
                     <div style="display:flex;flex-direction:column;gap:5px;overflow:auto;">${optHtml}</div>
                 </div>`;
@@ -2592,7 +2605,7 @@ class CanvasEditor {
         const fields = [
             { key: 'term',       label: 'Terme',      cls: 'cel-def-term',    value: el.data?.term       || '' },
             { key: 'definition', label: 'Définition',  cls: 'cel-def-body',    value: el.data?.definition || '' },
-            { key: 'example',    label: 'Exemple',     cls: 'cel-def-example', value: el.data?.example    || '' },
+            { key: 'example',    label: String(el.data?.exampleLabel || 'Exemple'), cls: 'cel-def-example', value: el.data?.example || '' },
         ];
 
         const editables = [];
@@ -2669,7 +2682,7 @@ class CanvasEditor {
 
         const label = document.createElement('div');
         label.className = 'cel-code-example-label';
-        label.textContent = 'Exemple';
+        label.textContent = String(el.data?.label ?? el.data?.blockTitle ?? 'Exemple').trim() || 'Exemple';
 
         const body = document.createElement('div');
         body.className = 'cel-code-example-text cel-def-edit-field';
