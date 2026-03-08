@@ -43,6 +43,45 @@
             padding: 0.4rem 1rem; font-family: system-ui, sans-serif;
             transform: translateY(-100%); transition: transform 0.25s ease;
         }
+        .sl-brand {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            margin-right: 4px;
+        }
+        .sl-brand-logo {
+            height: 16px;
+            width: auto;
+            display: none;
+            object-fit: contain;
+            object-position: left center;
+        }
+        .sl-brand-logo-dark { display: block; }
+        body.viewer-light .sl-brand-logo-dark { display: none; }
+        body.viewer-light .sl-brand-logo-light { display: block; }
+        #sl-audience-brand {
+            display: none;
+            position: fixed;
+            top: 10px;
+            left: 12px;
+            z-index: 190;
+            pointer-events: none;
+            opacity: 0.94;
+        }
+        body.viewer-audience #sl-audience-brand {
+            display: inline-flex;
+            align-items: center;
+        }
+        .sl-audience-brand-logo {
+            height: 16px;
+            width: auto;
+            display: none;
+            object-fit: contain;
+            object-position: left center;
+        }
+        .sl-audience-brand-logo-dark { display: block; }
+        body.viewer-light .sl-audience-brand-logo-dark { display: none; }
+        body.viewer-light .sl-audience-brand-logo-light { display: block; }
         /* Show on hover on the very top edge */
         #sl-toolbar-hover-zone {
             position: fixed; top: 0; left: 0; right: 0; height: 6px; z-index: 999;
@@ -51,6 +90,11 @@
         #sl-toolbar:hover { transform: translateY(0); }
         #sl-toolbar.force-show { transform: translateY(0); }
         #sl-toolbar-title { flex: 1; color: #fff; font-size: 0.85rem; font-weight: 600; }
+        body.viewer-light #sl-toolbar {
+            background: rgba(248,250,252,0.95);
+            border-bottom: 1px solid rgba(15,23,42,0.08);
+        }
+        body.viewer-light #sl-toolbar-title { color: #0f172a; }
         .sl-tb-btn {
             padding: 0.3rem 0.7rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);
             background: rgba(255,255,255,0.1); color: #fff; cursor: pointer;
@@ -60,6 +104,12 @@
         .sl-tb-btn:hover { background: rgba(255,255,255,0.2); }
         .sl-tb-btn.active { background: rgba(99,102,241,0.35); border-color: rgba(129,140,248,0.6); }
         .sl-tb-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+        body.viewer-light .sl-tb-btn {
+            border-color: rgba(15,23,42,0.16);
+            background: rgba(15,23,42,0.05);
+            color: #0f172a;
+        }
+        body.viewer-light .sl-tb-btn:hover { background: rgba(15,23,42,0.1); }
         /* Student room modal */
         #sl-room-modal {
             position: fixed; inset: 0; z-index: 2000;
@@ -814,6 +864,13 @@
         #sl-timer:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
         #sl-timer.running { color: #4ade80; }
         #sl-timer.paused { color: rgba(255,255,255,0.4); }
+        body.viewer-light #sl-timer { color: rgba(15,23,42,0.6); }
+        body.viewer-light #sl-timer.running { color: #15803d; }
+        body.viewer-light #sl-timer.paused { color: rgba(15,23,42,0.4); }
+        body.viewer-light #sl-timer:hover {
+            border-color: rgba(15,23,42,0.18);
+            background: rgba(15,23,42,0.06);
+        }
         /* Hide Reveal.js built-in UI */
         .reveal .progress, .reveal .slide-number { display: none !important; }
 
@@ -847,6 +904,20 @@
             gap: 12px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
         }
+        .pv-brand {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            margin-right: 2px;
+        }
+        .pv-brand-logo {
+            height: 15px;
+            width: auto;
+            display: none;
+            object-fit: contain;
+            object-position: left center;
+        }
+        .pv-brand-logo-dark { display: block; }
         .pv-toolbar-title { flex: 1; font-size: 0.8rem; font-weight: 600; color: #e2e8f0; }
         .pv-toolbar-btn {
             padding: 4px 12px;
@@ -1431,6 +1502,7 @@
                 grid-template-rows: 36px minmax(0, 1fr);
             }
             .pv-toolbar { padding: 0 8px; gap: 6px; height: 36px; }
+            .pv-brand-logo { height: 13px; }
             .pv-toolbar-title { font-size: 0.7rem; }
             .pv-toolbar-btn { padding: 3px 8px; font-size: 0.65rem; }
             .pv-main {
@@ -1461,6 +1533,8 @@
         /* ── Presenter light theme ───────────────────────── */
         .pv-layout.light { background: #f8fafc !important; color: #1e293b; }
         .pv-layout.light .pv-toolbar { background: rgba(248,250,252,0.97); border-color: rgba(0,0,0,0.08); }
+        .pv-layout.light .pv-brand-logo-dark { display: none; }
+        .pv-layout.light .pv-brand-logo-light { display: block; }
         .pv-layout.light .pv-toolbar-title { color: #1e293b; }
         .pv-layout.light .pv-toolbar-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #1e293b; }
         .pv-layout.light .pv-toolbar-btn:hover { background: rgba(0,0,0,0.08); }

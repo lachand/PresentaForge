@@ -35,6 +35,22 @@
         /* ── Join screen ─────────────────────────────── */
         #join-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
         .join-panel { width: 100%; max-width: 360px; text-align: center; }
+        .join-brand {
+            margin-bottom: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .join-brand-logo {
+            height: 24px;
+            width: auto;
+            display: none;
+            object-fit: contain;
+            object-position: center;
+        }
+        .join-brand-logo-light { display: block; }
+        body.dark .join-brand-logo-light { display: none; }
+        body.dark .join-brand-logo-dark { display: block; }
         .join-icon { margin-bottom: 12px; display:flex; align-items:center; justify-content:center; color: var(--primary); }
         .join-icon svg { width: 48px; height: 48px; }
         .join-panel h1 { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
@@ -68,6 +84,22 @@
             display: flex; align-items: center; gap: 8px; padding: 8px 14px;
             background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0;
         }
+        #student-brand {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            margin-right: 2px;
+        }
+        .student-brand-logo {
+            height: 14px;
+            width: auto;
+            display: none;
+            object-fit: contain;
+            object-position: left center;
+        }
+        .student-brand-logo-light { display: block; }
+        body.dark .student-brand-logo-light { display: none; }
+        body.dark .student-brand-logo-dark { display: block; }
         #header-title {
             flex: 1; font-size: 0.8rem; font-weight: 700; color: var(--primary);
             text-transform: uppercase; letter-spacing: 0.05em;
@@ -771,6 +803,10 @@
     <!-- Join screen -->
     <div id="join-screen">
         <div class="join-panel">
+            <div class="join-brand" aria-label="presentaForge">
+                <img class="join-brand-logo join-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="presentaForge">
+                <img class="join-brand-logo join-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="presentaForge">
+            </div>
             <div class="join-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg></div>
             <h1>Rejoindre</h1>
             <p>Entrez votre prénom pour rejoindre la présentation en cours</p>
@@ -783,6 +819,10 @@
     <!-- Main view (hidden until connected) -->
     <div id="main-view">
         <div id="student-header">
+            <a id="student-brand" aria-label="presentaForge" href="index.html" title="Retour à l’index des présentations">
+                <img class="student-brand-logo student-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="presentaForge">
+                <img class="student-brand-logo student-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="presentaForge">
+            </a>
             <span id="header-title">Présentation</span>
             <button id="theme-toggle" title="Thème clair/sombre">
                 <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>

@@ -216,6 +216,10 @@ function bindToolbar() {
         importPowerPoint();
         document.getElementById('split-open-menu')?.classList.add('hidden');
     });
+    document.getElementById('btn-import-pdf')?.addEventListener('click', () => {
+        importPDF();
+        document.getElementById('split-open-menu')?.classList.add('hidden');
+    });
 
     // Export buttons (in ribbon Affichage tab)
     document.getElementById('btn-export-json').addEventListener('click', () => {
@@ -286,9 +290,15 @@ function bindToolbar() {
 
     // Slide type chooser
     document.getElementById('btn-add-slide-big').addEventListener('click', openSlideTypeChooser);
-    document.getElementById('stc-close').addEventListener('click', () => document.getElementById('slide-type-chooser').style.display = 'none');
+    const closeSlideTypeChooser = () => {
+        const chooser = document.getElementById('slide-type-chooser');
+        if (!chooser) return;
+        chooser.classList.remove('is-open');
+        chooser.style.display = 'none';
+    };
+    document.getElementById('stc-close').addEventListener('click', closeSlideTypeChooser);
     document.getElementById('slide-type-chooser')?.addEventListener('click', e => {
-        if (e.target === document.getElementById('slide-type-chooser')) document.getElementById('slide-type-chooser').style.display = 'none';
+        if (e.target === document.getElementById('slide-type-chooser')) closeSlideTypeChooser();
     });
 }
 

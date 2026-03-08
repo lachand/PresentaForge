@@ -11,11 +11,15 @@
     <link rel="stylesheet" href="../vendor/revealjs/5.1.0/plugin/highlight/monokai.css">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
     <style id="sl-theme-css">/* injected by slides-core.js */</style>
-    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=3">
+    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=4">
 </head>
 <body>
     <div id="sl-toolbar-hover-zone"></div>
     <div id="sl-toolbar">
+        <div class="sl-brand" aria-label="presentaForge">
+            <img class="sl-brand-logo sl-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="presentaForge">
+            <img class="sl-brand-logo sl-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="presentaForge">
+        </div>
         <span id="sl-toolbar-title">Chargement...</span>
         <div id="sl-timer" class="paused" title="Minuteur (T pour démarrer/pauser, R pour réinitialiser)">⏱ 00:00</div>
         <button class="sl-tb-btn" id="btn-fullscreen" title="Plein écran (F)" aria-label="Plein écran (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/></svg></button>
@@ -27,6 +31,10 @@
     </div>
     <div class="reveal" id="reveal-root">
         <div class="slides" id="slides-root"></div>
+    </div>
+    <div id="sl-audience-brand" aria-hidden="true">
+        <img class="sl-audience-brand-logo sl-audience-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="">
+        <img class="sl-audience-brand-logo sl-audience-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="">
     </div>
 
     <!-- Whiteboard overlay + toolbar -->
@@ -56,6 +64,10 @@
     <!-- Presenter Mode Layout -->
     <div class="pv-layout" id="presenter-view">
         <div class="pv-toolbar">
+            <div class="pv-brand" aria-label="presentaForge">
+                <img class="pv-brand-logo pv-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="presentaForge">
+                <img class="pv-brand-logo pv-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="presentaForge">
+            </div>
             <span class="pv-toolbar-title" id="pv-title">Présentation</span>
             <button class="pv-toolbar-btn" id="pv-btn-theme" title="Thème clair/sombre (Ctrl+L)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
@@ -348,6 +360,6 @@
     <script src="../shared/slides/slides-core.js?v=15"></script>
     <script src="../shared/slides/ui-icons.js?v=2"></script>
     <script src="../vendor/qrcode-generator/1.4.4/qrcode.min.js"></script>
-    <script type="module" src="viewer-main.js?v=11"></script>
+    <script type="module" src="viewer-main.js?v=12"></script>
 </body>
 </html>

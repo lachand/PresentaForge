@@ -358,7 +358,9 @@ function updateRibbonContext() {
 
 function openSlideTypeChooser() {
     const el = document.getElementById('slide-type-chooser');
-    el.style.display = '';
+    if (!el) return;
+    el.classList.add('is-open');
+    el.style.display = 'flex';
     const grid = document.getElementById('stc-grid');
     grid.innerHTML = SlidesEditor.SLIDE_TYPES.map(t =>
         `<button class="slide-type-card" data-type="${t.id}">
@@ -369,6 +371,7 @@ function openSlideTypeChooser() {
     grid.querySelectorAll('.slide-type-card').forEach(card => {
         card.addEventListener('click', () => {
             editor.addSlide(card.dataset.type, editor.selectedIndex);
+            el.classList.remove('is-open');
             el.style.display = 'none';
         });
     });

@@ -2911,6 +2911,7 @@
         /* ── Audience mode (synced from presenter) ─────────── */
         const CHANNEL_NAME = SYNC_CHANNEL_NAME;
         const isAudienceMode = params.get('mode') === 'audience';
+        if (isAudienceMode) document.body.classList.add('viewer-audience');
 
         async function initAudienceMode(data) {
             window.OEIAudienceModePolicy = AUDIENCE_POLICY;

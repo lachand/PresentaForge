@@ -118,28 +118,26 @@ async function _pptxParse(file) {
 
     // 2. Build rId → target mapping from presentation.xml.rels
     const relsXml = await _pptxReadXml(zip, 'ppt/_rels/presentation.xml.rels');
-    const presRels = _pptxReadRels(relsXml);
+    const presRels = _pptxReadRels(relsXml, 'ppt/presentation.xml');
 
     // 3. Parse theme (colors + fonts)
-    const themeTarget = Object.values(presRels).find(t => t.includes('theme'));
+    const themeTarget = Object.values(presRels).find(t => /\/theme\//.test(t) || /theme\d+\.xml$/i.test(t));
     if (themeTarget) {
-        const themePath = 'ppt/' + themeTarget;
-        const themeXml = await _pptxReadXml(zip, themePath);
+        const themeXml = await _pptxReadXml(zip, themeTarget);
         if (themeXml) _pptxParseTheme(themeXml, ctx);
     }
 
     // 4. Parse slide masters for default text styles
-    const masterTargets = Object.values(presRels).filter(t => t.includes('slideMaster'));
+    const masterTargets = Object.values(presRels).filter(t => /slideMaster/i.test(t));
     for (const mt of masterTargets) {
-        const masterXml = await _pptxReadXml(zip, 'ppt/' + mt);
+        const masterXml = await _pptxReadXml(zip, mt);
         if (masterXml) _pptxParseMasterDefaults(masterXml, ctx);
     }
 
     // 5. Determine slide paths in order
     let slidePaths = slideRefs
         .map(rId => presRels[rId])
-        .filter(Boolean)
-        .map(t => 'ppt/' + t);
+        .filter(path => path && /^ppt\/slides\/slide\d+\.xml$/i.test(path));
 
     if (slidePaths.length === 0) {
         slidePaths = Object.keys(zip.files)
@@ -158,14 +156,14 @@ async function _pptxParse(file) {
         if (!slideXml) continue;
 
         const slideRelsPath = slidePath.replace('ppt/slides/', 'ppt/slides/_rels/') + '.rels';
-        const slideRels = _pptxReadRels(await _pptxReadXml(zip, slideRelsPath));
+        const slideRels = _pptxReadRels(await _pptxReadXml(zip, slideRelsPath), slidePath);
 
         // Optionally read slide layout for inherited styles
         const layoutEntry = Object.entries(slideRels)
             .find(([, t]) => t.includes('slideLayout'));
         let layoutXml = null;
         if (layoutEntry) {
-            layoutXml = await _pptxReadXml(zip, 'ppt/slides/' + layoutEntry[1]);
+            layoutXml = await _pptxReadXml(zip, layoutEntry[1]);
         }
 
         const slide = await _pptxParseSlide(slideXml, slidePath, slideRels, layoutXml, ctx);
@@ -239,11 +237,19 @@ function _pptxDetectAspect(w, h) {
 
 // ─── Relationships ────────────────────────────────────────────────────────────
 
-function _pptxReadRels(relsXml) {
+function _pptxReadRels(relsXml, sourcePath = '') {
     const map = {};
     if (!relsXml) return map;
     for (const rel of relsXml.getElementsByTagName('Relationship')) {
-        map[rel.getAttribute('Id')] = rel.getAttribute('Target');
+        const id = rel.getAttribute('Id');
+        const target = rel.getAttribute('Target') || '';
+        if (!id || !target) continue;
+        const mode = (rel.getAttribute('TargetMode') || '').toLowerCase();
+        if (mode === 'external' || /^[a-z][a-z0-9+.-]*:/i.test(target)) {
+            map[id] = target;
+            continue;
+        }
+        map[id] = _pptxResolveRelPath(sourcePath, target);
     }
     return map;
 }
@@ -385,7 +391,7 @@ async function _pptxParseSlide(slideXml, slidePath, slideRels, layoutXml, ctx) {
     if (bgEl) {
         bg = _pptxParseBackground(bgEl, ctx);
         if (!bg) {
-            const imgBg = await _pptxParseBackgroundImage(bgEl, slideRels, ctx);
+            const imgBg = await _pptxParseBackgroundImage(bgEl, slideRels, ctx, slidePath);
             if (imgBg) { bgImage = imgBg.bgImage; bgSize = imgBg.bgSize; }
         }
     }
@@ -393,7 +399,7 @@ async function _pptxParseSlide(slideXml, slidePath, slideRels, layoutXml, ctx) {
     // Walk shape tree
     const spTree = slideXml.getElementsByTagName('p:cSld')[0]?.getElementsByTagName('p:spTree')[0];
     if (spTree) {
-        await _pptxWalkShapeTree(spTree, elements, rIdToImage, ctx, 0, 0, pptxIdMap, rawConnectors, slideRels);
+        await _pptxWalkShapeTree(spTree, elements, rIdToImage, ctx, 0, 0, pptxIdMap, rawConnectors, slideRels, slidePath);
     }
 
     // Resolve connectors using the PPTX ID → our element ID map
@@ -423,7 +429,7 @@ async function _pptxParseSlide(slideXml, slidePath, slideRels, layoutXml, ctx) {
 
 // ─── Shape tree walker (handles groups recursively) ──────────────────────────
 
-async function _pptxWalkShapeTree(node, elements, rIdToImage, ctx, offsetX, offsetY, pptxIdMap, rawConnectors, slideRels) {
+async function _pptxWalkShapeTree(node, elements, rIdToImage, ctx, offsetX, offsetY, pptxIdMap, rawConnectors, slideRels, slidePath) {
     for (const child of node.children) {
         const tag = child.tagName || child.nodeName;
 
@@ -437,7 +443,7 @@ async function _pptxWalkShapeTree(node, elements, rIdToImage, ctx, offsetX, offs
                 if (pptxId) pptxIdMap[pptxId] = el.id;
             }
         } else if (tag === 'p:pic') {
-            const el = await _pptxParsePicture(child, rIdToImage, ctx, offsetX, offsetY);
+            const el = await _pptxParsePicture(child, rIdToImage, ctx, offsetX, offsetY, slidePath);
             if (el) {
                 elements.push(el);
                 const cNvPr = child.getElementsByTagName('p:cNvPr')[0];
@@ -471,7 +477,7 @@ async function _pptxWalkShapeTree(node, elements, rIdToImage, ctx, offsetX, offs
                     gy = offsetY + grpY - chY;
                 }
             }
-            await _pptxWalkShapeTree(child, elements, rIdToImage, ctx, gx, gy, pptxIdMap, rawConnectors, slideRels);
+            await _pptxWalkShapeTree(child, elements, rIdToImage, ctx, gx, gy, pptxIdMap, rawConnectors, slideRels, slidePath);
         }
     }
 }
@@ -704,7 +710,7 @@ function _pptxParseGraphicFrame(frame, ctx, offsetX, offsetY) {
 
 // ─── Image parser ────────────────────────────────────────────────────────────
 
-async function _pptxParsePicture(pic, rIdToImage, ctx, offsetX, offsetY) {
+async function _pptxParsePicture(pic, rIdToImage, ctx, offsetX, offsetY, slidePath) {
     const xfrm = pic.getElementsByTagName('a:xfrm')[0];
     if (!xfrm) return null;
 
@@ -717,7 +723,7 @@ async function _pptxParsePicture(pic, rIdToImage, ctx, offsetX, offsetY) {
     if (!embedId || !rIdToImage[embedId]) return null;
 
     const imgTarget = rIdToImage[embedId];
-    const imgPath = _pptxResolveRelPath('ppt/slides/', imgTarget);
+    const imgPath = _pptxResolveRelPath(slidePath, imgTarget);
 
     if (ctx.imageCache[imgPath]) {
         return {
@@ -896,7 +902,7 @@ function _pptxParseBackground(bgEl, ctx) {
     return undefined;
 }
 
-async function _pptxParseBackgroundImage(bgEl, slideRels, ctx) {
+async function _pptxParseBackgroundImage(bgEl, slideRels, ctx, slidePath) {
     // Look for blip fill in p:bgPr
     const bgPr = bgEl.getElementsByTagName('p:bgPr')[0];
     if (!bgPr) return null;
@@ -908,7 +914,7 @@ async function _pptxParseBackgroundImage(bgEl, slideRels, ctx) {
     if (!embedId || !slideRels[embedId]) return null;
 
     const imgTarget = slideRels[embedId];
-    const imgPath = _pptxResolveRelPath('ppt/slides/', imgTarget);
+    const imgPath = _pptxResolveRelPath(slidePath, imgTarget);
 
     // Check cache
     if (ctx.imageCache[imgPath]) {
@@ -1129,13 +1135,23 @@ function _pptxMapAlignment(algn) {
 }
 
 function _pptxResolveRelPath(base, target) {
-    if (target.startsWith('/')) return target.slice(1);
-    const combined = base + target;
-    const parts = combined.split('/');
-    const resolved = [];
-    for (const p of parts) {
-        if (p === '..') resolved.pop();
-        else if (p !== '.') resolved.push(p);
+    const rawTarget = String(target || '').replace(/\\/g, '/').trim();
+    if (!rawTarget) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(rawTarget) || rawTarget.startsWith('#')) return rawTarget;
+
+    let normalizedTarget = rawTarget.replace(/^\/+/, '');
+    if (/^(ppt|docProps|_rels|customXml)\//i.test(normalizedTarget)) return normalizedTarget;
+
+    const baseNorm = String(base || '').replace(/\\/g, '/').trim();
+    const resolved = baseNorm
+        .split('/')
+        .filter(Boolean);
+    if (baseNorm && !baseNorm.endsWith('/')) resolved.pop();
+
+    for (const part of normalizedTarget.split('/')) {
+        if (!part || part === '.') continue;
+        if (part === '..') { resolved.pop(); continue; }
+        resolved.push(part);
     }
     return resolved.join('/');
 }
