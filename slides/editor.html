@@ -429,7 +429,7 @@
         <!-- Format panel (contextual) -->
         <div class="ribbon-panel" id="ribbon-format">
             <!-- Taille -->
-            <div class="ribbon-group">
+            <div class="ribbon-group" id="fmt-size-group">
                 <div class="ribbon-group-content">
                     <div class="fmt-field"><label>X</label><input type="number" id="fmt-x" class="fmt-mini-input"></div>
                     <div class="fmt-field"><label>Y</label><input type="number" id="fmt-y" class="fmt-mini-input"></div>
@@ -440,7 +440,7 @@
             </div>
             <div class="ribbon-sep"></div>
             <!-- Apparence -->
-            <div class="ribbon-group">
+            <div class="ribbon-group" id="fmt-appearance-group">
                 <div class="ribbon-group-content">
                     <div class="fmt-section"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M21 8A9 9 0 005.64 5.64"/></svg><input type="range" id="fmt-rotation" class="fmt-range" min="0" max="360" value="0"><span id="fmt-rotation-label" class="fmt-value-label">0°</span></div>
                     <div class="fmt-section"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.5"/></svg><input type="range" id="fmt-opacity" class="fmt-range" min="0" max="100" value="100"><span id="fmt-opacity-label" class="fmt-value-label">100%</span></div>
@@ -478,7 +478,7 @@
             </div>
             <div class="ribbon-sep"></div>
             <!-- Organiser -->
-            <div class="ribbon-group">
+            <div class="ribbon-group" id="fmt-organize-group">
                 <div class="ribbon-group-content">
                     <button class="tb-btn" id="fmt-z-up" data-tooltip="Avancer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="14" width="10" height="8" rx="1"/><rect x="10" y="2" width="10" height="8" rx="1" fill="color-mix(in srgb, currentColor 15%, transparent)"/></svg></button>
                     <button class="tb-btn" id="fmt-z-down" data-tooltip="Reculer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="14" width="10" height="8" rx="1"/><rect x="4" y="2" width="10" height="8" rx="1" fill="color-mix(in srgb, currentColor 15%, transparent)"/></svg></button>
@@ -762,7 +762,7 @@
 <script src="../shared/slides/editor-zoom-view.js?v=9"></script>
 <script src="../shared/slides/editor-widget-picker.js?v=2"></script>
 <script src="../shared/slides/editor-props-panel.js?v=12"></script>
-<script src="../shared/slides/editor-format-tab.js?v=9"></script>
+<script src="../shared/slides/editor-format-tab.js?v=10"></script>
 <script src="../shared/slides/editor-insert.js?v=9"></script>
 <script src="../shared/slides/editor-block-presets.js?v=4"></script>
 <script src="../shared/slides/editor-context-menu.js?v=9"></script>

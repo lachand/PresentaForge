@@ -44,32 +44,62 @@ function _fmtSetIntraSlideControlsEnabled(enabled, hintText = '') {
     }
 }
 
+function _fmtSetGroupsVisible(groupIds, visible) {
+    for (const id of groupIds) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = visible ? '' : 'none';
+    }
+}
+
 function updateFormatTab() {
     const tabEl = document.getElementById('tab-format');
+    const hasSlide = !!editor.currentSlide;
     const isCanvas = editor.currentSlide?.type === 'canvas';
     const hasSelection = isCanvas && canvasEditor?.selectedId;
     const hasConnector = isCanvas && canvasEditor?._selectedConnectorId;
+    const allContextGroups = [
+        'fmt-size-group',
+        'fmt-appearance-group',
+        'fmt-text-group',
+        'fmt-paragraph-group',
+        'fmt-organize-group',
+        'fmt-align-group',
+        'fmt-anim-group',
+        'fmt-image-group',
+        'fmt-shape-group',
+        'fmt-code-group',
+    ];
 
-    if (tabEl) tabEl.classList.toggle('visible', !!isCanvas);
+    if (tabEl) tabEl.classList.toggle('visible', hasSlide);
 
-    // Outside canvas slides, fallback to Accueil.
-    if (!isCanvas) {
+    // Outside slides, fallback to Accueil.
+    if (!hasSlide) {
         if (tabEl && tabEl.classList.contains('active')) {
             switchRibbonTab('accueil');
         }
         return;
     }
 
+    // Non-canvas slides: keep Format accessible with guidance.
+    if (!isCanvas) {
+        _fmtSetGroupsVisible(allContextGroups, false);
+        const animGroup = document.getElementById('fmt-anim-group');
+        if (animGroup) animGroup.style.display = '';
+        const fmtListFragmentsWrap = document.getElementById('fmt-list-fragments-wrap');
+        if (fmtListFragmentsWrap) fmtListFragmentsWrap.style.display = 'none';
+        _fmtSetIntraSlideControlsEnabled(false, "Disponible sur les slides canvas. Utilisez Insertion > Convertir en canvas.");
+        cleanFormatSeparators();
+        return;
+    }
+
     // When nothing is selected: keep Format visible and show Intra-slide guidance.
     if (!hasSelection && !hasConnector) {
+        _fmtSetGroupsVisible(allContextGroups, false);
         ['fmt-x','fmt-y','fmt-w','fmt-h'].forEach(id => {
             const inp = document.getElementById(id);
             if (inp) inp.value = '';
         });
-        ['fmt-text-group','fmt-paragraph-group','fmt-image-group','fmt-shape-group','fmt-code-group','fmt-align-group'].forEach(id => {
-            const g = document.getElementById(id);
-            if (g) g.style.display = 'none';
-        });
+        _fmtSetGroupsVisible(['fmt-size-group', 'fmt-appearance-group', 'fmt-organize-group'], true);
         const animGroup = document.getElementById('fmt-anim-group');
         if (animGroup) animGroup.style.display = '';
         const fmtListFragmentsWrap = document.getElementById('fmt-list-fragments-wrap');
@@ -83,17 +113,15 @@ function updateFormatTab() {
         // Connector selected — hide element-specific format groups
         if (tabEl && !tabEl.classList.contains('active')) tabEl.click();
         ['fmt-x','fmt-y','fmt-w','fmt-h'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        // Hide all element-specific groups
-        ['fmt-text-group','fmt-paragraph-group','fmt-image-group','fmt-shape-group','fmt-code-group','fmt-anim-group','fmt-align-group'].forEach(id => {
-            const g = document.getElementById(id);
-            if (g) g.style.display = 'none';
-        });
+        _fmtSetGroupsVisible(allContextGroups, false);
+        _fmtSetGroupsVisible(['fmt-size-group', 'fmt-appearance-group', 'fmt-organize-group'], true);
         _fmtSetIntraSlideControlsEnabled(false, "La transition intra-slide s'applique aux éléments, pas aux connecteurs.");
         cleanFormatSeparators();
         return;
     }
 
     if (hasSelection) {
+        _fmtSetGroupsVisible(allContextGroups, true);
         // Auto-switch to Format tab when an element is selected
         if (tabEl && !tabEl.classList.contains('active')) {
             tabEl.click();
