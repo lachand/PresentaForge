@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Présentation</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230f172a'/%3E%3Cpath d='M18 18h28v20H18z' fill='none' stroke='%2338bdf8' stroke-width='4'/%3E%3Ccircle cx='24' cy='46' r='4' fill='%2338bdf8'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="../vendor/revealjs/5.1.0/dist/reset.css">
+    <link rel="stylesheet" href="../vendor/revealjs/5.1.0/dist/reveal.css">
+    <link rel="stylesheet" href="../vendor/revealjs/5.1.0/plugin/highlight/monokai.css">
+    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
+    <style id="sl-theme-css">/* injected by slides-core.js */</style>
+    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=3">
+</head>
+<body>
+    <div id="sl-toolbar-hover-zone"></div>
+    <div id="sl-toolbar">
+        <span id="sl-toolbar-title">Chargement...</span>
+        <div id="sl-timer" class="paused" title="Minuteur (T pour démarrer/pauser, R pour réinitialiser)">⏱ 00:00</div>
+        <button class="sl-tb-btn" id="btn-fullscreen" title="Plein écran (F)" aria-label="Plein écran (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/></svg></button>
+        <button class="sl-tb-btn" id="btn-whiteboard" title="Tableau blanc (W)" aria-label="Tableau blanc (W)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h6"/><path d="M14.5 3.5l6 6L9 21H3v-6z"/></svg></button>
+        <button class="sl-tb-btn" id="btn-overview" title="Vue d'ensemble (O)" aria-label="Vue d'ensemble (O)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+        <button class="sl-tb-btn" id="btn-notes" title="Mode présentateur (P/S)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg><span>Présentateur</span></button>
+        <button class="sl-tb-btn" id="btn-student-room" title="Salle étudiants"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Salle</span></button>
+        <button class="sl-tb-btn" id="btn-editor" title="Retour à l'éditeur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>Éditeur</span></button>
+    </div>
+    <div class="reveal" id="reveal-root">
+        <div class="slides" id="slides-root"></div>
+    </div>
+
+    <!-- Whiteboard overlay + toolbar -->
+    <canvas id="wb-canvas"></canvas>
+    <canvas id="wb-preview"></canvas>
+    <div id="wb-toolbar">
+        <button class="wb-btn active" id="wb-pen" title="Stylo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h6"/><path d="M14.5 3.5l6 6L9 21H3v-6z"/></svg></button>
+        <button class="wb-btn" id="wb-highlighter" title="Surligneur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l4 4"/><path d="M4 20l6-1 9-9-5-5-9 9z"/><path d="M3 21h7"/></svg></button>
+        <button class="wb-btn" id="wb-eraser" title="Gomme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 21h13"/><path d="M5.2 15.2L12 8.4a2 2 0 0 1 2.8 0l4.8 4.8a2 2 0 0 1 0 2.8L14 21H8a2 2 0 0 1-1.4-.6l-1.4-1.4a2 2 0 0 1 0-2.8z"/></svg></button>
+        <div class="wb-separator"></div>
+        <button class="wb-btn" id="wb-rect" title="Rectangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></button>
+        <button class="wb-btn" id="wb-circle" title="Cercle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/></svg></button>
+        <button class="wb-btn" id="wb-arrow" title="Flèche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="13 5 19 5 19 11"/></svg></button>
+        <div class="wb-separator"></div>
+        <button class="wb-color-btn active" id="wb-c-white" data-color="#ffffff" title="Blanc"></button>
+        <button class="wb-color-btn" id="wb-c-red" data-color="#ef4444" title="Rouge"></button>
+        <button class="wb-color-btn" id="wb-c-green" data-color="#22c55e" title="Vert"></button>
+        <button class="wb-color-btn" id="wb-c-blue" data-color="#3b82f6" title="Bleu"></button>
+        <button class="wb-color-btn" id="wb-c-yellow" data-color="#eab308" title="Jaune"></button>
+        <div class="wb-separator"></div>
+        <input type="range" class="wb-size-slider" id="wb-size" min="1" max="20" value="3" title="Épaisseur">
+        <div class="wb-separator"></div>
+        <button class="wb-btn" id="wb-clear" title="Effacer tout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+        <button class="wb-btn" id="wb-close" title="Fermer (W)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+
+    <!-- Presenter Mode Layout -->
+    <div class="pv-layout" id="presenter-view">
+        <div class="pv-toolbar">
+            <span class="pv-toolbar-title" id="pv-title">Présentation</span>
+            <button class="pv-toolbar-btn" id="pv-btn-theme" title="Thème clair/sombre (Ctrl+L)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                Thème
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-black" title="Écran noir (B)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                Noir
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-fullscreen" title="Plein écran (F)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M21 16v3a2 2 0 01-2 2h-3M8 21H5a2 2 0 01-2-2v-3"/></svg>
+                Plein écran
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-room-quick" title="Ouvrir la salle / QR audience">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Ouvrir salle
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-network" title="Diagnostic réseau / fallback relay">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7a12 12 0 0 1 16 0"/><path d="M7 10a8 8 0 0 1 10 0"/><path d="M10 13a4 4 0 0 1 4 0"/><circle cx="12" cy="18" r="1"/></svg>
+                Réseau
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-rec" title="Démarrer/arrêter l'enregistrement de session">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>
+                Enregistrer
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-replay" title="Rejouer la dernière session enregistrée">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="7 5 19 12 7 19 7 5"/></svg>
+                Replay
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-export-session" title="Exporter session (JSON + audio)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export session
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-export-replay" title="Exporter replay autonome (HTML + audio synchronisé)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="14" rx="2"/><polygon points="11 8 16 10.5 11 13 11 8"/><path d="M8 21h8"/></svg>
+                Export replay
+            </button>
+            <button class="pv-toolbar-btn" id="pv-btn-editor" title="Retour à l'éditeur">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Éditeur
+            </button>
+        </div>
+        <div class="pv-main" id="pv-main">
+            <div class="pv-slides-col" id="pv-slides-col">
+                <div class="pv-current" id="pv-current-panel">
+                    <div class="pv-current-frame" id="pv-current-frame">
+                        <div class="pv-current-inner" id="pv-current-inner"></div>
+                    </div>
+                    <div class="pv-slide-counter" id="pv-counter">Slide 1 / 1</div>
+                </div>
+                <div class="pv-lower-zone" id="pv-lower-zone">
+                    <div class="pv-next">
+                        <div class="pv-next-label">Slide suivante</div>
+                        <div class="pv-next-frame" id="pv-next-frame">
+                            <div class="pv-next-inner" id="pv-next-inner"></div>
+                        </div>
+                    </div>
+                    <div class="pv-context-panel">
+                        <div class="pv-context-head">
+                            <div class="pv-context-title">Contexte</div>
+                            <button class="pv-context-link" id="pv-context-open-salle" title="Ouvrir l'onglet salle">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                                Salle
+                            </button>
+                        </div>
+                        <div class="pv-context-toprow">
+                            <div class="pv-timer-display" id="pv-timer" title="Clic pour démarrer/pauser · Double-clic pour réinitialiser">00:00</div>
+                            <div class="pv-progress-badge" id="pv-progress"></div>
+                        </div>
+                        <div class="pv-nav-btns">
+                            <button class="pv-nav-btn" id="pv-prev" title="Slide précédent (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+                            <button class="pv-nav-btn" id="pv-next-btn" title="Slide suivant (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+                        </div>
+                        <div class="pv-room-mini" id="pv-room-mini"><span class="pv-room-mini-empty">Salle inactive</span></div>
+                        <div class="pv-context-dynamic" id="pv-context-dynamic"></div>
+                        <div class="pv-shortcuts">← → Espace : naviguer · T minuteur · R reset · B noir · F plein écran · S salle · +/− taille notes</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pv-splitter-v" id="pv-splitter-v" title="Redimensionner le panneau contexte"></div>
+
+            <div class="pv-notes-col" id="pv-notes-col">
+                <div class="pv-notes-header">
+                    <div class="pv-context-title">Notes</div>
+                    <div class="pv-font-controls">
+                        <button class="pv-font-btn" id="pv-font-down" title="Réduire la taille (−)">−</button>
+                        <span class="pv-font-size-label" id="pv-font-size-label">110%</span>
+                        <button class="pv-font-btn" id="pv-font-up" title="Augmenter la taille (+)">+</button>
+                    </div>
+                    <div class="pv-scene-controls" id="pv-scene-controls">
+                        <button class="pv-scene-btn" id="pv-scene-balanced" title="Scène équilibrée">Équilibré</button>
+                        <button class="pv-scene-btn" id="pv-scene-slide" title="Scène focus slide">Focus slide</button>
+                        <button class="pv-scene-btn" id="pv-scene-notes" title="Scène focus notes">Focus notes</button>
+                        <button class="pv-scene-btn" id="pv-scene-save" title="Sauver la scène courante">Sauver</button>
+                        <button class="pv-scene-btn" id="pv-scene-custom" title="Appliquer la scène sauvegardée">Perso</button>
+                    </div>
+                </div>
+                <div class="pv-notes-body">
+                    <div class="pv-rec-status" id="pv-rec-status"></div>
+                    <div class="pv-rec-live" id="pv-rec-live"></div>
+                    <div class="pv-notes-content" id="pv-notes"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Room Modal -->
+    <div id="sl-room-modal" class="ui-modal-overlay">
+        <div id="sl-room-panel" class="ui-modal">
+            <div class="rm-header">
+                <span><svg class="rm-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Salle étudiants</span>
+                <button class="rm-close-btn" id="sl-room-close-modal" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+
+            <!-- Zone connexion : toujours visible -->
+            <div class="rm-connect">
+                <!-- ID de salle configurable -->
+                <div class="rm-connect-block">
+                    <div class="rm-id-label"><svg class="rm-title-icon-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M11 13l8-8"/><path d="M16 5h3v3"/></svg>ID de salle</div>
+                    <div class="rm-inline-row">
+                        <input id="rm-room-id-input" class="rm-input rm-room-id-input" placeholder="ex: L1-algo-M114" maxlength="40">
+                        <button id="rm-room-id-refresh" class="rm-action-btn ui-btn rm-room-id-refresh" title="Générer un ID aléatoire"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg></button>
+                    </div>
+                </div>
+                <button id="sl-room-copy" class="rm-action-btn ui-btn primary rm-copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copier le lien stable</button>
+                <div id="rm-room-status" class="rm-room-status"></div>
+            </div>
+
+            <!-- Tabs (visibles quand salle active) -->
+            <div class="rm-tabs" id="rm-tabs">
+                <button class="rm-tab active" data-tab="students"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="rm-badge" id="rm-cnt-students">0</span></button>
+                <button class="rm-tab" data-tab="hands"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 11V6a1 1 0 0 1 2 0v5"/><path d="M10 11V5a1 1 0 0 1 2 0v6"/><path d="M14 11V6a1 1 0 0 1 2 0v5"/><path d="M18 11V8a1 1 0 0 1 2 0v6c0 4-3 7-7 7h-1c-3 0-6-2-7-5l-1-3a1.5 1.5 0 0 1 2.8-1.1L8 13"/></svg><span class="rm-badge" id="rm-cnt-hands">0</span></button>
+                <button class="rm-tab" data-tab="questions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg><span class="rm-badge" id="rm-cnt-questions">0</span></button>
+                <button class="rm-tab" data-tab="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg></button>
+                <button class="rm-tab" data-tab="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="11" cy="18" r="2"/></svg></button>
+            </div>
+
+            <!-- Tab: Étudiants -->
+            <div id="rm-panel-students" class="rm-panel">
+                <div id="sl-room-students" class="rm-empty-text center">En attente d'étudiants…</div>
+            </div>
+
+            <!-- Tab: Mains levées -->
+            <div id="rm-panel-hands" class="rm-panel">
+                <div id="rm-hands-list" class="rm-empty-text">Aucune main levée.</div>
+                <button id="rm-lower-all" class="rm-action-btn ui-btn">Baisser toutes les mains</button>
+            </div>
+
+            <!-- Tab: Questions -->
+            <div id="rm-panel-questions" class="rm-panel">
+                <div class="rm-question-toolbar">
+                    <select id="rm-question-filter" class="rm-select rm-question-filter ui-select">
+                        <option value="open">Ouvertes</option>
+                        <option value="pinned">Épinglées</option>
+                        <option value="resolved">Résolues</option>
+                        <option value="hidden">Masquées</option>
+                        <option value="all">Toutes</option>
+                    </select>
+                    <button id="rm-question-mark-all" class="rm-action-btn ui-btn rm-question-bulk">Tout masquer</button>
+                </div>
+                <div id="rm-questions-list" class="rm-empty-text">Aucune question.</div>
+            </div>
+
+            <!-- Tab: Dashboard -->
+            <div id="rm-panel-dashboard" class="rm-panel">
+                <div id="rm-dashboard-content" class="rm-empty-text">Ouvrez la salle pour voir les statistiques.</div>
+            </div>
+
+            <!-- Tab: Outils -->
+            <div id="rm-panel-tools" class="rm-panel">
+                <!-- Sondage rapide -->
+                <div class="rm-tool-section" id="rm-poll-launch">
+                    <div class="rm-tool-title"><svg class="rm-title-icon-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg>Sondage rapide</div>
+                    <select id="rm-poll-type" class="rm-select ui-select">
+                        <option value="thumbs">👍 Pour / 👎 Contre</option>
+                        <option value="scale5">1 — 2 — 3 — 4 — 5</option>
+                    </select>
+                    <input id="rm-poll-prompt" class="rm-input" placeholder="Question (optionnel)" maxlength="120">
+                    <button id="rm-poll-start" class="rm-action-btn ui-btn primary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="7 5 19 12 7 19 7 5"/></svg>Lancer le sondage</button>
+                </div>
+                <div id="rm-poll-live" class="rm-tool-section">
+                    <div class="rm-tool-title"><svg class="rm-title-icon-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg>Sondage en cours</div>
+                    <div id="rm-poll-prompt-display" class="rm-tool-meta"></div>
+                    <div id="rm-poll-results"></div>
+                    <button id="rm-poll-end" class="rm-action-btn ui-btn danger"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>Terminer le sondage</button>
+                </div>
+                <!-- Nuage de mots -->
+                <div class="rm-tool-section" id="rm-cloud-launch">
+                    <div class="rm-tool-title"><svg class="rm-title-icon-sm" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 19h10a4 4 0 0 0 0-8 5 5 0 0 0-9.7-1.5A4 4 0 0 0 7 19z"/></svg>Nuage de mots</div>
+                    <input id="rm-cloud-prompt" class="rm-input" placeholder="Ex: «Un mot sur les réseaux»" maxlength="120">
+                    <button id="rm-cloud-start" class="rm-action-btn ui-btn primary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="7 5 19 12 7 19 7 5"/></svg>Lancer le nuage</button>
+                </div>
+                <div id="rm-cloud-live" class="rm-tool-section">
+                    <div class="rm-tool-title"><svg class="rm-title-icon-sm" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 19h10a4 4 0 0 0 0-8 5 5 0 0 0-9.7-1.5A4 4 0 0 0 7 19z"/></svg>Nuage de mots en cours</div>
+                    <div id="rm-cloud-count" class="rm-tool-count">0 mots reçus</div>
+                    <button id="rm-cloud-show" class="rm-action-btn ui-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Afficher l'aperçu</button>
+                    <button id="rm-cloud-end" class="rm-action-btn ui-btn danger rm-gap-top"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>Terminer</button>
+                </div>
+                <div class="rm-tool-section" id="rm-nudge-tools">
+                    <div class="rm-tool-title"><svg class="rm-title-icon-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18"/><path d="M12 3l9 9-9 9"/><path d="M12 3l-9 9 9 9"/></svg>Relance audience</div>
+                    <div class="rm-nudge-grid">
+                        <button id="rm-nudge-question" class="rm-action-btn ui-btn rm-nudge-btn">Question ?</button>
+                        <button id="rm-nudge-hand" class="rm-action-btn ui-btn rm-nudge-btn">Main levée</button>
+                        <button id="rm-nudge-poll" class="rm-action-btn ui-btn rm-nudge-btn">Mini-sondage</button>
+                        <button id="rm-nudge-cloud" class="rm-action-btn ui-btn rm-nudge-btn">Nuage flash</button>
+                    </div>
+                    <div id="rm-nudge-feedback" class="rm-nudge-feedback"></div>
+                </div>
+                <div class="rm-tool-section" id="rm-feedback-tools">
+                    <div class="rm-tool-title"><svg class="rm-title-icon-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 13h8"/><path d="M9 9h.01"/><path d="M15 9h.01"/></svg>Feedback discret (10 min)</div>
+                    <div id="rm-feedback-summary" class="rm-feedback-summary"></div>
+                    <div id="rm-feedback-list" class="rm-feedback-list"></div>
+                    <button id="rm-feedback-reset" class="rm-action-btn ui-btn rm-feedback-reset">Réinitialiser</button>
+                </div>
+                <div class="rm-tool-section" id="rm-network-diagnostics">
+                    <div class="rm-tool-title"><svg class="rm-title-icon-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7a12 12 0 0 1 16 0"/><path d="M7 10a8 8 0 0 1 10 0"/><path d="M10 13a4 4 0 0 1 4 0"/><circle cx="12" cy="18" r="1"/></svg>Diagnostic réseau</div>
+                    <div id="rm-network-status" class="rm-tool-meta">Salle fermée</div>
+                    <div class="rm-remote-actions">
+                        <button id="rm-network-copy-auto" class="rm-action-btn ui-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copier lien auto</button>
+                        <button id="rm-network-copy-relay" class="rm-action-btn ui-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copier lien relay</button>
+                    </div>
+                    <button id="rm-network-retry-relay" class="rm-action-btn ui-btn">Relancer la connexion relay</button>
+                    <div id="rm-network-hint" class="rm-tool-meta">Ajoutez relayWs pour offrir un fallback réseau.</div>
+                </div>
+                <div class="rm-tool-section" id="rm-remote-control">
+                    <div class="rm-tool-title"><svg class="rm-title-icon-sm" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><circle cx="12" cy="18" r="1"/><line x1="9" y1="6" x2="15" y2="6"/></svg>Contrôle mobile sécurisé</div>
+                    <input id="rm-remote-password" type="password" class="rm-input rm-remote-pass" maxlength="64" placeholder="Mot de passe (min. 8 caractères)">
+                    <div class="rm-remote-actions">
+                        <button id="rm-remote-enable" class="rm-action-btn ui-btn primary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="7 5 19 12 7 19 7 5"/></svg>Activer</button>
+                        <button id="rm-remote-revoke" class="rm-action-btn ui-btn danger"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>Révoquer</button>
+                    </div>
+                    <div id="rm-remote-status" class="rm-remote-status">Définissez un mot de passe puis activez le contrôle mobile.</div>
+                    <div id="rm-remote-link-wrap" class="rm-remote-link-wrap">
+                        <div id="rm-remote-qr" class="rm-remote-qr"></div>
+                        <div id="rm-remote-url" class="rm-remote-link"></div>
+                        <button id="rm-remote-copy" class="rm-action-btn ui-btn rm-remote-copy"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copier le lien de contrôle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Word cloud overlay (présentateur) -->
+    <div id="sl-wordcloud-presenter">
+        <div id="sl-wc-prompt-presenter" class="wc-presenter-prompt"></div>
+        <div id="sl-wc-display-presenter"></div>
+        <div id="sl-wc-count" class="wc-presenter-count"></div>
+        <button id="sl-wc-close-presenter"><svg class="icon-inline-tight" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Fermer l'aperçu</button>
+    </div>
+
+    <div id="sl-keyboard-hint">← → Espace · F plein écran · O overview · P/S présentateur · W tableau blanc · T minuteur · R reset · Échap barre d'outils</div>
+
+    <!-- Audience QR overlay (shown in audience mode when presenter sends room:qr) -->
+    <div id="sl-audience-qr-overlay">
+        <img id="sl-audience-qr-img" src="" alt="QR Code">
+        <div id="sl-audience-qr-url"></div>
+        <div class="audience-qr-hint">Scannez le QR code pour rejoindre la salle</div>
+    </div>
+    <div id="sl-audience-cloud-overlay">
+        <div id="sl-audience-cloud-prompt"></div>
+        <div id="sl-audience-cloud-display"></div>
+        <div id="sl-audience-cloud-count"></div>
+    </div>
+    <div id="sl-audience-poll-overlay">
+        <div id="sl-audience-poll-prompt"></div>
+        <div id="sl-audience-poll-results"></div>
+        <div id="sl-audience-poll-total"></div>
+    </div>
+    <div id="sl-audience-exit-overlay">
+        <div id="sl-audience-exit-title"></div>
+        <div id="sl-audience-exit-prompts"></div>
+        <div id="sl-audience-exit-responses"></div>
+        <div id="sl-audience-exit-total"></div>
+    </div>
+    <div id="sl-audience-rank-overlay">
+        <div id="sl-audience-rank-title"></div>
+        <div id="sl-audience-rank-list"></div>
+        <div id="sl-audience-rank-total"></div>
+    </div>
+    <div id="sl-audience-roulette-toast"></div>
+
+    <script src="../shared/components/base/WidgetRegistry.js"></script>
+    <script src="../shared/slides/storage.js?v=2"></script>
+    <script src="../shared/slides/widget-plugins.js?v=2"></script>
+    <script src="../shared/slides/design-tokens.js?v=2"></script>
+    <script src="../shared/slides/realtime-contract.js?v=3"></script>
+    <script src="../shared/slides/network-session.js?v=2"></script>
+    <script src="../shared/slides/background-utils.js?v=1"></script>
+    <script src="../shared/slides/slides-core.js?v=15"></script>
+    <script src="../shared/slides/ui-icons.js?v=2"></script>
+    <script src="../vendor/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script type="module" src="viewer-main.js?v=11"></script>
+</body>
+</html>

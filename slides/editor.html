@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur de présentations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
+    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=20">
+    <style id="sl-preview-theme"></style>
+    <style id="sl-thumb-css"></style>
+</head>
+<body>
+<div id="app">
+    <!-- ═══════ RIBBON ═══════ -->
+    <div id="ribbon">
+        <!-- Ribbon tabs + title + controls -->
+        <div class="ribbon-tabs" id="ribbon-tabs">
+            <span class="ribbon-pres-title" id="pres-title" title="Cliquer pour renommer">Présentation sans titre</span>
+            <div class="ribbon-tabs-sep"></div>
+            <button class="ribbon-tab active" data-ribbon="accueil">Accueil</button>
+            <button class="ribbon-tab" data-ribbon="insertion">Insertion</button>
+            <button class="ribbon-tab" data-ribbon="conception">Conception</button>
+            <button class="ribbon-tab" data-ribbon="affichage">Affichage</button>
+            <button class="ribbon-tab contextual" data-ribbon="format" id="tab-format">Format</button>
+            <div class="u-flex-1"></div>
+            <div class="save-indicator" id="save-indicator">
+                <span class="save-dot saved" id="save-dot"></span>
+                <span id="file-name-indicator" class="file-name-indicator" title="Aucun fichier lié — Ctrl+S pour sauvegarder">Brouillon</span>
+                <span id="save-text" class="save-text-offset"></span>
+            </div>
+            <button class="tb-btn tb-btn-compact-history" id="btn-revision-history" title="Historique des révisions" aria-label="Historique des révisions">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+            </button>
+            <button class="tb-theme-toggle theme-toggle-compact" id="btn-toggle-theme" title="Thème clair/sombre de l'éditeur">
+                <svg id="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                <svg id="icon-moon" class="tb-icon-hidden" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 009 9 9 9 0 11-9-9z"/></svg>
+            </button>
+            <div class="ribbon-tab-indicator" id="ribbon-tab-indicator"></div>
+        </div>
+        <!-- Accueil panel -->
+        <div class="ribbon-panel active" id="ribbon-accueil">
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="split-btn" id="split-add-slide">
+                        <button class="split-btn-main" id="btn-add-slide" data-tooltip="Ajouter un slide|Insère un nouveau slide après le slide actuel">
+                            <span class="tb-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+                            <span class="tb-label">Nouvelle</span>
+                        </button>
+                        <button class="split-btn-arrow" id="split-add-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+                        <div class="split-dropdown hidden" id="split-add-menu"></div>
+                    </div>
+                    <button class="tb-btn-lg" id="btn-dup-slide" data-tooltip="Dupliquer|Crée une copie du slide actuel">
+                        <span class="tb-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16V4a2 2 0 012-2h12"/></svg></span>
+                        <span class="tb-label">Dupliquer</span>
+                    </button>
+                    <button class="tb-btn-lg" id="btn-del-slide" data-tooltip="Supprimer|Supprime le slide sélectionné">
+                        <span class="tb-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></span>
+                        <span class="tb-label">Supprimer</span>
+                    </button>
+                </div>
+                <span class="ribbon-group-label">Diapositive</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- A5: Move up/down + A6: Hide -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-slide-up" data-tooltip="Monter|Déplacer le slide vers le haut" data-shortcut="↑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></button>
+                    <button class="tb-btn" id="btn-slide-down" data-tooltip="Descendre|Déplacer le slide vers le bas" data-shortcut="↓"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+                    <button class="tb-btn" id="btn-hide-slide" data-tooltip="Masquer|Le slide est sauté en présentation"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Ordre</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-undo" data-tooltip="Annuler|Revenir à l'état précédent" data-shortcut="Ctrl+Z"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6.69 3L3 13"/></svg></button>
+                    <button class="tb-btn" id="btn-redo" data-tooltip="Rétablir|Restaurer l'action annulée" data-shortcut="Ctrl+Y"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 019-9 9 9 0 016.69 3L21 13"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Historique</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- A1: Clipboard -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-cut" data-tooltip="Couper|Couper l'élément canvas" data-shortcut="Ctrl+X"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></button>
+                    <button class="tb-btn" id="btn-copy" data-tooltip="Copier|Copier l'élément canvas" data-shortcut="Ctrl+C"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+                    <button class="tb-btn" id="btn-paste" data-tooltip="Coller|Coller l'élément copié" data-shortcut="Ctrl+V"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></button>
+                    <!-- A2: Paste format -->
+                    <button class="tb-btn" id="btn-paste-format" data-tooltip="Reproduire la mise en forme|Copie le style d'un élément"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Presse-papier</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- A7/A8: Selection -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-select-all" data-tooltip="Tout sélectionner|Sélectionne tous les éléments canvas" data-shortcut="Ctrl+A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 2"/></svg></button>
+                    <button class="tb-btn" id="btn-group" data-tooltip="Grouper|Groupe les éléments sélectionnés" data-shortcut="Ctrl+G"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/><path d="M10 6h4"/><path d="M6 10v4"/></svg></button>
+                    <button class="tb-btn" id="btn-ungroup" data-tooltip="Dégrouper|Sépare les éléments groupés" data-shortcut="Ctrl+Shift+G"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/><path d="M10 6h4" stroke-dasharray="2 2"/><path d="M6 10v4" stroke-dasharray="2 2"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Sélection</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- A3/A4: Search -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-search" data-tooltip="Rechercher & Remplacer|Ctrl+F / Ctrl+H" data-shortcut="Ctrl+F"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Rechercher</button>
+                </div>
+                <span class="ribbon-group-label">Recherche</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="split-btn" id="split-open">
+                        <button class="split-btn-main" id="btn-import" data-tooltip="Ouvrir|Charger un fichier JSON">
+                            <span class="tb-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5z"/></svg></span>
+                            <span class="tb-label">Ouvrir</span>
+                        </button>
+                        <button class="split-btn-arrow" id="split-open-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+                        <div class="split-dropdown hidden" id="split-open-menu">
+                            <button class="tb-dropdown-item" id="btn-open-new"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg> Nouvelle présentation</button>
+                            <button class="tb-dropdown-item" id="btn-open-clipboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Depuis le presse-papier</button>
+                            <button class="tb-dropdown-item" id="btn-import-pptx"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Importer PowerPoint (.pptx)</button>
+                            <div class="tb-dropdown-sep"></div>
+                            <div id="recent-files-list"><div class="recent-empty">Aucun fichier récent</div></div>
+                        </div>
+                    </div>
+                    <button class="tb-btn" id="btn-edit-metadata" data-tooltip="Métadonnées|Configurer titre, auteur, description, format…">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+                        Métadonnées
+                    </button>
+                    <button class="tb-btn-lg" id="btn-ai-prompt" data-tooltip="Prompt IA|Copie le prompt de génération de slides dans le presse-papier">
+                        <span class="tb-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 014 4v1h1a3 3 0 013 3v1a3 3 0 01-3 3h-1v1a4 4 0 01-8 0v-1H7a3 3 0 01-3-3v-1a3 3 0 013-3h1V6a4 4 0 014-4z"/><circle cx="10" cy="10" r="1" fill="currentColor"/><circle cx="14" cy="10" r="1" fill="currentColor"/><path d="M9 14c.6.9 1.6 1.5 3 1.5s2.4-.6 3-1.5"/></svg></span>
+                        <span class="tb-label">IA</span>
+                    </button>
+                </div>
+                <span class="ribbon-group-label">Fichier</span>
+            </div>
+        </div>
+        <!-- Insertion panel -->
+        <div class="ribbon-panel" id="ribbon-insertion">
+            <div class="ribbon-group" id="ribbon-insert-elements">
+                <div class="ribbon-group-content">
+                    <button class="el-type-btn" data-el="heading" data-tooltip="Titre|Élément titre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16"/><path d="M4 4v16"/><path d="M20 4v16"/></svg></span>Titre</button>
+                    <button class="el-type-btn" data-el="text" data-tooltip="Texte|Bloc de texte libre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>Texte</button>
+                    <button class="el-type-btn" data-el="highlight" data-tooltip="Code|Bloc de code / terminal avec mise en évidence optionnelle"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>Code/Terminal</button>
+                    <button class="el-type-btn" data-el="list" data-tooltip="Liste|Liste à puces"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg></span>Liste</button>
+                    <button class="el-type-btn" data-el="image" data-tooltip="Image|Insérer une image"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>Image</button>
+                    <!-- B1: Shape gallery -->
+                    <div class="el-inline-wrap">
+                        <button class="el-type-btn" id="btn-shape-gallery" data-tooltip="Formes|Galerie de formes géométriques"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></span>Forme ▾</button>
+                        <div class="shape-picker hidden" id="shape-picker"></div>
+                    </div>
+                    <button class="el-type-btn" data-el="widget" data-tooltip="Widget|Composant interactif"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>Widget</button>
+                    <button class="el-type-btn" data-el="definition" data-tooltip="Définition|Terme + définition"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Déf.</button>
+                    <button class="el-type-btn" data-el="quote" data-tooltip="Citation|Bloc citation"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/></svg></span>Citation</button>
+                    <button class="el-type-btn" data-el="card" data-tooltip="Carte|Carte avec titre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h5"/></svg></span>Carte</button>
+                    <button class="el-type-btn el-color-connector" id="btn-add-connector" data-tooltip="Connecteur|Cliquer puis relier deux éléments"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="13 5 19 5 19 11"/></svg></span>Flèche</button>
+                    <div class="el-inline-wrap">
+                        <button class="el-type-btn el-color-table" id="btn-insert-table" data-tooltip="Tableau|Grille de données"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></span>Table ▾</button>
+                        <div class="table-grid-picker hidden" id="table-grid-picker">
+                            <div class="table-grid" id="table-grid"></div>
+                            <div class="table-grid-label" id="table-grid-label">0 × 0</div>
+                        </div>
+                    </div>
+                    <button class="el-type-btn el-color-video" id="btn-insert-video" data-tooltip="Vidéo|Intégrer YouTube/Vimeo"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18"/><polygon points="10 8 16 12 10 16 10 8"/></svg></span>Vidéo</button>
+                    <button class="el-type-btn el-color-callout" id="btn-insert-callout" data-tooltip="Callout|Encadré info/warning/tip"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>Callout</button>
+<button class="el-type-btn el-color-mermaid" data-el="mermaid" data-tooltip="Diagramme|Mermaid (graphes, flowcharts)"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10"/><path d="M6.7 7.2 10.9 16"/><path d="M17.3 7.2 13.1 16"/></svg></span>Mermaid</button>
+                    <button class="el-type-btn el-color-latex" data-el="latex" data-tooltip="Équation|LaTeX / KaTeX"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6h14M5 18h14"/><path d="M9 14l2-4 2 4"/><path d="M8 14h6"/></svg></span>LaTeX</button>
+                    <button class="el-type-btn el-color-timer" data-el="timer" data-tooltip="Minuteur|Compte à rebours interactif"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 13l3-2"/><path d="M9 3h6"/><path d="M12 5v2"/></svg></span>Timer</button>
+                    <button class="el-type-btn el-color-iframe" data-el="iframe" data-tooltip="Iframe|Contenu web embarqué"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10l-3 2 3 2"/><path d="M16 10l3 2-3 2"/></svg></span>Iframe</button>
+                    <button class="el-type-btn el-color-qrcode" data-el="qrcode" data-tooltip="QR Code|Générer un QR code"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2z"/><path d="M18 14h3v3"/><path d="M17 18h2v3"/></svg></span>QR</button>
+                    <button class="el-type-btn el-color-smartart" data-el="smartart" data-tooltip="SmartArt|Diagrammes processus, cycle…"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="6" height="4" rx="1"/><rect x="15" y="4" width="6" height="4" rx="1"/><rect x="9" y="16" width="6" height="4" rx="1"/><path d="M9 6h6"/><path d="M6 8v4h12V8"/><path d="M12 12v4"/></svg></span>SmartArt</button>
+                    <button class="el-type-btn el-color-code-live" data-el="code-live" data-tooltip="Code Live|Éditeur + exécution Python/JS en direct"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="8 5 19 12 8 19 8 5"/></svg></span>Code Live</button>
+                    <button class="el-type-btn el-color-quiz-live" data-el="quiz-live" data-tooltip="Quiz|Quiz interactif P2P en temps réel"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="7" cy="9" r="1.5" fill="currentColor" opacity="0.5"/><path d="M10 9h8" opacity="0.7"/><circle cx="7" cy="14" r="1.5" fill="currentColor" opacity="0.5"/><path d="M10 14h6" opacity="0.7"/><circle cx="7" cy="19" r="1.5" fill="currentColor" opacity="0.5"/><path d="M10 19h5" opacity="0.5"/></svg></span>Quiz</button>
+                    <button class="el-type-btn el-color-assessment" data-el="cloze" data-tooltip="Texte à trous|Compléter des mots manquants"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16"/><path d="M16 12h4"/></svg></span>Texte à trous</button>
+                    <button class="el-type-btn el-color-assessment" data-el="mcq-single" data-tooltip="QCM simple|Une seule bonne réponse"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="5" cy="18" r="2"/><path d="M10 6h11M10 12h11M10 18h11"/></svg></span>QCM simple</button>
+                    <button class="el-type-btn el-color-assessment" data-el="mcq-multi" data-tooltip="QCM multi|Plusieurs bonnes réponses"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="4" height="4"/><rect x="3" y="10" width="4" height="4"/><rect x="3" y="16" width="4" height="4"/><path d="M10 6h11M10 12h11M10 18h11"/></svg></span>QCM multi</button>
+                    <button class="el-type-btn el-color-assessment" data-el="poll-likert" data-tooltip="Likert live|Vote 1→5 en direct"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="12" width="2.5" height="8"/><rect x="11" y="9" width="2.5" height="11"/><rect x="16" y="6" width="2.5" height="14"/></svg></span>Likert live</button>
+                    <button class="el-type-btn el-color-assessment" data-el="debate-mode" data-tooltip="Débat live|Pour / Contre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 14l-4-4 4-4"/><path d="M17 10l4 4-4 4"/><path d="M3 10h8M13 14h8"/></svg></span>Débat</button>
+                    <button class="el-type-btn el-color-assessment" data-el="exit-ticket" data-tooltip="Exit ticket|Bilan de fin de séance"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2"/></svg></span>Exit ticket</button>
+                    <button class="el-type-btn el-color-activity" data-el="drag-drop" data-tooltip="Drag & Drop|Classer des cartes"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 10l4 4"/></svg></span>Drag&Drop</button>
+                    <button class="el-type-btn el-color-activity" data-el="rank-order" data-tooltip="Classement|Ordonner des éléments"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h10M8 18h7"/><path d="M4 5l1.5 1.5L7.5 4.5"/><path d="M4 13l1.5 1.5L7.5 12.5"/><path d="M4 21l1.5-1.5L7.5 21.5"/></svg></span>Classement</button>
+                    <button class="el-type-btn el-color-activity" data-el="kanban-mini" data-tooltip="Kanban mini|Colonnes et cartes"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="5" height="16"/><rect x="10" y="4" width="5" height="10"/><rect x="17" y="4" width="4" height="7"/></svg></span>Kanban</button>
+                    <button class="el-type-btn el-color-activity" data-el="myth-reality" data-tooltip="Mythe vs Réalité|Carte recto/verso"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg></span>Mythe/Réalité</button>
+                    <button class="el-type-btn el-color-activity" data-el="flashcards-auto" data-tooltip="Flashcards|Mode révision intégré"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="14" height="10" rx="2"/><rect x="7" y="9" width="14" height="10" rx="2"/></svg></span>Flashcards</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="postit-wall" data-tooltip="Mur Post-it live|Collecte d'idées de la salle"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H8l-4 4z"/></svg></span>Post-it live</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="audience-roulette" data-tooltip="Roulette|Tirer un étudiant aléatoirement"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg></span>Roulette</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="room-stats" data-tooltip="Stats live|Indicateurs de la salle en direct"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg></span>Stats live</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="leaderboard-live" data-tooltip="Leaderboard live|Classement dynamique de la salle"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 01-10 0V4z"/><path d="M7 6H5a2 2 0 000 4h2"/><path d="M17 6h2a2 2 0 010 4h-2"/></svg></span>Leaderboard</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="swot-grid" data-tooltip="SWOT|Forces faiblesses opportunités menaces"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="7"/><rect x="13" y="4" width="8" height="7"/><rect x="3" y="13" width="8" height="7"/><rect x="13" y="13" width="8" height="7"/></svg></span>SWOT</button>
+                    <button class="el-type-btn el-color-diagram" data-el="decision-tree" data-tooltip="Arbre de décision|Branches cliquables"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M6 8v4h6"/><path d="M18 8v4h-6"/><path d="M12 12v4"/></svg></span>Arbre décision</button>
+                    <button class="el-type-btn el-color-diagram" data-el="timeline-vertical" data-tooltip="Timeline verticale|Jalons de progression"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="4" x2="8" y2="20"/><circle cx="8" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><path d="M12 6h8M12 12h8M12 18h8"/></svg></span>Timeline V</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="code-compare" data-tooltip="Comparateur de code|Avant / Après"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="10 6 4 12 10 18"/><polyline points="14 6 20 12 14 18"/></svg></span>Code compare</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="algo-stepper" data-tooltip="Algo stepper|Pas à pas algorithmique"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16"/><polyline points="14 10 16 12 14 14"/></svg></span>Algo stepper</button>
+                    <button class="el-type-btn el-color-mediax" data-el="gallery-annotable" data-tooltip="Gallery annotable|Image + points annotés"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8" cy="10" r="1.5"/><polyline points="21 14 16 9 9 16"/></svg></span>Gallery annot.</button>
+                </div>
+                <span class="ribbon-group-label">Éléments</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-slide-number" data-tooltip="N° de slide|Numérotation automatique"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg> N°</button>
+                    <button class="tb-btn" id="btn-auto-chapter" data-tooltip="N° chapitres auto|Numéroter les slides chapitre automatiquement (01, 02…)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg> Chap.</button>
+                    <button class="tb-btn" id="btn-footer" data-tooltip="Pied de page|Texte récurrent en bas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="17" x2="21" y2="17"/></svg> Pied</button>
+                    <button class="tb-btn" id="btn-layout-preset" data-tooltip="Dispositions & Masters|Choisir une disposition ou un master réutilisable"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="8" rx="1"/><rect x="14" y="13" width="7" height="8" rx="1"/></svg> Dispo./Master</button>
+                    <button class="tb-btn" id="btn-block-presets" data-tooltip="Blocs pédagogiques|Insérer une séquence de slides prête à l'emploi"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="4" width="8" height="7" rx="1"/><rect x="3" y="13" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/></svg> Blocs</button>
+                </div>
+                <span class="ribbon-group-label">En-tête / Pied</span>
+            </div>
+            <div class="ribbon-sep" id="ribbon-insert-sep"></div>
+            <div class="ribbon-group" id="ribbon-insert-actions">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-del-element" data-tooltip="Supprimer l'élément" data-shortcut="Suppr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                    <button class="tb-btn" id="btn-convert-canvas" data-tooltip="Convertir en canvas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Actions</span>
+            </div>
+            <span class="ribbon-context-msg" id="ribbon-insert-msg"></span>
+        </div>
+        <!-- Conception panel -->
+        <div class="ribbon-panel" id="ribbon-conception">
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="theme-mini-gallery" id="theme-mini-gallery"></div>
+                    <button class="theme-mini-more" id="btn-theme-manager" data-tooltip="Tous les thèmes|Gestionnaire complet">+</button>
+                </div>
+                <span class="ribbon-group-label">Thème</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <div class="ribbon-group-content ribbon-group-content-stack ribbon-bg-stack">
+                    <div class="quick-palette" id="quick-palette"></div>
+                    <div class="ribbon-bg-row">
+                        <input type="color" id="ribbon-bg-pick" value="#000000" title="Couleur de fond">
+                        <input type="text" id="ribbon-bg-text" value="" placeholder="Fond" class="fmt-mini-input">
+                    </div>
+                </div>
+                <span class="ribbon-group-label">Fond du slide</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- C5: BG Image + C6: Gradient -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-bg-image" data-tooltip="Image de fond|URL ou upload"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+                    <button class="tb-btn" id="btn-gradient" data-tooltip="Dégradé|Fond en dégradé linéaire"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"><defs><linearGradient id="g1"><stop offset="0%" stop-color="var(--primary)"/><stop offset="100%" stop-color="var(--accent)"/></linearGradient></defs></rect></svg> ∇</button>
+                    <!-- C7: Apply to all -->
+                    <button class="tb-btn" id="btn-apply-all-bg" data-tooltip="Appliquer à tous|Applique fond + transition à tous les slides"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="14" height="14" rx="2"/><rect x="3" y="3" width="14" height="14" rx="2"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Arrière-plan</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- C1/C2/C3: Transitions -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content ribbon-group-content-vertical">
+                    <div class="transition-picker" id="transition-picker">
+                        <button class="transition-chip active" data-transition="none">Aucune</button>
+                        <button class="transition-chip" data-transition="fade">Fondu</button>
+                        <button class="transition-chip" data-transition="slide-left">← Glissé</button>
+                        <button class="transition-chip" data-transition="slide-right">Glissé →</button>
+                        <button class="transition-chip" data-transition="zoom-in">Zoom+</button>
+                        <button class="transition-chip" data-transition="zoom-out">Zoom−</button>
+                        <button class="transition-chip" data-transition="flip">Flip</button>
+                    </div>
+                    <div class="fmt-section">
+                        <label class="ribbon-label">Durée</label>
+                        <input type="range" id="transition-duration" class="fmt-range" min="200" max="2000" value="500">
+                        <span id="transition-duration-label" class="fmt-value-label">500ms</span>
+                        <button class="tb-btn tb-btn-xs" id="btn-preview-transition" data-tooltip="Aperçu"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="8 5 19 12 8 19 8 5"/></svg></button>
+                    </div>
+                </div>
+                <span class="ribbon-group-label">Transition</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- Slide theme override -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content ribbon-group-content-tight">
+                    <div class="fmt-field"><label class="fmt-label-micro">Titre</label><input type="color" id="override-heading" value="#000000" class="fmt-color-input-compact"></div>
+                    <div class="fmt-field"><label class="fmt-label-micro">Texte</label><input type="color" id="override-text" value="#000000" class="fmt-color-input-compact"></div>
+                    <div class="fmt-field"><label class="fmt-label-micro">Accent</label><input type="color" id="override-primary" value="#000000" class="fmt-color-input-compact"></div>
+                    <button class="tb-btn tb-btn-mini-text" id="btn-clear-override" data-tooltip="Réinitialiser|Supprimer les surcharges de ce slide"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Thème du slide</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- C4: Slide padding -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <label class="ribbon-label">Marges</label>
+                    <input type="range" id="slide-padding" class="fmt-range" min="0" max="80" value="40">
+                    <span id="slide-padding-label" class="fmt-value-label">40px</span>
+                </div>
+                <span class="ribbon-group-label">Mise en page</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- C8: Fonts -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content ribbon-group-content-stack">
+                    <select id="ribbon-font-heading" class="ribbon-select" data-tooltip="Police des titres">
+                        <option value="">Titres (thème)</option>
+                        <option value="'Inter', system-ui, sans-serif">Inter</option>
+                        <option value="'Barlow', system-ui, sans-serif">Barlow</option>
+                        <option value="'Montserrat', system-ui, sans-serif">Montserrat</option>
+                        <option value="'Georgia', serif">Georgia</option>
+                        <option value="'Fira Code', monospace">Fira Code</option>
+                    </select>
+                    <select id="ribbon-font-body" class="ribbon-select" data-tooltip="Police du corps">
+                        <option value="">Corps (thème)</option>
+                        <option value="'Inter', system-ui, sans-serif">Inter</option>
+                        <option value="'Barlow', system-ui, sans-serif">Barlow</option>
+                        <option value="'Montserrat', system-ui, sans-serif">Montserrat</option>
+                        <option value="'Georgia', serif">Georgia</option>
+                        <option value="'Merriweather', serif">Merriweather</option>
+                    </select>
+                </div>
+                <span class="ribbon-group-label">Polices</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="aspect-select" id="aspect-select">
+                        <button class="aspect-btn active" data-aspect="16:9">16:9</button>
+                        <button class="aspect-btn" data-aspect="4:3">4:3</button>
+                        <button class="aspect-btn" data-aspect="a4">A4</button>
+                    </div>
+                </div>
+                <span class="ribbon-group-label">Ratio</span>
+            </div>
+        </div>
+        <!-- Affichage panel -->
+        <div class="ribbon-panel" id="ribbon-affichage">
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="split-btn" id="split-export">
+                        <button class="split-btn-main" id="btn-export-json" data-tooltip="Exporter JSON|Télécharge le projet" data-shortcut="Ctrl+S">
+                            <span class="tb-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
+                            <span class="tb-label">JSON</span>
+                        </button>
+                        <button class="split-btn-arrow" id="split-export-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+                        <div class="split-dropdown hidden" id="split-export-menu">
+                            <button class="tb-dropdown-item" id="btn-export-pdf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF</button>
+                            <button class="tb-dropdown-item" id="btn-export-html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> HTML autonome</button>
+                            <button class="tb-dropdown-item" id="btn-export-html-offline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> HTML offline (tout intégré)</button>
+                            <button class="tb-dropdown-item" id="btn-export-png"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> PNG (slide actuel)</button>
+                            <button class="tb-dropdown-item" id="btn-export-png-batch"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="18" height="18" rx="2"/></svg> PNG batch (ZIP)</button>
+                            <button class="tb-dropdown-item" id="btn-export-pptx"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h2v4H9z"/></svg> PowerPoint (PPTX)</button>
+                            <button class="tb-dropdown-item" id="btn-export-md"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4h20v16H2z"/><path d="M7 15V9l2.5 3L12 9v6"/></svg> Markdown</button>
+                            <button class="tb-dropdown-item" id="btn-optimize-media"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/><path d="M8 11h6"/><path d="M11 8v6"/></svg> Optimiser les médias</button>
+                            <div class="tb-dropdown-sep"></div>
+                            <button class="tb-dropdown-item" id="btn-print-notes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg> Imprimer les notes orateur</button>
+                            <div class="tb-dropdown-sep"></div>
+                            <button class="tb-dropdown-item" id="btn-qr-slide"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4"/><rect x="18" y="18" width="4" height="4"/></svg> Slide QR code</button>
+                            <button class="tb-dropdown-item" id="btn-export-student"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8M8 11h6"/></svg> Export étudiant (HTML)</button>
+                            <button class="tb-dropdown-item" id="btn-export-course-pack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v2H3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 15h8"/></svg> Pack cours (ZIP)</button>
+                        </div>
+                    </div>
+                </div>
+                <span class="ribbon-group-label">Exporter</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- D1/D2: Presentation -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="split-btn" id="split-presenter">
+                        <button class="split-btn-main" id="btn-presenter" data-tooltip="Présenter|Lancer le diaporama" data-shortcut="F5">
+                            <span class="tb-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+                            <span class="tb-label">Présenter</span>
+                        </button>
+                        <button class="split-btn-arrow" id="split-presenter-arrow" data-tooltip="Options de présentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+                        <div class="split-dropdown hidden" id="split-presenter-menu">
+                            <button class="tb-dropdown-item" id="menu-present-normal">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <div>Depuis le début<div class="menu-desc">Diaporama plein écran (F5)</div></div>
+                            </button>
+                            <button class="tb-dropdown-item" id="menu-present-current">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="10 3 22 12 10 21 10 3"/><line x1="3" y1="5" x2="3" y2="19" stroke-width="2.5"/></svg>
+                                <div>Depuis la slide actuelle<div class="menu-desc">Reprendre à la slide sélectionnée</div></div>
+                            </button>
+                            <button class="tb-dropdown-item" id="menu-present-speaker">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+                                <div>Mode présentateur<div class="menu-desc">Avec notes, slide suivant et minuteur</div></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <span class="ribbon-group-label">Diaporama</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="zoom-controls" id="zoom-controls">
+                        <button class="tb-btn" id="zoom-out" data-tooltip="Dézoomer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+                        <input type="range" id="zoom-slider" min="25" max="200" value="100">
+                        <span class="zoom-label" id="zoom-label">100%</span>
+                        <button class="tb-btn" id="zoom-in" data-tooltip="Zoomer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+                        <button class="tb-btn" id="zoom-fit" data-tooltip="Ajuster"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M21 8V5a2 2 0 00-2-2h-3"/><path d="M3 16v3a2 2 0 002 2h3"/><path d="M16 21h3a2 2 0 002-2v-3"/></svg></button>
+                    </div>
+                </div>
+                <span class="ribbon-group-label">Zoom</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="btn-toggle-outline" data-tooltip="Mode plan"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+                    <!-- D5: Sorter -->
+                    <button class="tb-btn" id="btn-sorter" data-tooltip="Trieuse|Vue grille de toutes les diapositives"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+                    <!-- D6: Editor theme toggle -->
+                    <button class="tb-btn" id="btn-ribbon-theme-toggle" data-tooltip="Thème éditeur|Clair / Sombre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+                    <button class="tb-btn" id="btn-markdown-mode" data-tooltip="Brouillon Markdown|Éditer les slides en Markdown"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4h20v16H2z"/><path d="M7 15V9l2.5 3L12 9v6"/><path d="M18 13l-2-2-2 2"/><path d="M16 15v-4"/></svg></button>
+                    <button class="tb-btn" id="btn-toggle-grid" data-tooltip="Grille magnétique|Afficher/masquer la grille d'accrochage"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M21 3v18"/></svg></button>
+                    <button class="tb-btn" id="btn-checker" data-tooltip="Vérifier la présentation|Détecte les problèmes courants"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></button>
+                    <button class="tb-btn" id="btn-assets-manager" data-tooltip="Assets|Inventaire et remplacement des URLs médias"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M3 10h18"/></svg> Assets</button>
+                    <button class="tb-btn" id="btn-design-tokens" data-tooltip="Design tokens|Styles globaux (couleurs, typo, layout)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="7" cy="13" r="2"/><circle cx="17" cy="14.5" r="2"/><path d="M15.7 8.2l-2.2 3.3M9 12.1l2.1-3M9 13.9l6 0"/></svg> Tokens</button>
+                    <button class="tb-btn" id="btn-widget-plugins" data-tooltip="Plugins widgets|Installer des widgets via manifest JSON"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6"/><path d="M12 16v6"/><path d="M8 8h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4a2 2 0 012-2z"/><path d="M2 12h4"/><path d="M18 12h4"/></svg> Plugins</button>
+                </div>
+                <span class="ribbon-group-label">Vue</span>
+            </div>
+        </div>
+        <!-- Format panel (contextual) -->
+        <div class="ribbon-panel" id="ribbon-format">
+            <!-- Taille -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="fmt-field"><label>X</label><input type="number" id="fmt-x" class="fmt-mini-input"></div>
+                    <div class="fmt-field"><label>Y</label><input type="number" id="fmt-y" class="fmt-mini-input"></div>
+                    <div class="fmt-field"><label>L</label><input type="number" id="fmt-w" class="fmt-mini-input"></div>
+                    <div class="fmt-field"><label>H</label><input type="number" id="fmt-h" class="fmt-mini-input"></div>
+                </div>
+                <span class="ribbon-group-label">Taille</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- Apparence -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <div class="fmt-section"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M21 8A9 9 0 005.64 5.64"/></svg><input type="range" id="fmt-rotation" class="fmt-range" min="0" max="360" value="0"><span id="fmt-rotation-label" class="fmt-value-label">0°</span></div>
+                    <div class="fmt-section"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.5"/></svg><input type="range" id="fmt-opacity" class="fmt-range" min="0" max="100" value="100"><span id="fmt-opacity-label" class="fmt-value-label">100%</span></div>
+                    <input type="color" id="fmt-border-color" value="#666666">
+                    <div class="fmt-section"><input type="range" id="fmt-border-width" class="fmt-range" min="0" max="10" value="0"><span id="fmt-border-width-label" class="fmt-value-label">0px</span></div>
+                    <div class="fmt-section"><input type="range" id="fmt-border-radius" class="fmt-range" min="0" max="50" value="0"><span id="fmt-border-radius-label" class="fmt-value-label">0px</span></div>
+                    <button class="fmt-toggle" id="fmt-shadow" data-tooltip="Ombre portée"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="2"/><rect x="7" y="7" width="14" height="14" rx="2" opacity="0.3"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Apparence</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- Texte -->
+            <div class="ribbon-group" id="fmt-text-group">
+                <div class="ribbon-group-content">
+                    <input type="color" id="fmt-color" value="#ffffff" data-tooltip="Couleur texte">
+                    <input type="number" id="fmt-font-size" min="8" max="200" value="22" class="fmt-mini-input" data-tooltip="Taille">
+                    <select id="fmt-font-weight" class="ribbon-select">
+                        <option value="400">Normal</option><option value="600">Semi</option><option value="700">Gras</option><option value="800">Extra</option>
+                    </select>
+                    <select id="fmt-font-family" class="ribbon-select" data-tooltip="Police">
+                        <option value="">Thème</option><option value="Inter">Inter</option><option value="Barlow">Barlow</option><option value="Georgia">Georgia</option><option value="monospace">Mono</option>
+                    </select>
+                </div>
+                <span class="ribbon-group-label">Texte</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- Paragraphe -->
+            <div class="ribbon-group" id="fmt-paragraph-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="fmt-align-left" data-tooltip="Gauche"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+                    <button class="tb-btn" id="fmt-align-center" data-tooltip="Centrer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg></button>
+                    <button class="tb-btn" id="fmt-align-right" data-tooltip="Droite"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Paragraphe</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- Organiser -->
+            <div class="ribbon-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="fmt-z-up" data-tooltip="Avancer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="14" width="10" height="8" rx="1"/><rect x="10" y="2" width="10" height="8" rx="1" fill="color-mix(in srgb, currentColor 15%, transparent)"/></svg></button>
+                    <button class="tb-btn" id="fmt-z-down" data-tooltip="Reculer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="14" width="10" height="8" rx="1"/><rect x="4" y="2" width="10" height="8" rx="1" fill="color-mix(in srgb, currentColor 15%, transparent)"/></svg></button>
+                    <button class="fmt-toggle" id="fmt-lock" data-tooltip="Verrouiller"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></button>
+                    <button class="tb-btn" id="fmt-group" data-tooltip="Grouper"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M14 7h3a2 2 0 012 2v3M10 17H7a2 2 0 01-2-2v-3"/></svg></button>
+                    <button class="tb-btn" id="fmt-ungroup" data-tooltip="Dégrouper"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+                    <button class="tb-btn" id="fmt-duplicate" data-tooltip="Dupliquer" data-shortcut="Ctrl+D"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16V4a2 2 0 012-2h12"/></svg></button>
+                    <button class="tb-btn" id="btn-pipette" data-tooltip="Pipette de style|Copie le style d'un élément et l'applique à un autre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.71 5.63l-2.34-2.34a1 1 0 00-1.42 0l-3.12 3.12-1.41-1.42-1.42 1.42 1.42 1.41-7.07 7.07a1 1 0 00-.29.71V18h2.83a1 1 0 00.71-.29l7.07-7.07 1.41 1.42 1.42-1.42-1.42-1.41 3.12-3.12a1 1 0 000-1.48z"/></svg></button>
+                    <button class="tb-btn" id="btn-fit-content" data-tooltip="Ajuster à la taille du contenu|Redimensionne la hauteur automatiquement"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 3H3"/><path d="M21 21H3"/><path d="M12 7v10"/><polyline points="8 11 12 7 16 11"/><polyline points="8 17 12 21 16 17"/></svg></button>
+                    <button class="tb-btn" id="fmt-delete" data-tooltip="Supprimer" data-shortcut="Suppr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Organiser</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- Align/Distribute (multi-select) -->
+            <div class="ribbon-group" id="fmt-align-group">
+                <div class="ribbon-group-content">
+                    <button class="tb-btn" id="fmt-el-align-left" data-tooltip="Aligner gauche"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="2" x2="4" y2="22"/><rect x="7" y="4" width="13" height="5" rx="1"/><rect x="7" y="13" width="8" height="5" rx="1"/></svg></button>
+                    <button class="tb-btn" id="fmt-el-align-ch" data-tooltip="Centrer H"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><rect x="5" y="4" width="14" height="5" rx="1"/><rect x="7" y="13" width="10" height="5" rx="1"/></svg></button>
+                    <button class="tb-btn" id="fmt-el-align-right" data-tooltip="Aligner droite"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="20" y1="2" x2="20" y2="22"/><rect x="4" y="4" width="13" height="5" rx="1"/><rect x="9" y="13" width="8" height="5" rx="1"/></svg></button>
+                    <button class="tb-btn" id="fmt-el-align-top" data-tooltip="Aligner haut"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="4" x2="22" y2="4"/><rect x="4" y="7" width="5" height="13" rx="1"/><rect x="13" y="7" width="5" height="8" rx="1"/></svg></button>
+                    <button class="tb-btn" id="fmt-el-align-cv" data-tooltip="Centrer V"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><rect x="4" y="5" width="5" height="14" rx="1"/><rect x="13" y="7" width="5" height="10" rx="1"/></svg></button>
+                    <button class="tb-btn" id="fmt-el-align-bottom" data-tooltip="Aligner bas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="20" x2="22" y2="20"/><rect x="4" y="4" width="5" height="13" rx="1"/><rect x="13" y="9" width="5" height="8" rx="1"/></svg></button>
+                    <button class="tb-btn" id="fmt-el-dist-h" data-tooltip="Distribuer H"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="2" x2="4" y2="22"/><line x1="20" y1="2" x2="20" y2="22"/><rect x="8" y="6" width="8" height="5" rx="1"/><rect x="8" y="13" width="8" height="5" rx="1"/></svg></button>
+                    <button class="tb-btn" id="fmt-el-dist-v" data-tooltip="Distribuer V"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="4" x2="22" y2="4"/><line x1="2" y1="20" x2="22" y2="20"/><rect x="6" y="8" width="5" height="8" rx="1"/><rect x="13" y="8" width="5" height="8" rx="1"/></svg></button>
+                    <button class="tb-btn" id="fmt-el-auto-layout" data-tooltip="Auto-layout intelligent|Réorganiser la sélection en grille lisible"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+                </div>
+                <span class="ribbon-group-label">Aligner</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- Animation -->
+            <div class="ribbon-group" id="fmt-anim-group">
+                <div class="ribbon-group-content">
+                    <select id="fmt-anim-type" class="ribbon-select" data-tooltip="Effet d'animation">
+                        <option value="none">Aucune</option>
+                        <option value="fade-in">Fondu</option>
+                        <option value="fade-up">Fondu ↑</option>
+                        <option value="fade-down">Fondu ↓</option>
+                        <option value="fade-left">Fondu ←</option>
+                        <option value="fade-right">Fondu →</option>
+                        <option value="grow">Zoom avant</option>
+                        <option value="shrink">Zoom arrière</option>
+                        <option value="zoom-in">Apparition</option>
+                    </select>
+                    <input type="number" id="fmt-anim-order" min="0" max="20" class="fmt-mini-input" placeholder="Auto" data-tooltip="Ordre">
+                </div>
+                <span class="ribbon-group-label">Animation</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <!-- Image style contextual (fit + filters only) -->
+            <div class="ribbon-group" id="fmt-image-group">
+                <div class="ribbon-group-content ribbon-group-content-wrap-tight">
+                    <div class="fit-selector">
+                        <button class="fit-btn active" data-fit="cover">Cover</button>
+                        <button class="fit-btn" data-fit="contain">Contain</button>
+                        <button class="fit-btn" data-fit="stretch">Stretch</button>
+                    </div>
+                    <div class="filter-chips">
+                        <button class="filter-chip" data-filter="none">Normal</button>
+                        <button class="filter-chip" data-filter="grayscale(1)">N&B</button>
+                        <button class="filter-chip" data-filter="sepia(1)">Sépia</button>
+                        <button class="filter-chip" data-filter="blur(2px)">Flou</button>
+                    </div>
+                </div>
+                <span class="ribbon-group-label">Image</span>
+            </div>
+            <!-- Shape style contextual (fill only) -->
+            <div class="ribbon-group" id="fmt-shape-group">
+                <div class="ribbon-group-content">
+                    <input type="color" id="fmt-fill-color" value="#818cf8" data-tooltip="Couleur de remplissage">
+                </div>
+                <span class="ribbon-group-label">Remplissage</span>
+            </div>
+            <!-- Code style contextual (theme only) -->
+            <div class="ribbon-group" id="fmt-code-group">
+                <div class="ribbon-group-content">
+                    <select id="fmt-code-theme" class="ribbon-select" data-tooltip="Thème du code">
+                        <option value="dark">Dark</option><option value="light">Light</option><option value="monokai">Monokai</option><option value="solarized">Solarized</option><option value="dracula">Dracula</option>
+                    </select>
+                </div>
+                <span class="ribbon-group-label">Style code</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ SLIDE LIST (filmstrip) ═══════ -->
+    <div id="slide-list">
+        <div id="slides-header">
+            <span>Slides <span id="slide-count"></span></span>
+            <button class="panel-toggle-btn" id="btn-collapse-slides" title="Réduire le panneau slides">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+        </div>
+        <div id="slides-items"></div>
+        <div id="add-slide-panel">
+            <button class="tb-btn" id="btn-add-slide-big">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nouvelle diapositive
+            </button>
+        </div>
+    </div>
+
+    <div class="resize-handle-v" id="resize-handle-left" title="Redimensionner"></div>
+
+    <!-- ═══════ PREVIEW AREA ═══════ -->
+    <div id="preview-area">
+        <button class="panel-toggle-btn" id="btn-expand-slides" title="Afficher le panneau slides">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <div id="preview-wrap">
+            <div id="preview-scaler">
+                <div id="preview-frame"></div>
+                <div class="preview-grid" id="preview-grid"></div>
+            </div>
+            <div class="drop-overlay" id="drop-overlay"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg> Déposer ici (image ou JSON)</div>
+        </div>
+        <div class="resize-handle-h" id="resize-handle-notes" title="Redimensionner les notes"></div>
+        <div id="notes-panel">
+            <div id="notes-panel-header">
+                <div id="notes-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    Notes &amp; Narration
+                    <button class="tl-toggle-btn" id="btn-toggle-timeline" title="Animations du slide">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2v-4"/></svg>
+                        <span id="timeline-count" class="timeline-count"></span>
+                    </button>
+                    <button class="panel-toggle-btn" id="btn-toggle-notes" title="Réduire les notes">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                </div>
+                <div id="timeline-items" class="tl-dropdown"></div>
+            </div>
+            <div id="notes-panel-body">
+                <div id="notes-left">
+                    <textarea id="notes-textarea" placeholder="Notes visibles uniquement dans le mode présentateur…"></textarea>
+                </div>
+                <div id="notes-right">
+                    <!-- narration controls injected here by initNarration() -->
+                </div>
+            </div>
+        </div>
+        <div class="stats-bar" id="stats-bar">
+            <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> <span id="stat-slides">0 slides</span></span>
+            <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg> <span id="stat-words">0 mots</span></span>
+            <span class="stat-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span id="stat-duration">~0 min</span></span>
+        </div>
+    </div>
+
+    <div class="resize-handle-v" id="resize-handle-right" title="Redimensionner"></div>
+
+    <!-- ═══════ SIDE CONTENT PANEL (data/content props) ═══════ -->
+    <div id="props-panel" class="collapsed">
+        <div id="props-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="props-title">Contenu</span>
+            <span class="u-flex-1"></span>
+            <button class="panel-toggle-btn" id="btn-collapse-props" title="Réduire le panneau contenu">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+        </div>
+        <div id="props-content">
+            <!-- Populated dynamically by updatePropsPanel() -->
+        </div>
+    </div>
+
+</div>
+<div id="theme-modal" class="modal-overlay ui-modal-overlay">
+    <div class="modal ui-modal">
+        <div class="modal-header ui-modal-header theme-modal-header">
+            <span class="modal-title ui-modal-title">Thèmes</span>
+            <button class="modal-close ui-modal-close" id="theme-modal-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div class="theme-grid" id="theme-grid"></div>
+        <div class="modal-actions ui-modal-actions">
+            <button class="tb-btn" id="btn-new-theme">+ Nouveau thème</button>
+            <button class="tb-btn" id="btn-import-theme">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5z"/></svg>
+                Importer
+            </button>
+        </div>
+        <div id="theme-editor" class="theme-editor-host"></div>
+    </div>
+</div>
+
+<!-- ═══════ SLIDE TYPE CHOOSER MODAL ═══════ -->
+<div class="slide-type-chooser modal-overlay ui-modal-overlay" id="slide-type-chooser">
+    <div class="slide-type-chooser-body modal ui-modal">
+        <div class="stc-header-row modal-header ui-modal-header">
+            <span class="slide-type-chooser-title stc-title-grow modal-title ui-modal-title">Ajouter un slide</span>
+            <button class="modal-close ui-modal-close" id="stc-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <p class="slide-type-chooser-subtitle">Choisissez un type de slide à insérer après le slide actuel.</p>
+        <div class="slide-type-chooser-grid" id="stc-grid"></div>
+    </div>
+</div>
+
+<!-- ═══════ PEDAGOGICAL BLOCK PRESETS MODAL ═══════ -->
+<div class="slide-type-chooser modal-overlay ui-modal-overlay" id="block-preset-modal">
+    <div class="slide-type-chooser-body modal ui-modal block-preset-body">
+        <div class="stc-header-row modal-header ui-modal-header">
+            <span class="slide-type-chooser-title stc-title-grow modal-title ui-modal-title">Blocs pédagogiques</span>
+            <button class="modal-close ui-modal-close" id="block-preset-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <p class="slide-type-chooser-subtitle">Insérez une séquence complète (objectifs, activité, synthèse...) après le slide actuel.</p>
+        <div class="block-preset-grid" id="block-preset-grid"></div>
+    </div>
+</div>
+
+<!-- ═══════ COMMAND PALETTE (Ctrl+K) ═══════ -->
+<div id="cmd-overlay" class="cmd-overlay" onclick="closeCommandPalette()"></div>
+
+<!-- Context Menu -->
+<div class="ctx-menu" id="ctx-menu">
+    <button class="ctx-menu-item" data-ctx="cut"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Couper<span class="ctx-menu-shortcut">Ctrl+X</span></button>
+    <button class="ctx-menu-item" data-ctx="copy"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copier<span class="ctx-menu-shortcut">Ctrl+C</span></button>
+    <button class="ctx-menu-item" data-ctx="paste"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Coller<span class="ctx-menu-shortcut">Ctrl+V</span></button>
+    <button class="ctx-menu-item" data-ctx="duplicate"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="2" y="2" width="13" height="13" rx="2"/></svg>Dupliquer<span class="ctx-menu-shortcut">Ctrl+D</span></button>
+    <button class="ctx-menu-item" data-ctx="copy-to-slide"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><rect x="3" y="7" width="11" height="14" rx="2"/></svg>Copier vers un slide…</button>
+    <div class="ctx-menu-sep"></div>
+    <div class="ctx-menu-sub">
+        <button class="ctx-menu-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>Aligner ▸</button>
+        <div class="ctx-submenu">
+            <button class="ctx-menu-item" data-ctx="align-left"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="2" x2="4" y2="22"/><rect x="7" y="4" width="13" height="5" rx="1"/><rect x="7" y="13" width="8" height="5" rx="1"/></svg>Aligner gauche</button>
+            <button class="ctx-menu-item" data-ctx="align-center-h"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><rect x="5" y="4" width="14" height="5" rx="1"/><rect x="7" y="13" width="10" height="5" rx="1"/></svg>Centrer H</button>
+            <button class="ctx-menu-item" data-ctx="align-right"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="20" y1="2" x2="20" y2="22"/><rect x="4" y="4" width="13" height="5" rx="1"/><rect x="9" y="13" width="8" height="5" rx="1"/></svg>Aligner droite</button>
+            <div class="ctx-menu-sep"></div>
+            <button class="ctx-menu-item" data-ctx="align-top"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="4" x2="22" y2="4"/><rect x="4" y="7" width="5" height="13" rx="1"/><rect x="13" y="7" width="5" height="8" rx="1"/></svg>Aligner haut</button>
+            <button class="ctx-menu-item" data-ctx="align-center-v"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><rect x="4" y="5" width="5" height="14" rx="1"/><rect x="13" y="7" width="5" height="10" rx="1"/></svg>Centrer V</button>
+            <button class="ctx-menu-item" data-ctx="align-bottom"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="20" x2="22" y2="20"/><rect x="4" y="4" width="5" height="13" rx="1"/><rect x="13" y="9" width="5" height="8" rx="1"/></svg>Aligner bas</button>
+            <div class="ctx-menu-sep"></div>
+            <button class="ctx-menu-item" data-ctx="distribute-h"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="2" x2="4" y2="22"/><line x1="20" y1="2" x2="20" y2="22"/><rect x="8" y="6" width="8" height="5" rx="1"/><rect x="8" y="13" width="8" height="5" rx="1"/></svg>Distribuer H</button>
+            <button class="ctx-menu-item" data-ctx="distribute-v"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="4" x2="22" y2="4"/><line x1="2" y1="20" x2="22" y2="20"/><rect x="6" y="8" width="5" height="8" rx="1"/><rect x="13" y="8" width="5" height="8" rx="1"/></svg>Distribuer V</button>
+            <button class="ctx-menu-item" data-ctx="auto-layout"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Auto-layout</button>
+        </div>
+    </div>
+    <div class="ctx-menu-sep"></div>
+    <button class="ctx-menu-item" data-ctx="bring-front"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M8 9l4-4 4 4"/></svg>Mettre devant</button>
+    <button class="ctx-menu-item" data-ctx="send-back"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5"/><path d="M16 15l-4 4-4-4"/></svg>Mettre derrière</button>
+    <div class="ctx-menu-sep"></div>
+    <button class="ctx-menu-item" data-ctx="select-all"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 2"/></svg>Tout sélectionner<span class="ctx-menu-shortcut">Ctrl+A</span></button>
+    <div class="ctx-menu-sep"></div>
+    <button class="ctx-menu-item danger" data-ctx="delete"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Supprimer<span class="ctx-menu-shortcut">Suppr</span></button>
+</div>
+<div class="command-palette is-hidden" id="command-palette">
+    <input type="text" class="command-palette-input" id="cmd-input" placeholder="Rechercher une commande…" autocomplete="off">
+    <div class="command-palette-results" id="cmd-results"></div>
+</div>
+
+<!-- ═══════ NOTIFICATIONS ═══════ -->
+<div id="notif"></div>
+
+<!-- ═══════ CONTENT POPOVER (floating editor) ═══════ -->
+<div class="content-popover is-hidden" id="content-popover"></div>
+
+<!-- ═══════ SCRIPTS ═══════ -->
+<script src="../shared/components/base/WidgetRegistry.js"></script>
+<script src="../vendor/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="../shared/slides/storage.js?v=2"></script>
+<script src="../shared/slides/widget-plugins.js?v=2"></script>
+<script src="../shared/slides/design-tokens.js?v=2"></script>
+<script src="../shared/slides/background-utils.js?v=1"></script>
+<script src="../shared/slides/slides-core.js?v=15"></script>
+<script src="../shared/slides/slides-editor.js?v=8"></script>
+<script src="../shared/slides/slides-canvas.js?v=14"></script>
+<!-- Editor controller modules (dependency order: utils first, bindings last) -->
+<script src="../shared/slides/editor-dialog.js"></script>
+<script src="../shared/slides/editor-utils.js?v=8"></script>
+<script src="../shared/slides/editor-ui.js?v=12"></script>
+<script src="../shared/slides/editor-clipboard.js?v=8"></script>
+<script src="../shared/slides/editor-search.js?v=8"></script>
+<script src="../shared/slides/editor-slide-ops.js?v=8"></script>
+<script src="../shared/slides/editor-command-palette.js?v=8"></script>
+<script src="../shared/slides/editor-theme-design.js?v=14"></script>
+<script src="../shared/slides/editor-slide-styling.js?v=8"></script>
+<script src="../shared/slides/editor-zoom-view.js?v=9"></script>
+<script src="../shared/slides/editor-widget-picker.js?v=2"></script>
+<script src="../shared/slides/editor-props-panel.js?v=12"></script>
+<script src="../shared/slides/editor-format-tab.js?v=8"></script>
+<script src="../shared/slides/editor-insert.js?v=9"></script>
+<script src="../shared/slides/editor-block-presets.js?v=4"></script>
+<script src="../shared/slides/editor-context-menu.js?v=9"></script>
+<script src="../shared/slides/editor-preview.js?v=10"></script>
+<script src="../shared/slides/editor-file-io.js?v=9"></script>
+<script src="../shared/slides/ui-icons.js?v=2"></script>
+<script src="../shared/slides/editor-save.js?v=8"></script>
+<script src="../shared/slides/editor-import-pptx.js?v=9"></script>
+<script src="../shared/slides/editor-markdown.js?v=8"></script>
+<script src="../shared/slides/editor-narration.js?v=8"></script>
+<script src="../shared/slides/editor-export.js?v=13"></script>
+<script src="../shared/slides/editor-timeline.js?v=8"></script>
+<script src="../shared/slides/editor-quick-insert.js?v=9"></script>
+<script src="../shared/slides/editor-masters.js?v=10"></script>
+<script src="../shared/slides/editor-enhancements.js?v=3"></script>
+<script src="../shared/slides/editor-resize.js?v=10"></script>
+<script src="../shared/slides/editor-checker.js?v=10"></script>
+<script src="../shared/slides/editor-bindings.js?v=15"></script>
+<script>
+/* =========================================================
+   EDITOR CONTROLLER — Shared state & orchestration
+   Modules loaded via <script> tags above:
+     editor-utils, editor-ui, editor-clipboard, editor-search,
+     editor-slide-ops, editor-command-palette, editor-theme-design,
+     editor-slide-styling, editor-zoom-view, editor-props-panel,
+     editor-format-tab, editor-insert, editor-context-menu,
+     editor-preview, editor-file-io, editor-export, editor-bindings
+   ========================================================= */
+
+/* ── Shared globals (accessed by multiple modules) ───── */
+const editor = new SlidesEditor(onUpdate);
+let previewScale = 1;
+let canvasEditor = null;
+let _thumbCssInjected = false;
+let _onUpdateDebounceTimer = null;
+
+/* ── init() — Bootstrap the editor ─────────────────────── */
+
+function init() {
+    initEditorTheme();
+    const params = new URLSearchParams(location.search);
+    const file = params.get('file');
+
+    const defaultFile = file || '../data/slides/demo-complete.json';
+    fetch(defaultFile).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
+        if (file || !editor.loadDraft()) editor.load(data);
+    }).catch(() => {
+        if (file) notify('Erreur chargement fichier', 'error');
+        if (!editor.loadDraft()) editor.new();
+    });
+
+    buildThemeSelect();
+    bindToolbar();
+    bindRibbon();
+    bindKeyboard();
+    updatePreviewScale();
+    window.addEventListener('resize', updatePreviewScale);
+
+    // Enhanced ribbon features
+    initRichTooltips();
+    initSplitButtons();
+    initCollapsibleRibbon();
+    initCollapsiblePanels();
+    initResizablePanels();
+    initZoomControls();
+    initFontSelector();
+    initAspectRatio();
+    initTransitions();
+    initSlidePadding();
+    initBodyFont();
+    initTableGridPicker();
+    bindFormatTab();
+    bindFormatTabEnhanced();
+    bindContextMenu();
+    bindAlignButtons();
+    initFileDrop();
+    initCanvasZoom();
+    bindBreadcrumb();
+    renderThemeMiniGallery();
+    renderThemeColorGrid();
+    renderQuickPalette();
+    renderLayoutGallery();
+    initBlockPresetsModal();
+    renderShapePicker();
+    initTimeline();
+    startAutoRevisions();
+    initNarration();
+    document.fonts.ready.then(() => requestAnimationFrame(() => updateTabIndicator()));
+    window.addEventListener('resize', () => updateTabIndicator());
+
+    // Notes textarea handler (debounced)
+    let _notesSaveTimer;
+    document.getElementById('notes-textarea')?.addEventListener('input', e => {
+        clearTimeout(_notesSaveTimer);
+        _notesSaveTimer = setTimeout(() => {
+            if (editor.currentSlide) {
+                editor.data.slides[editor.selectedIndex].notes = e.target.value;
+                editor._push();
+                const thumbWrap = document.querySelector(`.sl-thumb-wrap[data-idx="${editor.selectedIndex}"]`);
+                if (thumbWrap) {
+                    const info = thumbWrap.querySelector('.sl-thumb-info');
+                    const existing = info?.querySelector('.sl-thumb-notes-dot');
+                    if (e.target.value && !existing) {
+                        info?.insertAdjacentHTML('beforeend', '<span class="sl-thumb-notes-dot" title="Contient des notes"></span>');
+                    } else if (!e.target.value && existing) {
+                        existing.remove();
+                    }
+                }
+            }
+        }, 600);
+    });
+
+    // Command palette input events
+    document.getElementById('cmd-input')?.addEventListener('input', e => renderCommandResults(e.target.value));
+    document.getElementById('cmd-input')?.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { closeCommandPalette(); return; }
+        const items = document.querySelectorAll('#cmd-results .command-palette-item');
+        const active = document.querySelector('#cmd-results .command-palette-item.active');
+        const activeIdx = [...items].indexOf(active);
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            items[activeIdx]?.classList.remove('active');
+            items[Math.min(activeIdx + 1, items.length - 1)]?.classList.add('active');
+            items[Math.min(activeIdx + 1, items.length - 1)]?.scrollIntoView({ block: 'nearest' });
+        }
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            items[activeIdx]?.classList.remove('active');
+            items[Math.max(activeIdx - 1, 0)]?.classList.add('active');
+            items[Math.max(activeIdx - 1, 0)]?.scrollIntoView({ block: 'nearest' });
+        }
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.querySelector('#cmd-results .command-palette-item.active')?.click();
+        }
+    });
+}
+
+/* ── updatePreviewScale() ──────────────────────────────── */
+
+function updatePreviewScale() {
+    const wrap = document.getElementById('preview-wrap');
+    const { width, height } = wrap.getBoundingClientRect();
+    const scaleW = (width - 48) / 1280;
+    const scaleH = (height - 48) / 720;
+    const fitScale = Math.min(scaleW, scaleH, 1);
+    previewScale = fitScale * (_zoomLevel / 100);
+    const frame = document.getElementById('preview-frame');
+    frame.style.transform = `scale(${previewScale})`;
+    const scaler = document.getElementById('preview-scaler');
+    scaler.style.width  = Math.round(1280 * previewScale) + 'px';
+    scaler.style.height = Math.round(720 * previewScale) + 'px';
+    // Enable scrolling when zoomed beyond fit
+    const overflows = _zoomLevel > 100;
+    wrap.style.overflow = overflows ? 'auto' : 'hidden';
+    wrap.style.alignItems = overflows ? 'flex-start' : 'center';
+    wrap.style.justifyContent = overflows ? 'flex-start' : 'center';
+    if (canvasEditor) canvasEditor.setScale(previewScale);
+}
+
+/* ── onUpdate callback (called by SlidesEditor on changes) ── */
+
+function _onUpdateHeavy(reason, skipPropsPanel) {
+    renderSlideList();
+    renderPreview();
+    restoreAspectRatio();
+    if (!skipPropsPanel) updatePropsPanel();
+    updateTimeline();
+    updateNarrationUI();
+    if (_outlineMode) renderOutlineView();
+}
+
+function onUpdate(reason) {
+    if (!editor.data) return;
+
+    // For slide-update while user is interacting with an input (slider, text, color…),
+    // debounce heavy DOM work to avoid destroying the active input mid-interaction
+    const _ae = document.activeElement;
+    const isDragging = reason === 'slide-update' && _ae &&
+        (_ae.type === 'range' || ((_ae.tagName === 'INPUT' || _ae.tagName === 'TEXTAREA' || _ae.tagName === 'SELECT') && _ae.closest('#props-panel, #format-tab-content, .fmt-section')));
+
+    if (!isDragging) {
+        closeContentPopover();
+    }
+
+    // Heavy operations: debounce when interacting with inputs
+    // Skip updatePropsPanel entirely while editing inside it to avoid destroying the active input
+    if (isDragging) {
+        const skipProps = _ae && !!_ae.closest('#props-panel');
+        clearTimeout(_onUpdateDebounceTimer);
+        _onUpdateDebounceTimer = setTimeout(() => {
+            // Re-check: if user is still focused inside props-panel, skip its rebuild
+            const stillInProps = document.activeElement && document.activeElement.closest('#props-panel');
+            _onUpdateHeavy(reason, skipProps || stillInProps);
+        }, 150);
+    } else {
+        clearTimeout(_onUpdateDebounceTimer);
+        _onUpdateHeavy(reason, false);
+    }
+
+    // Lightweight operations always run
+    updateToolbarState();
+    const _themeMiniContainer = document.getElementById('theme-mini-gallery');
+    const _shouldRefreshThemeRibbons = reason === 'load' || reason === 'new' || reason === 'theme' || (_themeMiniContainer && _themeMiniContainer.childElementCount === 0);
+    if (_shouldRefreshThemeRibbons) {
+        renderThemeMiniGallery();
+        renderThemeColorGrid();
+        renderQuickPalette();
+    }
+    if (typeof window.updateCheckerLiveBadge === 'function') window.updateCheckerLiveBadge();
+    document.getElementById('pres-title').textContent = editor.data.metadata?.title || 'Sans titre';
+    document.getElementById('slide-count').textContent = `(${editor.data.slides.length})`;
+    const themeData = window.OEIDesignTokens?.resolvePresentationTheme
+        ? window.OEIDesignTokens.resolvePresentationTheme(editor.data)
+        : (typeof editor.data.theme === 'string'
+            ? (SlidesThemes.BUILT_IN[editor.data.theme] || SlidesThemes.BUILT_IN.dark)
+            : (editor.data.theme || SlidesThemes.BUILT_IN.dark));
+    const _css = SlidesThemes.generateCSS(themeData);
+    document.getElementById('sl-preview-theme').textContent = _css + '\n' + _css.replace(/\.reveal/g, '#preview-frame');
+    SlidesThemes.apply(themeData);
+    if (!_thumbCssInjected) {
+        document.getElementById('sl-thumb-css').textContent = SlidesThemes.generateThumbnailCSS();
+        _thumbCssInjected = true;
+    }
+
+    // Enhanced ribbon features
+    updateRibbonContext();
+
+    // Enhanced ribbon features
+    updateBreadcrumb();
+    updateStats();
+    updateFormatTab();
+    updateTransitionUI();
+    updateSlidePadding();
+    // Update save indicator based on actual autosave result
+    const _lastSaveOk = editor._lastSaveOk !== false;
+    updateSaveIndicator(_lastSaveOk);
+    if (!_lastSaveOk) {
+        notify('Sauvegarde échouée — espace de stockage insuffisant', 'error');
+    }
+}
+
+/* ── Start ─────────────────────────────────────────────── */
+init();
+</script>
+</body>
+</html>

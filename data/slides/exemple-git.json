@@ -1,0 +1,150 @@
+{
+  "metadata": {
+    "title": "GitHub Actions — Introduction",
+    "author": "Cours L2 Informatique",
+    "created": "2026-02-28",
+    "modified": "2026-02-28"
+  },
+  "theme": "dark",
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Module CI/CD",
+      "title": "GitHub Actions",
+      "subtitle": "Automatisation des workflows de développement",
+      "author": "L2 Informatique",
+      "date": "2026",
+      "notes": "Présenter le contexte CI/CD avant de démarrer."
+    },
+    {
+      "type": "chapter",
+      "number": "1",
+      "title": "Qu'est-ce que GitHub Actions ?",
+      "subtitle": "Automatisation intégrée à GitHub"
+    },
+    {
+      "type": "bullets",
+      "title": "GitHub Actions en résumé",
+      "items": [
+        "Plateforme d'<b>automatisation</b> intégrée à GitHub",
+        "Déclenché par des <b>événements</b> : push, PR, schedule…",
+        "Exécute des <b>workflows</b> définis en YAML",
+        "Gratuit pour les dépôts publics (2 000 min/mois pour les privés)"
+      ],
+      "note": "GitHub Actions = CI/CD + automatisation générale (pas seulement les tests)",
+      "notes": "Insister sur le fait que c'est intégré : pas de serveur séparé, tout est dans le repo."
+    },
+    {
+      "type": "definition",
+      "title": "Vocabulaire essentiel",
+      "term": "Workflow",
+      "definition": "Un fichier YAML dans <code>.github/workflows/</code> qui décrit une suite d'actions automatiques déclenchées par un événement GitHub.",
+      "example": "<code>ci.yml</code> → exécute les tests à chaque push sur <code>main</code>"
+    },
+    {
+      "type": "chapter",
+      "number": "2",
+      "title": "Anatomie d'un workflow",
+      "subtitle": "Structure du fichier YAML"
+    },
+    {
+      "type": "split",
+      "title": "Structure d'un workflow",
+      "left": {
+        "label": "Fichier YAML",
+        "type": "code",
+        "language": "yaml",
+        "code": "name: CI\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: '3.12'\n      - run: pip install -r requirements.txt\n      - run: pytest"
+      },
+      "right": {
+        "label": "Explication",
+        "type": "bullets",
+        "items": [
+          "<code>name</code> — nom affiché sur GitHub",
+          "<code>on</code> — événements déclencheurs",
+          "<code>jobs</code> — liste des tâches à exécuter",
+          "<code>runs-on</code> — OS du runner",
+          "<code>steps</code> — étapes séquentielles"
+        ]
+      }
+    },
+    {
+      "type": "chapter",
+      "number": "3",
+      "title": "Déclencheurs (triggers)",
+      "subtitle": "Quand s'exécute un workflow ?"
+    },
+    {
+      "type": "bullets",
+      "title": "Principaux événements déclencheurs",
+      "items": [
+        "<code>push</code> — à chaque push (filtre par branche ou tag)",
+        "<code>pull_request</code> — à l'ouverture/mise à jour d'une PR",
+        "<code>schedule</code> — tâche planifiée (cron)",
+        "<code>workflow_dispatch</code> — déclenchement manuel depuis l'UI",
+        "<code>workflow_call</code> — appelé par un autre workflow"
+      ]
+    },
+    {
+      "type": "simulation",
+      "title": "Simulateur de déclencheurs",
+      "widget": "workflow-trigger-simulator",
+      "config": {},
+      "notes": "Laisser les étudiants essayer les différents événements."
+    },
+    {
+      "type": "chapter",
+      "number": "4",
+      "title": "Matrix Strategy",
+      "subtitle": "Tester sur plusieurs environnements"
+    },
+    {
+      "type": "code",
+      "title": "Matrix : tester sur plusieurs versions",
+      "language": "yaml",
+      "code": "jobs:\n  test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        python-version: ['3.10', '3.11', '3.12']\n        os: [ubuntu-latest, windows-latest]\n    steps:\n      - uses: actions/setup-python@v5\n        with:\n          python-version: ${{ matrix.python-version }}\n      - run: pytest",
+      "explanation": "<p>La matrix génère automatiquement <b>6 jobs</b> (3 versions × 2 OS) qui s'exécutent en parallèle.</p><p>Chaque combinaison est testée indépendamment.</p>"
+    },
+    {
+      "type": "simulation",
+      "title": "Construire une matrix",
+      "widget": "matrix-builder",
+      "config": {},
+      "notes": "Montrer comment les dimensions se combinent en produit cartésien."
+    },
+    {
+      "type": "comparison",
+      "title": "CI/CD : Bonnes pratiques",
+      "left": {
+        "title": "✅ À faire",
+        "items": [
+          "Cacher les dépendances (<code>actions/cache</code>)",
+          "Utiliser les versions épinglées (<code>@v4</code>)",
+          "Stocker les secrets dans les Settings",
+          "Limiter les permissions (<code>permissions:</code>)"
+        ]
+      },
+      "right": {
+        "title": "❌ À éviter",
+        "items": [
+          "Mettre des secrets en clair dans le YAML",
+          "Utiliser <code>@main</code> sans épinglage",
+          "Donner des permissions trop larges",
+          "Ignorer les échecs de pipeline"
+        ]
+      }
+    },
+    {
+      "type": "quote",
+      "quote": "Every push to main should be a potential release.",
+      "author": "Principe du Continuous Delivery"
+    },
+    {
+      "type": "title",
+      "eyebrow": "Fin du module",
+      "title": "Questions ?",
+      "subtitle": "Documentation : docs.github.com/actions",
+      "notes": "Rediriger vers les exercices pratiques dans le cours."
+    }
+  ]
+}

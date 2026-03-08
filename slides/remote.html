@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Télécommande mobile</title>
+    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #111827;
+            --surface-2: #1f2937;
+            --border: #334155;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --primary: #818cf8;
+            --success: #34d399;
+            --danger: #f87171;
+            --warn: #f59e0b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100dvh;
+            background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 65%);
+            color: var(--text);
+            font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+            padding: 14px;
+        }
+        .remote-wrap {
+            max-width: 520px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .remote-card {
+            border: 1px solid var(--border);
+            background: color-mix(in srgb, var(--surface) 90%, transparent);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        }
+        .remote-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .remote-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .remote-row-goto {
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+        .remote-field {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
+            padding: 9px 10px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .remote-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+        }
+        .remote-btn {
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
+            padding: 9px 12px;
+            font-size: 0.86rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 40px;
+        }
+        .remote-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .remote-btn.primary {
+            border-color: color-mix(in srgb, var(--primary) 65%, var(--border));
+            background: color-mix(in srgb, var(--primary) 16%, transparent);
+            color: var(--primary);
+        }
+        .remote-btn:disabled {
+            opacity: 0.45;
+            cursor: default;
+            color: var(--muted);
+            border-color: var(--border);
+        }
+        .remote-status {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: var(--muted);
+            min-height: 34px;
+            margin-top: 2px;
+        }
+        .remote-status.ok { color: var(--success); }
+        .remote-status.warn { color: var(--warn); }
+        .remote-status.error { color: var(--danger); }
+        .remote-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .remote-grid .remote-btn { width: 100%; }
+        .remote-subline {
+            font-size: 0.74rem;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+        @media (max-width: 420px) {
+            .remote-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="remote-wrap">
+        <section class="remote-card">
+            <div class="remote-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><circle cx="12" cy="18" r="1"/></svg>
+                Télécommande Présentateur
+            </div>
+            <div class="remote-row">
+                <input id="remote-room" class="remote-field" maxlength="40" placeholder="ID de salle">
+                <button id="remote-connect" class="remote-btn primary">Connecter</button>
+            </div>
+            <div class="remote-row">
+                <input id="remote-password" type="password" class="remote-field" maxlength="64" placeholder="Mot de passe">
+                <button id="remote-auth" class="remote-btn">Authentifier</button>
+            </div>
+            <div id="remote-status" class="remote-status">Entrez l’ID de salle et le mot de passe.</div>
+            <div id="remote-session" class="remote-subline"></div>
+        </section>
+
+        <section class="remote-card">
+            <div class="remote-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg>
+                Contrôles
+            </div>
+            <div class="remote-grid">
+                <button class="remote-btn" data-cmd="prev">Précédent</button>
+                <button class="remote-btn" data-cmd="next">Suivant</button>
+                <button class="remote-btn" data-cmd="black">Noir</button>
+                <button class="remote-btn" data-cmd="salle">Onglet Salle</button>
+                <button class="remote-btn" data-cmd="timer-toggle">Timer start/stop</button>
+                <button class="remote-btn" data-cmd="timer-reset">Timer reset</button>
+            </div>
+            <div class="remote-row remote-row-goto">
+                <input id="remote-goto-index" class="remote-field" type="number" min="1" step="1" placeholder="Aller à la slide #">
+                <button id="remote-goto-btn" class="remote-btn">Aller</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="../shared/slides/realtime-contract.js?v=3"></script>
+    <script src="../shared/slides/network-session.js?v=2"></script>
+    <script src="../vendor/peerjs/1.5.5/peerjs.min.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        const RealtimeContract = window.OEIRealtimeContract || {};
+        const NetworkSession = window.OEINetworkSession || {};
+        const ROOM_MSG = RealtimeContract.ROOM_MSG;
+        const validateRoomMessage = typeof RealtimeContract.validateRoomMessage === 'function'
+            ? RealtimeContract.validateRoomMessage
+            : (() => true);
+        if (!ROOM_MSG) {
+            throw new Error('OEIRealtimeContract indisponible: impossible de démarrer le contrôle distant.');
+        }
+
+        const qs = new URLSearchParams(location.search);
+        const readPeerJSON = (key, fallback = null) => {
+            if (!key) return fallback;
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                return JSON.parse(raw);
+            } catch (e) {
+                return fallback;
+            }
+        };
+        const PEER_OPTIONS = typeof NetworkSession.buildPeerOptions === 'function'
+            ? NetworkSession.buildPeerOptions(qs, readPeerJSON, window.OEI_PEER_OPTIONS)
+            : { debug: 0 };
+        const roomFromUrl = (qs.get('room') || '').trim();
+        if (roomFromUrl) document.getElementById('remote-room').value = roomFromUrl;
+
+        const statusEl = document.getElementById('remote-status');
+        const sessionEl = document.getElementById('remote-session');
+        const connectBtn = document.getElementById('remote-connect');
+        const authBtn = document.getElementById('remote-auth');
+        const gotoBtn = document.getElementById('remote-goto-btn');
+        const cmdButtons = Array.from(document.querySelectorAll('[data-cmd]'));
+
+        let peer = null;
+        let conn = null;
+        let token = '';
+        let tokenExpiresAt = 0;
+        let challenge = null;
+        let clientNonce = '';
+
+        const enc = new TextEncoder();
+        const toBase64Url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        const fromBase64Url = value => {
+            const b64 = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+            const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+            const bin = atob(padded);
+            const out = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+            return out;
+        };
+        const randomToken = (size = 18) => {
+            const bytes = new Uint8Array(size);
+            crypto.getRandomValues(bytes);
+            return toBase64Url(bytes);
+        };
+        const bytesToHex = bytes => Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        const sha256Hex = async value => {
+            const digest = await crypto.subtle.digest('SHA-256', enc.encode(String(value || '')));
+            return bytesToHex(new Uint8Array(digest));
+        };
+        const deriveHashHex = async (password, saltToken, iterations) => {
+            const key = await crypto.subtle.importKey('raw', enc.encode(String(password || '')), 'PBKDF2', false, ['deriveBits']);
+            const bits = await crypto.subtle.deriveBits({
+                name: 'PBKDF2',
+                hash: 'SHA-256',
+                salt: fromBase64Url(saltToken),
+                iterations: Math.max(10000, Number(iterations) || 120000),
+            }, key, 256);
+            return bytesToHex(new Uint8Array(bits));
+        };
+
+        function setStatus(text, tone) {
+            statusEl.textContent = String(text || '');
+            statusEl.className = `remote-status ${tone || ''}`.trim();
+        }
+
+        function updateControls() {
+            const now = Date.now();
+            const authed = !!token && tokenExpiresAt > now && conn && conn.open;
+            cmdButtons.forEach(btn => btn.disabled = !authed);
+            gotoBtn.disabled = !authed;
+            authBtn.disabled = !conn || !conn.open || !challenge;
+            if (!authed) {
+                sessionEl.textContent = '';
+                return;
+            }
+            const secLeft = Math.max(0, Math.round((tokenExpiresAt - now) / 1000));
+            sessionEl.textContent = `Session active (${secLeft}s restantes)`;
+        }
+
+        async function authenticate() {
+            if (!challenge || !conn || !conn.open) {
+                setStatus('Aucun challenge actif. Reconnectez-vous.', 'warn');
+                return;
+            }
+            const password = document.getElementById('remote-password').value.trim();
+            if (password.length < 8) {
+                setStatus('Mot de passe trop court (8 caractères min).', 'error');
+                return;
+            }
+            setStatus('Vérification du mot de passe…', 'warn');
+            try {
+                const hash = await deriveHashHex(password, challenge.salt, challenge.iterations);
+                const proof = await sha256Hex(`${challenge.challengeId}:${clientNonce}:${challenge.serverNonce}:${hash}`);
+                conn.send({
+                    type: ROOM_MSG.REMOTE_AUTH_PROOF,
+                    challengeId: challenge.challengeId,
+                    clientNonce,
+                    proof,
+                });
+            } catch (err) {
+                setStatus(`Erreur crypto: ${err.message || err}`, 'error');
+            }
+        }
+
+        function closeConnection() {
+            token = '';
+            tokenExpiresAt = 0;
+            challenge = null;
+            if (conn) { try { conn.close(); } catch (e) {} }
+            conn = null;
+            if (peer) { try { peer.destroy(); } catch (e) {} }
+            peer = null;
+            updateControls();
+        }
+
+        function connectRoom() {
+            const roomId = document.getElementById('remote-room').value.trim()
+                .replace(/[^a-zA-Z0-9\-_]/g, '-')
+                .replace(/-{2,}/g, '-')
+                .slice(0, 40);
+            if (!roomId) {
+                setStatus('ID de salle invalide.', 'error');
+                return;
+            }
+            document.getElementById('remote-room').value = roomId;
+            qs.set('room', roomId);
+            history.replaceState(null, '', `${location.pathname}?${qs.toString()}`);
+
+            closeConnection();
+            setStatus('Connexion à la salle…', 'warn');
+            connectBtn.disabled = true;
+
+            peer = new Peer(undefined, PEER_OPTIONS);
+            peer.on('open', () => {
+                conn = peer.connect(roomId, { reliable: true });
+                conn.on('open', () => {
+                    clientNonce = randomToken(16);
+                    conn.send({ type: ROOM_MSG.REMOTE_HELLO, clientNonce, device: 'mobile' });
+                    setStatus('Connecté. En attente du challenge…', 'warn');
+                    connectBtn.disabled = false;
+                    updateControls();
+                });
+                conn.on('data', msg => {
+                    if (!msg || typeof msg !== 'object') return;
+                    if (!validateRoomMessage(msg)) return;
+                    switch (msg.type) {
+                        case ROOM_MSG.REMOTE_AUTH_CHALLENGE:
+                            challenge = {
+                                challengeId: String(msg.challengeId || ''),
+                                serverNonce: String(msg.serverNonce || ''),
+                                salt: String(msg.salt || ''),
+                                iterations: Number(msg.iterations) || 120000,
+                            };
+                            setStatus('Challenge reçu. Authentification…', 'warn');
+                            updateControls();
+                            authenticate();
+                            break;
+                        case ROOM_MSG.REMOTE_AUTH_OK:
+                            token = String(msg.token || '');
+                            tokenExpiresAt = Number(msg.expiresAt) || (Date.now() + 600000);
+                            challenge = null;
+                            setStatus('Contrôle mobile authentifié.', 'ok');
+                            updateControls();
+                            break;
+                        case ROOM_MSG.REMOTE_AUTH_ERROR:
+                            token = '';
+                            tokenExpiresAt = 0;
+                            setStatus(msg.reason || 'Authentification refusée.', 'error');
+                            updateControls();
+                            break;
+                        case ROOM_MSG.REMOTE_COMMAND_ACK:
+                            setStatus(msg.ok ? 'Commande envoyée.' : (msg.reason || 'Commande refusée.'), msg.ok ? 'ok' : 'warn');
+                            break;
+                        case ROOM_MSG.REMOTE_REVOKED:
+                            token = '';
+                            tokenExpiresAt = 0;
+                            challenge = null;
+                            setStatus(msg.reason || 'Session révoquée côté présentateur.', 'error');
+                            updateControls();
+                            break;
+                        default:
+                            break;
+                    }
+                });
+                conn.on('close', () => {
+                    token = '';
+                    tokenExpiresAt = 0;
+                    challenge = null;
+                    setStatus('Connexion fermée.', 'warn');
+                    updateControls();
+                });
+                conn.on('error', () => {
+                    token = '';
+                    tokenExpiresAt = 0;
+                    challenge = null;
+                    setStatus('Erreur de connexion.', 'error');
+                    updateControls();
+                });
+            });
+            peer.on('error', err => {
+                setStatus(`Erreur PeerJS: ${err.type || err.message || err}`, 'error');
+                connectBtn.disabled = false;
+            });
+        }
+
+        function sendCommand(command, extra) {
+            if (!conn || !conn.open || !token || tokenExpiresAt <= Date.now()) {
+                setStatus('Session distante expirée. Réauthentifiez-vous.', 'warn');
+                updateControls();
+                return;
+            }
+            conn.send(Object.assign({
+                type: ROOM_MSG.REMOTE_COMMAND,
+                rid: randomToken(10),
+                token,
+                command,
+            }, extra || {}));
+        }
+
+        connectBtn.addEventListener('click', connectRoom);
+        authBtn.addEventListener('click', authenticate);
+        document.getElementById('remote-password').addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (challenge) authenticate();
+                else connectRoom();
+            }
+        });
+        cmdButtons.forEach(btn => {
+            btn.addEventListener('click', () => sendCommand(btn.dataset.cmd, null));
+        });
+        gotoBtn.addEventListener('click', () => {
+            const raw = document.getElementById('remote-goto-index').value;
+            const idx = Number(raw);
+            if (!Number.isFinite(idx) || idx < 1) {
+                setStatus('Index de slide invalide.', 'error');
+                return;
+            }
+            sendCommand('goto', { index: Math.trunc(idx - 1) });
+        });
+
+        setInterval(updateControls, 1000);
+        updateControls();
+    })();
+    </script>
+</body>
+</html>

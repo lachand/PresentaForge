@@ -1,0 +1,144 @@
+/* ui-primitives.css — shared UI building blocks (editor / viewer / student) */
+
+:root {
+    --ui-font: var(--font, system-ui, sans-serif);
+    --ui-radius-sm: var(--radius-sm, 6px);
+    --ui-radius-md: var(--radius-md, 10px);
+    --ui-border: var(--border, #d1d5db);
+    --ui-bg: var(--card, var(--surface, #ffffff));
+    --ui-bg-hover: color-mix(in srgb, var(--primary, #6366f1) 8%, var(--ui-bg));
+    --ui-text: var(--text, #0f172a);
+    --ui-muted: var(--muted, #64748b);
+    --ui-primary: var(--primary, #6366f1);
+    --ui-primary-hover: var(--primary-hover, #4f46e5);
+    --ui-overlay: var(--overlay-bg, rgba(0, 0, 0, 0.55));
+    --ui-panel: var(--panel, var(--ui-bg));
+    --ui-shadow: var(--shadow-md, 0 10px 30px rgba(0, 0, 0, 0.2));
+}
+
+.ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-sm);
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    font-family: var(--ui-font);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.ui-btn:hover {
+    background: var(--ui-bg-hover);
+    border-color: color-mix(in srgb, var(--ui-primary) 45%, var(--ui-border));
+    color: var(--ui-primary);
+}
+.ui-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+    pointer-events: none;
+}
+.ui-btn--primary {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+    color: #fff;
+}
+.ui-btn--primary:hover {
+    background: var(--ui-primary-hover);
+    border-color: var(--ui-primary-hover);
+    color: #fff;
+}
+.ui-btn--icon {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+}
+.ui-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.ui-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 5px 28px 5px 8px;
+    border-radius: var(--ui-radius-sm);
+    border: 1px solid var(--ui-border);
+    background-color: var(--ui-bg);
+    color: var(--ui-text);
+    font-family: var(--ui-font);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ui-select:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--ui-primary) 75%, var(--ui-border));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-primary) 20%, transparent);
+}
+
+.ui-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: var(--ui-overlay);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.ui-modal-overlay.is-open {
+    display: flex;
+}
+.ui-modal {
+    width: min(680px, 94vw);
+    max-height: 86vh;
+    overflow: auto;
+    border-radius: var(--ui-radius-md);
+    border: 1px solid var(--ui-border);
+    background: var(--ui-panel);
+    color: var(--ui-text);
+    box-shadow: var(--ui-shadow);
+}
+.ui-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px 10px;
+}
+.ui-modal-title {
+    margin: 0;
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ui-text);
+}
+.ui-modal-close {
+    border: 1px solid transparent;
+    border-radius: var(--ui-radius-sm);
+    background: transparent;
+    color: var(--ui-muted);
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.ui-modal-close:hover {
+    color: var(--ui-primary);
+    border-color: color-mix(in srgb, var(--ui-primary) 28%, var(--ui-border));
+    background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
+}
+.ui-modal-body {
+    padding: 0 16px 12px;
+}
+.ui-modal-actions {
+    padding: 0 16px 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}

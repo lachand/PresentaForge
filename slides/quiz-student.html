@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Live — Répondre</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background:#0f1117; color:#e2e8f0; min-height:100vh; display:flex; flex-direction:column; }
+        .header { padding:16px 20px; background:#1a1d27; border-bottom:1px solid #2d3347; display:flex; align-items:center; gap:10px; }
+        .header-icon { font-size:1.3rem; }
+        .header-title { font-size:0.85rem; font-weight:700; color:#818cf8; text-transform:uppercase; letter-spacing:0.05em; }
+        .header-timer { margin-left:auto; font-family:monospace; font-size:1rem; color:#64748b; }
+        .status { padding:12px 20px; text-align:center; font-size:0.85rem; color:#64748b; }
+        .status.error { color:#f87171; }
+        .status.success { color:#34d399; }
+        .question { padding:20px; font-size:1.15rem; font-weight:600; color:#f1f5f9; line-height:1.5; text-align:center; }
+        .options { padding:0 16px 20px; display:flex; flex-direction:column; gap:10px; flex:1; }
+        .option { display:flex; align-items:center; gap:12px; padding:14px 18px; border:2px solid #2d3347; border-radius:12px; cursor:pointer; transition:all 0.2s; -webkit-tap-highlight-color:transparent; user-select:none; }
+        .option:hover { border-color:#818cf8; background:rgba(129,140,248,0.08); }
+        .option:active { transform:scale(0.98); }
+        .option.selected { border-color:#818cf8; background:rgba(129,140,248,0.15); }
+        .option.correct { border-color:#34d399 !important; background:rgba(52,211,153,0.15) !important; }
+        .option.wrong { border-color:#f87171 !important; background:rgba(248,113,113,0.1) !important; opacity:0.7; }
+        .option-letter { width:36px; height:36px; border-radius:50%; background:rgba(129,140,248,0.15); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem; color:#818cf8; flex-shrink:0; }
+        .option.selected .option-letter { background:#818cf8; color:#fff; }
+        .option.correct .option-letter { background:#34d399; color:#fff; }
+        .option.wrong .option-letter { background:#f87171; color:#fff; }
+        .option-text { font-size:1rem; color:#e2e8f0; }
+        .waiting { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:16px; padding:40px 20px; text-align:center; }
+        .waiting-spinner { width:40px; height:40px; border:3px solid #2d3347; border-top-color:#818cf8; border-radius:50%; animation:spin 0.8s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .waiting-text { font-size:0.9rem; color:#64748b; }
+        .result-banner { padding:20px; text-align:center; font-size:1rem; font-weight:600; border-radius:12px; margin:16px; }
+        .result-banner.correct { background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); }
+        .result-banner.wrong { background:rgba(248,113,113,0.1); color:#f87171; border:1px solid rgba(248,113,113,0.2); }
+        .footer { padding:12px 20px; text-align:center; font-size:0.7rem; color:#475569; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="header-icon">📊</span>
+        <span class="header-title">Quiz Live</span>
+        <span class="header-timer" id="timer"></span>
+    </div>
+
+    <div id="waiting" class="waiting">
+        <div class="waiting-spinner"></div>
+        <div class="waiting-text">Connexion au présentateur…</div>
+    </div>
+
+    <div id="quiz-container" style="display:none; flex:1; display:none; flex-direction:column;">
+        <div class="question" id="question"></div>
+        <div class="options" id="options"></div>
+        <div id="result-area"></div>
+    </div>
+
+    <div class="footer">Quiz Live — P2P via PeerJS</div>
+
+    <script src="../vendor/peerjs/1.5.5/peerjs.min.js"></script>
+    <script>
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const roomId = params.get('room');
+        if (!roomId) {
+            document.getElementById('waiting').innerHTML = '<div class="waiting-text" style="color:#f87171">Aucun identifiant de quiz. Scannez le QR code depuis la présentation.</div>';
+            return;
+        }
+
+        const waitingEl = document.getElementById('waiting');
+        const containerEl = document.getElementById('quiz-container');
+        const questionEl = document.getElementById('question');
+        const optionsEl = document.getElementById('options');
+        const timerEl = document.getElementById('timer');
+        const resultArea = document.getElementById('result-area');
+
+        let conn = null;
+        let answered = false;
+        let selectedAnswer = null;
+        let timerInterval = null;
+
+        // Connect to presenter
+        const peer = new Peer(undefined, { debug: 0 });
+
+        peer.on('open', () => {
+            waitingEl.querySelector('.waiting-text').textContent = 'Connexion au quiz…';
+            conn = peer.connect(roomId, { reliable: true });
+
+            conn.on('open', () => {
+                waitingEl.querySelector('.waiting-text').textContent = 'Connecté ! En attente de la question…';
+            });
+
+            conn.on('data', (data) => {
+                if (data.type === 'quiz') {
+                    showQuiz(data);
+                } else if (data.type === 'end') {
+                    endQuiz();
+                }
+            });
+
+            conn.on('error', (err) => {
+                waitingEl.innerHTML = `<div class="waiting-text" style="color:#f87171">Erreur de connexion: ${err.message || err}</div>`;
+            });
+
+            conn.on('close', () => {
+                if (!answered) {
+                    waitingEl.style.display = '';
+                    waitingEl.innerHTML = '<div class="waiting-text">Connexion fermée par le présentateur.</div>';
+                }
+            });
+        });
+
+        peer.on('error', (err) => {
+            waitingEl.innerHTML = `<div class="waiting-text" style="color:#f87171">Erreur: ${err.message || err}</div>`;
+        });
+
+        function showQuiz(data) {
+            waitingEl.style.display = 'none';
+            containerEl.style.display = 'flex';
+            questionEl.textContent = data.question || 'Question';
+            answered = false;
+            selectedAnswer = null;
+            resultArea.innerHTML = '';
+
+            const options = data.options || [];
+            optionsEl.innerHTML = '';
+            options.forEach((opt, i) => {
+                const div = document.createElement('div');
+                div.className = 'option';
+                div.innerHTML = `<span class="option-letter">${String.fromCharCode(65 + i)}</span><span class="option-text">${escHtml(opt)}</span>`;
+                div.addEventListener('click', () => selectOption(i, div));
+                optionsEl.appendChild(div);
+            });
+
+            // Start timer
+            let remaining = data.duration || 30;
+            timerEl.textContent = remaining + 's';
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                remaining--;
+                timerEl.textContent = remaining + 's';
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    if (!answered) endQuiz();
+                }
+            }, 1000);
+        }
+
+        function selectOption(index, el) {
+            if (answered) return;
+            answered = true;
+            selectedAnswer = index;
+
+            // Highlight selection
+            document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+
+            // Send answer to presenter
+            if (conn && conn.open) {
+                conn.send({ type: 'answer', value: index });
+            }
+
+            resultArea.innerHTML = '<div class="status success">Réponse envoyée ! En attente des résultats…</div>';
+        }
+
+        function endQuiz() {
+            clearInterval(timerInterval);
+            timerEl.textContent = 'Terminé';
+
+            if (!answered) {
+                resultArea.innerHTML = '<div class="result-banner wrong">⏰ Temps écoulé — pas de réponse</div>';
+                document.querySelectorAll('.option').forEach(o => { o.style.pointerEvents = 'none'; o.style.opacity = '0.5'; });
+            } else {
+                resultArea.innerHTML = '<div class="result-banner correct">✅ Réponse enregistrée !</div>';
+            }
+        }
+
+        function escHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+    })();
+    </script>
+</body>
+</html>
