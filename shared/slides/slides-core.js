@@ -644,11 +644,11 @@ section.sl-canvas {
 .sl-highlight-block { width:100%;height:100%;background:#0d1117;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;border:1px solid #21262d; }
 .sl-highlight-block .sl-code-tbar { border-bottom:1px solid #21262d; }
 .sl-highlight-block pre { flex:1;margin:0!important;padding:0!important;background:#0d1117!important;box-shadow:none!important;width:100%!important;border:none!important;position:relative;overflow:hidden; }
-.sl-highlight-block pre code { font-family:var(--sl-font-mono,monospace)!important;font-size:13px!important;line-height:1.6!important;color:#e6edf3!important;padding:0.65rem 1rem!important;background:#0d1117!important;max-height:none!important;overflow:visible!important;text-align:left!important; }
+.sl-highlight-block pre code { font-family:var(--sl-font-mono,monospace)!important;font-size:var(--sl-code-font-size,13px)!important;line-height:1.6!important;color:#e6edf3!important;padding:0.65rem 1rem!important;background:#0d1117!important;max-height:none!important;overflow:visible!important;text-align:left!important; }
 .sl-highlight-block pre.code-wrapper > code.fragment { position:absolute;top:0;left:0;width:100%;height:100%;background:#0d1117!important;box-sizing:border-box; }
 .sl-highlight-block .hljs-ln { width:100%;border-collapse:collapse; }
 .sl-highlight-block .hljs-ln td { padding:0 4px;vertical-align:top; }
-.sl-highlight-block .hljs-ln-numbers { user-select:none;color:#6e7681;text-align:right;width:2.2em;padding-right:0.6rem;border-right:1px solid #21262d; }
+.sl-highlight-block .hljs-ln-numbers { user-select:none;color:#6e7681;text-align:right;width:2.2em;padding-right:0.6rem;border-right:1px solid #21262d;font-size:var(--sl-code-gutter-size,13px); }
 .sl-highlight-block .highlight-line { background:rgba(255,255,255,0.12); }
 .sl-highlight-block .has-highlights tr:not(.highlight-line) { opacity:1; }
 .sl-highlight-block .has-highlights .highlight-line .hljs-ln-numbers { color:#8b949e; }
@@ -3474,7 +3474,11 @@ class SlidesRenderer {
                 break;
             }
             case 'code': {
-                content = SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'sl');
+                const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 16));
+                const codeSize = Math.round(base * 0.82);
+                const langSize = Math.round(base * 0.64);
+                content = `<div style="width:100%;height:100%;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'sl')}</div>`;
                 break;
             }
             case 'list': {
@@ -3652,13 +3656,17 @@ class SlidesRenderer {
                 break;
             }
             case 'highlight': {
+                const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 16));
+                const codeSize = Math.round(base * 0.82);
+                const langSize = Math.round(base * 0.64);
                 const lang = SlidesRenderer.esc(el.data?.language || 'python');
                 const code = SlidesRenderer.esc(el.data?.code || '');
                 const highlights = (el.data?.highlights || []).map(h => h.lines).join('|');
                 // Use Reveal.js native <pre><code> (no sl-code-terminal wrapper)
                 // to avoid flex layout conflicts with Reveal's fragment cloning.
                 // Wrap in .sl-highlight-block to apply terminal-like styling.
-                content = `<div class="sl-highlight-block">
+                content = `<div class="sl-highlight-block" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">
                     <div class="sl-code-tbar"><div class="sl-code-dot sl-code-dot-r"></div><div class="sl-code-dot sl-code-dot-y"></div><div class="sl-code-dot sl-code-dot-g"></div><span class="sl-code-tbar-lang">${lang}</span></div>
                     <pre><code class="language-${lang}" data-line-numbers="${highlights}">${code}</code></pre>
                 </div>`;

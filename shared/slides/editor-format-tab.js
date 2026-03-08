@@ -18,6 +18,8 @@ function _fmtDefaultFontSizeForType(type, explicitSize) {
         heading: 52,
         text: 22,
         list: 22,
+        code: 16,
+        highlight: 16,
         definition: 16,
         'code-example': 16,
         quote: 26,
@@ -248,7 +250,7 @@ function updateFormatTabEnhanced() {
 
     // Show/hide contextual groups
     const type = el.type;
-    const textTypes = ['heading', 'text', 'list', 'definition', 'code-example', 'quote', 'card', 'table'];
+    const textTypes = ['heading', 'text', 'list', 'code', 'highlight', 'definition', 'code-example', 'quote', 'card', 'table'];
     document.getElementById('fmt-text-group').style.display = textTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-paragraph-group').style.display = textTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-image-group').style.display = type === 'image' ? '' : 'none';

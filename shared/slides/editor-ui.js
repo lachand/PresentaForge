@@ -300,6 +300,10 @@ function switchRibbonTab(tabId) {
     // If ribbon was collapsed and we click a tab, expand it
     const ribbon = document.getElementById('ribbon');
     if (ribbon.classList.contains('ribbon-collapsed')) ribbon.classList.remove('ribbon-collapsed');
+    // Ensure contextual groups are recalculated when opening Format.
+    if (tabId === 'format' && typeof updateFormatTab === 'function') {
+        updateFormatTab();
+    }
     requestAnimationFrame(() => updateTabIndicator());
 }
 

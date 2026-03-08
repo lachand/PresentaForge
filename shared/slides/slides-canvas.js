@@ -390,11 +390,19 @@ class CanvasEditor {
 .cel-code-dot-r { background: #ff5f57; }
 .cel-code-dot-y { background: #febc2e; }
 .cel-code-dot-g { background: #28c840; }
-.cel-code-tbar-lang { margin-left: auto; font-size: 10px; color: #6e7681; font-family: var(--sl-font-mono, monospace); letter-spacing: 0.04em; }
+.cel-code-tbar-lang {
+    margin-left: auto;
+    font-size: var(--cel-code-lang-size, 10px);
+    color: #6e7681;
+    font-family: var(--sl-font-mono, monospace);
+    letter-spacing: 0.04em;
+}
 .cel-code-scroll { flex: 1; overflow: auto; display: flex; min-height: 0; }
 .cel-code-gutter {
     padding: 0.65rem 0.6rem 0.65rem 0.85rem;
-    color: #3d4451; font-size: 13px; line-height: 1.6;
+    color: #3d4451;
+    font-size: var(--cel-code-gutter-size, 13px);
+    line-height: 1.6;
     user-select: none; text-align: right;
     font-family: var(--sl-font-mono, monospace);
     white-space: pre; border-right: 1px solid #21262d;
@@ -407,7 +415,9 @@ class CanvasEditor {
 }
 .cel-code-scroll > pre code {
     font-family: var(--sl-font-mono, monospace);
-    font-size: 13px; line-height: 1.6; color: #e6edf3;
+    font-size: var(--cel-code-font-size, 13px);
+    line-height: 1.6;
+    color: #e6edf3;
     background: transparent !important; white-space: pre; display: block; padding: 0 !important;
 }
 .cel-list-content { width:100%; height:100%; padding: 6px 0 6px 1.5em; overflow: auto; }
@@ -498,18 +508,21 @@ class CanvasEditor {
     background: color-mix(in srgb, var(--sl-slide-bg, #1a1d27) 82%, #000);
 }
 .cel-code-example-widget .cel-code-terminal {
+    --cel-code-font-size: var(--ce-code-font-size, 13px);
+    --cel-code-gutter-size: var(--ce-code-gutter-size, 13px);
+    --cel-code-lang-size: var(--ce-code-lang-size, 10px);
     height: 100%;
     border: none;
     border-radius: 0;
 }
 .cel-code-example-widget .cel-code-gutter {
-    font-size: var(--ce-code-gutter-size, 13px);
+    font-size: var(--ce-code-gutter-size, var(--cel-code-gutter-size, 13px));
 }
 .cel-code-example-widget .cel-code-tbar-lang {
-    font-size: var(--ce-code-lang-size, 10px);
+    font-size: var(--ce-code-lang-size, var(--cel-code-lang-size, 10px));
 }
 .cel-code-example-widget .cel-code-scroll > pre code {
-    font-size: var(--ce-code-font-size, 13px);
+    font-size: var(--ce-code-font-size, var(--cel-code-font-size, 13px));
 }
 .cel-codeexample-live,
 .cel-codeexample-stepper {
@@ -1154,7 +1167,11 @@ class CanvasEditor {
                 return `<div class="cel-text-content" style="font-size:${s.fontSize||22}px;font-weight:${s.fontWeight||400};color:${s.color||'var(--sl-text)'};text-align:${s.textAlign||'left'};font-family:${s.fontFamily||'var(--sl-font-body)'};line-height:${s.lineHeight||1.35};width:100%;height:100%;box-sizing:border-box;${vAlignCSS}${extras}">${body}</div>`;
             }
             case 'code': {
-                return SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'cel');
+                const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 16));
+                const codeSize = Math.round(base * 0.82);
+                const langSize = Math.round(base * 0.64);
+                return `<div style="width:100%;height:100%;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'cel')}</div>`;
             }
             case 'list': {
                 const s = el.style || {};
@@ -1295,11 +1312,15 @@ class CanvasEditor {
                 return `<div style="width:100%;height:100%;border-radius:8px;border:2px dashed var(--sl-border);display:flex;align-items:center;justify-content:center;color:var(--sl-muted);font-size:1.1rem;flex-direction:column;gap:0.5rem;"><span style="font-size:2rem">⧉</span><span>URL non définie</span></div>`;
             }
             case 'highlight': {
+                const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 16));
+                const codeSize = Math.round(base * 0.82);
+                const langSize = Math.round(base * 0.64);
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
                 const highlights = el.data?.highlights || [];
                 const lines = code.split('\n');
-                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
+                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal" style="--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
                 lines.forEach((line, i) => {
                     const ln = i + 1;
                     const cls = highlights.some(h => CanvasEditor._lineInRange(ln, h.lines)) ? ' cel-hl-line' : '';
