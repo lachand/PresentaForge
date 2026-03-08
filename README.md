@@ -1,6 +1,6 @@
-# Slides Minimal Repo
+# presentaForge
 
-Ce dépôt contient uniquement le nécessaire pour faire tourner l'écosystème Slides en local:
+Ce depot contient uniquement le necessaire pour faire tourner `presentaForge` en local:
 
 - `slides/` (éditeur, viewer, étudiant, remote, scripts)
 - `slides/assets/brand/` (logos, favicon, identité visuelle)
@@ -12,7 +12,7 @@ Ce dépôt contient uniquement le nécessaire pour faire tourner l'écosystème 
 
 ## Lancer en local
 
-Utiliser un serveur HTTP statique à la racine du dépôt (pas en `file://`).
+Utiliser un serveur HTTP statique a la racine du depot (pas en `file://`).
 
 Exemples:
 

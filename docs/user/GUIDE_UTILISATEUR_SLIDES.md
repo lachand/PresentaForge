@@ -1,321 +1,185 @@
-# Guide utilisateur slideForge (complet)
+# Guide utilisateur presentaForge
 
-Ce document décrit l'utilisation de l'application `slideForge` côté:
+Ce guide couvre l'utilisation de `presentaForge` sur les vues:
 
-- édition de cours,
-- présentation enseignant,
-- diffusion audience,
-- participation étudiant,
-- contrôle distant.
+- index,
+- editeur,
+- presentateur,
+- audience,
+- etudiant,
+- telecommande mobile.
 
-Il inclut des captures réelles du DOM de l'application.
+Le contenu a ete simplifie avec moins d'illustrations pour eviter les problemes de crop/rendu DOM sur certaines captures.
 
-## 0. Identité visuelle `slideForge`
+## 1. Demarrage rapide
 
-Assets utilisés dans l'application:
-
-- `slides/assets/brand/presentaforge_favico.png` (favicon)
-- `slides/assets/brand/presentaforge_logo_dark.png` (logo compact sur fond clair)
-- `slides/assets/brand/presentaforge_logo_light.png` (logo compact sur fond sombre)
-- `slides/assets/brand/presentaforge_text_dark.png` (logotype sur fond clair)
-- `slides/assets/brand/presentaforge_text_light.png` (logotype sur fond sombre)
-
-Prévisualisation:
-
-![slideForge logotype clair](../../slides/assets/brand/presentaforge_text_dark.png)
-
-![slideForge logotype sombre](../../slides/assets/brand/presentaforge_text_light.png)
-
-## 1. Accès et démarrage
-
-### 1.1 Lancer l'application en local
-
-1. Ouvrir un terminal à la racine du projet.
-2. Lancer un serveur web statique (exemple):
+1. Ouvrir un terminal a la racine du projet.
+2. Lancer un serveur statique:
 
 ```bash
 python3 -m http.server 8080
 ```
 
-3. Ouvrir les URLs:
+3. Ouvrir ensuite:
 
-- `http://localhost:8080/slides/index.html` (index)
-- `http://localhost:8080/slides/editor.html` (éditeur)
-- `http://localhost:8080/slides/viewer.html` (visualisation)
+- `http://localhost:8080/slides/index.html`
+- `http://localhost:8080/slides/editor.html`
+- `http://localhost:8080/slides/viewer.html`
 
-### 1.2 Écran d'index
+Illustration (index):
 
-L'index centralise les présentations disponibles.
+![Index presentaForge](./images/slides-index.png)
 
-![Index desktop](./images/slides-index.png)
+## 2. Editeur
 
-Version mobile:
+L'editeur est organise en 4 zones principales:
 
-![Index mobile](./images/slides-index-mobile.png)
+- ruban d'actions en haut,
+- liste des slides a gauche,
+- zone de travail centrale,
+- panneau de proprietes a droite.
 
-## 2. Éditeur: vue générale
+![Editeur - vue generale](./images/editor-home.png)
 
-L'éditeur est organisé en 4 zones:
+### 2.1 Onglet Accueil
 
-- ruban supérieur (actions),
-- colonne slides à gauche (filmstrip),
-- zone d'aperçu centrale,
-- panneau de propriétés à droite.
+Permet de:
 
-![Éditeur - vue globale](./images/editor-home.png)
+- creer/dupliquer/supprimer une diapositive,
+- annuler/retablir,
+- gerer le presse-papier,
+- ouvrir/importer et sauvegarder.
 
-Capture complémentaire (vue éditeur alternative):
+### 2.2 Onglet Insertion
 
-![Éditeur - overview](./images/editor-overview.png)
+Permet d'ajouter:
 
-Version mobile (comportement responsive):
+- contenu (titre, texte, image, forme, tableau, video),
+- widgets,
+- elements interactifs (QCM, Likert, activites),
+- blocs pedagogiques, layouts et pied de page.
 
-![Éditeur mobile](./images/editor-mobile.png)
+![Editeur - Insertion](./images/editor-insertion-tab.png)
 
-## 3. Onglets du ruban
+### 2.3 Onglet Conception
 
-## 3.1 Accueil
+Permet de definir:
 
-Principales actions:
+- theme,
+- fond de slide,
+- ratio,
+- variantes visuelles par slide.
 
-- créer, dupliquer, supprimer, déplacer un slide,
-- annuler/rétablir,
-- couper/copier/coller,
-- ouvrir/importer.
+![Editeur - Conception](./images/editor-conception-tab.png)
 
-![Éditeur - Accueil](./images/editor-home.png)
+### 2.4 Onglet Affichage
 
-## 3.2 Insertion
+Permet de:
 
-Permet d'insérer:
+- lancer la presentation,
+- exporter (JSON, PDF, HTML, PNG, PPTX, Markdown),
+- ouvrir les outils de verification (checker, assets, tokens, plugins).
 
-- texte, image, forme, code, widgets,
-- éléments d'évaluation (QCM, Likert, etc.),
-- composants de facilitation (post-it live, roulette, stats, leaderboard),
-- structures pédagogiques (footer, layouts, blocs).
+![Editeur - Affichage](./images/editor-affichage-tab.png)
 
-![Éditeur - Insertion](./images/editor-insertion-tab.png)
+## 3. Mode presentateur
 
-### 3.2.1 Configuration du pied de page
+Le mode presentateur est la vue de pilotage enseignant:
 
-![Modal pied de page](./images/editor-footer-modal.png)
-
-### 3.2.2 Dispositions et masters
-
-![Modal dispositions/masters](./images/editor-layout-master-modal.png)
-
-### 3.2.3 Blocs pédagogiques
-
-![Modal blocs](./images/editor-block-presets-modal.png)
-
-## 3.3 Conception
-
-Personnalisation visuelle:
-
-- thème global,
-- fond du slide (couleur / image / gradient),
-- transitions,
-- overrides par slide,
-- ratio et polices.
-
-![Éditeur - Conception](./images/editor-conception-tab.png)
-
-Capture complémentaire (conception alternative):
-
-![Conception - alternative](./images/editor-design-tab.png)
-
-### 3.3.1 Gestionnaire de thèmes
-
-![Gestionnaire de thèmes](./images/editor-theme-manager-modal.png)
-
-## 3.4 Affichage
-
-Actions de sortie et d'inspection:
-
-- exports (JSON, PDF, HTML, PNG, PPTX, Markdown, ZIP),
-- lancement diaporama,
-- trieuse / mode plan,
-- checker qualité,
-- assets manager,
-- design tokens,
-- plugins widgets.
-
-![Éditeur - Affichage](./images/editor-affichage-tab.png)
-
-### 3.4.1 Menu export
-
-![Menu export](./images/editor-export-menu.png)
-
-### 3.4.2 Menu présenter
-
-![Menu présenter](./images/editor-presenter-menu.png)
-
-### 3.4.3 Outils d'audit/maintenance
-
-Checker:
-
-![Checker](./images/editor-checker-modal.png)
-
-Gestionnaire d'assets:
-
-![Assets manager](./images/editor-assets-modal.png)
-
-Design tokens:
-
-![Design tokens](./images/editor-design-tokens-modal.png)
-
-Plugins widgets:
-
-![Plugins widgets](./images/editor-widget-plugins-modal.png)
-
-## 4. Modales et configurations globales
-
-## 4.1 Métadonnées de la présentation
-
-Permet de renseigner titre, auteur, niveau, établissement, description, etc.
-
-![Métadonnées](./images/editor-metadata-modal.png)
-
-## 4.2 Thème clair/sombre de l'éditeur
-
-Basculer l'interface utilisateur en clair/sombre (hors thème de slides).
-
-![Éditeur en thème clair](./images/editor-light-theme.png)
-
-## 5. Vues de travail alternatives
-
-## 5.1 Trieuse de diapositives
-
-Vue grille pour réordonner rapidement.
-
-![Trieuse](./images/editor-sorter-view.png)
-
-## 5.2 Mode plan
-
-Vue orientée structure et navigation.
-
-![Mode plan](./images/editor-outline-view.png)
-
-## 5.3 Colonne slides réduite
-
-Quand la colonne gauche est réduite:
-
-- bouton de ré-ouverture disponible,
-- poignée gauche réutilisable pour ré-étendre.
-
-![Colonne slides réduite](./images/editor-slides-collapsed.png)
-
-## 6. Mode présentateur
-
-Le mode présentateur fournit:
-
-- slide courante,
-- slide suivante,
+- slide courante + slide suivante,
 - notes,
-- contrôles de navigation,
-- contrôle salle/réseau.
+- minuteur,
+- ouverture de salle et suivi audience.
 
-![Présentateur - vue générale](./images/presenter-overview.png)
+![Mode presentateur](./images/presenter-overview.png)
 
-Capture complémentaire (présentateur alternative):
+Bonnes pratiques:
 
-![Présentateur - mode](./images/presenter-mode.png)
+- ouvrir la salle des le debut,
+- copier le lien stable pour Moodle/ENT,
+- surveiller le diagnostic reseau si connexions mobiles instables.
 
-## 6.1 Salle étudiants (modale)
+## 4. Vue audience
 
-Suivi en direct:
+La vue audience est passive:
 
-- participants,
-- mains levées,
-- questions,
-- outils de pilotage.
+- pas de pilotage local de la presentation,
+- synchronisation avec le presentateur,
+- affichage propre pour projection secondaire.
 
-![Présentateur - salle](./images/presenter-room-modal.png)
+![Vue audience](./images/viewer-audience.png)
 
-Onglet questions:
+## 5. Mode etudiant
 
-![Présentateur - questions](./images/presenter-room-questions-tab.png)
+Le mode etudiant permet de:
 
-## 6.2 Diagnostic réseau
+- rejoindre une salle,
+- suivre la presentation,
+- repondre aux interactions autorisees,
+- utiliser favoris/revision si actives.
 
-Pour surveiller/reconfigurer la connectivité temps réel.
+![Mode etudiant](./images/student-mode.png)
 
-![Présentateur - réseau](./images/presenter-network-panel.png)
+## 6. Telecommande mobile
 
-## 6.3 Scène orientée notes
+La telecommande mobile sert a:
 
-Préset de layout mettant l'accent sur les notes.
+- naviguer precedent/suivant,
+- ecran noir,
+- actions rapides de presentation,
+- controle via salle + mot de passe si active.
 
-![Présentateur - focus notes](./images/presenter-notes-focus.png)
+Acces: `http://localhost:8080/slides/remote.html`
 
-## 7. Vue audience
+## 7. Exports
 
-Affichage passif synchronisé depuis le présentateur.
+Depuis l'editeur (`Affichage`):
 
-![Viewer standard](./images/viewer-standard.png)
+- Export JSON: format source principal.
+- Export PDF: support impression.
+- Export HTML: partage autonome.
+- Export PNG/PPTX/Markdown selon usage.
 
-Variante audience:
+Conseil: valider visuellement le rendu sur 2-3 slides avant diffusion.
 
-![Viewer audience](./images/viewer-audience.png)
+## 8. Metadonnees et accessibilite
 
-## 8. Mode étudiant
+Dans `Accueil` > `Metadonnees`, renseigner au minimum:
 
-Le mode étudiant sert à:
+- titre,
+- auteur,
+- niveau,
+- etablissement.
 
-- suivre la présentation synchronisée,
-- répondre aux interactions autorisées (QCM/sondages/etc.).
+Cote accessibilite:
 
-![Mode étudiant](./images/student-mode.png)
+- remplir l'alt text des images,
+- verifier contraste texte/fond,
+- eviter les slides trop charges.
 
-Version mobile:
+## 9. Depannage rapide
 
-![Mode étudiant mobile](./images/student-mobile.png)
+- Si l'UI semble incoherente: `Ctrl+F5`.
+- Si la synchro salle est instable: ouvrir diagnostic reseau en mode presentateur.
+- Si un panneau est masque dans l'editeur: utiliser les poignets/boutons de re-ouverture.
+- Si un export est incorrect: relancer un export apres rechargement de la presentation.
 
-## 9. Contrôle distant et quiz étudiant
+## 10. Identite visuelle presentaForge
 
-Télécommande distante:
+Assets de marque utilises:
 
-![Remote control](./images/remote-control.png)
+- `slides/assets/brand/presentaforge_favico.png`
+- `slides/assets/brand/presentaforge_logo_dark.png`
+- `slides/assets/brand/presentaforge_logo_light.png`
+- `slides/assets/brand/presentaforge_text_dark.png`
+- `slides/assets/brand/presentaforge_text_light.png`
 
-Page quiz étudiant:
+## 11. Regenerer les captures (optionnel)
 
-![Quiz étudiant](./images/quiz-student.png)
-
-## 10. Parcours recommandé (enseignant)
-
-1. Préparer la présentation dans l'éditeur (`Accueil` + `Insertion` + `Conception`).
-2. Vérifier (`Affichage` > checker / assets).
-3. Ouvrir le mode présentateur.
-4. Ouvrir la salle étudiants et copier le lien stable.
-5. Présenter, animer les interactions, suivre les retours salle.
-6. Exporter les livrables nécessaires (JSON/HTML/PDF/PPTX selon usage).
-
-## 11. Accessibilité (bonnes pratiques)
-
-- Remplir le texte alternatif (`alt text`) pour les éléments visuels.
-- Maintenir un contraste suffisant texte/fond.
-- Éviter les blocs trop denses; préférer des slides lisibles à distance.
-- Utiliser des libellés explicites pour les éléments interactifs.
-
-## 12. Dépannage rapide
-
-- Après update front, faire un hard refresh: `Ctrl+F5`.
-- Si un panneau semble figé, recharger la page puis rouvrir le document.
-- Si la synchro temps réel est instable, ouvrir le diagnostic réseau côté présentateur.
-- En mode éditeur, si la colonne gauche est réduite:
-  - cliquer le bouton d'expansion dans la zone preview,
-  - ou glisser la poignée verticale gauche.
-
-## 13. Régénérer les captures du guide
-
-Les captures sont générées depuis rendu DOM réel (Chromium headless).
-
-Script:
+Si tu veux mettre a jour les captures du guide:
 
 ```bash
 tools/slides/capture-user-guide-screenshots.sh
 ```
 
-Fichiers générés dans:
-
-- `docs/user/images/`
+Les images sont generees dans `docs/user/images/`.
