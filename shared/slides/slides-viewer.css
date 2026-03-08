@@ -68,10 +68,7 @@
             pointer-events: none;
             opacity: 0.94;
         }
-        body.viewer-audience #sl-audience-brand {
-            display: inline-flex;
-            align-items: center;
-        }
+        body.viewer-audience #sl-audience-brand { display: none; }
         .sl-audience-brand-logo {
             height: 16px;
             width: auto;
