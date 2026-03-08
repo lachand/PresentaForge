@@ -98,7 +98,7 @@ class CanvasEditor {
             case 'widget':
                 return { ...base, data: { widget: 'workflow-trigger-simulator', config: {} } };
             case 'definition':
-                return { ...base, data: { term: 'Terme', definition: 'La définition complète du terme.', example: '' } };
+                return { ...base, data: { term: 'Terme', definition: 'La définition complète du terme.', example: '' }, style: { fontSize: 16 } };
             case 'code-example':
                 return {
                     ...base,
@@ -114,6 +114,7 @@ class CanvasEditor {
                             { title: 'Affichage', detail: 'Afficher le résultat final.', code: 'print(i)' },
                         ],
                     },
+                    style: { fontSize: 16 },
                 };
             case 'quote':
                 return { ...base, data: { text: 'Votre citation ici.', author: '' }, style: { fontSize: 26, color: 'var(--sl-heading)' } };
@@ -500,6 +501,15 @@ class CanvasEditor {
     height: 100%;
     border: none;
     border-radius: 0;
+}
+.cel-code-example-widget .cel-code-gutter {
+    font-size: var(--ce-code-gutter-size, 13px);
+}
+.cel-code-example-widget .cel-code-tbar-lang {
+    font-size: var(--ce-code-lang-size, 10px);
+}
+.cel-code-example-widget .cel-code-scroll > pre code {
+    font-size: var(--ce-code-font-size, 13px);
 }
 .cel-codeexample-live,
 .cel-codeexample-stepper {
@@ -1170,43 +1180,55 @@ class CanvasEditor {
                 return `<div class="cel-widget-loading"><span style="font-size:0.75rem;font-weight:700">WIDGET</span><span>Chargement…</span></div>`;
             }
             case 'definition': {
+                const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 16));
+                const termSize = Math.round(base * 1.06);
+                const bodySize = Math.round(base);
+                const exampleSize = Math.round(base * 0.78);
                 return `<div class="cel-def-content">
-                    <div class="cel-def-term">${escHtml(el.data?.term||'')}</div>
-                    <div class="cel-def-body">${el.data?.definition||''}</div>
-                    ${el.data?.example ? `<div class="cel-def-example">Exemple : ${escHtml(el.data.example)}</div>` : ''}
+                    <div class="cel-def-term" style="font-size:${termSize}px;">${escHtml(el.data?.term||'')}</div>
+                    <div class="cel-def-body" style="font-size:${bodySize}px;">${el.data?.definition||''}</div>
+                    ${el.data?.example ? `<div class="cel-def-example" style="font-size:${exampleSize}px;">Exemple : ${escHtml(el.data.example)}</div>` : ''}
                 </div>`;
             }
             case 'code-example': {
+                const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 16));
                 const data = el.data || {};
                 const body = data.text || '';
                 const widgetMode = data.widgetType || 'terminal';
-                const widgetHtml = CanvasEditor._renderCodeExampleWidget(data, widgetMode);
-                return `<div class="cel-code-example-content">
-                    <div class="cel-code-example-label">Exemple</div>
-                    <div class="cel-code-example-text">${body}</div>
-                    <div class="cel-code-example-widget">${widgetHtml}</div>
+                const widgetHtml = CanvasEditor._renderCodeExampleWidget(data, widgetMode, s);
+                return `<div class="cel-code-example-content" style="font-size:${base}px;">
+                    <div class="cel-code-example-label" style="font-size:${Math.round(base * 1.02)}px;">Exemple</div>
+                    <div class="cel-code-example-text" style="font-size:${Math.round(base * 0.92)}px;">${body}</div>
+                    <div class="cel-code-example-widget" style="--ce-code-font-size:${Math.round(base * 0.82)}px;--ce-code-gutter-size:${Math.round(base * 0.82)}px;--ce-code-lang-size:${Math.round(base * 0.64)}px;">${widgetHtml}</div>
                 </div>`;
             }
             case 'quote': {
                 const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 26));
+                const markSize = Math.round(base * 1.85);
+                const authorSize = Math.round(base * 0.48);
                 const author = el.data?.author
-                    ? `<div style="margin-top:0.75rem;font-size:0.78em;color:var(--sl-primary,#818cf8);font-weight:600;font-style:normal;">— ${escHtml(el.data.author)}</div>`
+                    ? `<div style="margin-top:0.75rem;font-size:${authorSize}px;color:var(--sl-primary,#818cf8);font-weight:600;font-style:normal;">— ${escHtml(el.data.author)}</div>`
                     : '';
                 return `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1rem 1.5rem;box-sizing:border-box;overflow:hidden;">
-                    <div style="font-size:3em;color:var(--sl-primary,#818cf8);opacity:0.4;line-height:0.7;margin-bottom:0.2rem;">"</div>
-                    <div style="font-size:${s.fontSize||26}px;font-style:italic;color:${s.color||'var(--sl-heading,#f1f5f9)'};line-height:1.5;font-family:var(--sl-font-body,system-ui);">${escHtml(el.data?.text||'')}</div>
+                    <div style="font-size:${markSize}px;color:var(--sl-primary,#818cf8);opacity:0.4;line-height:0.7;margin-bottom:0.2rem;">"</div>
+                    <div style="font-size:${base}px;font-style:italic;color:${s.color||'var(--sl-heading,#f1f5f9)'};line-height:1.5;font-family:var(--sl-font-body,system-ui);">${escHtml(el.data?.text||'')}</div>
                     ${author}
                 </div>`;
             }
             case 'card': {
                 const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 18));
+                const titleSize = Math.round(base * 0.76);
                 const cardTitle = el.data?.title
-                    ? `<div style="font-size:0.85em;font-weight:700;color:${s.titleColor||'var(--sl-primary,#818cf8)'};border-bottom:1px solid var(--sl-border,#2d3347);padding-bottom:0.5rem;margin-bottom:0.75rem;">${escHtml(el.data.title)}</div>`
+                    ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||'var(--sl-primary,#818cf8)'};border-bottom:1px solid var(--sl-border,#2d3347);padding-bottom:0.5rem;margin-bottom:0.75rem;">${escHtml(el.data.title)}</div>`
                     : '';
                 const items = (el.data?.items || []).map(i => `<li>${escHtml(i)}</li>`).join('');
                 return `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary,#818cf8) 5%,var(--sl-slide-bg,#1a1d27));border:1px solid var(--sl-border,#2d3347);border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
                     ${cardTitle}
-                    <ul style="margin:0;padding-left:1.4em;font-size:${s.fontSize||18}px;color:${s.color||'var(--sl-text,#cbd5e1)'};">${items}</ul>
+                    <ul style="margin:0;padding-left:1.4em;font-size:${base}px;color:${s.color||'var(--sl-text,#cbd5e1)'};">${items}</ul>
                 </div>`;
             }
             case 'table': {
@@ -1630,35 +1652,74 @@ class CanvasEditor {
         return ['terminal', 'live', 'stepper'].includes(mode) ? mode : 'terminal';
     }
 
-    static _renderCodeExampleWidget(data, mode) {
+    static _renderCodeExampleWidget(data, mode, style = {}) {
         const resolvedMode = CanvasEditor._normalizeCodeExampleMode(mode);
         const lang = data.language || 'python';
         const code = data.code || '';
+        const base = Math.max(10, Number(style.fontSize || 16));
+        const headSize = Math.round(base * 0.66);
+        const codeSize = Math.round(base * 0.82);
+        const stepTitleSize = Math.round(base * 0.74);
+        const stepDetailSize = Math.round(base * 0.69);
         if (resolvedMode === 'live') {
             return `<div class="cel-codeexample-live">
-                <div class="cel-codeexample-live-head">
+                <div class="cel-codeexample-live-head" style="font-size:${headSize}px;">
                     <span class="cel-codeexample-live-lang">${escHtml(lang)}</span>
                     <span class="cel-codeexample-live-tag">Live</span>
                 </div>
-                <pre class="cel-codeexample-live-code"><code class="language-${escHtml(lang)}">${escHtml(code)}</code></pre>
+                <pre class="cel-codeexample-live-code" style="font-size:${codeSize}px;"><code class="language-${escHtml(lang)}">${escHtml(code)}</code></pre>
             </div>`;
         }
         if (resolvedMode === 'stepper') {
             const steps = Array.isArray(data.stepperSteps) ? data.stepperSteps : [];
             const first = steps[0] || {};
             return `<div class="cel-codeexample-stepper">
-                <div class="cel-codeexample-stepper-head">
+                <div class="cel-codeexample-stepper-head" style="font-size:${headSize}px;">
                     <span>${escHtml(data.stepperTitle || 'Exécution pas à pas')}</span>
                     <span class="cel-codeexample-stepper-tag">Stepper</span>
                 </div>
                 <div class="cel-codeexample-stepper-body">
-                    <div class="cel-codeexample-stepper-title">${escHtml(first.title || 'Étape 1')}</div>
-                    <div class="cel-codeexample-stepper-detail">${escHtml(first.detail || '')}</div>
-                    <pre class="cel-codeexample-stepper-code"><code class="language-${escHtml(lang)}">${escHtml(first.code || '')}</code></pre>
+                    <div class="cel-codeexample-stepper-title" style="font-size:${stepTitleSize}px;">${escHtml(first.title || 'Étape 1')}</div>
+                    <div class="cel-codeexample-stepper-detail" style="font-size:${stepDetailSize}px;">${escHtml(first.detail || '')}</div>
+                    <pre class="cel-codeexample-stepper-code" style="font-size:${codeSize}px;"><code class="language-${escHtml(lang)}">${escHtml(first.code || '')}</code></pre>
                 </div>
             </div>`;
         }
         return SlidesShared.codeTerminal(code, lang, 'cel');
+    }
+
+    static _editableToPlainText(root) {
+        if (!root) return '';
+        const blockTags = new Set(['DIV', 'P', 'LI', 'UL', 'OL', 'PRE', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+        let out = '';
+
+        const ensureLineBreak = () => {
+            if (!out.endsWith('\n')) out += '\n';
+        };
+
+        const walk = node => {
+            if (!node) return;
+            if (node.nodeType === 3) {
+                out += String(node.nodeValue || '').replace(/\u00a0/g, ' ');
+                return;
+            }
+            if (node.nodeType !== 1) return;
+            const tag = (node.tagName || '').toUpperCase();
+            if (tag === 'BR') {
+                out += '\n';
+                return;
+            }
+            const isBlock = blockTags.has(tag);
+            if (isBlock && out && !out.endsWith('\n')) ensureLineBreak();
+            for (const child of node.childNodes || []) walk(child);
+            if (isBlock) ensureLineBreak();
+        };
+
+        walk(root);
+        return out
+            .replace(/\r\n?/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .replace(/\n+$/g, '');
     }
 
     /* ── Mermaid / KaTeX / QR lazy rendering ──────────────── */
@@ -2388,11 +2449,8 @@ class CanvasEditor {
             div.classList.remove('editing');
             toolbar.remove();
             const rawHtml = editable.innerHTML;
-            // Prefer innerText to preserve visual line breaks from contentEditable
-            // (<div>/<p>/<br>) so bullet auto-formatting can reliably parse "-" lines.
-            const plainText = String(editable.innerText || editable.textContent || '')
-                .replace(/\u00a0/g, ' ')
-                .replace(/\r\n?/g, '\n');
+            // Extract text from contentEditable while preserving tabs + line breaks.
+            const plainText = CanvasEditor._editableToPlainText(editable);
             // Store both html (rich) and text (plain fallback)
             const dataUpdate = { text: plainText };
             // Keep html only when real rich formatting is present.

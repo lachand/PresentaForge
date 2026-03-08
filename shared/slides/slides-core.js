@@ -620,11 +620,11 @@ section.sl-canvas {
 .sl-code-tbar { background:#161b22;display:flex;align-items:center;padding:0 12px;height:34px;gap:6px;flex-shrink:0;border-bottom:1px solid #21262d; }
 .sl-code-dot { width:11px;height:11px;border-radius:50%;flex-shrink:0; }
 .sl-code-dot-r{background:#ff5f57}.sl-code-dot-y{background:#febc2e}.sl-code-dot-g{background:#28c840}
-.sl-code-tbar-lang { margin-left:auto;font-size:10px;color:#6e7681;font-family:var(--sl-font-mono,monospace);letter-spacing:0.04em; }
+.sl-code-tbar-lang { margin-left:auto;font-size:var(--sl-code-lang-size,10px);color:#6e7681;font-family:var(--sl-font-mono,monospace);letter-spacing:0.04em; }
 .sl-code-scroll { flex:1;overflow:auto;display:flex;min-height:0;position:relative; }
-.sl-code-gutter { padding:0.65rem 0.6rem 0.65rem 0.85rem;color:#3d4451;font-size:13px;line-height:1.6;user-select:none;text-align:right;font-family:var(--sl-font-mono,monospace);white-space:pre;border-right:1px solid #21262d;min-width:2.2em;flex-shrink:0; }
+.sl-code-gutter { padding:0.65rem 0.6rem 0.65rem 0.85rem;color:#3d4451;font-size:var(--sl-code-gutter-size,13px);line-height:1.6;user-select:none;text-align:right;font-family:var(--sl-font-mono,monospace);white-space:pre;border-right:1px solid #21262d;min-width:2.2em;flex-shrink:0; }
 .sl-code-scroll pre { flex:1;margin:0;padding:0.65rem 1rem;background:transparent!important;overflow:visible;min-width:0;border:none!important; }
-.sl-code-scroll pre code { font-family:var(--sl-font-mono,monospace);font-size:13px;line-height:1.6;color:#e6edf3;background:transparent!important;white-space:pre;display:block;padding:0!important; }
+.sl-code-scroll pre code { font-family:var(--sl-font-mono,monospace);font-size:var(--sl-code-font-size,13px);line-height:1.6;color:#e6edf3;background:transparent!important;white-space:pre;display:block;padding:0!important; }
 /* Reveal.js highlight plugin: line-number table wrapper */
 .sl-code-scroll .hljs-ln { width:100%; }
 .sl-code-scroll .hljs-ln td { padding:0 4px; vertical-align:top; }
@@ -927,12 +927,14 @@ class SlidesRenderer {
     }
 
     static _bullets(s) {
+        const revealItems = !!s.revealItems;
+        const liCls = revealItems ? ' class="fragment"' : '';
         const items = (s.items || []).map(item => {
             if (typeof item === 'string') {
-                return `<li class="fragment">${item}</li>`;
+                return `<li${liCls}>${item}</li>`;
             }
-            const subs = (item.sub || []).map(sub => `<li class="fragment">${sub}</li>`).join('');
-            return `<li class="fragment">${item.text || item}${subs ? `<ul>${subs}</ul>` : ''}</li>`;
+            const subs = (item.sub || []).map(sub => `<li${liCls}>${sub}</li>`).join('');
+            return `<li${liCls}>${item.text || item}${subs ? `<ul>${subs}</ul>` : ''}</li>`;
         }).join('');
         const listHtml = `<ul>${items}</ul>`;
         const note = s.note ? `<div class="sl-bullets-note"><strong>Note</strong><br>${s.note}</div>` : '';
@@ -976,7 +978,9 @@ class SlidesRenderer {
                 const lang = SlidesRenderer.esc(col.language || 'text');
                 content = `<pre><code class="language-${lang}" data-trim data-noescape>${SlidesRenderer.esc(col.code || '')}</code></pre>`;
             } else if (col.type === 'bullets' || (col.type !== 'code' && col.type !== 'text' && Array.isArray(col.items))) {
-                const items = (col.items || []).map(i => `<li class="fragment">${i}</li>`).join('');
+                const revealItems = (col.revealItems != null) ? !!col.revealItems : !!s.revealItems;
+                const liCls = revealItems ? ' class="fragment"' : '';
+                const items = (col.items || []).map(i => `<li${liCls}>${i}</li>`).join('');
                 content = `<ul>${items}</ul>`;
             } else {
                 // text type: accept col.text (string) or col.items (array, join as paragraphs)
@@ -1007,7 +1011,9 @@ class SlidesRenderer {
         const title = s.title ? `<h2>${SlidesRenderer.esc(s.title)}</h2>` : '';
         const renderCol = (col) => {
             if (!col) return '';
-            const items = (col.items || []).map(i => `<li class="fragment">${i}</li>`).join('');
+            const revealItems = (col.revealItems != null) ? !!col.revealItems : !!s.revealItems;
+            const liCls = revealItems ? ' class="fragment"' : '';
+            const items = (col.items || []).map(i => `<li${liCls}>${i}</li>`).join('');
             return `<div class="sl-cmp-col">
                 <div class="sl-cmp-col-title">${SlidesRenderer.esc(col.title || '')}</div>
                 <ul>${items}</ul>
@@ -3473,7 +3479,8 @@ class SlidesRenderer {
             }
             case 'list': {
                 const s = el.style || {};
-                const items = (el.data?.items || []).map(i => `<li class="fragment">${i}</li>`).join('');
+                const liCls = el.data?.revealItems ? ' class="fragment"' : '';
+                const items = (el.data?.items || []).map(i => `<li${liCls}>${i}</li>`).join('');
                 content = `<ul style="margin:0;padding:6px 0 6px 1.5em;font-size:${s.fontSize||22}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>`;
                 break;
             }
@@ -3494,69 +3501,82 @@ class SlidesRenderer {
                 break;
             }
             case 'definition': {
+                const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 16));
+                const termSize = Math.round(base * 1.06);
+                const bodySize = Math.round(base);
+                const exampleSize = Math.round(base * 0.78);
                 content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 8%,var(--sl-slide-bg));border-left:4px solid var(--sl-primary);border-radius:0 8px 8px 0;padding:0.75rem 1rem;overflow:auto;box-sizing:border-box;">
-                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);margin-bottom:0.35rem;">${SlidesRenderer.esc(el.data?.term||'')}</div>
-                    <div style="color:var(--sl-text);line-height:1.5;">${el.data?.definition||''}</div>
-                    ${el.data?.example ? `<div style="margin-top:0.5rem;font-size:0.85em;color:var(--sl-muted);">Exemple : ${SlidesRenderer.esc(el.data.example)}</div>` : ''}
+                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);margin-bottom:0.35rem;font-size:${termSize}px;">${SlidesRenderer.esc(el.data?.term||'')}</div>
+                    <div style="color:var(--sl-text);line-height:1.5;font-size:${bodySize}px;">${el.data?.definition||''}</div>
+                    ${el.data?.example ? `<div style="margin-top:0.5rem;font-size:${exampleSize}px;color:var(--sl-muted);">Exemple : ${SlidesRenderer.esc(el.data.example)}</div>` : ''}
                 </div>`;
                 break;
             }
             case 'code-example': {
+                const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 16));
                 const mode = ['terminal', 'live', 'stepper'].includes(el.data?.widgetType) ? el.data.widgetType : 'terminal';
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
-                let widget = SlidesShared.codeTerminal(code, lang, 'sl');
+                let widget = `<div style="height:100%;--sl-code-font-size:${Math.round(base * 0.82)}px;--sl-code-gutter-size:${Math.round(base * 0.82)}px;--sl-code-lang-size:${Math.round(base * 0.64)}px;">${SlidesShared.codeTerminal(code, lang, 'sl')}</div>`;
                 if (mode === 'live') {
                     widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
-                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:0.66rem;">
+                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:${Math.round(base * 0.66)}px;">
                             <span style="font-family:var(--sl-font-mono);color:var(--sl-muted);text-transform:uppercase;">${SlidesRenderer.esc(lang)}</span>
                             <span style="margin-left:auto;color:var(--sl-primary);font-weight:700;text-transform:uppercase;">Live</span>
                         </div>
-                        <pre style="margin:0;padding:8px 10px;font-size:0.72rem;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;flex:1;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(code)}</code></pre>
+                        <pre style="margin:0;padding:8px 10px;font-size:${Math.round(base * 0.82)}px;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;flex:1;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(code)}</code></pre>
                     </div>`;
                 } else if (mode === 'stepper') {
                     const steps = Array.isArray(el.data?.stepperSteps) ? el.data.stepperSteps : [];
                     const first = steps[0] || {};
                     widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
-                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:0.66rem;">
+                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:${Math.round(base * 0.66)}px;">
                             <span>${SlidesRenderer.esc(el.data?.stepperTitle || 'Exécution pas à pas')}</span>
                             <span style="margin-left:auto;color:var(--sl-primary);font-weight:700;text-transform:uppercase;">Stepper</span>
                         </div>
                         <div style="display:flex;flex-direction:column;gap:6px;padding:8px 10px;min-height:0;overflow:auto;">
-                            <div style="font-size:0.74rem;color:var(--sl-heading);font-weight:600;">${SlidesRenderer.esc(first.title || 'Étape 1')}</div>
-                            <div style="font-size:0.69rem;color:var(--sl-muted);">${SlidesRenderer.esc(first.detail || '')}</div>
-                            <pre style="margin:0;margin-top:auto;padding:7px 8px;border:1px solid var(--sl-border);border-radius:7px;background:color-mix(in srgb,var(--sl-slide-bg) 80%,#000);font-size:0.66rem;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(first.code || '')}</code></pre>
+                            <div style="font-size:${Math.round(base * 0.74)}px;color:var(--sl-heading);font-weight:600;">${SlidesRenderer.esc(first.title || 'Étape 1')}</div>
+                            <div style="font-size:${Math.round(base * 0.69)}px;color:var(--sl-muted);">${SlidesRenderer.esc(first.detail || '')}</div>
+                            <pre style="margin:0;margin-top:auto;padding:7px 8px;border:1px solid var(--sl-border);border-radius:7px;background:color-mix(in srgb,var(--sl-slide-bg) 80%,#000);font-size:${Math.round(base * 0.82)}px;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(first.code || '')}</code></pre>
                         </div>
                     </div>`;
                 }
                 content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 8%,var(--sl-slide-bg));border-left:4px solid var(--sl-primary);border-radius:0 8px 8px 0;padding:0.75rem 1rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;overflow:hidden;">
-                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);font-size:1em;text-transform:uppercase;letter-spacing:0.03em;">Exemple</div>
-                    <div style="color:var(--sl-text);font-size:0.88em;line-height:1.45;max-height:36%;overflow:auto;">${el.data?.text || ''}</div>
+                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);font-size:${Math.round(base * 1.02)}px;text-transform:uppercase;letter-spacing:0.03em;">Exemple</div>
+                    <div style="color:var(--sl-text);font-size:${Math.round(base * 0.92)}px;line-height:1.45;max-height:36%;overflow:auto;">${el.data?.text || ''}</div>
                     <div style="flex:1;min-height:110px;border:1px solid var(--sl-border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-slide-bg) 82%,#000);">${widget}</div>
                 </div>`;
                 break;
             }
             case 'quote': {
                 const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 26));
+                const markSize = Math.round(base * 1.85);
+                const authorSize = Math.round(base * 0.48);
                 const author = el.data?.author
-                    ? `<div style="margin-top:0.75rem;font-size:0.78em;color:var(--sl-primary);font-weight:600;font-style:normal;">— ${SlidesRenderer.esc(el.data.author)}</div>`
+                    ? `<div style="margin-top:0.75rem;font-size:${authorSize}px;color:var(--sl-primary);font-weight:600;font-style:normal;">— ${SlidesRenderer.esc(el.data.author)}</div>`
                     : '';
                 content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1rem 1.5rem;box-sizing:border-box;overflow:hidden;">
-                    <div style="font-size:3em;color:var(--sl-primary);opacity:0.4;line-height:0.7;margin-bottom:0.2rem;">"</div>
-                    <div style="font-size:${s.fontSize||26}px;font-style:italic;color:${s.color||'var(--sl-heading)'};line-height:1.5;font-family:var(--sl-font-body);">${el.data?.text||''}</div>
+                    <div style="font-size:${markSize}px;color:var(--sl-primary);opacity:0.4;line-height:0.7;margin-bottom:0.2rem;">"</div>
+                    <div style="font-size:${base}px;font-style:italic;color:${s.color||'var(--sl-heading)'};line-height:1.5;font-family:var(--sl-font-body);">${el.data?.text||''}</div>
                     ${author}
                 </div>`;
                 break;
             }
             case 'card': {
                 const s = el.style || {};
+                const base = Math.max(10, Number(s.fontSize || 18));
+                const titleSize = Math.round(base * 0.76);
                 const cardTitle = el.data?.title
-                    ? `<div style="font-size:0.85em;font-weight:700;color:${s.titleColor||'var(--sl-primary)'};border-bottom:1px solid var(--sl-border);padding-bottom:0.5rem;margin-bottom:0.75rem;">${SlidesRenderer.esc(el.data.title)}</div>`
+                    ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||'var(--sl-primary)'};border-bottom:1px solid var(--sl-border);padding-bottom:0.5rem;margin-bottom:0.75rem;">${SlidesRenderer.esc(el.data.title)}</div>`
                     : '';
-                const items = (el.data?.items || []).map(i => `<li class="fragment">${SlidesRenderer.esc(i)}</li>`).join('');
+                const liCls = el.data?.revealItems ? ' class="fragment"' : '';
+                const items = (el.data?.items || []).map(i => `<li${liCls}>${SlidesRenderer.esc(i)}</li>`).join('');
                 content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 5%,var(--sl-slide-bg));border:1px solid var(--sl-border);border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
                     ${cardTitle}
-                    <ul style="margin:0;padding-left:1.4em;font-size:${s.fontSize||18}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>
+                    <ul style="margin:0;padding-left:1.4em;font-size:${base}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>
                 </div>`;
                 break;
             }

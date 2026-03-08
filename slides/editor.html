@@ -509,10 +509,10 @@
                 <span class="ribbon-group-label">Aligner</span>
             </div>
             <div class="ribbon-sep"></div>
-            <!-- Animation -->
+            <!-- Transition intra-slide -->
             <div class="ribbon-group" id="fmt-anim-group">
                 <div class="ribbon-group-content">
-                    <select id="fmt-anim-type" class="ribbon-select" data-tooltip="Effet d'animation">
+                    <select id="fmt-anim-type" class="ribbon-select" data-tooltip="Transition intra-slide|Faire apparaître un élément après le reste">
                         <option value="none">Aucune</option>
                         <option value="fade-in">Fondu</option>
                         <option value="fade-up">Fondu ↑</option>
@@ -523,9 +523,13 @@
                         <option value="shrink">Zoom arrière</option>
                         <option value="zoom-in">Apparition</option>
                     </select>
-                    <input type="number" id="fmt-anim-order" min="0" max="20" class="fmt-mini-input" placeholder="Auto" data-tooltip="Ordre">
+                    <input type="number" id="fmt-anim-order" min="0" max="20" class="fmt-mini-input" placeholder="Auto" data-tooltip="Ordre d'apparition">
+                    <label class="fmt-check-inline" id="fmt-list-fragments-wrap" data-tooltip="Puces point par point|Optionnel, non activé par défaut">
+                        <input type="checkbox" id="fmt-list-fragments">
+                        <span>Puces pas-à-pas</span>
+                    </label>
                 </div>
-                <span class="ribbon-group-label">Animation</span>
+                <span class="ribbon-group-label">Intra-slide</span>
             </div>
             <div class="ribbon-sep"></div>
             <!-- Image style contextual (fit + filters only) -->

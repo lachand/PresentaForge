@@ -12,6 +12,21 @@
  */
 /* editor-format-tab.js — Format tab update, binding, and enhanced formatting controls */
 
+function _fmtDefaultFontSizeForType(type, explicitSize) {
+    if (Number.isFinite(explicitSize) && explicitSize > 0) return explicitSize;
+    const byType = {
+        heading: 52,
+        text: 22,
+        list: 22,
+        definition: 16,
+        'code-example': 16,
+        quote: 26,
+        card: 18,
+        table: 18,
+    };
+    return byType[type] || 22;
+}
+
 function updateFormatTab() {
     const tabEl = document.getElementById('tab-format');
     const isCanvas = editor.currentSlide?.type === 'canvas';
@@ -60,7 +75,7 @@ function updateFormatTab() {
             const fmtColor = document.getElementById('fmt-color');
             if (fmtColor) fmtColor.value = colorToHex(s.color || s.fill || '#ffffff');
             const fmtFS = document.getElementById('fmt-font-size');
-            if (fmtFS && document.activeElement !== fmtFS) fmtFS.value = s.fontSize || 22;
+            if (fmtFS && document.activeElement !== fmtFS) fmtFS.value = _fmtDefaultFontSizeForType(el.type, s.fontSize);
             const fmtFW = document.getElementById('fmt-font-weight');
             if (fmtFW) fmtFW.value = String(s.fontWeight || 400);
 
@@ -167,7 +182,7 @@ function updateFormatTabEnhanced() {
 
     // Show/hide contextual groups
     const type = el.type;
-    const textTypes = ['heading', 'text', 'list', 'definition', 'quote', 'card', 'table'];
+    const textTypes = ['heading', 'text', 'list', 'definition', 'code-example', 'quote', 'card', 'table'];
     document.getElementById('fmt-text-group').style.display = textTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-paragraph-group').style.display = textTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-image-group').style.display = type === 'image' ? '' : 'none';
@@ -217,6 +232,13 @@ function updateFormatTabEnhanced() {
     const fmtAnimOrder = document.getElementById('fmt-anim-order');
     if (fmtAnimType) fmtAnimType.value = animType;
     if (fmtAnimOrder && document.activeElement !== fmtAnimOrder) fmtAnimOrder.value = animOrder;
+    const fmtListFragmentsWrap = document.getElementById('fmt-list-fragments-wrap');
+    const fmtListFragments = document.getElementById('fmt-list-fragments');
+    const supportsProgressiveItems = type === 'list' || type === 'card';
+    if (fmtListFragmentsWrap) fmtListFragmentsWrap.style.display = supportsProgressiveItems ? '' : 'none';
+    if (fmtListFragments && document.activeElement !== fmtListFragments) {
+        fmtListFragments.checked = !!el.data?.revealItems;
+    }
 
     // Clean up separators (hide when adjacent to hidden groups or other hidden seps)
     cleanFormatSeparators();
@@ -409,5 +431,12 @@ function bindFormatTabEnhanced() {
         const aType = typeInp?.value || 'fade-in';
         if (aType === 'none') return;
         canvasEditor.updateData(s.id, { animation: { type: aType, order: el.value !== '' ? +el.value : undefined } });
+    });
+
+    // Progressive list/card items (optional point-by-point reveal)
+    document.getElementById('fmt-list-fragments')?.addEventListener('change', function() {
+        const s = canvasEditor?.getSelected();
+        if (!s || (s.type !== 'list' && s.type !== 'card')) return;
+        canvasEditor.updateData(s.id, { data: { revealItems: !!this.checked } });
     });
 }

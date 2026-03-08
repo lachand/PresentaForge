@@ -3088,9 +3088,12 @@
 
             const _sessionRec = {
                 active: false,
+                paused: false,
                 replaying: false,
                 startAt: 0,
                 stopAt: 0,
+                pausedAccumMs: 0,
+                pauseStartedAt: 0,
                 events: [],
                 captions: [],
                 autoNotesBySlide: {},
@@ -3111,6 +3114,7 @@
             const _recStatusEl = () => document.getElementById('pv-rec-status');
             const _recLiveEl = () => document.getElementById('pv-rec-live');
             const _recButtonEl = () => document.getElementById('pv-btn-rec');
+            const _recPauseButtonEl = () => document.getElementById('pv-btn-rec-pause');
             const _replayButtonEl = () => document.getElementById('pv-btn-replay');
             const _exportButtonEl = () => document.getElementById('pv-btn-export-session');
             const _exportReplayButtonEl = () => document.getElementById('pv-btn-export-replay');
@@ -3119,11 +3123,21 @@
                 _updateRecordingUi();
             };
 
+            const _recordElapsedMs = (now = Date.now()) => {
+                if (!_sessionRec.startAt) return 0;
+                const safeNow = Number.isFinite(Number(now)) ? Number(now) : Date.now();
+                const activePauseMs = _sessionRec.paused && _sessionRec.pauseStartedAt
+                    ? Math.max(0, safeNow - _sessionRec.pauseStartedAt)
+                    : 0;
+                return Math.max(0, safeNow - _sessionRec.startAt - (_sessionRec.pausedAccumMs || 0) - activePauseMs);
+            };
+
             const _recordEvent = (type, payload = {}) => {
                 if (!_sessionRec.active) return;
+                if (_sessionRec.paused) return;
                 _sessionRec.events.push({
                     type: String(type || '').slice(0, 48),
-                    t: Date.now() - _sessionRec.startAt,
+                    t: _recordElapsedMs(Date.now()),
                     payload: (payload && typeof payload === 'object') ? payload : {},
                 });
             };
@@ -3144,6 +3158,7 @@
             const _updateRecordingUi = () => {
                 const status = _recStatusEl();
                 const recBtn = _recButtonEl();
+                const pauseBtn = _recPauseButtonEl();
                 const replayBtn = _replayButtonEl();
                 const exportBtn = _exportButtonEl();
                 const exportReplayBtn = _exportReplayButtonEl();
@@ -3152,6 +3167,14 @@
                     recBtn.innerHTML = _sessionRec.active
                         ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>Stop`
                         : `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>Enregistrer`;
+                }
+                if (pauseBtn) {
+                    pauseBtn.disabled = !_sessionRec.active || _sessionRec.exportBusy;
+                    pauseBtn.classList.toggle('active', _sessionRec.paused);
+                    pauseBtn.classList.toggle('rec-paused', _sessionRec.paused);
+                    pauseBtn.innerHTML = _sessionRec.paused
+                        ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="7 5 19 12 7 19 7 5"/></svg>Reprendre`
+                        : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>Pause`;
                 }
                 if (replayBtn) {
                     replayBtn.classList.toggle('active', _sessionRec.replaying);
@@ -3176,9 +3199,11 @@
                     return;
                 }
                 if (_sessionRec.active) {
-                    const elapsed = Date.now() - _sessionRec.startAt;
+                    const elapsed = _recordElapsedMs(Date.now());
                     const parts = [];
-                    parts.push(`Enregistrement en cours · ${_pvClock(elapsed)}`);
+                    parts.push(_sessionRec.paused
+                        ? `Enregistrement en pause · ${_pvClock(elapsed)}`
+                        : `Enregistrement en cours · ${_pvClock(elapsed)}`);
                     parts.push(_sessionRec.speechEnabled ? 'Sous-titres auto: actif' : 'Sous-titres auto: indisponible');
                     status.textContent = parts.join(' · ');
                     status.classList.add('recording');
@@ -3210,6 +3235,7 @@
 
             const _onSpeechResult = event => {
                 if (!_sessionRec.active) return;
+                if (_sessionRec.paused) return;
                 if (!event?.results) return;
                 for (let i = event.resultIndex || 0; i < event.results.length; i++) {
                     const result = event.results[i];
@@ -3263,6 +3289,46 @@
                 try { rec.stop(); } catch (_) {}
             };
 
+            const _pauseSessionRecording = () => {
+                if (!_sessionRec.active || _sessionRec.paused) return;
+                _recordEvent('record:pause', { index: currentIndex, fragmentIndex: currentFragmentIndex });
+                _sessionRec.paused = true;
+                _sessionRec.pauseStartedAt = Date.now();
+                _stopSpeechRecognition();
+                if (_sessionRec.mediaRecorder && _sessionRec.mediaRecorder.state === 'recording') {
+                    if (typeof _sessionRec.mediaRecorder.pause === 'function') {
+                        try { _sessionRec.mediaRecorder.pause(); } catch (_) {}
+                    }
+                }
+                _setLiveCaption('');
+                _updateRecordingUi();
+            };
+
+            const _resumeSessionRecording = (silent = false) => {
+                if (!_sessionRec.active || !_sessionRec.paused) return;
+                const now = Date.now();
+                if (_sessionRec.pauseStartedAt) {
+                    _sessionRec.pausedAccumMs += Math.max(0, now - _sessionRec.pauseStartedAt);
+                }
+                _sessionRec.paused = false;
+                _sessionRec.pauseStartedAt = 0;
+                if (_sessionRec.mediaRecorder && _sessionRec.mediaRecorder.state === 'paused') {
+                    if (typeof _sessionRec.mediaRecorder.resume === 'function') {
+                        try { _sessionRec.mediaRecorder.resume(); } catch (_) {}
+                    }
+                }
+                if (!silent) _startSpeechRecognition();
+                if (!silent) {
+                    _recordEvent('record:resume', { index: currentIndex, fragmentIndex: currentFragmentIndex });
+                    _recordEvent('goTo', { index: currentIndex });
+                    if (currentFragmentIndex >= 0) {
+                        _recordEvent('fragment', { slideIndex: currentIndex, fragmentIndex: currentFragmentIndex, hidden: false });
+                    }
+                    _recordEvent('black', { on: !!blackScreen });
+                }
+                _updateRecordingUi();
+            };
+
             const _stopReplay = () => {
                 _sessionRec.replayTimers.forEach(timer => clearTimeout(timer));
                 _sessionRec.replayTimers = [];
@@ -3281,11 +3347,14 @@
             const _buildSessionSnapshot = () => {
                 const startedAt = _sessionRec.startAt || Date.now();
                 const endedAt = _sessionRec.stopAt || Date.now();
+                const effectiveDurationMs = _recordElapsedMs(endedAt);
                 return {
-                    version: 1,
+                    version: 2,
                     createdAt: new Date(startedAt).toISOString(),
                     endedAt: new Date(endedAt).toISOString(),
-                    durationMs: Math.max(0, endedAt - startedAt),
+                    durationMs: Math.max(0, effectiveDurationMs),
+                    wallDurationMs: Math.max(0, endedAt - startedAt),
+                    pausedMs: Math.max(0, (endedAt - startedAt) - effectiveDurationMs),
                     presentation: {
                         title,
                         source: file || '__draft__',
@@ -3305,8 +3374,11 @@
                 _sessionRec.exportMessage = '';
                 _setLiveCaption('');
                 _sessionRec.active = true;
+                _sessionRec.paused = false;
                 _sessionRec.startAt = Date.now();
                 _sessionRec.stopAt = 0;
+                _sessionRec.pausedAccumMs = 0;
+                _sessionRec.pauseStartedAt = 0;
                 _sessionRec.events = [];
                 _sessionRec.captions = [];
                 _sessionRec.autoNotesBySlide = {};
@@ -3352,8 +3424,10 @@
 
             const _stopSessionRecording = () => {
                 if (!_sessionRec.active) return;
+                if (_sessionRec.paused) _resumeSessionRecording(true);
                 _recordEvent('record:stop', { index: currentIndex, fragmentIndex: currentFragmentIndex });
                 _sessionRec.active = false;
+                _sessionRec.paused = false;
                 _sessionRec.exportMessage = '';
                 _sessionRec.stopAt = Date.now();
                 if (_sessionRec.labelTimer) {
@@ -4285,6 +4359,11 @@ body{min-height:100vh;display:flex;flex-direction:column}
                 }
                 await _startSessionRecording();
             });
+            document.getElementById('pv-btn-rec-pause')?.addEventListener('click', () => {
+                if (!_sessionRec.active) return;
+                if (_sessionRec.paused) _resumeSessionRecording();
+                else _pauseSessionRecording();
+            });
             document.getElementById('pv-btn-replay')?.addEventListener('click', () => {
                 _startReplaySession();
             });
@@ -4326,6 +4405,11 @@ body{min-height:100vh;display:flex;flex-direction:column}
                 }
                 if (e.key === 't' || e.key === 'T') timerToggle();
                 if (e.key === 'r' || e.key === 'R') timerReset();
+                if ((e.key === 'p' || e.key === 'P') && _sessionRec.active) {
+                    e.preventDefault();
+                    if (_sessionRec.paused) _resumeSessionRecording();
+                    else _pauseSessionRecording();
+                }
                 if (e.key === 's' || e.key === 'S') openPresenterRoomPanel();
                 if (e.key === 'Escape') {
                     if (document.fullscreenElement) document.exitFullscreen();

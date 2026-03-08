@@ -941,6 +941,11 @@
             color: #fecaca;
             background: rgba(248, 113, 113, 0.22);
         }
+        .pv-toolbar-btn.rec-paused {
+            border-color: rgba(251, 191, 36, 0.68);
+            color: #fde68a;
+            background: rgba(251, 191, 36, 0.2);
+        }
 
         .pv-main {
             min-width: 0;
@@ -1540,6 +1545,7 @@
         .pv-layout.light .pv-toolbar-btn:hover { background: rgba(0,0,0,0.08); }
         .pv-layout.light .pv-toolbar-btn.active { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.4); color: #4f46e5; }
         .pv-layout.light .pv-toolbar-btn.rec-active { background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.42); color: #b91c1c; }
+        .pv-layout.light .pv-toolbar-btn.rec-paused { background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.42); color: #b45309; }
         .pv-layout.light .pv-slides-col {
             background: #f1f5f9;
             border-color: rgba(0,0,0,0.08);

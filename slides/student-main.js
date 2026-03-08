@@ -1009,36 +1009,50 @@
             inner.style.transform = `scale(${scale})`;
         }
 
+        function maxPresenterAllowedIndex() {
+            const hardMax = Math.max(0, slidesHtml.length - 1);
+            const safePresenterIndex = toSafeInt(_presenterIndex);
+            if (safePresenterIndex === null) return hardMax;
+            return Math.max(0, Math.min(hardMax, safePresenterIndex));
+        }
+
         function showSlide(idx) {
             _saveSlideNotes();
-            if (idx < 0 || idx >= slidesHtml.length) return;
-            currentIndex = idx;
+            let target = toSafeInt(idx);
+            if (target === null) return;
+            if (target < 0 || target >= slidesHtml.length) return;
+            const allowedMax = maxPresenterAllowedIndex();
+            if (target > allowedMax) {
+                target = allowedMax;
+                setConnectionDetail(`Navigation limitée à la slide ${allowedMax + 1} (présentateur)`, 'warn');
+            }
+            currentIndex = target;
             const inner = document.getElementById('slide-inner');
             const counter = document.getElementById('slide-counter');
             if (!inner) return;
 
-            inner.innerHTML = slidesHtml[idx];
+            inner.innerHTML = slidesHtml[target];
             applyFragmentProgress(-1);
-            if (counter) counter.textContent = `${idx + 1} / ${slidesHtml.length}`;
+            if (counter) counter.textContent = `${target + 1} / ${slidesHtml.length}`;
             // Sync nav bar
             const navCounter = document.getElementById('slide-counter-nav');
-            if (navCounter) navCounter.textContent = `${idx + 1} / ${slidesHtml.length}`;
+            if (navCounter) navCounter.textContent = `${target + 1} / ${slidesHtml.length}`;
             const prevBtn = document.getElementById('nav-prev');
             const nextBtn = document.getElementById('nav-next');
-            if (prevBtn) prevBtn.disabled = idx === 0;
-            if (nextBtn) nextBtn.disabled = idx === slidesHtml.length - 1;
+            if (prevBtn) prevBtn.disabled = target === 0;
+            if (nextBtn) nextBtn.disabled = target >= allowedMax;
             scaleSlide();
             mountCodeLive(inner);
             mountStudentWidgets(inner);
-            _loadSlideNotes(idx);
+            _loadSlideNotes(target);
             updateBookmarkControls();
             if (_revisionEnabled) {
                 const now = Date.now();
-                const prevSeen = Number(_revisionLastSeenAt.get(idx) || 0);
+                const prevSeen = Number(_revisionLastSeenAt.get(target) || 0);
                 if ((now - prevSeen) > 1500) {
-                    const entry = revisionEntry(idx);
+                    const entry = revisionEntry(target);
                     entry.seen = Number(entry.seen || 0) + 1;
-                    _revisionLastSeenAt.set(idx, now);
+                    _revisionLastSeenAt.set(target, now);
                     saveRevisionState();
                 }
             }
@@ -1707,6 +1721,7 @@
                     setConnected(true);
                     // Show current slide
                     const initIndex = typeof msg.currentIndex === 'number' ? msg.currentIndex : 0;
+                    _presenterIndex = initIndex;
                     if (_revisionEnabled) {
                         const deck = revisionOrderedDeck();
                         const start = deck.includes(initIndex) ? initIndex : (deck[0] ?? initIndex);
@@ -1728,6 +1743,9 @@
                             clearInterval(quizTimerInterval);
                             document.getElementById('quiz-overlay').classList.remove('active');
                             quizActive = false;
+                        }
+                        if (currentIndex > maxPresenterAllowedIndex()) {
+                            showSlide(_presenterIndex);
                         }
                         if (_followPresenter) {
                             showSlide(msg.index);
@@ -1899,6 +1917,10 @@
             showByModeStep(-1);
         });
         document.getElementById('nav-next').addEventListener('click', () => {
+            if (currentIndex >= maxPresenterAllowedIndex()) {
+                setConnectionDetail('Vous ne pouvez pas dépasser la slide courante du présentateur', 'warn');
+                return;
+            }
             _followPresenter = false;
             document.getElementById('nav-follow').classList.remove('active');
             showByModeStep(1);
