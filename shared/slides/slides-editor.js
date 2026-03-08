@@ -182,6 +182,10 @@ class SlidesEditor {
                 modified: new Date().toISOString().slice(0, 10),
             },
             theme: 'dark',
+            typography: {
+                heading: 52,
+                text: 22,
+            },
             slides: [
                 SlidesEditor.DEFAULT_SLIDE('title'),
                 SlidesEditor.DEFAULT_SLIDE('bullets'),
@@ -202,6 +206,7 @@ class SlidesEditor {
 
     new() {
         this.data = SlidesEditor.DEFAULT_PRESENTATION();
+        this._ensureTypographyDefaults();
         this.selectedIndex = 0;
         this._historyStack = [];
         this._historyIndex = -1;
@@ -211,6 +216,8 @@ class SlidesEditor {
 
     load(data) {
         this.data = JSON.parse(JSON.stringify(data)); // deep clone
+        this._ensureTypographyDefaults();
+        this._normalizeLegacyCanvasFontSizes();
         this.selectedIndex = 0;
         this._historyStack = [];
         this._historyIndex = -1;
@@ -231,6 +238,67 @@ class SlidesEditor {
         this.data.theme = themeIdOrObject;
         this._push();
         this.onUpdate('theme');
+    }
+
+    setTypographyDefaults(patch = {}) {
+        this._ensureTypographyDefaults();
+        const next = { ...this.data.typography };
+        if (Object.prototype.hasOwnProperty.call(patch, 'heading')) {
+            const n = Number(patch.heading);
+            if (Number.isFinite(n)) next.heading = Math.max(12, Math.min(160, Math.round(n)));
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'text')) {
+            const n = Number(patch.text);
+            if (Number.isFinite(n)) next.text = Math.max(10, Math.min(120, Math.round(n)));
+        }
+        this.data.typography = next;
+        this._push();
+        this.onUpdate('typography');
+    }
+
+    _ensureTypographyDefaults() {
+        if (!this.data || typeof this.data !== 'object') return;
+        const raw = (this.data.typography && typeof this.data.typography === 'object')
+            ? this.data.typography
+            : {};
+        const heading = Number(raw.heading);
+        const text = Number(raw.text);
+        this.data.typography = {
+            heading: Number.isFinite(heading) ? Math.max(12, Math.min(160, Math.round(heading))) : 52,
+            text: Number.isFinite(text) ? Math.max(10, Math.min(120, Math.round(text))) : 22,
+        };
+    }
+
+    _normalizeLegacyCanvasFontSizes() {
+        const legacyDefaults = {
+            heading: 52,
+            text: 22,
+            list: 22,
+            code: 16,
+            highlight: 16,
+            definition: 16,
+            'code-example': 16,
+            shape: 16,
+            quote: 26,
+            card: 18,
+            table: 18,
+            latex: 32,
+            timer: 48,
+        };
+        const slides = Array.isArray(this.data?.slides) ? this.data.slides : [];
+        for (const slide of slides) {
+            if (!slide || slide.type !== 'canvas' || !Array.isArray(slide.elements)) continue;
+            for (const el of slide.elements) {
+                if (!el || typeof el !== 'object' || !el.style || typeof el.style !== 'object') continue;
+                const legacy = legacyDefaults[el.type];
+                if (!Number.isFinite(legacy)) continue;
+                const fs = Number(el.style.fontSize);
+                if (!Number.isFinite(fs)) continue;
+                if (Math.round(fs) === legacy) {
+                    delete el.style.fontSize;
+                }
+            }
+        }
     }
 
     // ── Slide CRUD ─────────────────────────────────────────

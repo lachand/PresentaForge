@@ -249,6 +249,48 @@ function initBodyFont() {
     });
 }
 
+function _resolveTypographyForUi() {
+    const raw = (editor.data && typeof editor.data.typography === 'object' && editor.data.typography)
+        ? editor.data.typography
+        : {};
+    const heading = Number(raw.heading);
+    const text = Number(raw.text);
+    return {
+        heading: Number.isFinite(heading) ? Math.max(12, Math.min(160, Math.round(heading))) : 52,
+        text: Number.isFinite(text) ? Math.max(10, Math.min(120, Math.round(text))) : 22,
+    };
+}
+
+function syncTypographyDefaultsControls() {
+    const headingInput = document.getElementById('ribbon-size-heading-global');
+    const textInput = document.getElementById('ribbon-size-text-global');
+    if (!headingInput || !textInput || !editor.data) return;
+    const typography = _resolveTypographyForUi();
+    if (document.activeElement !== headingInput) headingInput.value = String(typography.heading);
+    if (document.activeElement !== textInput) textInput.value = String(typography.text);
+}
+
+function initTypographyDefaultsControls() {
+    const headingInput = document.getElementById('ribbon-size-heading-global');
+    const textInput = document.getElementById('ribbon-size-text-global');
+    if (!headingInput || !textInput) return;
+    let timer = null;
+    const scheduleCommit = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            editor.setTypographyDefaults({
+                heading: headingInput.value,
+                text: textInput.value,
+            });
+        }, 90);
+    };
+    headingInput.addEventListener('input', scheduleCommit);
+    textInput.addEventListener('input', scheduleCommit);
+    headingInput.addEventListener('change', scheduleCommit);
+    textInput.addEventListener('change', scheduleCommit);
+    syncTypographyDefaultsControls();
+}
+
 /* ── Theme manager ─────────────────────────────────────── */
 
 function openThemeManager() {

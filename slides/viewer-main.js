@@ -775,7 +775,12 @@
         function _roomBuildInitMessage() {
             if (!_presentationData) return null;
             const slides = (_presentationData.slides || []).filter(s => !s.hidden);
-            const opts = { showSlideNumber: false, footerText: null, totalSlides: slides.length };
+            const opts = {
+                showSlideNumber: false,
+                footerText: null,
+                totalSlides: slides.length,
+                typography: SlidesShared.resolveTypographyDefaults(_presentationData.typography),
+            };
             return {
                 type: ROOM_MSG.INIT,
                 title: _presentationData.metadata?.title || 'Présentation',
@@ -2982,6 +2987,7 @@
                 footerText: null,
                 totalSlides: slides.length,
                 chapterNumbers: SlidesRenderer._buildChapterNumbers(slides, data.autoNumberChapters),
+                typography: SlidesShared.resolveTypographyDefaults(data.typography),
             };
 
             // Open audience window
@@ -3538,6 +3544,7 @@
                     footerText: null,
                     totalSlides: slides.length,
                     chapterNumbers: SlidesRenderer._buildChapterNumbers(slides, data.autoNumberChapters),
+                    typography: SlidesShared.resolveTypographyDefaults(data.typography),
                 };
                 const payload = {
                     title,

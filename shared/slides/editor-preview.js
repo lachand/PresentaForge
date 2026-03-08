@@ -24,6 +24,7 @@ function _slideRenderOpts() {
         metadata: editor.data.metadata || {},
         totalSlides: editor.data.slides?.length || 0,
         chapterNumbers: SlidesRenderer._buildChapterNumbers(editor.data.slides || [], editor.data.autoNumberChapters),
+        typography: SlidesShared.resolveTypographyDefaults(editor.data.typography),
     };
 }
 
@@ -202,7 +203,13 @@ function mountCanvasEditor(slide) {
         _canvasLoadedIndex = -1;
     }
     if (_canvasLoadedIndex !== currentIndex) {
-        canvasEditor.load(slide.elements || [], slide.bg, slide.connectors || [], currentIndex);
+        canvasEditor.load(
+            slide.elements || [],
+            slide.bg,
+            slide.connectors || [],
+            currentIndex,
+            SlidesShared.resolveTypographyDefaults(editor.data?.typography),
+        );
         // Build caption registry from all slides for cross-references
         canvasEditor.setCaptionRegistry(SlidesShared.buildCaptionRegistry(editor.data?.slides || []));
         _canvasLoadedIndex = currentIndex;

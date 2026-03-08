@@ -13,20 +13,13 @@
 /* editor-format-tab.js — Format tab update, binding, and enhanced formatting controls */
 
 function _fmtDefaultFontSizeForType(type, explicitSize) {
-    if (Number.isFinite(explicitSize) && explicitSize > 0) return explicitSize;
-    const byType = {
-        heading: 52,
-        text: 22,
-        list: 22,
-        code: 16,
-        highlight: 16,
-        definition: 16,
-        'code-example': 16,
-        quote: 26,
-        card: 18,
-        table: 18,
-    };
-    return byType[type] || 22;
+    const style = Number.isFinite(Number(explicitSize)) ? { fontSize: Number(explicitSize) } : {};
+    return SlidesShared.resolveElementFontSize(
+        type,
+        style,
+        SlidesShared.resolveTypographyDefaults(editor?.data?.typography),
+        22,
+    );
 }
 
 function _fmtSetIntraSlideControlsEnabled(enabled, hintText = '') {

@@ -327,6 +327,20 @@
             </div>
             <div class="ribbon-sep"></div>
             <div class="ribbon-group">
+                <div class="ribbon-group-content ribbon-group-content-stack">
+                    <div class="ribbon-bg-row">
+                        <label class="fmt-label-micro" for="ribbon-size-heading-global">Titre</label>
+                        <input type="number" id="ribbon-size-heading-global" class="fmt-mini-input" min="12" max="160" step="1" value="52">
+                    </div>
+                    <div class="ribbon-bg-row">
+                        <label class="fmt-label-micro" for="ribbon-size-text-global">Texte</label>
+                        <input type="number" id="ribbon-size-text-global" class="fmt-mini-input" min="10" max="120" step="1" value="22">
+                    </div>
+                </div>
+                <span class="ribbon-group-label">Typographie</span>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
                 <div class="ribbon-group-content">
                     <div class="aspect-select" id="aspect-select">
                         <button class="aspect-btn active" data-aspect="16:9">16:9</button>
@@ -746,9 +760,9 @@
 <script src="../shared/slides/widget-plugins.js?v=2"></script>
 <script src="../shared/slides/design-tokens.js?v=2"></script>
 <script src="../shared/slides/background-utils.js?v=1"></script>
-<script src="../shared/slides/slides-core.js?v=16"></script>
-<script src="../shared/slides/slides-editor.js?v=8"></script>
-<script src="../shared/slides/slides-canvas.js?v=15"></script>
+<script src="../shared/slides/slides-core.js?v=17"></script>
+<script src="../shared/slides/slides-editor.js?v=9"></script>
+<script src="../shared/slides/slides-canvas.js?v=16"></script>
 <!-- Editor controller modules (dependency order: utils first, bindings last) -->
 <script src="../shared/slides/editor-dialog.js"></script>
 <script src="../shared/slides/editor-utils.js?v=8"></script>
@@ -757,16 +771,16 @@
 <script src="../shared/slides/editor-search.js?v=8"></script>
 <script src="../shared/slides/editor-slide-ops.js?v=8"></script>
 <script src="../shared/slides/editor-command-palette.js?v=8"></script>
-<script src="../shared/slides/editor-theme-design.js?v=14"></script>
+<script src="../shared/slides/editor-theme-design.js?v=15"></script>
 <script src="../shared/slides/editor-slide-styling.js?v=8"></script>
 <script src="../shared/slides/editor-zoom-view.js?v=9"></script>
 <script src="../shared/slides/editor-widget-picker.js?v=2"></script>
 <script src="../shared/slides/editor-props-panel.js?v=12"></script>
-<script src="../shared/slides/editor-format-tab.js?v=10"></script>
+<script src="../shared/slides/editor-format-tab.js?v=11"></script>
 <script src="../shared/slides/editor-insert.js?v=9"></script>
 <script src="../shared/slides/editor-block-presets.js?v=4"></script>
 <script src="../shared/slides/editor-context-menu.js?v=9"></script>
-<script src="../shared/slides/editor-preview.js?v=10"></script>
+<script src="../shared/slides/editor-preview.js?v=11"></script>
 <script src="../shared/slides/editor-file-io.js?v=9"></script>
 <script src="../shared/slides/ui-icons.js?v=2"></script>
 <script src="../shared/slides/editor-save.js?v=8"></script>
@@ -774,7 +788,7 @@
 <script src="../shared/slides/editor-import-pdf.js?v=1"></script>
 <script src="../shared/slides/editor-markdown.js?v=8"></script>
 <script src="../shared/slides/editor-narration.js?v=8"></script>
-<script src="../shared/slides/editor-export.js?v=13"></script>
+<script src="../shared/slides/editor-export.js?v=14"></script>
 <script src="../shared/slides/editor-timeline.js?v=8"></script>
 <script src="../shared/slides/editor-quick-insert.js?v=9"></script>
 <script src="../shared/slides/editor-masters.js?v=10"></script>
@@ -834,6 +848,7 @@ function init() {
     initTransitions();
     initSlidePadding();
     initBodyFont();
+    initTypographyDefaultsControls();
     initTableGridPicker();
     bindFormatTab();
     bindFormatTabEnhanced();
@@ -1000,6 +1015,7 @@ function onUpdate(reason) {
     updateFormatTab();
     updateTransitionUI();
     updateSlidePadding();
+    syncTypographyDefaultsControls();
     // Update save indicator based on actual autosave result
     const _lastSaveOk = editor._lastSaveOk !== false;
     updateSaveIndicator(_lastSaveOk);

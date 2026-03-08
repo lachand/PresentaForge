@@ -22,6 +22,49 @@
 
 class SlidesShared {
     static esc(t) { return String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    static DEFAULT_TYPOGRAPHY = Object.freeze({ heading: 52, text: 22 });
+    static FONT_BASE_MAP = Object.freeze({
+        heading: { source: 'heading', ratio: 1 },
+        text: { source: 'text', ratio: 1 },
+        list: { source: 'text', ratio: 1 },
+        code: { source: 'text', ratio: 16 / 22 },
+        highlight: { source: 'text', ratio: 16 / 22 },
+        definition: { source: 'text', ratio: 16 / 22 },
+        'code-example': { source: 'text', ratio: 16 / 22 },
+        shape: { source: 'text', ratio: 16 / 22 },
+        quote: { source: 'text', ratio: 26 / 22 },
+        card: { source: 'text', ratio: 18 / 22 },
+        table: { source: 'text', ratio: 18 / 22 },
+        latex: { source: 'text', ratio: 32 / 22 },
+        timer: { source: 'text', ratio: 48 / 22 },
+    });
+
+    static resolveTypographyDefaults(raw = null) {
+        const source = raw && typeof raw === 'object' ? raw : {};
+        const heading = Number(source.heading);
+        const text = Number(source.text);
+        return {
+            heading: Number.isFinite(heading)
+                ? Math.max(12, Math.min(160, Math.round(heading)))
+                : SlidesShared.DEFAULT_TYPOGRAPHY.heading,
+            text: Number.isFinite(text)
+                ? Math.max(10, Math.min(120, Math.round(text)))
+                : SlidesShared.DEFAULT_TYPOGRAPHY.text,
+        };
+    }
+
+    static resolveElementFontSize(type = '', style = {}, typography = null, fallback = 16) {
+        const explicit = Number(style?.fontSize);
+        if (Number.isFinite(explicit)) return Math.max(8, explicit);
+        const t = SlidesShared.resolveTypographyDefaults(typography);
+        const map = SlidesShared.FONT_BASE_MAP[type];
+        if (map) {
+            const source = map.source === 'heading' ? t.heading : t.text;
+            return Math.max(8, Math.round(source * map.ratio));
+        }
+        const fb = Number(fallback);
+        return Number.isFinite(fb) ? Math.max(8, Math.round(fb)) : t.text;
+    }
 
     /**
      * Auto-format plain text bullets:
@@ -67,7 +110,7 @@ class SlidesShared {
      * Generate SVG inner markup for a shape element.
      * @returns {{ svgInner: string, opacity: number, textHtml: string }}
      */
-    static shapeSVG(el, { escapeText = true } = {}) {
+    static shapeSVG(el, { escapeText = true, baseFontSize = null, typography = null } = {}) {
         const s = el.style || {};
         const d = el.data || {};
         const shapeType = d.shapeType || d.shape || 'rect';
@@ -76,6 +119,10 @@ class SlidesShared {
         const stroke = s.stroke || 'none';
         const sw = s.strokeWidth || 0;
         const text = d.text || '';
+        const fallbackFontSize = Number(baseFontSize);
+        const finalFontSize = Number.isFinite(fallbackFontSize)
+            ? Math.max(8, fallbackFontSize)
+            : 16;
         let svgInner = '';
         switch (shapeType) {
             case 'ellipse': svgInner = `<ellipse cx="50%" cy="50%" rx="49%" ry="49%" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
@@ -91,7 +138,7 @@ class SlidesShared {
             default: svgInner = `<rect x="2" y="2" width="96" height="96" rx="${s.borderRadius||2}" ry="${s.borderRadius||2}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
         }
         const displayText = escapeText ? SlidesShared.esc(text) : text;
-        const textHtml = text ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:${s.color||'var(--sl-text,#fff)'};font-size:${s.fontSize||16}px;font-weight:${s.fontWeight||'normal'};text-align:center;padding:8px;pointer-events:none;">${displayText}</div>` : '';
+        const textHtml = text ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:${s.color||'var(--sl-text,#fff)'};font-size:${SlidesShared.resolveElementFontSize('shape', s, typography, finalFontSize)}px;font-weight:${s.fontWeight||'normal'};text-align:center;padding:8px;pointer-events:none;">${displayText}</div>` : '';
         return { svgInner, opacity, textHtml };
     }
 
@@ -749,6 +796,7 @@ class SlidesRenderer {
             totalSlides: slides.length,
             captionRegistry,
             chapterNumbers,
+            typography: SlidesShared.resolveTypographyDefaults(data.typography),
         };
         container.innerHTML = slides.map((s, i) => SlidesRenderer.renderSlide(s, i, opts)).join('\n');
     }
@@ -3454,6 +3502,7 @@ class SlidesRenderer {
             case 'heading':
             case 'text': {
                 const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize(el.type, s, opts.typography, 22);
                 const vAlign = s.verticalAlign || 'top';
                 const vAlignCSS = vAlign === 'middle' ? 'display:flex;flex-direction:column;justify-content:center;'
                     : vAlign === 'bottom' ? 'display:flex;flex-direction:column;justify-content:flex-end;'
@@ -3470,12 +3519,12 @@ class SlidesRenderer {
                 body = body.replace(/\{\{slideNumber\}\}/g, String(slideIndex + 1));
                 // Resolve cross-references
                 if (opts.captionRegistry) body = SlidesShared.resolveRefs(body, opts.captionRegistry);
-                content = `<div style="width:100%;height:100%;padding:8px 10px;font-size:${s.fontSize||22}px;font-weight:${s.fontWeight||400};color:${s.color||'var(--sl-text)'};text-align:${s.textAlign||'left'};font-family:${s.fontFamily||'var(--sl-font-body)'};line-height:${s.lineHeight||1.35};white-space:pre-wrap;word-break:break-word;overflow:hidden;box-sizing:border-box;${vAlignCSS}${extras}">${body}</div>`;
+                content = `<div style="width:100%;height:100%;padding:8px 10px;font-size:${base}px;font-weight:${s.fontWeight||400};color:${s.color||'var(--sl-text)'};text-align:${s.textAlign||'left'};font-family:${s.fontFamily||'var(--sl-font-body)'};line-height:${s.lineHeight||1.35};white-space:pre-wrap;word-break:break-word;overflow:hidden;box-sizing:border-box;${vAlignCSS}${extras}">${body}</div>`;
                 break;
             }
             case 'code': {
                 const s = el.style || {};
-                const base = Math.max(10, Number(s.fontSize || 16));
+                const base = SlidesShared.resolveElementFontSize('code', s, opts.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
                 content = `<div style="width:100%;height:100%;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'sl')}</div>`;
@@ -3483,9 +3532,10 @@ class SlidesRenderer {
             }
             case 'list': {
                 const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('list', s, opts.typography, 22);
                 const liCls = el.data?.revealItems ? ' class="fragment"' : '';
                 const items = (el.data?.items || []).map(i => `<li${liCls}>${i}</li>`).join('');
-                content = `<ul style="margin:0;padding:6px 0 6px 1.5em;font-size:${s.fontSize||22}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>`;
+                content = `<ul style="margin:0;padding:6px 0 6px 1.5em;font-size:${base}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>`;
                 break;
             }
             case 'image': {
@@ -3495,7 +3545,8 @@ class SlidesRenderer {
                 break;
             }
             case 'shape': {
-                const { svgInner, opacity, textHtml } = SlidesShared.shapeSVG(el, { escapeText: true });
+                const base = SlidesShared.resolveElementFontSize('shape', el.style || {}, opts.typography, 16);
+                const { svgInner, opacity, textHtml } = SlidesShared.shapeSVG(el, { escapeText: true, baseFontSize: base, typography: opts.typography });
                 content = `<div style="position:relative;width:100%;height:100%;opacity:${opacity};"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgInner}</svg>${textHtml}</div>`;
                 break;
             }
@@ -3506,7 +3557,7 @@ class SlidesRenderer {
             }
             case 'definition': {
                 const s = el.style || {};
-                const base = Math.max(10, Number(s.fontSize || 16));
+                const base = SlidesShared.resolveElementFontSize('definition', s, opts.typography, 16);
                 const termSize = Math.round(base * 1.06);
                 const bodySize = Math.round(base);
                 const exampleSize = Math.round(base * 0.78);
@@ -3519,7 +3570,7 @@ class SlidesRenderer {
             }
             case 'code-example': {
                 const s = el.style || {};
-                const base = Math.max(10, Number(s.fontSize || 16));
+                const base = SlidesShared.resolveElementFontSize('code-example', s, opts.typography, 16);
                 const mode = ['terminal', 'live', 'stepper'].includes(el.data?.widgetType) ? el.data.widgetType : 'terminal';
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
@@ -3556,7 +3607,7 @@ class SlidesRenderer {
             }
             case 'quote': {
                 const s = el.style || {};
-                const base = Math.max(10, Number(s.fontSize || 26));
+                const base = SlidesShared.resolveElementFontSize('quote', s, opts.typography, 26);
                 const markSize = Math.round(base * 1.85);
                 const authorSize = Math.round(base * 0.48);
                 const author = el.data?.author
@@ -3571,7 +3622,7 @@ class SlidesRenderer {
             }
             case 'card': {
                 const s = el.style || {};
-                const base = Math.max(10, Number(s.fontSize || 18));
+                const base = SlidesShared.resolveElementFontSize('card', s, opts.typography, 18);
                 const titleSize = Math.round(base * 0.76);
                 const cardTitle = el.data?.title
                     ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||'var(--sl-primary)'};border-bottom:1px solid var(--sl-border);padding-bottom:0.5rem;margin-bottom:0.75rem;">${SlidesRenderer.esc(el.data.title)}</div>`
@@ -3600,6 +3651,7 @@ class SlidesRenderer {
             }
             case 'table': {
                 const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('table', s, opts.typography, 18);
                 const rows = el.data?.rows || [];
                 let tHtml = '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">';
                 rows.forEach((row, ri) => {
@@ -3616,7 +3668,7 @@ class SlidesRenderer {
                     tHtml += '</tr>';
                 });
                 tHtml += '</table>';
-                content = `<div style="width:100%;height:100%;overflow:auto;font-size:${s.fontSize||18}px;color:${s.color||'var(--sl-text)'};text-align:left;">${tHtml}</div>`;
+                content = `<div style="width:100%;height:100%;overflow:auto;font-size:${base}px;color:${s.color||'var(--sl-text)'};text-align:left;">${tHtml}</div>`;
                 break;
             }
             case 'mermaid': {
@@ -3627,19 +3679,21 @@ class SlidesRenderer {
             case 'latex': {
                 const s = el.style || {};
                 const expr = el.data?.expression || '';
-                content = `<div class="sl-latex-pending" data-latex="${SlidesRenderer.esc(expr)}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${s.fontSize||32}px;color:${s.color||'var(--sl-text)'};"><span class="sl-latex-render">${SlidesRenderer.esc(expr)}</span></div>`;
+                const base = SlidesShared.resolveElementFontSize('latex', s, opts.typography, 32);
+                content = `<div class="sl-latex-pending" data-latex="${SlidesRenderer.esc(expr)}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${base}px;color:${s.color||'var(--sl-text)'};"><span class="sl-latex-render">${SlidesRenderer.esc(expr)}</span></div>`;
                 break;
             }
             case 'timer': {
                 const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('timer', s, opts.typography, 48);
                 const dur = el.data?.duration || 300;
                 const label = el.data?.label || '';
                 const mins = Math.floor(dur / 60);
                 const secs = dur % 60;
                 const display = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
                 content = `<div class="sl-timer-content" data-duration="${dur}" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;">
-                    ${label ? `<div style="font-size:${Math.round((s.fontSize||48)*0.4)}px;color:var(--sl-muted);font-weight:600;text-transform:uppercase;">${SlidesRenderer.esc(label)}</div>` : ''}
-                    <div class="sl-timer-display" style="font-size:${s.fontSize||48}px;color:${s.color||'var(--sl-heading)'};font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--sl-font-mono,monospace);">${display}</div>
+                    ${label ? `<div style="font-size:${Math.round(base * 0.4)}px;color:var(--sl-muted);font-weight:600;text-transform:uppercase;">${SlidesRenderer.esc(label)}</div>` : ''}
+                    <div class="sl-timer-display" style="font-size:${base}px;color:${s.color||'var(--sl-heading)'};font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--sl-font-mono,monospace);">${display}</div>
                     <div style="display:flex;gap:0.5rem;margin-top:0.3rem;">
                         <button class="sl-timer-btn sl-timer-start" title="Démarrer" style="pointer-events:auto;">▶</button>
                         <button class="sl-timer-btn sl-timer-pause" title="Pause" style="display:none;pointer-events:auto;">⏸</button>
@@ -3657,7 +3711,7 @@ class SlidesRenderer {
             }
             case 'highlight': {
                 const s = el.style || {};
-                const base = Math.max(10, Number(s.fontSize || 16));
+                const base = SlidesShared.resolveElementFontSize('highlight', s, opts.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
                 const lang = SlidesRenderer.esc(el.data?.language || 'python');

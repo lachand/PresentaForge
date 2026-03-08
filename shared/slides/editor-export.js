@@ -449,6 +449,7 @@ async function exportPDF() {
             metadata: data.metadata || {},
             totalSlides: data.slides.length,
             chapterNumbers: SlidesRenderer._buildChapterNumbers(data.slides, data.autoNumberChapters),
+            typography: SlidesShared.resolveTypographyDefaults(data.typography),
         };
 
         for (let i = 0; i < data.slides.length; i++) {
@@ -514,6 +515,7 @@ function _exportPDFPrint() {
         metadata: data.metadata || {},
         totalSlides: data.slides.length,
         chapterNumbers: SlidesRenderer._buildChapterNumbers(data.slides, data.autoNumberChapters),
+        typography: SlidesShared.resolveTypographyDefaults(data.typography),
     };
     const slidesHTML = data.slides.map((slide, i) =>
         `<div class="pdf-slide">${SlidesRenderer.renderSlide(slide, i, pdfOpts)}</div>`
@@ -668,6 +670,7 @@ async function exportHTML() {
         metadata: data.metadata || {},
         totalSlides: visibleSlides.length,
         chapterNumbers: SlidesRenderer._buildChapterNumbers(visibleSlides, data.autoNumberChapters),
+        typography: SlidesShared.resolveTypographyDefaults(data.typography),
     };
     const slidesHTML = visibleSlides.map((slide, i) =>
         SlidesRenderer.renderSlide(slide, i, htmlOpts)
@@ -1272,6 +1275,7 @@ async function exportHTMLOffline() {
             metadata: data.metadata || {},
             totalSlides: visibleSlides.length,
             chapterNumbers: SlidesRenderer._buildChapterNumbers(visibleSlides, data.autoNumberChapters),
+            typography: SlidesShared.resolveTypographyDefaults(data.typography),
         };
         const slidesHTML = visibleSlides.map((slide, i) =>
             SlidesRenderer.renderSlide(slide, i, htmlOpts)
@@ -1390,6 +1394,7 @@ async function exportPNGBatch() {
             metadata: data.metadata || {},
             totalSlides: total,
             chapterNumbers: SlidesRenderer._buildChapterNumbers(data.slides, data.autoNumberChapters),
+            typography: SlidesShared.resolveTypographyDefaults(data.typography),
         };
 
         for (let i = 0; i < total; i++) {
@@ -2375,6 +2380,7 @@ function _buildStudentExportDocument(data) {
         metadata: data.metadata || {},
         totalSlides: visibleSlides.length,
         chapterNumbers: SlidesRenderer._buildChapterNumbers(visibleSlides, data.autoNumberChapters),
+        typography: SlidesShared.resolveTypographyDefaults(data.typography),
     };
     let slideCards = '';
     let navItems = '';
