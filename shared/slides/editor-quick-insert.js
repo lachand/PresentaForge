@@ -22,14 +22,21 @@ const _quickInsertItems = [
     { id: 'shape', label: 'Forme', keywords: 'shape forme rectangle cercle ellipse triangle', iconSelector: '#btn-shape-gallery .el-icon', iconKey: 'diagram' },
     { id: 'widget', label: 'Widget', keywords: 'widget plugin composant interactif', iconSelector: '#ribbon-insertion .el-type-btn[data-el="widget"] .el-icon', iconKey: 'settings' },
     { id: 'definition', label: 'Définition', keywords: 'definition glossaire terme définition', iconSelector: '#ribbon-insertion .el-type-btn[data-el="definition"] .el-icon', iconKey: 'book' },
+    { id: 'callout-box', label: 'Callout box', keywords: 'callout box encadré attention info warning danger', iconSelector: '#btn-insert-callout .el-icon', iconKey: 'question' },
+    { id: 'exercise-block', label: 'Exercice', keywords: 'exercice consigne objectif indice correction activité', iconSelector: '#ribbon-insertion .el-type-btn[data-el="exercise-block"] .el-icon', iconKey: 'activity' },
+    { id: 'before-after', label: 'Before / After', keywords: 'before after avant après comparaison', iconSelector: '#ribbon-insertion .el-type-btn[data-el="before-after"] .el-icon', iconKey: 'text' },
+    { id: 'mistake-fix', label: 'Erreur / Correction', keywords: 'erreur correction piège fréquent fix', iconSelector: '#ribbon-insertion .el-type-btn[data-el="mistake-fix"] .el-icon', iconKey: 'code' },
+    { id: 'rubric-block', label: 'Rubric block', keywords: 'rubric barème grille évaluation critères', iconSelector: '#ribbon-insertion .el-type-btn[data-el="rubric-block"] .el-icon', iconKey: 'poll' },
     { id: 'code-example', label: 'Exemple de code', keywords: 'exemple code terminal live stepper widget', iconSelector: '#ribbon-insertion .el-type-btn[data-el="code-example"] .el-icon', iconKey: 'code' },
+    { id: 'terminal-session', label: 'Session terminal', keywords: 'terminal bash shell session commandes sortie', iconSelector: '#ribbon-insertion .el-type-btn[data-el="terminal-session"] .el-icon', iconKey: 'code' },
     { id: 'quote', label: 'Citation', keywords: 'citation quote blockquote', iconSelector: '#ribbon-insertion .el-type-btn[data-el="quote"] .el-icon', iconKey: 'quote' },
     { id: 'card', label: 'Carte', keywords: 'card carte panneau callout', iconSelector: '#ribbon-insertion .el-type-btn[data-el="card"] .el-icon', iconKey: 'grid' },
     { id: 'connector', label: 'Connecteur', keywords: 'connector connecteur ligne flèche arrow line', iconSelector: '#btn-add-connector .el-icon', iconKey: 'diagram' },
     { id: 'video', label: 'Vidéo', keywords: 'video youtube vimeo embed', iconSelector: '#btn-insert-video .el-icon', iconKey: 'play' },
     { id: 'callout', label: 'Callout', keywords: 'callout info warning tip encadré', iconSelector: '#btn-insert-callout .el-icon', iconKey: 'question' },
     { id: 'mermaid', label: 'Diagramme Mermaid', keywords: 'mermaid diagramme graphe flowchart sequence', iconSelector: '#ribbon-insertion .el-type-btn[data-el="mermaid"] .el-icon', iconKey: 'diagram' },
-    { id: 'latex', label: 'Équation LaTeX', keywords: 'latex equation math formule katex', iconSelector: '#ribbon-insertion .el-type-btn[data-el="latex"] .el-icon', iconKey: 'code' },
+    { id: 'diagramme', label: 'Diagramme', keywords: 'diagramme chart graphique bar line pie area donut radar scatter bubble histogram boxplot waterfall funnel heatmap treemap sankey gantt jauge radial gauge combo stacked 100', iconSelector: '#ribbon-insertion .el-type-btn[data-el="diagramme"] .el-icon', iconKey: 'diagram' },
+    { id: 'latex', label: 'Équation LaTeX', keywords: 'latex equation math formule katex', iconSelector: '#ribbon-insertion .el-type-btn[data-el="latex"] .el-icon', iconKey: 'book' },
     { id: 'timer', label: 'Minuteur', keywords: 'timer minuteur countdown chrono temps', iconSelector: '#ribbon-insertion .el-type-btn[data-el="timer"] .el-icon', iconKey: 'clock' },
     { id: 'iframe', label: 'Iframe', keywords: 'iframe embed url site web page', iconSelector: '#ribbon-insertion .el-type-btn[data-el="iframe"] .el-icon', iconKey: 'integration' },
     { id: 'qrcode', label: 'QR Code', keywords: 'qr qrcode code barres lien url', iconSelector: '#ribbon-insertion .el-type-btn[data-el="qrcode"] .el-icon', iconKey: 'grid' },
@@ -200,10 +207,17 @@ function _doQuickInsert(id) {
         case 'image':
         case 'widget':
         case 'definition':
+        case 'callout-box':
+        case 'exercise-block':
+        case 'before-after':
+        case 'mistake-fix':
+        case 'rubric-block':
         case 'code-example':
+        case 'terminal-session':
         case 'quote':
         case 'card':
         case 'mermaid':
+        case 'diagramme':
         case 'latex':
         case 'timer':
         case 'iframe':

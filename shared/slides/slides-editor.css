@@ -202,6 +202,50 @@ html, body {
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: var(--muted); z-index: 10;
 }
+.sp-diag-grid-wrap {
+    max-height: 260px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+}
+.sp-diag-grid {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+.sp-diag-grid .sp-diag-cell {
+    border: 1px solid var(--border);
+    padding: 2px;
+    background: var(--bg);
+}
+.sp-diag-grid .sp-diag-cell.is-header {
+    background: color-mix(in srgb, var(--card) 78%, var(--primary) 22%);
+}
+.sp-diag-grid .sp-diag-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    padding: 4px 6px;
+    font-size: 0.7rem;
+}
+.sp-diag-grid .sp-diag-input.is-header {
+    color: var(--heading);
+    font-weight: 600;
+}
+.sp-diag-grid .sp-diag-input::placeholder {
+    color: var(--muted);
+    opacity: 0.85;
+}
+[data-theme="light"] .sp-diag-grid .sp-diag-cell.is-header {
+    background: color-mix(in srgb, var(--card) 64%, var(--primary) 36%);
+}
+[data-theme="light"] .sp-diag-grid .sp-diag-input.is-header::placeholder {
+    color: color-mix(in srgb, var(--heading) 64%, var(--muted) 36%);
+    opacity: 0.95;
+}
 
 /* ================================================================
    RIBBON — Title bar + Tab navigation + Contextual panels
@@ -582,6 +626,13 @@ html, body {
 }
 .sl-thumb-wrap.active .sl-thumb-outer {
     border-color: var(--primary);
+}
+.sl-thumb-wrap.selected:not(.active) {
+    background: color-mix(in srgb, var(--primary) 9%, var(--panel));
+    border-left-color: color-mix(in srgb, var(--primary) 70%, transparent);
+}
+.sl-thumb-wrap.selected:not(.active) .sl-thumb-outer {
+    border-color: color-mix(in srgb, var(--primary) 55%, transparent);
 }
 
 .sl-thumb-outer {

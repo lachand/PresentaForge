@@ -23,6 +23,8 @@
         GO_TO: 'goTo',
         FRAGMENT_STEP: 'fragment:step',
         BLACK: 'black',
+        AUDIENCE_LOCK: 'audience:lock',
+        EXERCISE_MODE: 'exercise:mode',
         ROOM_QR: 'room:qr',
         ELEMENT_STATE: 'element:state',
         POLL_START: 'poll:start',
@@ -117,6 +119,10 @@
         [SYNC_MSG.GO_TO]: msg => isNonNegInt(msg.index),
         [SYNC_MSG.FRAGMENT_STEP]: msg => isNonNegInt(msg.slideIndex) && isInt(msg.fragmentIndex),
         [SYNC_MSG.BLACK]: msg => isBoolean(msg.on),
+        [SYNC_MSG.AUDIENCE_LOCK]: msg => isBoolean(msg.locked) && (msg.index == null || isNonNegInt(msg.index)),
+        [SYNC_MSG.EXERCISE_MODE]: msg => isBoolean(msg.active)
+            && (msg.title == null || isString(msg.title, 160))
+            && (msg.message == null || isString(msg.message, 400)),
         [SYNC_MSG.ROOM_QR]: msg => isBoolean(msg.show) && (msg.url == null || isString(msg.url, 2500)),
         [SYNC_MSG.ELEMENT_STATE]: msg => isString(msg.elementType || '', 80)
             && (msg.slideIndex == null || isNonNegInt(msg.slideIndex))

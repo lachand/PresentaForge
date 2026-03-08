@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../vendor/revealjs/5.1.0/plugin/highlight/monokai.css">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
     <style id="sl-theme-css">/* injected by slides-core.js */</style>
-    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=4">
+    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=6">
 </head>
 <body>
     <div id="sl-toolbar-hover-zone"></div>
@@ -64,55 +64,59 @@
     <!-- Presenter Mode Layout -->
     <div class="pv-layout" id="presenter-view">
         <div class="pv-toolbar">
-            <div class="pv-brand" aria-label="presentaForge">
-                <img class="pv-brand-logo pv-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="presentaForge">
-                <img class="pv-brand-logo pv-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="presentaForge">
+            <div class="pv-toolbar-left">
+                <div class="pv-brand" aria-label="presentaForge">
+                    <img class="pv-brand-logo pv-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="presentaForge">
+                    <img class="pv-brand-logo pv-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="presentaForge">
+                </div>
+                <span class="pv-toolbar-title" id="pv-title">Présentation</span>
             </div>
-            <span class="pv-toolbar-title" id="pv-title">Présentation</span>
-            <button class="pv-toolbar-btn" id="pv-btn-theme" title="Thème clair/sombre (Ctrl+L)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-                Thème
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-black" title="Écran noir (B)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                Noir
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-fullscreen" title="Plein écran (F)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M21 16v3a2 2 0 01-2 2h-3M8 21H5a2 2 0 01-2-2v-3"/></svg>
-                Plein écran
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-room-quick" title="Ouvrir la salle / QR audience">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Ouvrir salle
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-network" title="Diagnostic réseau / fallback relay">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7a12 12 0 0 1 16 0"/><path d="M7 10a8 8 0 0 1 10 0"/><path d="M10 13a4 4 0 0 1 4 0"/><circle cx="12" cy="18" r="1"/></svg>
-                Réseau
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-rec" title="Démarrer/arrêter l'enregistrement de session">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>
-                Enregistrer
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-rec-pause" title="Mettre en pause / reprendre l'enregistrement">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
-                Pause
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-replay" title="Rejouer la dernière session enregistrée">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="7 5 19 12 7 19 7 5"/></svg>
-                Replay
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-export-session" title="Exporter session (JSON + audio)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export session
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-export-replay" title="Exporter replay autonome (HTML + audio synchronisé)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="14" rx="2"/><polygon points="11 8 16 10.5 11 13 11 8"/><path d="M8 21h8"/></svg>
-                Export replay
-            </button>
-            <button class="pv-toolbar-btn" id="pv-btn-editor" title="Retour à l'éditeur">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Éditeur
-            </button>
+            <div class="pv-toolbar-actions" aria-label="Actions présentateur">
+                <div class="pv-toolbar-group" aria-label="Affichage">
+                    <button class="pv-toolbar-btn" id="pv-btn-theme" title="Thème clair/sombre (Ctrl+L)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                        Thème
+                    </button>
+                    <button class="pv-toolbar-btn" id="pv-btn-black" title="Écran noir (B)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        Noir
+                    </button>
+                </div>
+                <div class="pv-toolbar-group" aria-label="Salle">
+                    <button class="pv-toolbar-btn" id="pv-btn-room-quick" title="Ouvrir la salle / QR audience">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Ouvrir salle
+                    </button>
+                    <button class="pv-toolbar-btn" id="pv-btn-network" title="Diagnostic réseau / fallback relay">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7a12 12 0 0 1 16 0"/><path d="M7 10a8 8 0 0 1 10 0"/><path d="M10 13a4 4 0 0 1 4 0"/><circle cx="12" cy="18" r="1"/></svg>
+                        Réseau
+                    </button>
+                </div>
+                <div class="pv-toolbar-group" aria-label="Enregistrement">
+                    <button class="pv-toolbar-btn" id="pv-btn-rec" title="Démarrer/arrêter l'enregistrement de session">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>
+                        Enregistrer
+                    </button>
+                    <button class="pv-toolbar-btn" id="pv-btn-rec-pause" title="Mettre en pause / reprendre l'enregistrement">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+                        Pause
+                    </button>
+                    <button class="pv-toolbar-btn" id="pv-btn-export-session" title="Exporter session (JSON + audio)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export session
+                    </button>
+                    <button class="pv-toolbar-btn" id="pv-btn-export-replay" title="Exporter replay autonome (HTML + audio synchronisé)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="14" rx="2"/><polygon points="11 8 16 10.5 11 13 11 8"/><path d="M8 21h8"/></svg>
+                        Export replay
+                    </button>
+                </div>
+                <div class="pv-toolbar-group pv-toolbar-group-end" aria-label="Navigation">
+                    <button class="pv-toolbar-btn" id="pv-btn-editor" title="Retour à l'éditeur">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Éditeur
+                    </button>
+                </div>
+            </div>
         </div>
         <div class="pv-main" id="pv-main">
             <div class="pv-slides-col" id="pv-slides-col">
@@ -353,17 +357,22 @@
         <div id="sl-audience-rank-total"></div>
     </div>
     <div id="sl-audience-roulette-toast"></div>
+    <div id="sl-audience-lock-pill">Verrou anti-spoiler actif</div>
+    <div id="sl-audience-exercise-overlay">
+        <div class="audience-exercise-title" id="sl-audience-exercise-title">Mode exercice</div>
+        <div class="audience-exercise-msg" id="sl-audience-exercise-msg">Travaillez l’exercice en cours. La correction arrive juste après.</div>
+    </div>
 
     <script src="../shared/components/base/WidgetRegistry.js"></script>
     <script src="../shared/slides/storage.js?v=2"></script>
     <script src="../shared/slides/widget-plugins.js?v=2"></script>
     <script src="../shared/slides/design-tokens.js?v=2"></script>
-    <script src="../shared/slides/realtime-contract.js?v=3"></script>
+    <script src="../shared/slides/realtime-contract.js?v=4"></script>
     <script src="../shared/slides/network-session.js?v=2"></script>
     <script src="../shared/slides/background-utils.js?v=1"></script>
-    <script src="../shared/slides/slides-core.js?v=19"></script>
+    <script src="../shared/slides/slides-core.js?v=23"></script>
     <script src="../shared/slides/ui-icons.js?v=2"></script>
     <script src="../vendor/qrcode-generator/1.4.4/qrcode.min.js"></script>
-    <script type="module" src="viewer-main.js?v=13"></script>
+    <script type="module" src="viewer-main.js?v=15"></script>
 </body>
 </html>

@@ -28,20 +28,37 @@ function _slideRenderOpts() {
     };
 }
 
+function isSlideListInteractionContext() {
+    const active = document.activeElement;
+    if (!active) return false;
+    if (active.id === 'slides-items') return true;
+    return !!(active.closest && active.closest('#slide-list'));
+}
+window.isSlideListInteractionContext = isSlideListInteractionContext;
+
 function renderSlideList() {
     const container = document.getElementById('slides-items');
     const slides = editor.data.slides;
     const typeMap = Object.fromEntries(SlidesEditor.SLIDE_TYPES.map(t => [t.id, t]));
     const opts = _slideRenderOpts();
+    const selectedSet = new Set(
+        (typeof editor.getSelectedSlideIndices === 'function')
+            ? editor.getSelectedSlideIndices()
+            : [editor.selectedIndex],
+    );
+    container.tabIndex = 0;
+    container.setAttribute('aria-label', 'Liste des slides');
+    container.setAttribute('role', 'listbox');
 
     container.innerHTML = slides.map((slide, i) => {
         const meta = typeMap[slide.type] || { icon: '⬜', label: slide.type };
         const title = slide.title || slide.quote || slide.term || `Slide ${i + 1}`;
         const active = i === editor.selectedIndex ? ' active' : '';
+        const selected = selectedSet.has(i) ? ' selected' : '';
         const notesDot = slide.notes ? '<span class="sl-thumb-notes-dot" title="Contient des notes"></span>' : '';
         const thumbHtml = SlidesRenderer.renderSlide(slide, i, opts);
         const hiddenCls = slide.hidden ? ' hidden-slide' : '';
-        return `<div class="sl-thumb-wrap${active}${hiddenCls}" data-idx="${i}" draggable="true">
+        return `<div class="sl-thumb-wrap${active}${selected}${hiddenCls}" data-idx="${i}" data-selected="${selectedSet.has(i) ? '1' : '0'}" draggable="true" role="option" aria-selected="${selectedSet.has(i) ? 'true' : 'false'}">
             <div class="sl-thumb-outer">
                 <div class="sl-thumb-inner">${thumbHtml}</div>
             </div>
@@ -62,8 +79,20 @@ function renderSlideList() {
         el.addEventListener('click', e => {
             if (e.target.closest('[data-action]')) return;
             if (e.target.closest('.sl-thumb-title-input')) return;
-            editor.selectSlide(+el.dataset.idx);
-            renderSlideList(); renderPreview();
+            const idx = +el.dataset.idx;
+            container.focus({ preventScroll: true });
+            if (e.shiftKey && typeof editor.extendSlideSelection === 'function') {
+                editor.extendSlideSelection(idx);
+            } else if ((e.ctrlKey || e.metaKey) && typeof editor.toggleSlideSelection === 'function') {
+                editor.toggleSlideSelection(idx);
+            } else {
+                editor.selectSlide(idx);
+            }
+            renderSlideList();
+            renderPreview();
+        });
+        el.addEventListener('mousedown', () => {
+            container.focus({ preventScroll: true });
         });
         // Double-click on title for inline edit
         const titleSpan = el.querySelector('.sl-thumb-title');
@@ -98,9 +127,26 @@ function renderSlideList() {
         btn.addEventListener('click', async e => {
             e.stopPropagation();
             const i = +btn.closest('[data-idx]').dataset.idx;
+            const selected = (typeof editor.getSelectedSlideIndices === 'function')
+                ? editor.getSelectedSlideIndices()
+                : [editor.selectedIndex];
+            const target = (selected.includes(i) && selected.length > 1) ? selected : [i];
             switch(btn.dataset.action) {
-                case 'dup': editor.duplicateSlide(i); break;
-                case 'del': if (await OEIDialog.confirm('Supprimer ce slide ?', { danger: true })) editor.removeSlide(i); break;
+                case 'dup':
+                    if (target.length > 1 && typeof editor.duplicateSlides === 'function') editor.duplicateSlides(target);
+                    else editor.duplicateSlide(i);
+                    break;
+                case 'del':
+                    if (await OEIDialog.confirm(
+                        target.length > 1
+                            ? `Supprimer ${target.length} slides sélectionnés ?`
+                            : 'Supprimer ce slide ?',
+                        { danger: true },
+                    )) {
+                        if (target.length > 1 && typeof editor.removeSlides === 'function') editor.removeSlides(target);
+                        else editor.removeSlide(i);
+                    }
+                    break;
             }
         });
     });
@@ -111,22 +157,35 @@ function renderSlideList() {
 
 function setupDragAndDrop(container) {
     let dragIdx = null;
+    let movingIndices = [];
     container.querySelectorAll('.sl-thumb-wrap').forEach(el => {
         el.addEventListener('dragstart', e => {
             dragIdx = +el.dataset.idx;
-            el.classList.add('dragging');
+            const selected = (typeof editor.getSelectedSlideIndices === 'function')
+                ? editor.getSelectedSlideIndices()
+                : [editor.selectedIndex];
+            movingIndices = (selected.includes(dragIdx) && selected.length > 1) ? selected : [dragIdx];
+            movingIndices.forEach((idx) => {
+                const node = container.querySelector(`.sl-thumb-wrap[data-idx="${idx}"]`);
+                node?.classList.add('dragging');
+            });
+            container.focus({ preventScroll: true });
             e.dataTransfer.effectAllowed = 'move';
         });
         el.addEventListener('dragend', () => {
-            el.classList.remove('dragging');
+            movingIndices.forEach((idx) => {
+                const node = container.querySelector(`.sl-thumb-wrap[data-idx="${idx}"]`);
+                node?.classList.remove('dragging');
+            });
             container.querySelectorAll('.sl-thumb-wrap').forEach(w => w.classList.remove('drag-over-top', 'drag-over-bottom'));
             dragIdx = null;
+            movingIndices = [];
         });
         el.addEventListener('dragover', e => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             const overIdx = +el.dataset.idx;
-            if (overIdx === dragIdx) return;
+            if (movingIndices.includes(overIdx) && movingIndices.length === 1) return;
             container.querySelectorAll('.sl-thumb-wrap').forEach(w => w.classList.remove('drag-over-top', 'drag-over-bottom'));
             const rect = el.getBoundingClientRect();
             el.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
@@ -134,16 +193,19 @@ function setupDragAndDrop(container) {
         el.addEventListener('dragleave', () => el.classList.remove('drag-over-top', 'drag-over-bottom'));
         el.addEventListener('drop', e => {
             e.preventDefault();
-            if (dragIdx === null) return;
+            if (dragIdx === null || !movingIndices.length) return;
             const overIdx = +el.dataset.idx;
-            if (overIdx === dragIdx) return;
             const rect = el.getBoundingClientRect();
             const isTop = e.clientY < rect.top + rect.height / 2;
-            let to = isTop
-                ? (dragIdx < overIdx ? overIdx - 1 : overIdx)
-                : (dragIdx < overIdx ? overIdx : overIdx + 1);
-            to = Math.max(0, Math.min(editor.data.slides.length - 1, to));
-            if (to !== dragIdx) editor.moveSlide(dragIdx, to);
+            const insertIndex = isTop ? overIdx : (overIdx + 1);
+            if (typeof editor.moveSlides === 'function') editor.moveSlides(movingIndices, insertIndex);
+            else {
+                let to = isTop
+                    ? (dragIdx < overIdx ? overIdx - 1 : overIdx)
+                    : (dragIdx < overIdx ? overIdx : overIdx + 1);
+                to = Math.max(0, Math.min(editor.data.slides.length - 1, to));
+                if (to !== dragIdx) editor.moveSlide(dragIdx, to);
+            }
         });
     });
 }

@@ -32,11 +32,18 @@ class CanvasEditor {
         { id: 'shape',      icon: '□',   label: 'Forme',      w: 200, h: 150 },
         { id: 'widget',     icon: 'W',   label: 'Widget',     w: 800, h: 420 },
         { id: 'definition', icon: 'DEF', label: 'Définition', w: 700, h: 200 },
+        { id: 'callout-box', icon: 'ℹ', label: 'Callout box', w: 680, h: 220 },
+        { id: 'exercise-block', icon: 'EXO', label: 'Exercice', w: 760, h: 420 },
+        { id: 'before-after', icon: 'B/A', label: 'Before / After', w: 760, h: 340 },
+        { id: 'mistake-fix', icon: 'FIX', label: 'Erreur/Correction', w: 760, h: 320 },
+        { id: 'rubric-block', icon: 'RUB', label: 'Rubric block', w: 820, h: 360 },
         { id: 'code-example', icon: 'EX', label: 'Exemple code', w: 760, h: 360 },
+        { id: 'terminal-session', icon: '$', label: 'Session terminal', w: 760, h: 320 },
         { id: 'quote',      icon: '"',   label: 'Citation',   w: 900, h: 340 },
         { id: 'card',       icon: '▤',   label: 'Carte',      w: 540, h: 380 },
         { id: 'video',      icon: '▶',   label: 'Vidéo',      w: 560, h: 315 },
         { id: 'mermaid',    icon: 'MMD', label: 'Mermaid',    w: 700, h: 400 },
+        { id: 'diagramme',  icon: 'CH',  label: 'Diagramme',  w: 760, h: 380 },
         { id: 'latex',      icon: 'FX',  label: 'LaTeX',      w: 500, h: 120 },
         { id: 'timer',      icon: 'TM',  label: 'Timer',      w: 200, h: 100 },
         { id: 'iframe',     icon: 'WEB', label: 'Iframe',     w: 700, h: 450 },
@@ -99,6 +106,76 @@ class CanvasEditor {
                 return { ...base, data: { widget: 'workflow-trigger-simulator', config: {} } };
             case 'definition':
                 return { ...base, data: { label: 'Definition', term: 'Terme', definition: 'La définition complète du terme.', exampleLabel: 'Exemple', example: '' }, style: {} };
+            case 'callout-box':
+                return {
+                    ...base,
+                    data: {
+                        label: 'Attention',
+                        text: 'Message important à retenir pour éviter une erreur fréquente.',
+                        tone: 'warning',
+                    },
+                    style: {},
+                };
+            case 'exercise-block':
+                return {
+                    ...base,
+                    data: {
+                        title: 'Exercice guidé',
+                        objective: 'Appliquez la notion vue précédemment sur un cas concret.',
+                        instructions: [
+                            'Implémentez la fonction demandée.',
+                            'Testez-la sur 2 cas.',
+                            'Expliquez votre choix d’algorithme.',
+                        ],
+                        hints: [
+                            'Commencez par un cas simple.',
+                            'Validez les entrées avant le traitement.',
+                        ],
+                        correction: '',
+                        showCorrection: false,
+                    },
+                    style: {},
+                };
+            case 'before-after':
+                return {
+                    ...base,
+                    data: {
+                        title: 'Avant / Après',
+                        beforeLabel: 'Avant',
+                        before: 'Situation initiale, limites, approche précédente.',
+                        afterLabel: 'Après',
+                        after: 'Approche améliorée, résultat attendu, bénéfices.',
+                        tone: 'info',
+                    },
+                    style: {},
+                };
+            case 'mistake-fix':
+                return {
+                    ...base,
+                    data: {
+                        title: 'Erreur fréquente vs correction',
+                        language: 'python',
+                        mistake: 'for i in range(len(items)):\nprint(items[i])',
+                        fix: 'for i in range(len(items)):\n    print(items[i])',
+                        tone: 'danger',
+                    },
+                    style: {},
+                };
+            case 'rubric-block':
+                return {
+                    ...base,
+                    data: {
+                        title: 'Grille d’évaluation',
+                        levels: ['Débutant', 'Intermédiaire', 'Maîtrise'],
+                        rows: [
+                            { criterion: 'Exactitude', descriptors: ['Erreurs majeures', 'Quelques erreurs', 'Sans erreur'] },
+                            { criterion: 'Clarté', descriptors: ['Peu clair', 'Globalement clair', 'Très clair'] },
+                            { criterion: 'Justification', descriptors: ['Absente', 'Partielle', 'Solide'] },
+                        ],
+                        tone: 'primary',
+                    },
+                    style: {},
+                };
             case 'code-example':
                 return {
                     ...base,
@@ -114,6 +191,17 @@ class CanvasEditor {
                             { title: 'Traitement', detail: 'Appliquer la logique principale.', code: 'i += 1' },
                             { title: 'Affichage', detail: 'Afficher le résultat final.', code: 'print(i)' },
                         ],
+                    },
+                    style: {},
+                };
+            case 'terminal-session':
+                return {
+                    ...base,
+                    data: {
+                        label: 'Session terminal',
+                        language: 'bash',
+                        script: '$ python3 app.py\nApplication démarrée\n$ pytest -q\n4 passed in 0.10s',
+                        tone: 'info',
                     },
                     style: {},
                 };
@@ -133,6 +221,21 @@ class CanvasEditor {
                 return { ...base, data: { src: '', embedUrl: '', alt: '' } };
             case 'mermaid':
                 return { ...base, data: { code: 'graph LR\n    A[Début] --> B{Condition}\n    B -->|Oui| C[Action]\n    B -->|Non| D[Fin]' } };
+            case 'diagramme':
+                return {
+                    ...base,
+                    data: {
+                        title: 'Diagramme',
+                        chartType: 'bar',
+                        rows: [
+                            ['Catégorie', 'Série A', 'Série B'],
+                            ['A', '12', '8'],
+                            ['B', '18', '11'],
+                            ['C', '9', '14'],
+                        ],
+                    },
+                    style: {},
+                };
             case 'latex':
                 return { ...base, data: { expression: 'E = mc^2' }, style: { color: 'var(--sl-text)' } };
             case 'timer':
@@ -551,7 +654,7 @@ class CanvasEditor {
 .cel-codeexample-live-tag,
 .cel-codeexample-stepper-tag {
     margin-left: auto;
-    color: var(--sl-primary, #818cf8);
+    color: var(--ce-accent, var(--sl-primary, #818cf8));
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -1111,7 +1214,7 @@ class CanvasEditor {
         const guide = this.container.querySelector('.canvas-guide-layer');
         this.container.insertBefore(div, guide);
         if (el.type === 'widget') this._mountWidget(div, el);
-        if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example') this._highlightCodeBlock(div);
+        if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example' || el.type === 'terminal-session') this._highlightCodeBlock(div);
         this._postRenderElement(el);
         return div;
     }
@@ -1184,9 +1287,11 @@ class CanvasEditor {
                 const base = SlidesShared.resolveElementFontSize('code', s, this.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
-                const label = String(el.data?.label ?? 'Code').trim() || 'Code';
+                const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
+                const label = labelRaw;
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
-                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</div>
+                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</div>
                     <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'cel')}</div>
                 </div>`;
             }
@@ -1217,30 +1322,166 @@ class CanvasEditor {
             case 'definition': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('definition', s, this.typography, 16);
-                const blockLabel = String(el.data?.label ?? el.data?.blockLabel ?? 'Definition').trim() || 'Definition';
+                const blockLabelRaw = String(el.data?.label ?? el.data?.blockLabel ?? 'Definition').trim() || 'Definition';
+                const blockLabel = blockLabelRaw;
                 const exampleLabel = String(el.data?.exampleLabel ?? 'Exemple').trim() || 'Exemple';
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, blockLabelRaw);
                 const termSize = Math.round(base * 1.06);
                 const bodySize = Math.round(base);
                 const exampleSize = Math.round(base * 0.78);
-                return `<div class="cel-def-content">
-                    <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${escHtml(blockLabel)}</div>
-                    <div class="cel-def-term" style="font-size:${termSize}px;">${escHtml(el.data?.term||'')}</div>
+                return `<div class="cel-def-content" style="background:${tone.strongBg};border-left-color:${tone.accent};border-color:${tone.border};">
+                    <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${escHtml(blockLabel)}</div>
+                    <div class="cel-def-term" style="font-size:${termSize}px;color:${tone.accent};">${escHtml(el.data?.term||'')}</div>
                     <div class="cel-def-body" style="font-size:${bodySize}px;">${el.data?.definition||''}</div>
                     ${el.data?.example ? `<div class="cel-def-example" style="font-size:${exampleSize}px;">${escHtml(exampleLabel)} : ${escHtml(el.data.example)}</div>` : ''}
+                </div>`;
+            }
+            case 'callout-box': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('callout-box', s, this.typography, 18);
+                const labelRaw = String(el.data?.label || 'Info').trim() || 'Info';
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
+                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:5px solid ${tone.accent};border-radius:8px;padding:0.9rem 1rem;box-sizing:border-box;overflow:auto;">
+                    <div style="font-size:${Math.round(base * 0.78)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.45rem;">${escHtml(labelRaw)}</div>
+                    <div style="font-size:${base}px;line-height:1.5;color:${s.color || 'var(--sl-text)'};">${el.data?.text || ''}</div>
+                </div>`;
+            }
+            case 'exercise-block': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('exercise-block', s, this.typography, 18);
+                const title = String(el.data?.title || 'Exercice').trim() || 'Exercice';
+                const objective = String(el.data?.objective || '').trim();
+                const instructions = Array.isArray(el.data?.instructions) ? el.data.instructions : [];
+                const hints = Array.isArray(el.data?.hints) ? el.data.hints : [];
+                const correction = String(el.data?.correction || '').trim();
+                const showCorrection = !!el.data?.showCorrection;
+                const liHtml = (items) => items.map((item) => `<li>${escHtml(item)}</li>`).join('');
+                return `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary,#818cf8) 7%,var(--sl-slide-bg,#1a1d27));border:1px solid var(--sl-border,#2d3347);border-radius:10px;padding:0.85rem 1rem;box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;gap:0.65rem;">
+                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${escHtml(title)}</div>
+                    ${objective ? `<div style="font-size:${Math.round(base * 0.85)}px;color:var(--sl-text,#cbd5e1);line-height:1.45;"><strong style="color:var(--sl-primary,#818cf8);">Objectif :</strong> ${escHtml(objective)}</div>` : ''}
+                    ${instructions.length ? `<div><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Consignes</div><ul style="margin:0;padding-left:1.25em;font-size:${Math.round(base * 0.85)}px;color:var(--sl-text,#cbd5e1);line-height:1.45;">${liHtml(instructions)}</ul></div>` : ''}
+                    ${hints.length ? `<div><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-info,#38bdf8);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Indices</div><ul style="margin:0;padding-left:1.25em;font-size:${Math.round(base * 0.8)}px;color:var(--sl-muted,#94a3b8);line-height:1.4;">${liHtml(hints)}</ul></div>` : ''}
+                    ${correction ? `<div style="margin-top:auto;border-top:1px dashed var(--sl-border,#2d3347);padding-top:0.5rem;"><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Correction</div><div style="font-size:${Math.round(base * 0.82)}px;color:${showCorrection ? 'var(--sl-text,#cbd5e1)' : 'var(--sl-muted,#94a3b8)'};line-height:1.4;">${showCorrection ? escHtml(correction) : 'Masquée (activez "Afficher la correction").'}</div></div>` : '' }
+                </div>`;
+            }
+            case 'before-after': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('before-after', s, this.typography, 17);
+                const title = String(el.data?.title || 'Avant / Après').trim() || 'Avant / Après';
+                const beforeLabel = String(el.data?.beforeLabel || 'Avant').trim() || 'Avant';
+                const afterLabel = String(el.data?.afterLabel || 'Après').trim() || 'Après';
+                const beforeText = String(el.data?.before || '').trim();
+                const afterText = String(el.data?.after || '').trim();
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
+                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;">
+                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${escHtml(title)}</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,${tone.accent} 34%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,${tone.accent} 10%,var(--sl-slide-bg,#1a1d27));">
+                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.03em;">${escHtml(beforeLabel)}</div>
+                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;">${escHtml(beforeText)}</div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 36%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
+                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">${escHtml(afterLabel)}</div>
+                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;">${escHtml(afterText)}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            case 'mistake-fix': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('mistake-fix', s, this.typography, 17);
+                const title = String(el.data?.title || 'Erreur fréquente vs correction').trim() || 'Erreur fréquente vs correction';
+                const lang = String(el.data?.language || 'python').trim() || 'python';
+                const mistake = String(el.data?.mistake || '').trim();
+                const fix = String(el.data?.fix || '').trim();
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
+                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.5rem;">
+                    <div style="font-size:${Math.round(base * 0.92)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${escHtml(title)}</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-danger,#ef4444) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-danger,#ef4444) 9%,var(--sl-slide-bg,#1a1d27));">
+                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-danger,#ef4444);text-transform:uppercase;letter-spacing:0.03em;">Erreur fréquente</div>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${escHtml(lang)}">${escHtml(mistake)}</code></pre>
+                        </div>
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
+                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">Correction</div>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${escHtml(lang)}">${escHtml(fix)}</code></pre>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            case 'rubric-block':
+            case 'rubrick-block': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('rubric-block', s, this.typography, 16);
+                const title = String(el.data?.title || 'Grille d’évaluation').trim() || 'Grille d’évaluation';
+                const levels = (Array.isArray(el.data?.levels) ? el.data.levels : [])
+                    .map((level) => String(level || '').trim())
+                    .filter(Boolean)
+                    .slice(0, 5);
+                const rowsRaw = Array.isArray(el.data?.rows) ? el.data.rows : [];
+                const rows = rowsRaw
+                    .map((row) => {
+                        const criterion = String(row?.criterion || '').trim();
+                        const descriptors = (Array.isArray(row?.descriptors) ? row.descriptors : [])
+                            .map((value) => String(value || '').trim())
+                            .slice(0, levels.length || 3);
+                        return { criterion, descriptors };
+                    })
+                    .filter((row) => row.criterion || row.descriptors.some(Boolean))
+                    .slice(0, 8);
+                const safeLevels = levels.length ? levels : ['Niveau 1', 'Niveau 2', 'Niveau 3'];
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
+                const cellSize = Math.round(base * 0.78);
+                let tableHtml = `<table style="width:100%;border-collapse:collapse;table-layout:fixed;">`;
+                tableHtml += `<tr><th style="padding:6px 8px;text-align:left;border:1px solid ${tone.border};background:color-mix(in srgb,${tone.accent} 20%,transparent);font-size:${cellSize}px;color:var(--sl-heading,#f1f5f9);">Critère</th>`;
+                safeLevels.forEach((level) => {
+                    tableHtml += `<th style="padding:6px 8px;text-align:left;border:1px solid ${tone.border};background:color-mix(in srgb,${tone.accent} 20%,transparent);font-size:${cellSize}px;color:var(--sl-heading,#f1f5f9);">${escHtml(level)}</th>`;
+                });
+                tableHtml += `</tr>`;
+                rows.forEach((row) => {
+                    tableHtml += `<tr><td style="padding:6px 8px;border:1px solid ${tone.border};font-size:${cellSize}px;font-weight:600;color:${s.color || 'var(--sl-text,#cbd5e1)'};background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 86%,#000);">${escHtml(row.criterion)}</td>`;
+                    safeLevels.forEach((_, idx) => {
+                        const value = row.descriptors[idx] || '';
+                        tableHtml += `<td style="padding:6px 8px;border:1px solid ${tone.border};font-size:${cellSize}px;line-height:1.35;color:${s.color || 'var(--sl-text,#cbd5e1)'};background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);">${escHtml(value)}</td>`;
+                    });
+                    tableHtml += `</tr>`;
+                });
+                if (!rows.length) {
+                    tableHtml += `<tr><td colspan="${safeLevels.length + 1}" style="padding:10px;border:1px solid ${tone.border};font-size:${cellSize}px;color:var(--sl-muted,#94a3b8);text-align:center;">Ajoutez des critères dans le panneau de propriétés.</td></tr>`;
+                }
+                tableHtml += `</table>`;
+                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:4px solid ${tone.accent};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.5rem;overflow:hidden;">
+                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:${tone.accent};">${escHtml(title)}</div>
+                    <div style="flex:1;min-height:0;overflow:auto;">${tableHtml}</div>
                 </div>`;
             }
             case 'code-example': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('code-example', s, this.typography, 16);
                 const data = el.data || {};
-                const label = String(data.label ?? data.blockTitle ?? 'Exemple').trim() || 'Exemple';
+                const labelRaw = String(data.label ?? data.blockTitle ?? 'Exemple').trim() || 'Exemple';
+                const label = labelRaw;
+                const tone = SlidesShared.tonePalette(data.labelTone ?? data.tone, labelRaw);
                 const body = data.text || '';
                 const widgetMode = data.widgetType || 'terminal';
                 const widgetHtml = CanvasEditor._renderCodeExampleWidget(data, widgetMode, s, base);
-                return `<div class="cel-code-example-content" style="font-size:${base}px;">
-                    <div class="cel-code-example-label" style="font-size:${Math.round(base * 1.02)}px;">${escHtml(label)}</div>
+                return `<div class="cel-code-example-content" style="font-size:${base}px;background:${tone.strongBg};border-left-color:${tone.accent};border-color:${tone.border};--ce-accent:${tone.accent};">
+                    <div class="cel-code-example-label" style="font-size:${Math.round(base * 1.02)}px;color:${tone.accent};">${escHtml(label)}</div>
                     <div class="cel-code-example-text" style="font-size:${Math.round(base * 0.92)}px;">${body}</div>
                     <div class="cel-code-example-widget" style="--ce-code-font-size:${Math.round(base * 0.82)}px;--ce-code-gutter-size:${Math.round(base * 0.82)}px;--ce-code-lang-size:${Math.round(base * 0.64)}px;">${widgetHtml}</div>
+                </div>`;
+            }
+            case 'terminal-session': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('terminal-session', s, this.typography, 16);
+                const codeSize = Math.round(base * 0.82);
+                const langSize = Math.round(base * 0.64);
+                const labelRaw = String(el.data?.label ?? 'Session terminal').trim() || 'Session terminal';
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
+                const script = String(el.data?.script || '').replace(/\r\n/g, '\n');
+                return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
+                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(labelRaw)}</div>
+                    <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(script, el.data?.language || 'bash', 'cel')}</div>
                 </div>`;
             }
             case 'quote': {
@@ -1261,11 +1502,13 @@ class CanvasEditor {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('card', s, this.typography, 18);
                 const titleSize = Math.round(base * 0.76);
+                const titleRaw = String(el.data?.title || '').trim();
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, titleRaw);
                 const cardTitle = el.data?.title
-                    ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||'var(--sl-primary,#818cf8)'};border-bottom:1px solid var(--sl-border,#2d3347);padding-bottom:0.5rem;margin-bottom:0.75rem;">${escHtml(el.data.title)}</div>`
+                    ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||tone.accent};border-bottom:1px solid ${tone.border};padding-bottom:0.5rem;margin-bottom:0.75rem;">${escHtml(el.data.title)}</div>`
                     : '';
                 const items = (el.data?.items || []).map(i => `<li>${escHtml(i)}</li>`).join('');
-                return `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary,#818cf8) 5%,var(--sl-slide-bg,#1a1d27));border:1px solid var(--sl-border,#2d3347);border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
+                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:3px solid ${tone.accent};border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
                     ${cardTitle}
                     <ul style="margin:0;padding-left:1.4em;font-size:${base}px;color:${s.color||'var(--sl-text,#cbd5e1)'};">${items}</ul>
                 </div>`;
@@ -1298,6 +1541,13 @@ class CanvasEditor {
                     <div class="cel-mermaid-render" id="${mermaidId}"></div>
                     <pre class="cel-mermaid-src" style="display:none">${escHtml(code)}</pre>
                 </div>`;
+            }
+            case 'diagramme': {
+                const s = el.style || {};
+                return SlidesShared.renderDiagrammeBlock(el.data || {}, s, this.typography, {
+                    prefix: 'cel',
+                    fallbackFontSize: 16,
+                });
             }
             case 'latex': {
                 const s = el.style || {};
@@ -1343,10 +1593,12 @@ class CanvasEditor {
                 const langSize = Math.round(base * 0.64);
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
-                const label = String(el.data?.label ?? 'Code').trim() || 'Code';
+                const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
+                const label = labelRaw;
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 const highlights = el.data?.highlights || [];
                 const lines = code.split('\n');
-                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal" style="--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
+                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal" style="--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
                 lines.forEach((line, i) => {
                     const ln = i + 1;
                     const cls = highlights.some(h => CanvasEditor._lineInRange(ln, h.lines)) ? ' cel-hl-line' : '';
@@ -2164,7 +2416,7 @@ class CanvasEditor {
         const inner = div.querySelector('.cel-inner');
         if (inner) inner.innerHTML = this._renderContent(el);
         if (el.type === 'widget') this._mountWidget(div, el);
-        if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example') this._highlightCodeBlock(div);
+        if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example' || el.type === 'terminal-session') this._highlightCodeBlock(div);
         this._postRenderElement(el);
         // Animation badge
         let badge = div.querySelector('.cel-anim-badge');

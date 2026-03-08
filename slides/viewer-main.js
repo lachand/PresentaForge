@@ -2,7 +2,7 @@
         import Reveal from '../vendor/revealjs/5.1.0/dist/reveal.esm.js';
         import Highlight from '../vendor/revealjs/5.1.0/plugin/highlight/highlight.esm.js';
         import { createWhiteboardController } from './viewer/whiteboard.js';
-        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=4';
+        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=5';
         import { clearNode, el, appendAll } from './viewer/dom-utils.js';
         import { resolveRealtimeContract } from './viewer/runtime-contracts.js';
         import { createViewerAppState } from './viewer/app-state.js';
@@ -3016,6 +3016,69 @@
             let blackScreen = false;
             let _pvSceneId = 'balanced';
             let _pvCustomScene = null;
+            let audienceLockActive = false;
+            let audienceLockIndex = 0;
+            let exerciseModeActive = false;
+            const EXERCISE_MODE_DEFAULT_TITLE = 'Mode exercice';
+            const EXERCISE_MODE_DEFAULT_MESSAGE = 'Travaillez l’exercice en cours. La correction arrive juste après.';
+            const audienceLockBtn = document.getElementById('pv-btn-audience-lock');
+            const exerciseModeBtn = document.getElementById('pv-btn-exercise');
+
+            const _syncAudienceLockUi = () => {
+                if (!audienceLockBtn) return;
+                audienceLockBtn.classList.toggle('active', audienceLockActive);
+                audienceLockBtn.setAttribute('aria-pressed', audienceLockActive ? 'true' : 'false');
+                audienceLockBtn.title = audienceLockActive
+                    ? `Verrou anti-spoiler actif (max slide ${audienceLockIndex + 1}) · L`
+                    : 'Verrou anti-spoiler audience (L)';
+            };
+
+            const _syncExerciseModeUi = () => {
+                if (!exerciseModeBtn) return;
+                exerciseModeBtn.classList.toggle('active', exerciseModeActive);
+                exerciseModeBtn.setAttribute('aria-pressed', exerciseModeActive ? 'true' : 'false');
+                exerciseModeBtn.title = exerciseModeActive
+                    ? 'Mode exercice actif (X)'
+                    : 'Mode exercice (X)';
+            };
+
+            const _postAudienceLockState = () => {
+                channel.postMessage({
+                    type: SYNC_MSG.AUDIENCE_LOCK,
+                    locked: audienceLockActive,
+                    index: audienceLockActive ? audienceLockIndex : null,
+                });
+            };
+
+            const _postExerciseModeState = () => {
+                channel.postMessage({
+                    type: SYNC_MSG.EXERCISE_MODE,
+                    active: exerciseModeActive,
+                    title: EXERCISE_MODE_DEFAULT_TITLE,
+                    message: EXERCISE_MODE_DEFAULT_MESSAGE,
+                });
+            };
+
+            const setAudienceLock = (locked, anchorIndex = null) => {
+                audienceLockActive = !!locked;
+                if (audienceLockActive) {
+                    const anchor = toIntOrNull(anchorIndex);
+                    audienceLockIndex = Math.max(0, anchor === null ? currentIndex : anchor);
+                }
+                _syncAudienceLockUi();
+                _postAudienceLockState();
+            };
+
+            const toggleAudienceLock = () => setAudienceLock(!audienceLockActive, currentIndex);
+            const setExerciseMode = active => {
+                exerciseModeActive = !!active;
+                _syncExerciseModeUi();
+                _postExerciseModeState();
+            };
+            const toggleExerciseMode = () => setExerciseMode(!exerciseModeActive);
+
+            _syncAudienceLockUi();
+            _syncExerciseModeUi();
 
             const _pvEsc = value => String(value ?? '')
                 .replace(/&/g, '&amp;')
@@ -4027,6 +4090,17 @@ body{min-height:100vh;display:flex;flex-direction:column}
             function broadcastState() {
                 channel.postMessage({ type: SYNC_MSG.GO_TO, index: currentIndex });
                 if (blackScreen) channel.postMessage({ type: SYNC_MSG.BLACK, on: true });
+                channel.postMessage({
+                    type: SYNC_MSG.AUDIENCE_LOCK,
+                    locked: audienceLockActive,
+                    index: audienceLockActive ? audienceLockIndex : null,
+                });
+                channel.postMessage({
+                    type: SYNC_MSG.EXERCISE_MODE,
+                    active: exerciseModeActive,
+                    title: EXERCISE_MODE_DEFAULT_TITLE,
+                    message: EXERCISE_MODE_DEFAULT_MESSAGE,
+                });
                 if (_activePoll) {
                     const snap = _roomBridgeSnapshotPoll();
                     channel.postMessage({
@@ -4355,7 +4429,13 @@ body{min-height:100vh;display:flex;flex-direction:column}
 
             // Toolbar buttons
             document.getElementById('pv-btn-black').addEventListener('click', toggleBlack);
-            document.getElementById('pv-btn-fullscreen').addEventListener('click', () => {
+            audienceLockBtn?.addEventListener('click', () => {
+                toggleAudienceLock();
+            });
+            exerciseModeBtn?.addEventListener('click', () => {
+                toggleExerciseMode();
+            });
+            document.getElementById('pv-btn-fullscreen')?.addEventListener('click', () => {
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen();
                 else document.exitFullscreen();
             });
@@ -4412,6 +4492,14 @@ body{min-height:100vh;display:flex;flex-direction:column}
                 }
                 if (e.key === 't' || e.key === 'T') timerToggle();
                 if (e.key === 'r' || e.key === 'R') timerReset();
+                if (e.key === 'l' || e.key === 'L') {
+                    e.preventDefault();
+                    toggleAudienceLock();
+                }
+                if (e.key === 'x' || e.key === 'X') {
+                    e.preventDefault();
+                    toggleExerciseMode();
+                }
                 if ((e.key === 'p' || e.key === 'P') && _sessionRec.active) {
                     e.preventDefault();
                     if (_sessionRec.paused) _resumeSessionRecording();

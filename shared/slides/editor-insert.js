@@ -151,12 +151,16 @@ function insertVideoElement(url) {
 
 function insertCallout() {
     if (!canvasEditor) return;
-    canvasEditor.add('card');
+    canvasEditor.add('callout-box');
     const slide = editor.currentSlide;
     if (slide?.elements?.length) {
         const last = slide.elements[slide.elements.length - 1];
-        last.data = { ...last.data, title: 'ℹ️ Info', text: 'Texte du callout…' };
-        last.style = { ...last.style, fill: 'rgba(59, 130, 246, 0.15)', borderLeft: '4px solid #3b82f6', borderRadius: '0 8px 8px 0' };
+        last.data = {
+            ...last.data,
+            label: 'Attention',
+            text: 'Texte du callout…',
+            tone: 'warning',
+        };
         editor._push();
     }
 }
@@ -186,11 +190,11 @@ function insertSmartArt() {
 
 function insertTerminal() {
     if (!canvasEditor) return;
-    canvasEditor.add('highlight');
+    canvasEditor.add('terminal-session');
     const slide = editor.currentSlide;
     if (slide?.elements?.length) {
         const last = slide.elements[slide.elements.length - 1];
-        last.data = { ...last.data, code: '$ echo "Hello World"\nHello World\n$ _', language: 'bash', highlights: [] };
+        last.data = { ...last.data, label: 'Session terminal', script: '$ echo "Hello World"\nHello World\n$ _', language: 'bash', tone: 'info' };
         last.w = 620; last.h = 280;
         editor._push();
     }

@@ -12,11 +12,39 @@
  */
 /* editor-props-panel.js — Properties panel for canvas element and connector editing */
 
-const CODE_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Correction', 'Solution', 'Astuce', 'Demo', 'Synthese'];
-const CODE_LABEL_PRESETS = ['Code', 'Snippet', 'Correction', 'Analyse'];
-const DEFINITION_LABEL_PRESETS = ['Definition', 'Theoreme', 'Propriete', 'Rappel'];
-const DEFINITION_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Contre-exemple', 'Remarque', 'Application'];
+const CODE_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Correction', 'Solution', 'Astuce', 'Bonnes pratiques', 'Erreur frequente', 'Demo', 'Synthese'];
+const CODE_LABEL_PRESETS = ['Code', 'Snippet', 'API', 'Debug', 'Performance', 'Bonnes pratiques', 'Correction', 'Erreur frequente', 'Analyse'];
+const DEFINITION_LABEL_PRESETS = ['Definition', 'Notion', 'Rappel', 'Theoreme', 'Propriete', 'Attention', 'Erreur frequente', 'A retenir', 'Vocabulaire'];
+const DEFINITION_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Application', 'Contre-exemple', 'Cas limite', 'Remarque'];
+const CARD_TITLE_PRESETS = ['Objectif', 'Consigne', 'Correction', 'Astuce', 'Erreur frequente', 'Checklist', 'A retenir'];
+const CALLOUT_LABEL_PRESETS = ['Info', 'Attention', 'Important', 'Astuce', 'A retenir', 'Erreur frequente'];
+const EXERCISE_TITLE_PRESETS = ['Exercice guide', 'Mise en pratique', 'Atelier', 'Challenge', 'Correction guidee'];
+const BEFORE_AFTER_TITLE_PRESETS = ['Avant / Après', 'État initial / cible', 'Problème / solution', 'Comparaison'];
+const MISTAKE_TITLE_PRESETS = ['Erreur frequente vs correction', 'Piege classique', 'Mauvaise approche vs bonne approche'];
+const RUBRIC_TITLE_PRESETS = ['Grille d’évaluation', 'Barème', 'Critères de réussite'];
+const TERMINAL_LABEL_PRESETS = ['Session terminal', 'Commandes', 'Sortie terminal', 'Debug CLI', 'Trace execution'];
 const ASSESSMENT_LABEL_PRESETS = ['Quiz', 'Exercice', 'Evaluation', 'Correction'];
+const LABEL_TONE_PRESETS = [
+    { value: 'auto', label: 'Auto (selon label)' },
+    { value: 'primary', label: 'Primaire' },
+    { value: 'accent', label: 'Accent' },
+    { value: 'info', label: 'Info (bleu)' },
+    { value: 'success', label: 'Succes (vert)' },
+    { value: 'warning', label: 'Attention (orange)' },
+    { value: 'danger', label: 'Danger (rouge)' },
+];
+
+function _normalizeTonePreset(value) {
+    const tone = String(value || '').trim().toLowerCase();
+    return LABEL_TONE_PRESETS.some((item) => item.value === tone) ? tone : 'auto';
+}
+
+function _toneOptionsHtml(selectedTone = 'auto') {
+    const current = _normalizeTonePreset(selectedTone);
+    return LABEL_TONE_PRESETS
+        .map((item) => `<option value="${escAttr(item.value)}"${item.value === current ? ' selected' : ''}>${esc(item.label)}</option>`)
+        .join('');
+}
 
 function updatePropsPanel() {
     const panel = document.getElementById('props-content');
@@ -70,9 +98,17 @@ function updatePropsPanel() {
         widget: 'Widget',
         list: 'Liste',
         definition: 'Définition',
+        'callout-box': 'Callout box',
+        'exercise-block': 'Exercice',
+        'before-after': 'Before / After',
+        'mistake-fix': 'Erreur / Correction',
+        'rubric-block': 'Rubric block',
+        'rubrick-block': 'Rubric block',
         'code-example': 'Exemple code',
+        'terminal-session': 'Session terminal',
         video: 'Vidéo',
         mermaid: 'Diagramme',
+        diagramme: 'Diagramme',
         latex: 'Équation',
         timer: 'Minuteur',
         iframe: 'Iframe',
@@ -124,6 +160,7 @@ function updatePropsPanel() {
         case 'definition': {
             const blockLabel = String(d.label ?? d.blockLabel ?? 'Definition').trim() || 'Definition';
             const exampleLabel = String(d.exampleLabel ?? 'Exemple').trim() || 'Exemple';
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
             const selectedBlockPreset = DEFINITION_LABEL_PRESETS.includes(blockLabel) ? blockLabel : '__custom__';
             const selectedExamplePreset = DEFINITION_EXAMPLE_LABEL_PRESETS.includes(exampleLabel) ? exampleLabel : '__custom__';
             const blockOptions = DEFINITION_LABEL_PRESETS
@@ -132,13 +169,168 @@ function updatePropsPanel() {
             const exampleOptions = DEFINITION_EXAMPLE_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedExamplePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
+            const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Definition</div>
                 <div class="props-row"><label>Label bloc</label><select id="sp-def-label-preset">${blockOptions}<option value="__custom__"${selectedBlockPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Texte bloc</label><input type="text" id="sp-def-label" value="${escAttr(blockLabel)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-def-tone">${toneOptions}</select></div>
                 <div class="props-row" style="margin-top:6px"><label>Label exemple</label><select id="sp-def-example-label-preset">${exampleOptions}<option value="__custom__"${selectedExamplePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Texte exemple</label><input type="text" id="sp-def-example-label" value="${escAttr(exampleLabel)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:6px;line-height:1.4">Le terme, la definition et l'exemple se modifient directement sur le canvas.</div>
+            </div>`;
+            break;
+        }
+
+        case 'callout-box': {
+            const labelValue = String(d.label ?? 'Info').trim() || 'Info';
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
+            const selectedPreset = CALLOUT_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const labelOptions = CALLOUT_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            const toneOptions = _toneOptionsHtml(toneValue);
+            html = `<div class="props-section">
+                <div class="props-section-title">Callout box</div>
+                <div class="props-row"><label>Label</label><select id="sp-callout-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-callout-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-callout-tone">${toneOptions}</select></div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Message</label>
+                <textarea id="sp-callout-text" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.text || '')}</textarea>
+            </div>`;
+            break;
+        }
+
+        case 'exercise-block': {
+            const titleValue = String(d.title ?? 'Exercice guide').trim() || 'Exercice guide';
+            const selectedTitlePreset = EXERCISE_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const titleOptions = EXERCISE_TITLE_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            const instructions = Array.isArray(d.instructions) ? d.instructions : [];
+            const hints = Array.isArray(d.hints) ? d.hints : [];
+            html = `<div class="props-section">
+                <div class="props-section-title">Exercice</div>
+                <div class="props-row"><label>Titre</label><select id="sp-ex-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ex-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Objectif</label>
+                <textarea id="sp-ex-objective" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.objective || '')}</textarea>
+            </div>
+            <div class="props-section">
+                <div class="props-section-title">Contenu</div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Consignes (1 par ligne)</label>
+                <textarea id="sp-ex-instructions" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(instructions.join('\n'))}</textarea>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Indices (1 par ligne)</label>
+                <textarea id="sp-ex-hints" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(hints.join('\n'))}</textarea>
+            </div>
+            <div class="props-section">
+                <div class="props-section-title">Correction</div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Texte correction</label>
+                <textarea id="sp-ex-correction" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.correction || '')}</textarea>
+                <div class="props-row" style="margin-top:6px"><label>Afficher la correction</label><input type="checkbox" id="sp-ex-show-correction"${d.showCorrection ? ' checked' : ''}></div>
+            </div>`;
+            break;
+        }
+
+        case 'before-after': {
+            const titleValue = String(d.title ?? 'Avant / Après').trim() || 'Avant / Après';
+            const selectedTitlePreset = BEFORE_AFTER_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const titleOptions = BEFORE_AFTER_TITLE_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'info');
+            const toneOptions = _toneOptionsHtml(toneValue);
+            html = `<div class="props-section">
+                <div class="props-section-title">Before / After</div>
+                <div class="props-row"><label>Titre</label><select id="sp-ba-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ba-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-ba-tone">${toneOptions}</select></div>
+            </div>
+            <div class="props-section">
+                <div class="props-section-title">Avant</div>
+                <div class="props-row"><label>Label</label><input type="text" id="sp-ba-before-label" value="${escAttr(d.beforeLabel || 'Avant')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <textarea id="sp-ba-before" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.before || '')}</textarea>
+            </div>
+            <div class="props-section">
+                <div class="props-section-title">Après</div>
+                <div class="props-row"><label>Label</label><input type="text" id="sp-ba-after-label" value="${escAttr(d.afterLabel || 'Après')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <textarea id="sp-ba-after" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.after || '')}</textarea>
+            </div>`;
+            break;
+        }
+
+        case 'mistake-fix': {
+            const titleValue = String(d.title ?? 'Erreur frequente vs correction').trim() || 'Erreur frequente vs correction';
+            const selectedTitlePreset = MISTAKE_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const titleOptions = MISTAKE_TITLE_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'danger');
+            const toneOptions = _toneOptionsHtml(toneValue);
+            html = `<div class="props-section">
+                <div class="props-section-title">Erreur / Correction</div>
+                <div class="props-row"><label>Titre</label><select id="sp-mf-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-mf-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-mf-tone">${toneOptions}</select></div>
+                <div class="props-row"><label>Langage</label><select id="sp-mf-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
+            </div>
+            <div class="props-section">
+                <div class="props-section-title">Erreur frequente</div>
+                <textarea id="sp-mf-mistake" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.mistake || '')}</textarea>
+            </div>
+            <div class="props-section">
+                <div class="props-section-title">Correction</div>
+                <textarea id="sp-mf-fix" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.fix || '')}</textarea>
+            </div>`;
+            break;
+        }
+
+        case 'rubric-block':
+        case 'rubrick-block': {
+            const titleValue = String(d.title ?? 'Grille d’évaluation').trim() || 'Grille d’évaluation';
+            const selectedTitlePreset = RUBRIC_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const titleOptions = RUBRIC_TITLE_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'primary');
+            const toneOptions = _toneOptionsHtml(toneValue);
+            const levels = Array.isArray(d.levels) ? d.levels : [];
+            const rows = Array.isArray(d.rows) ? d.rows : [];
+            html = `<div class="props-section">
+                <div class="props-section-title">Rubric block</div>
+                <div class="props-row"><label>Titre</label><select id="sp-rb-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-rb-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-rb-tone">${toneOptions}</select></div>
+            </div>
+            <div class="props-section">
+                <div class="props-section-title">Niveaux</div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Un niveau par ligne</label>
+                <textarea id="sp-rb-levels" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(levels.join('\n'))}</textarea>
+            </div>
+            <div class="props-section">
+                <div class="props-section-title">Critères (JSON)</div>
+                <textarea id="sp-rb-rows" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(JSON.stringify(rows, null, 2))}</textarea>
+                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"criterion":"…","descriptors":["…","…","…"]}]</div>
+            </div>`;
+            break;
+        }
+
+        case 'terminal-session': {
+            const labelValue = String(d.label ?? 'Session terminal').trim() || 'Session terminal';
+            const selectedPreset = TERMINAL_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const labelOptions = TERMINAL_LABEL_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'info');
+            const toneOptions = _toneOptionsHtml(toneValue);
+            html = `<div class="props-section">
+                <div class="props-section-title">Session terminal</div>
+                <div class="props-row"><label>Label</label><select id="sp-term-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-term-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-term-tone">${toneOptions}</select></div>
+                <div class="props-row"><label>Langage</label><select id="sp-term-lang"><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Session</label>
+                <textarea id="sp-term-script" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.script || '')}</textarea>
             </div>`;
             break;
         }
@@ -147,14 +339,17 @@ function updatePropsPanel() {
             const mode = ['terminal', 'live', 'stepper'].includes(d.widgetType) ? d.widgetType : 'terminal';
             const steps = Array.isArray(d.stepperSteps) ? d.stepperSteps : [];
             const labelValue = String(d.label ?? d.blockTitle ?? 'Exemple').trim() || 'Exemple';
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
             const selectedPreset = CODE_EXAMPLE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
             const labelOptions = CODE_EXAMPLE_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
+            const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Exemple</div>
                 <div class="props-row"><label>Titre</label><select id="sp-ce-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ce-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-ce-tone">${toneOptions}</select></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Texte</label>
                 <textarea id="sp-ce-text" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.text || '')}</textarea>
                 <div class="props-row" style="margin-top:6px"><label>Widget</label><select id="sp-ce-mode"><option value="terminal"${mode === 'terminal' ? ' selected' : ''}>Code/Terminal</option><option value="live"${mode === 'live' ? ' selected' : ''}>Code Live</option><option value="stepper"${mode === 'stepper' ? ' selected' : ''}>Algo stepper</option></select></div>
@@ -188,14 +383,17 @@ function updatePropsPanel() {
 
         case 'code': {
             const labelValue = String(d.label ?? 'Code').trim() || 'Code';
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
             const selectedPreset = CODE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
             const labelOptions = CODE_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
+            const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Code</div>
                 <div class="props-row"><label>Label</label><select id="sp-code-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-code-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-code-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Lang</label><select id="sp-code-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JS</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
             </div>`;
             break;
@@ -222,9 +420,17 @@ function updatePropsPanel() {
 
         case 'card': {
             const cardItems = d.items || [];
+            const titleValue = String(d.title || '').trim();
+            const selectedTitlePreset = CARD_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const titleOptions = CARD_TITLE_PRESETS
+                .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
+                .join('');
+            const toneOptions = _toneOptionsHtml(_normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto'));
             html = `<div class="props-section">
                 <div class="props-section-title">Carte</div>
+                <div class="props-row"><label>Preset titre</label><select id="sp-card-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-card-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-card-tone">${toneOptions}</select></div>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Points</div>
@@ -276,6 +482,66 @@ function updatePropsPanel() {
             </div>`;
             break;
 
+        case 'diagramme': {
+            const rawRows = Array.isArray(d.rows) ? d.rows : [];
+            const colCount = Math.max(2, rawRows.reduce((max, row) => {
+                if (!Array.isArray(row)) return max;
+                return Math.max(max, row.length);
+            }, 0));
+            const normalizedRows = rawRows.length
+                ? rawRows
+                    .filter((row) => Array.isArray(row))
+                    .map((row) => {
+                        const next = row.slice(0, colCount).map((cell) => String(cell ?? ''));
+                        while (next.length < colCount) next.push('');
+                        return next;
+                    })
+                : [
+                    ['Catégorie', 'Série A', 'Série B'],
+                    ['A', '12', '8'],
+                    ['B', '18', '11'],
+                    ['C', '9', '14'],
+                ];
+            const rowCount = Math.max(2, normalizedRows.length);
+            while (normalizedRows.length < rowCount) normalizedRows.push(Array(colCount).fill(''));
+            const chartType = ['bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'combo', 'scatter', 'bubble', 'histogram', 'boxplot', 'waterfall', 'funnel', 'radar', 'pie', 'donut', 'heatmap', 'treemap', 'sankey', 'gantt', 'radial-gauge'].includes(String(d.chartType || '').toLowerCase())
+                ? String(d.chartType).toLowerCase()
+                : 'bar';
+            const gridHtml = normalizedRows.map((row, ri) => `<tr>
+                ${row.map((cell, ci) => {
+                    const isHeader = ri === 0 || ci === 0;
+                    const cellClasses = `sp-diag-cell${isHeader ? ' is-header' : ''}`;
+                    const inputClasses = `sp-diag-input${isHeader ? ' is-header' : ''}`;
+                    const placeholder = ri === 0
+                        ? (ci === 0 ? 'Catégorie' : `Série ${ci}`)
+                        : (ci === 0 ? `Cat. ${ri}` : '0');
+                    return `<td class="${cellClasses}">
+                        <input class="${inputClasses}" type="text" data-diag-r="${ri}" data-diag-c="${ci}" value="${escAttr(cell)}" placeholder="${escAttr(placeholder)}" style="min-width:${ci === 0 ? 90 : 72}px;">
+                    </td>`;
+                }).join('')}
+            </tr>`).join('');
+            html = `<div class="props-section">
+                <div class="props-section-title">Diagramme</div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-diag-title" value="${escAttr(d.title || 'Diagramme')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Type</label><select id="sp-diag-type"><option value="bar"${chartType === 'bar' ? ' selected' : ''}>Barres</option><option value="stacked-bar"${chartType === 'stacked-bar' ? ' selected' : ''}>Barres empilées</option><option value="stacked-100"${chartType === 'stacked-100' ? ' selected' : ''}>Barres empilées 100%</option><option value="line"${chartType === 'line' ? ' selected' : ''}>Lignes</option><option value="area"${chartType === 'area' ? ' selected' : ''}>Aires</option><option value="combo"${chartType === 'combo' ? ' selected' : ''}>Combo barres + ligne</option><option value="scatter"${chartType === 'scatter' ? ' selected' : ''}>Nuage (X,Y)</option><option value="bubble"${chartType === 'bubble' ? ' selected' : ''}>Bulles (X,Y,Taille)</option><option value="histogram"${chartType === 'histogram' ? ' selected' : ''}>Histogramme</option><option value="boxplot"${chartType === 'boxplot' ? ' selected' : ''}>Boîte à moustaches</option><option value="waterfall"${chartType === 'waterfall' ? ' selected' : ''}>Waterfall</option><option value="funnel"${chartType === 'funnel' ? ' selected' : ''}>Entonnoir</option><option value="radar"${chartType === 'radar' ? ' selected' : ''}>Radar</option><option value="pie"${chartType === 'pie' ? ' selected' : ''}>Camembert</option><option value="donut"${chartType === 'donut' ? ' selected' : ''}>Anneau</option><option value="heatmap"${chartType === 'heatmap' ? ' selected' : ''}>Heatmap</option><option value="treemap"${chartType === 'treemap' ? ' selected' : ''}>Treemap</option><option value="sankey"${chartType === 'sankey' ? ' selected' : ''}>Sankey</option><option value="gantt"${chartType === 'gantt' ? ' selected' : ''}>Gantt</option><option value="radial-gauge"${chartType === 'radial-gauge' ? ' selected' : ''}>Jauge radiale</option></select></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">
+                    <button class="tb-btn" id="sp-diag-add-row" style="font-size:0.68rem;justify-content:center">+ Ligne</button>
+                    <button class="tb-btn" id="sp-diag-add-col" style="font-size:0.68rem;justify-content:center">+ Colonne</button>
+                    <button class="tb-btn" id="sp-diag-del-row" style="font-size:0.68rem;justify-content:center">− Ligne</button>
+                    <button class="tb-btn" id="sp-diag-del-col" style="font-size:0.68rem;justify-content:center">− Colonne</button>
+                </div>
+                <div style="font-size:0.64rem;color:var(--muted);margin-top:6px">${normalizedRows.length} ligne(s) × ${colCount} colonne(s)</div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Données (tableau)</label>
+                <div class="sp-diag-grid-wrap">
+                    <table class="sp-diag-grid">
+                        ${gridHtml}
+                    </table>
+                </div>
+                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px;line-height:1.4">Ligne 1: en-têtes de séries. Colonne 1: catégories. Exemples: Scatter=Série A(X)+Série B(Y), Bubble + Série C(taille), Boxplot=Min/Q1/Médiane/Q3/Max, Sankey=Source/Cible/Valeur, Gantt=Tâche/Début/Fin.</div>
+            </div>`;
+            break;
+        }
+
         case 'latex':
             html = `<div class="props-section">
                 <div class="props-section-title">Équation LaTeX</div>
@@ -303,14 +569,17 @@ function updatePropsPanel() {
         case 'highlight': {
             const hls = d.highlights || [];
             const labelValue = String(d.label ?? 'Code').trim() || 'Code';
+            const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
             const selectedPreset = CODE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
             const labelOptions = CODE_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
+            const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Code</div>
                 <div class="props-row"><label>Label</label><select id="sp-hl-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-hl-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Couleur</label><select id="sp-hl-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Lang</label><select id="sp-hl-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash / Terminal</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="json"${d.language === 'json' ? ' selected' : ''}>JSON</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code</label>
                 <textarea id="sp-hl-code" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
@@ -675,6 +944,7 @@ function _bindPropsPanel(el) {
                 if (labelInput) labelInput.value = inp.value;
                 canvasEditor.updateData(id, { data: { label: inp.value } });
             });
+            bindChange('sp-def-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
             bind('sp-def-example-label', inp => {
                 const value = inp.value || '';
                 canvasEditor.updateData(id, { data: { exampleLabel: value } });
@@ -694,6 +964,167 @@ function _bindPropsPanel(el) {
                 if (labelInput) labelInput.value = inp.value;
                 canvasEditor.updateData(id, { data: { exampleLabel: inp.value } });
             });
+            break;
+
+        case 'callout-box':
+            bind('sp-callout-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-callout-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Info';
+                    presetSelect.value = CALLOUT_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-callout-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-callout-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-callout-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
+            bindChange('sp-callout-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
+            bind('sp-callout-text', inp => canvasEditor.updateData(id, { data: { text: inp.value } }));
+            break;
+
+        case 'exercise-block':
+            bind('sp-ex-title', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { title: value } });
+                const presetSelect = document.getElementById('sp-ex-title-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Exercice guide';
+                    presetSelect.value = EXERCISE_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-ex-title-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const titleInput = document.getElementById('sp-ex-title');
+                    if (titleInput) titleInput.focus();
+                    return;
+                }
+                const titleInput = document.getElementById('sp-ex-title');
+                if (titleInput) titleInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { title: inp.value } });
+            });
+            bind('sp-ex-objective', inp => canvasEditor.updateData(id, { data: { objective: inp.value } }));
+            bind('sp-ex-instructions', inp => canvasEditor.updateData(id, { data: { instructions: parseLines(inp.value) } }));
+            bind('sp-ex-hints', inp => canvasEditor.updateData(id, { data: { hints: parseLines(inp.value) } }));
+            bind('sp-ex-correction', inp => canvasEditor.updateData(id, { data: { correction: inp.value } }));
+            document.getElementById('sp-ex-show-correction')?.addEventListener('change', function() {
+                canvasEditor.updateData(id, { data: { showCorrection: !!this.checked } });
+            });
+            break;
+
+        case 'before-after':
+            bind('sp-ba-title', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { title: value } });
+                const presetSelect = document.getElementById('sp-ba-title-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Avant / Après';
+                    presetSelect.value = BEFORE_AFTER_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-ba-title-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const titleInput = document.getElementById('sp-ba-title');
+                    if (titleInput) titleInput.focus();
+                    return;
+                }
+                const titleInput = document.getElementById('sp-ba-title');
+                if (titleInput) titleInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { title: inp.value } });
+            });
+            bindChange('sp-ba-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
+            bind('sp-ba-before-label', inp => canvasEditor.updateData(id, { data: { beforeLabel: inp.value } }));
+            bind('sp-ba-before', inp => canvasEditor.updateData(id, { data: { before: inp.value } }));
+            bind('sp-ba-after-label', inp => canvasEditor.updateData(id, { data: { afterLabel: inp.value } }));
+            bind('sp-ba-after', inp => canvasEditor.updateData(id, { data: { after: inp.value } }));
+            break;
+
+        case 'mistake-fix':
+            bind('sp-mf-title', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { title: value } });
+                const presetSelect = document.getElementById('sp-mf-title-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Erreur frequente vs correction';
+                    presetSelect.value = MISTAKE_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-mf-title-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const titleInput = document.getElementById('sp-mf-title');
+                    if (titleInput) titleInput.focus();
+                    return;
+                }
+                const titleInput = document.getElementById('sp-mf-title');
+                if (titleInput) titleInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { title: inp.value } });
+            });
+            bindChange('sp-mf-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
+            bindChange('sp-mf-lang', inp => canvasEditor.updateData(id, { data: { language: inp.value } }));
+            bind('sp-mf-mistake', inp => canvasEditor.updateData(id, { data: { mistake: inp.value } }));
+            bind('sp-mf-fix', inp => canvasEditor.updateData(id, { data: { fix: inp.value } }));
+            break;
+
+        case 'rubric-block':
+        case 'rubrick-block':
+            bind('sp-rb-title', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { title: value } });
+                const presetSelect = document.getElementById('sp-rb-title-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Grille d’évaluation';
+                    presetSelect.value = RUBRIC_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-rb-title-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const titleInput = document.getElementById('sp-rb-title');
+                    if (titleInput) titleInput.focus();
+                    return;
+                }
+                const titleInput = document.getElementById('sp-rb-title');
+                if (titleInput) titleInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { title: inp.value } });
+            });
+            bindChange('sp-rb-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
+            bind('sp-rb-levels', inp => canvasEditor.updateData(id, { data: { levels: parseLines(inp.value) } }));
+            bind('sp-rb-rows', inp => {
+                const fallback = canvasEditor.getSelected()?.data?.rows || [];
+                const rows = parseJsonArrayOr(inp.value, fallback);
+                canvasEditor.updateData(id, { data: { rows } });
+            });
+            break;
+
+        case 'terminal-session':
+            bind('sp-term-label', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { label: value } });
+                const presetSelect = document.getElementById('sp-term-label-preset');
+                if (presetSelect) {
+                    const normalized = value.trim() || 'Session terminal';
+                    presetSelect.value = TERMINAL_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-term-label-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const labelInput = document.getElementById('sp-term-label');
+                    if (labelInput) labelInput.focus();
+                    return;
+                }
+                const labelInput = document.getElementById('sp-term-label');
+                if (labelInput) labelInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { label: inp.value } });
+            });
+            bindChange('sp-term-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
+            bindChange('sp-term-lang', inp => canvasEditor.updateData(id, { data: { language: inp.value } }));
+            bind('sp-term-script', inp => canvasEditor.updateData(id, { data: { script: inp.value } }));
             break;
 
         case 'image':
@@ -721,6 +1152,7 @@ function _bindPropsPanel(el) {
                 if (labelInput) labelInput.value = inp.value;
                 canvasEditor.updateData(id, { data: { label: inp.value } });
             });
+            bindChange('sp-code-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
             bindChange('sp-code-lang', inp => canvasEditor.updateData(id, { data: { language: inp.value } }));
             break;
 
@@ -746,7 +1178,26 @@ function _bindPropsPanel(el) {
             break;
 
         case 'card': {
-            bind('sp-card-title', inp => canvasEditor.updateData(id, { data: { title: inp.value } }));
+            bind('sp-card-title', inp => {
+                const value = inp.value || '';
+                canvasEditor.updateData(id, { data: { title: value } });
+                const presetSelect = document.getElementById('sp-card-title-preset');
+                if (presetSelect) {
+                    const normalized = value.trim();
+                    presetSelect.value = CARD_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                }
+            });
+            bindChange('sp-card-title-preset', inp => {
+                if (inp.value === '__custom__') {
+                    const titleInput = document.getElementById('sp-card-title');
+                    if (titleInput) titleInput.focus();
+                    return;
+                }
+                const titleInput = document.getElementById('sp-card-title');
+                if (titleInput) titleInput.value = inp.value;
+                canvasEditor.updateData(id, { data: { title: inp.value } });
+            });
+            bindChange('sp-card-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
             const getItems = () => Array.from(document.querySelectorAll('[data-card-idx]')).map(i => i.value);
             document.querySelectorAll('[data-card-idx]').forEach(input => {
                 input.addEventListener('input', () => canvasEditor.updateData(id, { data: { items: getItems() } }));
@@ -821,6 +1272,84 @@ function _bindPropsPanel(el) {
             bind('sp-mermaid-code', inp => canvasEditor.updateData(id, { data: { code: inp.value } }));
             break;
 
+        case 'diagramme':
+            bind('sp-diag-title', inp => canvasEditor.updateData(id, { data: { title: inp.value || 'Diagramme' } }));
+            bindChange('sp-diag-type', inp => {
+                const chartType = ['bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'combo', 'scatter', 'bubble', 'histogram', 'boxplot', 'waterfall', 'funnel', 'radar', 'pie', 'donut', 'heatmap', 'treemap', 'sankey', 'gantt', 'radial-gauge'].includes(String(inp.value || '').toLowerCase())
+                    ? String(inp.value).toLowerCase()
+                    : 'bar';
+                canvasEditor.updateData(id, { data: { chartType } });
+            });
+            const getDiagRows = () => {
+                const inputs = Array.from(document.querySelectorAll('[data-diag-r][data-diag-c]'));
+                if (!inputs.length) {
+                    const fallbackRows = canvasEditor.getSelected()?.data?.rows;
+                    if (Array.isArray(fallbackRows) && fallbackRows.length) return fallbackRows;
+                    return [
+                        ['Catégorie', 'Série A', 'Série B'],
+                        ['A', '12', '8'],
+                        ['B', '18', '11'],
+                    ];
+                }
+                const maxRow = inputs.reduce((max, input) => Math.max(max, Number(input.dataset.diagR) || 0), 0);
+                const maxCol = inputs.reduce((max, input) => Math.max(max, Number(input.dataset.diagC) || 0), 0);
+                const rows = Array.from({ length: maxRow + 1 }, () => Array(maxCol + 1).fill(''));
+                inputs.forEach((input) => {
+                    const r = Number(input.dataset.diagR) || 0;
+                    const c = Number(input.dataset.diagC) || 0;
+                    rows[r][c] = String(input.value ?? '');
+                });
+                return rows;
+            };
+            const applyDiagRows = (rows) => {
+                if (!Array.isArray(rows) || !rows.length) return;
+                canvasEditor.updateData(id, { data: { rows } });
+            };
+            document.querySelectorAll('[data-diag-r][data-diag-c]').forEach((input) => {
+                input.addEventListener('input', () => applyDiagRows(getDiagRows()));
+            });
+            document.getElementById('sp-diag-add-row')?.addEventListener('click', () => {
+                const rows = getDiagRows();
+                const colCount = Math.max(2, rows[0]?.length || 0);
+                const next = rows.map((row) => {
+                    const clone = Array.isArray(row) ? row.slice(0, colCount) : [];
+                    while (clone.length < colCount) clone.push('');
+                    return clone;
+                });
+                const newRow = Array(colCount).fill('');
+                newRow[0] = `Cat. ${Math.max(1, next.length)}`;
+                next.push(newRow);
+                applyDiagRows(next);
+                updatePropsPanel();
+            });
+            document.getElementById('sp-diag-del-row')?.addEventListener('click', () => {
+                const rows = getDiagRows();
+                if (rows.length <= 2) return;
+                rows.pop();
+                applyDiagRows(rows);
+                updatePropsPanel();
+            });
+            document.getElementById('sp-diag-add-col')?.addEventListener('click', () => {
+                const rows = getDiagRows();
+                const next = rows.map((row) => Array.isArray(row) ? row.slice() : []);
+                next.forEach((row, ri) => row.push(ri === 0 ? `Série ${Math.max(1, row.length)}` : ''));
+                applyDiagRows(next);
+                updatePropsPanel();
+            });
+            document.getElementById('sp-diag-del-col')?.addEventListener('click', () => {
+                const rows = getDiagRows();
+                const colCount = Math.max(...rows.map((row) => Array.isArray(row) ? row.length : 0));
+                if (colCount <= 2) return;
+                const next = rows.map((row) => {
+                    const clone = Array.isArray(row) ? row.slice() : [];
+                    clone.pop();
+                    return clone;
+                });
+                applyDiagRows(next);
+                updatePropsPanel();
+            });
+            break;
+
         case 'latex':
             bind('sp-latex-expr', inp => canvasEditor.updateData(id, { data: { expression: inp.value } }));
             break;
@@ -855,6 +1384,7 @@ function _bindPropsPanel(el) {
                 if (labelInput) labelInput.value = inp.value;
                 canvasEditor.updateData(id, { data: { label: inp.value } });
             });
+            bindChange('sp-hl-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
             bindChange('sp-hl-lang', inp => canvasEditor.updateData(id, { data: { language: inp.value } }));
             bind('sp-hl-code', inp => canvasEditor.updateData(id, { data: { code: inp.value } }));
             const getHls = () => Array.from(document.querySelectorAll('[data-hl-lines]')).map((inp, i) => ({
@@ -1158,6 +1688,7 @@ function _bindPropsPanel(el) {
                 if (labelInput) labelInput.value = inp.value;
                 canvasEditor.updateData(id, { data: { label: inp.value } });
             });
+            bindChange('sp-ce-tone', inp => canvasEditor.updateData(id, { data: { tone: _normalizeTonePreset(inp.value) } }));
             bind('sp-ce-text', inp => canvasEditor.updateData(id, { data: { text: inp.value } }));
             bindChange('sp-ce-mode', inp => {
                 const mode = ['terminal', 'live', 'stepper'].includes(inp.value) ? inp.value : 'terminal';

@@ -12,6 +12,64 @@
  */
 /* editor-bindings.js — Toolbar, ribbon, and keyboard bindings */
 
+let _slideClipboard = [];
+
+function _selectedSlideIndicesForOps() {
+    if (typeof editor?.getSelectedSlideIndices === 'function') {
+        const indices = editor.getSelectedSlideIndices();
+        if (indices.length) return indices;
+    }
+    return [editor.selectedIndex];
+}
+
+function _copySelectedSlidesToClipboard() {
+    if (!editor?.data?.slides?.length) return false;
+    const indices = _selectedSlideIndicesForOps();
+    const slides = editor.data.slides;
+    _slideClipboard = indices
+        .map((idx) => slides[idx])
+        .filter(Boolean)
+        .map((slide) => JSON.parse(JSON.stringify(slide)));
+    if (!_slideClipboard.length) return false;
+    notify(_slideClipboard.length > 1 ? `${_slideClipboard.length} slides copiés` : 'Slide copié', 'success');
+    return true;
+}
+
+function _pasteSlidesFromClipboard() {
+    if (!Array.isArray(_slideClipboard) || !_slideClipboard.length) return false;
+    const selected = _selectedSlideIndicesForOps();
+    const after = selected.length ? Math.max(...selected) : editor.selectedIndex;
+    if (typeof editor.insertSlides === 'function') {
+        editor.insertSlides(_slideClipboard, after);
+    } else {
+        const clones = _slideClipboard.map((slide) => JSON.parse(JSON.stringify(slide)));
+        const at = Math.max(0, Math.min(editor.data.slides.length, (after || 0) + 1));
+        editor.data.slides.splice(at, 0, ...clones);
+        editor.selectedIndex = at + clones.length - 1;
+        editor._push();
+        editor.onUpdate('slides');
+    }
+    notify(_slideClipboard.length > 1 ? `${_slideClipboard.length} slides collés` : 'Slide collé', 'success');
+    return true;
+}
+
+function _moveSelectedSlidesBy(delta) {
+    const selected = _selectedSlideIndicesForOps();
+    if (!selected.length || !editor?.data?.slides?.length) return false;
+    const sorted = [...selected].sort((a, b) => a - b);
+    if (delta < 0 && sorted[0] <= 0) return false;
+    if (delta > 0 && sorted[sorted.length - 1] >= editor.data.slides.length - 1) return false;
+    const targetIndex = delta < 0 ? sorted[0] - 1 : sorted[sorted.length - 1] + 2;
+    if (typeof editor.moveSlides === 'function') {
+        editor.moveSlides(sorted, targetIndex);
+    } else if (sorted.length === 1) {
+        editor.moveSlide(sorted[0], sorted[0] + (delta < 0 ? -1 : 1));
+    } else {
+        return false;
+    }
+    return true;
+}
+
 function buildTypeButtons() {
     // No-op: emoji grid removed, slide type chooser modal used instead
 }
@@ -312,9 +370,28 @@ function bindRibbon() {
 
     // Accueil tab: slide management
     document.getElementById('btn-add-slide').addEventListener('click', openSlideTypeChooser);
-    document.getElementById('btn-dup-slide').addEventListener('click', () => editor.duplicateSlide(editor.selectedIndex));
+    document.getElementById('btn-dup-slide').addEventListener('click', () => {
+        const selected = _selectedSlideIndicesForOps();
+        if (selected.length > 1 && typeof editor.duplicateSlides === 'function') {
+            editor.duplicateSlides(selected);
+            return;
+        }
+        editor.duplicateSlide(editor.selectedIndex);
+    });
     document.getElementById('btn-del-slide').addEventListener('click', async () => {
-        if (await OEIDialog.confirm('Supprimer ce slide ?', { danger: true })) editor.removeSlide(editor.selectedIndex);
+        const selected = _selectedSlideIndicesForOps();
+        const ok = await OEIDialog.confirm(
+            selected.length > 1
+                ? `Supprimer ${selected.length} slides sélectionnés ?`
+                : 'Supprimer ce slide ?',
+            { danger: true },
+        );
+        if (!ok) return;
+        if (selected.length > 1 && typeof editor.removeSlides === 'function') {
+            editor.removeSlides(selected);
+            return;
+        }
+        editor.removeSlide(editor.selectedIndex);
     });
 
     // A5: Slide move up/down
@@ -483,6 +560,7 @@ function initInsertionGroupFilter() {
         { id: 'content', label: 'Contenu', icon: 'text' },
         { id: 'media', label: 'Médias', icon: 'media' },
         { id: 'diagram', label: 'Diagrammes', icon: 'diagram' },
+        { id: 'maths', label: 'Maths', icon: 'book' },
         { id: 'code', label: 'Code', icon: 'code' },
         { id: 'assessment', label: 'Assessment', icon: 'poll' },
         { id: 'activity', label: 'Activités', icon: 'activity' },
@@ -494,6 +572,7 @@ function initInsertionGroupFilter() {
         text: 'content',
         list: 'content',
         definition: 'content',
+        'callout-box': 'content',
         quote: 'content',
         card: 'content',
         table: 'content',
@@ -504,12 +583,15 @@ function initInsertionGroupFilter() {
         shape: 'diagram',
         smartart: 'diagram',
         mermaid: 'diagram',
+        diagramme: 'diagram',
         'decision-tree': 'diagram',
         'timeline-vertical': 'diagram',
+        latex: 'maths',
         highlight: 'code',
+        'mistake-fix': 'code',
         'code-live': 'code',
         'code-example': 'code',
-        latex: 'code',
+        'terminal-session': 'code',
         'code-compare': 'code',
         'algo-stepper': 'code',
         'quiz-live': 'assessment',
@@ -520,10 +602,13 @@ function initInsertionGroupFilter() {
         'debate-mode': 'assessment',
         'exit-ticket': 'assessment',
         'drag-drop': 'activity',
+        'exercise-block': 'activity',
+        'before-after': 'content',
         'rank-order': 'activity',
         'kanban-mini': 'activity',
         'myth-reality': 'activity',
         'flashcards-auto': 'activity',
+        'rubric-block': 'assessment',
         timer: 'facilitation',
         'postit-wall': 'facilitation',
         'audience-roulette': 'facilitation',
@@ -699,6 +784,7 @@ function bindKeyboard() {
     document.addEventListener('keydown', e => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
         if (e.target.isContentEditable) return;
+        const inSlideList = !!(window.isSlideListInteractionContext && window.isSlideListInteractionContext());
         if (e.ctrlKey || e.metaKey) {
             if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); editor.undo(); }
             if (e.key === 'z' && e.shiftKey) { e.preventDefault(); editor.redo(); }
@@ -707,8 +793,16 @@ function bindKeyboard() {
             if (e.key === 'k') { e.preventDefault(); openCommandPalette(); }
             if (e.key === 'f') { e.preventDefault(); openSearchDialog(); }
             if (e.key === 'x') { e.preventDefault(); clipboardCut(); }
-            if (e.key === 'c') { e.preventDefault(); clipboardCopy(); }
-            if (e.key === 'v') { e.preventDefault(); clipboardPaste(); }
+            if (e.key === 'c') {
+                e.preventDefault();
+                if (inSlideList) _copySelectedSlidesToClipboard();
+                else clipboardCopy();
+            }
+            if (e.key === 'v') {
+                e.preventDefault();
+                if (inSlideList) _pasteSlidesFromClipboard();
+                else clipboardPaste();
+            }
             if (e.key === 'd') { e.preventDefault(); document.getElementById('fmt-duplicate')?.click(); }
             if (e.key === 'a') { e.preventDefault(); selectAll(); }
             if (e.key === 'g' && e.shiftKey) { e.preventDefault(); ungroupSelected(); }
@@ -724,15 +818,40 @@ function bindKeyboard() {
                 const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
                 canvasEditor.nudge(dx, dy);
             } else {
-                if (e.key === 'ArrowUp')   { e.preventDefault(); editor.moveSlide(editor.selectedIndex, editor.selectedIndex - 1); }
-                if (e.key === 'ArrowDown') { e.preventDefault(); editor.moveSlide(editor.selectedIndex, editor.selectedIndex + 1); }
+                if (e.key === 'ArrowUp')   { e.preventDefault(); if (!_moveSelectedSlidesBy(-1)) editor.moveSlide(editor.selectedIndex, editor.selectedIndex - 1); }
+                if (e.key === 'ArrowDown') { e.preventDefault(); if (!_moveSelectedSlidesBy(1)) editor.moveSlide(editor.selectedIndex, editor.selectedIndex + 1); }
                 if (e.key === 'ArrowLeft' && editor.selectedIndex > 0) { e.preventDefault(); editor.selectSlide(editor.selectedIndex - 1); }
                 if (e.key === 'ArrowRight' && editor.selectedIndex < editor.data.slides.length - 1) { e.preventDefault(); editor.selectSlide(editor.selectedIndex + 1); }
             }
         }
-        if (e.key === 'Delete' && e.shiftKey) { OEIDialog.confirm('Supprimer ce slide ?', { danger: true }).then(ok => { if (ok) editor.removeSlide(editor.selectedIndex); }); }
+        if (e.key === 'Delete' && e.shiftKey) {
+            const selected = _selectedSlideIndicesForOps();
+            OEIDialog.confirm(
+                selected.length > 1
+                    ? `Supprimer ${selected.length} slides sélectionnés ?`
+                    : 'Supprimer ce slide ?',
+                { danger: true },
+            ).then(ok => {
+                if (!ok) return;
+                if (selected.length > 1 && typeof editor.removeSlides === 'function') editor.removeSlides(selected);
+                else editor.removeSlide(editor.selectedIndex);
+            });
+        }
         if (e.key === 'Delete' && !e.shiftKey && canvasEditor?.selectedIds?.size > 0) canvasEditor.removeSelected();
         if (e.key === 'Delete' && !e.shiftKey && canvasEditor?._selectedConnectorId) canvasEditor.removeSelected();
+        if (e.key === 'Delete' && !e.shiftKey && inSlideList && !(canvasEditor?.selectedIds?.size > 0) && !canvasEditor?._selectedConnectorId) {
+            const selected = _selectedSlideIndicesForOps();
+            OEIDialog.confirm(
+                selected.length > 1
+                    ? `Supprimer ${selected.length} slides sélectionnés ?`
+                    : 'Supprimer ce slide ?',
+                { danger: true },
+            ).then(ok => {
+                if (!ok) return;
+                if (selected.length > 1 && typeof editor.removeSlides === 'function') editor.removeSlides(selected);
+                else editor.removeSlide(editor.selectedIndex);
+            });
+        }
         if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             openQuickInsert();

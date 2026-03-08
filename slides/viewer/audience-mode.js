@@ -84,6 +84,17 @@ export async function initAudienceMode(ctx) {
     let audienceExitTicketId = null;
     let audienceRankOrderId = null;
     let audienceRouletteTimer = null;
+    let audienceLockActive = false;
+    let audienceLockIndex = null;
+    let audienceExerciseActive = false;
+    const audienceExerciseDefaults = {
+        title: 'Mode exercice',
+        message: 'Travaillez l’exercice en cours. La correction arrive juste après.',
+    };
+    const lockPill = document.getElementById('sl-audience-lock-pill');
+    const exerciseOverlay = document.getElementById('sl-audience-exercise-overlay');
+    const exerciseTitleEl = document.getElementById('sl-audience-exercise-title');
+    const exerciseMsgEl = document.getElementById('sl-audience-exercise-msg');
     const buildQrImageSrc = (value, size = 320) => {
         const safeValue = String(value || '');
         if (window.qrcode && safeValue) {
@@ -286,6 +297,34 @@ export async function initAudienceMode(ctx) {
         }, 3200);
     };
 
+    const applyAudienceLockState = (locked, indexRaw) => {
+        audienceLockActive = !!locked;
+        const idx = toIntOrNull(indexRaw);
+        audienceLockIndex = audienceLockActive
+            ? (idx === null ? 0 : Math.max(0, idx))
+            : null;
+        if (lockPill) {
+            lockPill.classList.toggle('open', audienceLockActive);
+            if (audienceLockActive && audienceLockIndex !== null) {
+                lockPill.textContent = `Verrou anti-spoiler actif · slide ${audienceLockIndex + 1} max`;
+            }
+        }
+    };
+
+    const clampIndexForAudienceLock = index => {
+        if (!audienceLockActive || audienceLockIndex === null) return index;
+        return Math.min(Math.max(0, index), audienceLockIndex);
+    };
+
+    const applyAudienceExerciseMode = (active, titleRaw, messageRaw) => {
+        audienceExerciseActive = !!active;
+        const title = toTrimmedString(titleRaw, 120) || audienceExerciseDefaults.title;
+        const message = toTrimmedString(messageRaw, 240) || audienceExerciseDefaults.message;
+        if (exerciseTitleEl) exerciseTitleEl.textContent = title;
+        if (exerciseMsgEl) exerciseMsgEl.textContent = message;
+        if (exerciseOverlay) exerciseOverlay.classList.toggle('open', audienceExerciseActive);
+    };
+
     const channel = new BroadcastChannel(CHANNEL_NAME);
     channel.onmessage = (e) => {
         const msg = e.data;
@@ -293,17 +332,19 @@ export async function initAudienceMode(ctx) {
         if (validateSyncMessage && !validateSyncMessage(msg)) return;
         switch (msg.type) {
             case SYNC_MSG.GO_TO: {
-                const index = toIntOrNull(msg.index);
-                if (index === null) return;
-                deck.slide(index, 0, -1);
+                const rawIndex = toIntOrNull(msg.index);
+                if (rawIndex === null) return;
+                deck.slide(clampIndexForAudienceLock(rawIndex), 0, -1);
                 break;
             }
             case SYNC_MSG.FRAGMENT_STEP: {
                 const slideIndex = toIntOrNull(msg.slideIndex);
                 const fragmentIndex = toIntOrNull(msg.fragmentIndex);
                 if (slideIndex === null || fragmentIndex === null) return;
+                const clampedSlideIndex = clampIndexForAudienceLock(slideIndex);
+                if (clampedSlideIndex !== slideIndex) return;
                 const state = deck.getState();
-                if ((state?.indexh ?? -1) !== slideIndex) deck.slide(slideIndex, 0, -1);
+                if ((state?.indexh ?? -1) !== clampedSlideIndex) deck.slide(clampedSlideIndex, 0, -1);
                 const slideEl = deck.getCurrentSlide();
                 if (!slideEl) break;
                 const frags = Array.from(slideEl.querySelectorAll('.fragment'));
@@ -312,6 +353,20 @@ export async function initAudienceMode(ctx) {
                     frag.classList.toggle('visible', visible);
                     frag.classList.toggle('current-fragment', i === fragmentIndex && fragmentIndex >= 0);
                 });
+                break;
+            }
+            case SYNC_MSG.AUDIENCE_LOCK: {
+                applyAudienceLockState(msg.locked, msg.index);
+                if (audienceLockActive && audienceLockIndex !== null) {
+                    const currentSlide = toIntOrNull(deck.getState()?.indexh ?? 0);
+                    if (currentSlide !== null && currentSlide > audienceLockIndex) {
+                        deck.slide(audienceLockIndex, 0, -1);
+                    }
+                }
+                break;
+            }
+            case SYNC_MSG.EXERCISE_MODE: {
+                applyAudienceExerciseMode(msg.active, msg.title, msg.message);
                 break;
             }
             case SYNC_MSG.BLACK: {

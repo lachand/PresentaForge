@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
-    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=22">
+    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=24">
     <style id="sl-preview-theme"></style>
     <style id="sl-thumb-css"></style>
 </head>
@@ -162,7 +162,12 @@
                     </div>
                     <button class="el-type-btn" data-el="widget" data-tooltip="Widget|Composant interactif"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>Widget</button>
                     <button class="el-type-btn" data-el="definition" data-tooltip="Définition|Terme + définition"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Déf.</button>
+                    <button class="el-type-btn el-color-activity" data-el="exercise-block" data-tooltip="Exercice|Objectif, consignes, indices, correction"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h10M8 18h7"/><path d="M4 6l1.5 1.5L7.5 5.5"/><path d="M4 12l1.5 1.5L7.5 11.5"/><path d="M4 18l1.5 1.5L7.5 17.5"/></svg></span>Exercice</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="before-after" data-tooltip="Before / After|Comparer un état avant/après"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6H4v5"/><path d="M4 6l6 6"/><path d="M15 18h5v-5"/><path d="M20 18l-6-6"/></svg></span>Before/After</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="mistake-fix" data-tooltip="Erreur / Correction|Comparer un mauvais et un bon exemple"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M3 7h7v10H3z"/><path d="M14 7h7v10h-7z"/></svg></span>Erreur/Fix</button>
+                    <button class="el-type-btn el-color-assessment" data-el="rubric-block" data-tooltip="Rubric block|Grille d'évaluation par critères"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/><path d="M15 10v10"/></svg></span>Rubric</button>
                     <button class="el-type-btn" data-el="code-example" data-tooltip="Exemple de code|Bloc exemple avec widget terminal/live/stepper"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6 2 12l6 6"/><path d="M16 6 22 12l-6 6"/><path d="M11 19h5"/></svg></span>Ex. code</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="terminal-session" data-tooltip="Session terminal|Commandes + sorties shell"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 10 12 4 17"/><line x1="12" y1="17" x2="20" y2="17"/></svg></span>Session term.</button>
                     <button class="el-type-btn" data-el="quote" data-tooltip="Citation|Bloc citation"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/></svg></span>Citation</button>
                     <button class="el-type-btn" data-el="card" data-tooltip="Carte|Carte avec titre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h5"/></svg></span>Carte</button>
                     <button class="el-type-btn el-color-connector" id="btn-add-connector" data-tooltip="Connecteur|Cliquer puis relier deux éléments"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="13 5 19 5 19 11"/></svg></span>Flèche</button>
@@ -174,8 +179,9 @@
                         </div>
                     </div>
                     <button class="el-type-btn el-color-video" id="btn-insert-video" data-tooltip="Vidéo|Intégrer YouTube/Vimeo"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18"/><polygon points="10 8 16 12 10 16 10 8"/></svg></span>Vidéo</button>
-                    <button class="el-type-btn el-color-callout" id="btn-insert-callout" data-tooltip="Callout|Encadré info/warning/tip"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>Callout</button>
+                    <button class="el-type-btn el-color-callout" id="btn-insert-callout" data-tooltip="Callout box|Encadré info/warning/success/danger"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>Callout box</button>
 <button class="el-type-btn el-color-mermaid" data-el="mermaid" data-tooltip="Diagramme|Mermaid (graphes, flowcharts)"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10"/><path d="M6.7 7.2 10.9 16"/><path d="M17.3 7.2 13.1 16"/></svg></span>Mermaid</button>
+                    <button class="el-type-btn el-color-diagram" data-el="diagramme" data-tooltip="Diagramme|Graphique à partir d'un tableau de données"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="2.8" height="9"/><rect x="11" y="8" width="2.8" height="12"/><rect x="16" y="5" width="2.8" height="15"/></svg></span>Diagramme</button>
                     <button class="el-type-btn el-color-latex" data-el="latex" data-tooltip="Équation|LaTeX / KaTeX"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6h14M5 18h14"/><path d="M9 14l2-4 2 4"/><path d="M8 14h6"/></svg></span>LaTeX</button>
                     <button class="el-type-btn el-color-timer" data-el="timer" data-tooltip="Minuteur|Compte à rebours interactif"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 13l3-2"/><path d="M9 3h6"/><path d="M12 5v2"/></svg></span>Timer</button>
                     <button class="el-type-btn el-color-iframe" data-el="iframe" data-tooltip="Iframe|Contenu web embarqué"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10l-3 2 3 2"/><path d="M16 10l3 2-3 2"/></svg></span>Iframe</button>
@@ -760,27 +766,27 @@
 <script src="../shared/slides/widget-plugins.js?v=2"></script>
 <script src="../shared/slides/design-tokens.js?v=2"></script>
 <script src="../shared/slides/background-utils.js?v=1"></script>
-<script src="../shared/slides/slides-core.js?v=19"></script>
-<script src="../shared/slides/slides-editor.js?v=10"></script>
-<script src="../shared/slides/slides-canvas.js?v=17"></script>
+<script src="../shared/slides/slides-core.js?v=23"></script>
+<script src="../shared/slides/slides-editor.js?v=12"></script>
+<script src="../shared/slides/slides-canvas.js?v=19"></script>
 <!-- Editor controller modules (dependency order: utils first, bindings last) -->
 <script src="../shared/slides/editor-dialog.js"></script>
 <script src="../shared/slides/editor-utils.js?v=8"></script>
 <script src="../shared/slides/editor-ui.js?v=14"></script>
 <script src="../shared/slides/editor-clipboard.js?v=8"></script>
 <script src="../shared/slides/editor-search.js?v=8"></script>
-<script src="../shared/slides/editor-slide-ops.js?v=8"></script>
+<script src="../shared/slides/editor-slide-ops.js?v=9"></script>
 <script src="../shared/slides/editor-command-palette.js?v=8"></script>
 <script src="../shared/slides/editor-theme-design.js?v=15"></script>
 <script src="../shared/slides/editor-slide-styling.js?v=8"></script>
 <script src="../shared/slides/editor-zoom-view.js?v=9"></script>
 <script src="../shared/slides/editor-widget-picker.js?v=2"></script>
-<script src="../shared/slides/editor-props-panel.js?v=12"></script>
-<script src="../shared/slides/editor-format-tab.js?v=11"></script>
-<script src="../shared/slides/editor-insert.js?v=9"></script>
+<script src="../shared/slides/editor-props-panel.js?v=17"></script>
+<script src="../shared/slides/editor-format-tab.js?v=12"></script>
+<script src="../shared/slides/editor-insert.js?v=10"></script>
 <script src="../shared/slides/editor-block-presets.js?v=4"></script>
 <script src="../shared/slides/editor-context-menu.js?v=9"></script>
-<script src="../shared/slides/editor-preview.js?v=12"></script>
+<script src="../shared/slides/editor-preview.js?v=13"></script>
 <script src="../shared/slides/editor-file-io.js?v=9"></script>
 <script src="../shared/slides/ui-icons.js?v=2"></script>
 <script src="../shared/slides/editor-save.js?v=8"></script>
@@ -790,12 +796,12 @@
 <script src="../shared/slides/editor-narration.js?v=8"></script>
 <script src="../shared/slides/editor-export.js?v=14"></script>
 <script src="../shared/slides/editor-timeline.js?v=8"></script>
-<script src="../shared/slides/editor-quick-insert.js?v=9"></script>
+<script src="../shared/slides/editor-quick-insert.js?v=12"></script>
 <script src="../shared/slides/editor-masters.js?v=10"></script>
 <script src="../shared/slides/editor-enhancements.js?v=3"></script>
 <script src="../shared/slides/editor-resize.js?v=10"></script>
-<script src="../shared/slides/editor-checker.js?v=10"></script>
-<script src="../shared/slides/editor-bindings.js?v=17"></script>
+<script src="../shared/slides/editor-checker.js?v=12"></script>
+<script src="../shared/slides/editor-bindings.js?v=21"></script>
 <script>
 /* =========================================================
    EDITOR CONTROLLER — Shared state & orchestration

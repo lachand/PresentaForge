@@ -15,13 +15,21 @@
 /* ── A5: Slide move up/down ────────────────────────────── */
 
 function slideMove(dir) {
+    const selected = (typeof editor.getSelectedSlideIndices === 'function')
+        ? editor.getSelectedSlideIndices()
+        : [editor.selectedIndex];
+    const sorted = [...selected].sort((a, b) => a - b);
+    if (!sorted.length) return;
+    if (dir < 0 && sorted[0] <= 0) return;
+    if (dir > 0 && sorted[sorted.length - 1] >= editor.data.slides.length - 1) return;
+    if (sorted.length > 1 && typeof editor.moveSlides === 'function') {
+        const targetIndex = dir < 0 ? sorted[0] - 1 : sorted[sorted.length - 1] + 2;
+        editor.moveSlides(sorted, targetIndex);
+        return;
+    }
     const idx = editor.selectedIndex;
-    const slides = editor.data.slides;
     const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= slides.length) return;
-    [slides[idx], slides[newIdx]] = [slides[newIdx], slides[idx]];
-    editor.selectedIndex = newIdx;
-    editor._push();
+    editor.moveSlide(idx, newIdx);
 }
 
 /* ── A6: Hide slide ────────────────────────────────────── */

@@ -196,6 +196,8 @@ class SlidesEditor {
     constructor(onUpdate) {
         this.data = null;
         this.selectedIndex = 0;
+        this.selectedSlides = new Set([0]);
+        this._slideSelectionAnchor = 0;
         this.onUpdate = onUpdate || (() => {});
         this._historyStack = [];
         this._historyIndex = -1;
@@ -208,6 +210,8 @@ class SlidesEditor {
         this.data = SlidesEditor.DEFAULT_PRESENTATION();
         this._ensureTypographyDefaults();
         this.selectedIndex = 0;
+        this.selectedSlides = new Set([0]);
+        this._slideSelectionAnchor = 0;
         this._historyStack = [];
         this._historyIndex = -1;
         this._push();
@@ -219,6 +223,8 @@ class SlidesEditor {
         this._ensureTypographyDefaults();
         this._normalizeLegacyCanvasFontSizes();
         this.selectedIndex = 0;
+        this.selectedSlides = new Set([0]);
+        this._slideSelectionAnchor = 0;
         this._historyStack = [];
         this._historyIndex = -1;
         this._push();
@@ -278,8 +284,13 @@ class SlidesEditor {
             code: 16,
             highlight: 16,
             definition: 16,
+            'callout-box': 18,
+            'exercise-block': 18,
+            'mistake-fix': 17,
             'code-example': 16,
+            'terminal-session': 16,
             shape: 16,
+            diagramme: 16,
             quote: 26,
             card: 18,
             table: 18,
@@ -303,6 +314,47 @@ class SlidesEditor {
         }
     }
 
+    _clampSlideIndex(index) {
+        const n = this.data?.slides?.length || 0;
+        if (n <= 0) return 0;
+        const i = Number(index);
+        if (!Number.isFinite(i)) return 0;
+        return Math.max(0, Math.min(n - 1, Math.trunc(i)));
+    }
+
+    _sanitizeSlideIndices(indices) {
+        const n = this.data?.slides?.length || 0;
+        if (n <= 0) return [];
+        const src = Array.isArray(indices) ? indices : [];
+        const uniq = new Set();
+        src.forEach((value) => {
+            const i = Number(value);
+            if (!Number.isFinite(i)) return;
+            const clamped = Math.trunc(i);
+            if (clamped < 0 || clamped >= n) return;
+            uniq.add(clamped);
+        });
+        const out = Array.from(uniq);
+        out.sort((a, b) => a - b);
+        return out;
+    }
+
+    _syncSelectionAfterDataChange() {
+        const n = this.data?.slides?.length || 0;
+        if (n <= 0) {
+            this.selectedIndex = 0;
+            this.selectedSlides = new Set([0]);
+            this._slideSelectionAnchor = 0;
+            return;
+        }
+        this.selectedIndex = this._clampSlideIndex(this.selectedIndex);
+        const normalized = this._sanitizeSlideIndices(Array.from(this.selectedSlides || []));
+        const finalIndices = normalized.length ? normalized : [this.selectedIndex];
+        if (!finalIndices.includes(this.selectedIndex)) this.selectedIndex = finalIndices[finalIndices.length - 1];
+        this.selectedSlides = new Set(finalIndices);
+        this._slideSelectionAnchor = this._clampSlideIndex(this._slideSelectionAnchor);
+    }
+
     // ── Slide CRUD ─────────────────────────────────────────
 
     addSlide(type = 'bullets', afterIndex = null) {
@@ -310,6 +362,24 @@ class SlidesEditor {
         const slide = SlidesEditor.DEFAULT_SLIDE(type);
         this.data.slides.splice(idx, 0, slide);
         this.selectedIndex = idx;
+        this.selectedSlides = new Set([idx]);
+        this._slideSelectionAnchor = idx;
+        this._push();
+        this.onUpdate('slides');
+    }
+
+    insertSlides(slides, afterIndex = null) {
+        const src = Array.isArray(slides) ? slides : [];
+        if (!src.length) return;
+        const insertAt = afterIndex == null
+            ? this.data.slides.length
+            : this._clampSlideIndex(afterIndex) + 1;
+        const clones = src.map((slide) => JSON.parse(JSON.stringify(slide)));
+        this.data.slides.splice(insertAt, 0, ...clones);
+        const indices = clones.map((_, i) => insertAt + i);
+        this.selectedIndex = indices[indices.length - 1];
+        this.selectedSlides = new Set(indices);
+        this._slideSelectionAnchor = indices[0];
         this._push();
         this.onUpdate('slides');
     }
@@ -318,6 +388,28 @@ class SlidesEditor {
         const copy = JSON.parse(JSON.stringify(this.data.slides[index]));
         this.data.slides.splice(index + 1, 0, copy);
         this.selectedIndex = index + 1;
+        this.selectedSlides = new Set([this.selectedIndex]);
+        this._slideSelectionAnchor = this.selectedIndex;
+        this._push();
+        this.onUpdate('slides');
+    }
+
+    duplicateSlides(indices) {
+        const sorted = this._sanitizeSlideIndices(indices);
+        if (!sorted.length) return;
+        let offset = 0;
+        const inserted = [];
+        sorted.forEach((idx) => {
+            const source = this.data.slides[idx + offset];
+            const copy = JSON.parse(JSON.stringify(source));
+            const insertAt = idx + offset + 1;
+            this.data.slides.splice(insertAt, 0, copy);
+            inserted.push(insertAt);
+            offset += 1;
+        });
+        this.selectedIndex = inserted[inserted.length - 1];
+        this.selectedSlides = new Set(inserted);
+        this._slideSelectionAnchor = inserted[0];
         this._push();
         this.onUpdate('slides');
     }
@@ -326,6 +418,24 @@ class SlidesEditor {
         if (this.data.slides.length <= 1) return;
         this.data.slides.splice(index, 1);
         this.selectedIndex = Math.min(this.selectedIndex, this.data.slides.length - 1);
+        this.selectedSlides = new Set([this.selectedIndex]);
+        this._slideSelectionAnchor = this.selectedIndex;
+        this._push();
+        this.onUpdate('slides');
+    }
+
+    removeSlides(indices) {
+        const sorted = this._sanitizeSlideIndices(indices);
+        if (!sorted.length) return;
+        if (this.data.slides.length - sorted.length < 1) return;
+        const first = sorted[0];
+        [...sorted].reverse().forEach((idx) => {
+            this.data.slides.splice(idx, 1);
+        });
+        const next = this._clampSlideIndex(first);
+        this.selectedIndex = next;
+        this.selectedSlides = new Set([next]);
+        this._slideSelectionAnchor = next;
         this._push();
         this.onUpdate('slides');
     }
@@ -335,6 +445,35 @@ class SlidesEditor {
         const [slide] = this.data.slides.splice(from, 1);
         this.data.slides.splice(to, 0, slide);
         this.selectedIndex = to;
+        this.selectedSlides = new Set([to]);
+        this._slideSelectionAnchor = to;
+        this._push();
+        this.onUpdate('slides');
+    }
+
+    moveSlides(indices, targetIndex) {
+        const sorted = this._sanitizeSlideIndices(indices);
+        if (!sorted.length) return;
+        const total = this.data.slides.length;
+        let insertion = Number(targetIndex);
+        if (!Number.isFinite(insertion)) return;
+        insertion = Math.max(0, Math.min(total, Math.trunc(insertion)));
+        if (insertion >= sorted[0] && insertion <= sorted[sorted.length - 1] + 1) return;
+
+        const selectedSet = new Set(sorted);
+        const moving = sorted.map((idx) => this.data.slides[idx]);
+        const remaining = this.data.slides.filter((_, idx) => !selectedSet.has(idx));
+        const removedBefore = sorted.filter((idx) => idx < insertion).length;
+        const insertInRemaining = Math.max(0, Math.min(remaining.length, insertion - removedBefore));
+        this.data.slides = [
+            ...remaining.slice(0, insertInRemaining),
+            ...moving,
+            ...remaining.slice(insertInRemaining),
+        ];
+        const newIndices = moving.map((_, i) => insertInRemaining + i);
+        this.selectedIndex = newIndices[newIndices.length - 1];
+        this.selectedSlides = new Set(newIndices);
+        this._slideSelectionAnchor = newIndices[0];
         this._push();
         this.onUpdate('slides');
     }
@@ -351,9 +490,83 @@ class SlidesEditor {
         this.onUpdate('slide-update');
     }
 
-    selectSlide(index) {
-        this.selectedIndex = index;
+    selectSlide(index, options = {}) {
+        const idx = this._clampSlideIndex(index);
+        const mode = options && typeof options === 'object' ? options : {};
+        if (mode.range) {
+            this.extendSlideSelection(idx);
+            return;
+        }
+        if (mode.additive) {
+            this.toggleSlideSelection(idx);
+            return;
+        }
+        this.selectedIndex = idx;
+        this.selectedSlides = new Set([idx]);
+        this._slideSelectionAnchor = idx;
         this.onUpdate('select');
+    }
+
+    setSlideSelection(indices, options = {}) {
+        const sorted = this._sanitizeSlideIndices(indices);
+        if (!sorted.length) return;
+        const last = sorted[sorted.length - 1];
+        this.selectedIndex = this._clampSlideIndex(
+            options?.focusIndex != null ? options.focusIndex : last,
+        );
+        this.selectedSlides = new Set(sorted);
+        this._slideSelectionAnchor = this._clampSlideIndex(
+            options?.anchorIndex != null ? options.anchorIndex : this._slideSelectionAnchor,
+        );
+        this.onUpdate('select');
+    }
+
+    clearSlideSelection() {
+        const idx = this._clampSlideIndex(this.selectedIndex);
+        this.selectedSlides = new Set([idx]);
+        this._slideSelectionAnchor = idx;
+        this.onUpdate('select');
+    }
+
+    toggleSlideSelection(index) {
+        const idx = this._clampSlideIndex(index);
+        const next = new Set(this.selectedSlides || []);
+        if (next.has(idx)) {
+            if (next.size === 1) return;
+            next.delete(idx);
+            const sorted = this._sanitizeSlideIndices(Array.from(next));
+            this.selectedSlides = new Set(sorted);
+            this.selectedIndex = sorted[sorted.length - 1];
+        } else {
+            next.add(idx);
+            const sorted = this._sanitizeSlideIndices(Array.from(next));
+            this.selectedSlides = new Set(sorted);
+            this.selectedIndex = idx;
+        }
+        this._slideSelectionAnchor = idx;
+        this.onUpdate('select');
+    }
+
+    extendSlideSelection(index) {
+        const idx = this._clampSlideIndex(index);
+        const anchor = this._clampSlideIndex(this._slideSelectionAnchor);
+        const start = Math.min(anchor, idx);
+        const end = Math.max(anchor, idx);
+        const range = [];
+        for (let i = start; i <= end; i += 1) range.push(i);
+        this.selectedSlides = new Set(range);
+        this.selectedIndex = idx;
+        this.onUpdate('select');
+    }
+
+    getSelectedSlideIndices() {
+        this._syncSelectionAfterDataChange();
+        return this._sanitizeSlideIndices(Array.from(this.selectedSlides));
+    }
+
+    isSlideSelected(index) {
+        const idx = this._clampSlideIndex(index);
+        return this.selectedSlides?.has(idx) || false;
     }
 
     get currentSlide() {
@@ -402,6 +615,7 @@ class SlidesEditor {
         if (this._historyIndex <= 0) return;
         this._historyIndex--;
         this.data = JSON.parse(this._historyStack[this._historyIndex]);
+        this._syncSelectionAfterDataChange();
         this.onUpdate('undo');
     }
 
@@ -409,6 +623,7 @@ class SlidesEditor {
         if (this._historyIndex >= this._historyStack.length - 1) return;
         this._historyIndex++;
         this.data = JSON.parse(this._historyStack[this._historyIndex]);
+        this._syncSelectionAfterDataChange();
         this.onUpdate('redo');
     }
 

@@ -243,7 +243,7 @@ function updateFormatTabEnhanced() {
 
     // Show/hide contextual groups
     const type = el.type;
-    const textTypes = ['heading', 'text', 'list', 'code', 'highlight', 'definition', 'code-example', 'quote', 'card', 'table'];
+    const textTypes = ['heading', 'text', 'list', 'code', 'highlight', 'definition', 'callout-box', 'exercise-block', 'mistake-fix', 'code-example', 'terminal-session', 'quote', 'card', 'table'];
     document.getElementById('fmt-text-group').style.display = textTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-paragraph-group').style.display = textTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-image-group').style.display = type === 'image' ? '' : 'none';

@@ -30,8 +30,16 @@ class SlidesShared {
         code: { source: 'text', ratio: 16 / 22 },
         highlight: { source: 'text', ratio: 16 / 22 },
         definition: { source: 'text', ratio: 16 / 22 },
+        'callout-box': { source: 'text', ratio: 18 / 22 },
+        'exercise-block': { source: 'text', ratio: 18 / 22 },
+        'before-after': { source: 'text', ratio: 17 / 22 },
+        'mistake-fix': { source: 'text', ratio: 17 / 22 },
+        'rubric-block': { source: 'text', ratio: 16 / 22 },
+        'rubrick-block': { source: 'text', ratio: 16 / 22 },
         'code-example': { source: 'text', ratio: 16 / 22 },
+        'terminal-session': { source: 'text', ratio: 16 / 22 },
         shape: { source: 'text', ratio: 16 / 22 },
+        diagramme: { source: 'text', ratio: 16 / 22 },
         quote: { source: 'text', ratio: 26 / 22 },
         card: { source: 'text', ratio: 18 / 22 },
         table: { source: 'text', ratio: 18 / 22 },
@@ -65,6 +73,75 @@ class SlidesShared {
         }
         const fb = Number(fallback);
         return Number.isFinite(fb) ? Math.max(8, Math.round(fb)) : t.text;
+    }
+
+    static LABEL_TONE_HINTS = Object.freeze({
+        'attention': 'warning',
+        'consigne': 'warning',
+        'cas limite': 'warning',
+        'erreur frequente': 'danger',
+        'piege frequent': 'danger',
+        'contre exemple': 'danger',
+        'correction': 'success',
+        'solution': 'success',
+        'a retenir': 'success',
+        'checklist': 'success',
+        'astuce': 'info',
+        'bonnes pratiques': 'info',
+        'api': 'info',
+        'debug': 'info',
+        'performance': 'info',
+        'snippet': 'info',
+        'demo': 'info',
+        'synthese': 'info',
+        'notion': 'info',
+        'rappel': 'info',
+        'theoreme': 'info',
+        'propriete': 'info',
+        'vocabulaire': 'info',
+        'application': 'info',
+    });
+
+    static normalizeLabelToken(value = '') {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim();
+    }
+
+    static normalizeTone(value = '') {
+        const tone = String(value || '').trim().toLowerCase();
+        if (['primary', 'accent', 'info', 'success', 'warning', 'danger'].includes(tone)) return tone;
+        return 'auto';
+    }
+
+    static resolveTone(rawTone = '', label = '') {
+        const tone = SlidesShared.normalizeTone(rawTone);
+        if (tone !== 'auto') return tone;
+        const token = SlidesShared.normalizeLabelToken(label);
+        return SlidesShared.LABEL_TONE_HINTS[token] || 'primary';
+    }
+
+    static tonePalette(rawTone = '', label = '') {
+        const tone = SlidesShared.resolveTone(rawTone, label);
+        const accentMap = {
+            primary: 'var(--sl-primary,#818cf8)',
+            accent: 'var(--sl-accent,#f472b6)',
+            info: 'var(--sl-info,#38bdf8)',
+            success: 'var(--sl-success,#22c55e)',
+            warning: 'var(--sl-warning,#f59e0b)',
+            danger: 'var(--sl-danger,#ef4444)',
+        };
+        const accent = accentMap[tone] || accentMap.primary;
+        return {
+            tone,
+            accent,
+            softBg: `color-mix(in srgb, ${accent} 6%, var(--sl-slide-bg,#1a1d27))`,
+            strongBg: `color-mix(in srgb, ${accent} 10%, var(--sl-slide-bg,#1a1d27))`,
+            border: `color-mix(in srgb, ${accent} 40%, var(--sl-border,#2d3347))`,
+        };
     }
 
     /**
@@ -161,11 +238,824 @@ class SlidesShared {
             `</div>`;
     }
 
+    static DIAGRAM_PALETTE = Object.freeze([
+        'var(--sl-primary,#818cf8)',
+        'var(--sl-info,#38bdf8)',
+        'var(--sl-success,#22c55e)',
+        'var(--sl-warning,#f59e0b)',
+        'var(--sl-danger,#ef4444)',
+        'var(--sl-accent,#f472b6)',
+    ]);
+
+    static _diagramColor(index = 0) {
+        const i = Number.isFinite(index) ? Math.max(0, Math.floor(index)) : 0;
+        return SlidesShared.DIAGRAM_PALETTE[i % SlidesShared.DIAGRAM_PALETTE.length];
+    }
+
+    static _diagramNumber(value) {
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+        const normalized = String(value ?? '')
+            .trim()
+            .replace(/\s+/g, '')
+            .replace(',', '.');
+        if (!normalized) return 0;
+        const n = Number(normalized);
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    static _diagramRows(rows) {
+        if (!Array.isArray(rows)) return [];
+        const out = [];
+        rows.forEach((row) => {
+            if (Array.isArray(row)) {
+                const cleaned = row.map((cell) => String(cell ?? '').trim());
+                if (cleaned.some(Boolean)) out.push(cleaned);
+                return;
+            }
+            const asText = String(row ?? '').trim();
+            if (!asText) return;
+            const delimiter = asText.includes('\t')
+                ? '\t'
+                : (asText.includes(';') ? ';' : (asText.includes('|') ? '|' : null));
+            if (!delimiter) {
+                out.push([asText]);
+                return;
+            }
+            const parts = asText.split(delimiter).map((cell) => String(cell ?? '').trim());
+            if (parts.some(Boolean)) out.push(parts);
+        });
+        return out;
+    }
+
+    static _diagramDataset(data = {}) {
+        const rows = SlidesShared._diagramRows(data?.rows || []);
+        const chartType = [
+            'bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'combo',
+            'scatter', 'bubble', 'histogram', 'boxplot', 'waterfall', 'funnel',
+            'radar', 'pie', 'donut', 'heatmap', 'treemap', 'sankey', 'gantt', 'radial-gauge',
+        ].includes(String(data?.chartType || '').toLowerCase())
+            ? String(data.chartType).toLowerCase()
+            : 'bar';
+        const title = String(data?.title || 'Diagramme').trim() || 'Diagramme';
+        if (!rows.length) {
+            return { chartType, title, rows: [], categories: [], series: [] };
+        }
+        const header = rows[0];
+        const seriesNames = header
+            .slice(1)
+            .map((name, idx) => {
+                const n = String(name || '').trim();
+                return n || `Série ${idx + 1}`;
+            });
+        if (!seriesNames.length) seriesNames.push('Série 1');
+        const categories = [];
+        const series = seriesNames.map((name) => ({ name, values: [] }));
+        rows.slice(1).forEach((row, rowIdx) => {
+            if (!Array.isArray(row) || !row.length) return;
+            const hasAny = row.some((cell) => String(cell ?? '').trim().length > 0);
+            if (!hasAny) return;
+            const label = String(row[0] || '').trim() || `Catégorie ${rowIdx + 1}`;
+            categories.push(label);
+            for (let si = 0; si < series.length; si++) {
+                series[si].values.push(SlidesShared._diagramNumber(row[si + 1]));
+            }
+        });
+        return { chartType, title, rows, categories, series };
+    }
+
+    static renderDiagrammeBlock(data = {}, style = {}, typography = null, options = {}) {
+        const dataset = SlidesShared._diagramDataset(data);
+        const chartType = dataset.chartType || 'bar';
+        const rows = Array.isArray(dataset.rows) ? dataset.rows : [];
+        const rowData = rows.slice(1).filter((row) => Array.isArray(row) && row.some((cell) => String(cell ?? '').trim()));
+        const categories = dataset.categories || [];
+        const series = dataset.series || [];
+        const title = dataset.title || 'Diagramme';
+        const fallbackFontSize = Number(options?.fallbackFontSize);
+        const base = SlidesShared.resolveElementFontSize(
+            'diagramme',
+            style,
+            typography,
+            Number.isFinite(fallbackFontSize) ? fallbackFontSize : 16
+        );
+        const titleSize = Math.round(base * 0.9);
+        const axisSize = Math.round(base * 0.62);
+        const legendSize = Math.round(base * 0.66);
+        const textColor = style?.color || 'var(--sl-text,#cbd5e1)';
+        const headingColor = style?.titleColor || 'var(--sl-heading,#f1f5f9)';
+        const borderColor = 'var(--sl-border,#2d3347)';
+        const chartBg = 'color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 82%,#000)';
+        const chartW = 1000;
+        const chartH = 420;
+        const header = Array.isArray(rows[0]) ? rows[0] : [];
+        const round2 = (value) => Math.round((Number(value) || 0) * 100) / 100;
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        const parseNum = (value) => SlidesShared._diagramNumber(value);
+
+        if (!rows.length) {
+            return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.5rem;padding:0.8rem;box-sizing:border-box;border:1px solid ${borderColor};border-radius:10px;background:var(--sl-slide-bg,#1a1d27);overflow:hidden;">
+                <div style="font-size:${titleSize}px;font-weight:700;color:${headingColor};">${SlidesShared.esc(title)}</div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;border:1px dashed ${borderColor};border-radius:8px;color:var(--sl-muted,#94a3b8);font-size:${Math.round(base * 0.8)}px;padding:0.8rem;text-align:center;">
+                    Ajoutez un tableau de données (en-tête + lignes) dans le panneau de propriétés.
+                </div>
+            </div>`;
+        }
+
+        const maxSeriesLen = series.reduce((acc, cur) => Math.max(acc, (cur.values || []).length), 0);
+        const nCategories = Math.max(categories.length, maxSeriesLen, rowData.length, 1);
+        const allValues = [];
+        series.forEach((serie) => {
+            (serie.values || []).forEach((v) => allValues.push(Number.isFinite(v) ? v : 0));
+        });
+        let maxValue = Math.max(1, ...allValues.map((v) => Math.max(0, v)));
+        const gridSteps = 4;
+        const margin = { left: 68, right: 24, top: 16, bottom: 72 };
+        const plotW = chartW - margin.left - margin.right;
+        const plotH = chartH - margin.top - margin.bottom;
+        let xMax = maxValue;
+        let yMax = maxValue;
+
+        if (chartType === 'stacked-bar' || chartType === 'stacked-100') {
+            const stackedMax = Array.from({ length: nCategories }, (_, idx) =>
+                series.reduce((sum, serie) => sum + Math.max(0, (serie.values || [])[idx] || 0), 0)
+            ).reduce((max, value) => Math.max(max, value), 0);
+            maxValue = chartType === 'stacked-100' ? 100 : Math.max(1, stackedMax);
+            xMax = maxValue;
+            yMax = maxValue;
+        }
+
+        if (chartType === 'scatter' || chartType === 'bubble') {
+            const xSeriesValues = (series[0]?.values || []).map((v) => Math.max(0, v));
+            const ySeriesValues = ((series[1] || series[0])?.values || []).map((v) => Math.max(0, v));
+            xMax = Math.max(1, ...xSeriesValues);
+            yMax = Math.max(1, ...ySeriesValues);
+            maxValue = yMax;
+        }
+
+        const toY = (v, upper = maxValue) => margin.top + plotH - ((Math.max(0, v) / Math.max(1, upper)) * plotH);
+        const toX = (v, upper = xMax) => margin.left + ((Math.max(0, v) / Math.max(1, upper)) * plotW);
+
+        let chartBody = '';
+        let legendItems = [];
+
+        if (chartType === 'pie' || chartType === 'donut') {
+            const firstSeries = series[0] || { name: 'Série 1', values: [] };
+            const pieValues = categories.map((_, idx) => Math.max(0, firstSeries.values[idx] || 0));
+            const sum = pieValues.reduce((acc, v) => acc + v, 0);
+            if (sum > 0) {
+                const cx = 320;
+                const cy = 208;
+                const r = 138;
+                const innerR = chartType === 'donut' ? Math.round(r * 0.56) : 0;
+                let start = -Math.PI / 2;
+                const slices = [];
+                for (let i = 0; i < pieValues.length; i++) {
+                    const value = pieValues[i];
+                    if (value <= 0) continue;
+                    const angle = (value / sum) * Math.PI * 2;
+                    const end = start + angle;
+                    const color = SlidesShared._diagramColor(i);
+                    if (angle >= (Math.PI * 2 - 0.0001)) {
+                        slices.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" />`);
+                    } else {
+                        const x1 = cx + (r * Math.cos(start));
+                        const y1 = cy + (r * Math.sin(start));
+                        const x2 = cx + (r * Math.cos(end));
+                        const y2 = cy + (r * Math.sin(end));
+                        const largeArc = angle > Math.PI ? 1 : 0;
+                        slices.push(`<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${color}" />`);
+                    }
+                    start = end;
+                }
+                chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">
+                    ${slices.join('')}
+                    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1" />
+                    ${innerR > 0 ? `<circle cx="${cx}" cy="${cy}" r="${innerR}" fill="${chartBg}" />` : ''}
+                </svg>`;
+                legendItems = categories.map((label, i) => ({
+                    label,
+                    value: pieValues[i] || 0,
+                    color: SlidesShared._diagramColor(i),
+                }));
+            } else {
+                chartBody = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--sl-muted,#94a3b8);font-size:${Math.round(base * 0.8)}px;">Aucune valeur positive à afficher.</div>`;
+            }
+        } else if (chartType === 'radial-gauge') {
+            const value = Math.max(0, parseNum(series[0]?.values?.[0] || rowData[0]?.[1] || 0));
+            const minV = parseNum(series[1]?.values?.[0] || rowData[0]?.[2] || 0);
+            let maxV = parseNum(series[2]?.values?.[0] || rowData[0]?.[3] || 100);
+            if (!Number.isFinite(maxV) || maxV <= minV) maxV = minV + 100;
+            const ratio = clamp((value - minV) / Math.max(1, maxV - minV), 0, 1);
+            const cx = chartW / 2;
+            const cy = chartH * 0.72;
+            const r = Math.min(plotW, plotH) * 0.44;
+            const toPolar = (angle) => ({
+                x: cx + (r * Math.cos(angle)),
+                y: cy + (r * Math.sin(angle)),
+            });
+            const start = (-135 * Math.PI) / 180;
+            const end = (135 * Math.PI) / 180;
+            const valEnd = start + ((end - start) * ratio);
+            const arcPath = (a1, a2) => {
+                const p1 = toPolar(a1);
+                const p2 = toPolar(a2);
+                const large = (a2 - a1) > Math.PI ? 1 : 0;
+                return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${large} 1 ${p2.x} ${p2.y}`;
+            };
+            const label = String(rowData[0]?.[0] || header[1] || 'Valeur');
+            chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">
+                <path d="${arcPath(start, end)}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="20" stroke-linecap="round" />
+                <path d="${arcPath(start, valEnd)}" fill="none" stroke="${SlidesShared._diagramColor(0)}" stroke-width="20" stroke-linecap="round" />
+                <text x="${cx}" y="${cy - 16}" text-anchor="middle" fill="var(--sl-heading,#f1f5f9)" font-size="${Math.round(base * 1.15)}" font-weight="700">${SlidesShared.esc(String(round2(value)))}</text>
+                <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${Math.round(base * 0.66)}">${SlidesShared.esc(label)}</text>
+                <text x="${cx - r}" y="${cy + 30}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${Math.round(base * 0.54)}">${SlidesShared.esc(String(round2(minV)))}</text>
+                <text x="${cx + r}" y="${cy + 30}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${Math.round(base * 0.54)}">${SlidesShared.esc(String(round2(maxV)))}</text>
+            </svg>`;
+        } else if (chartType === 'radar') {
+            const cx = 500;
+            const cy = 210;
+            const radius = 142;
+            const nAxis = Math.max(3, nCategories);
+            const levels = 4;
+            const safeMax = Math.max(1, maxValue);
+            const polarPoint = (idx, ratio) => {
+                const angle = ((Math.PI * 2) * (idx / nAxis)) - (Math.PI / 2);
+                return {
+                    x: cx + (Math.cos(angle) * radius * ratio),
+                    y: cy + (Math.sin(angle) * radius * ratio),
+                };
+            };
+            const svgParts = [];
+            for (let lvl = 1; lvl <= levels; lvl++) {
+                const ratio = lvl / levels;
+                const ring = [];
+                for (let i = 0; i < nAxis; i++) {
+                    const p = polarPoint(i, ratio);
+                    ring.push(`${p.x},${p.y}`);
+                }
+                svgParts.push(`<polygon points="${ring.join(' ')}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" />`);
+            }
+            for (let i = 0; i < nAxis; i++) {
+                const outer = polarPoint(i, 1);
+                const label = categories[i] || `Cat. ${i + 1}`;
+                const labelPoint = polarPoint(i, 1.14);
+                svgParts.push(`<line x1="${cx}" y1="${cy}" x2="${outer.x}" y2="${outer.y}" stroke="rgba(255,255,255,0.16)" stroke-width="1" />`);
+                svgParts.push(`<text x="${labelPoint.x}" y="${labelPoint.y}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(label)}</text>`);
+            }
+            series.forEach((serie, si) => {
+                const color = SlidesShared._diagramColor(si);
+                const points = [];
+                for (let i = 0; i < nAxis; i++) {
+                    const value = Math.max(0, serie.values[i] || 0);
+                    const ratio = value / safeMax;
+                    const p = polarPoint(i, ratio);
+                    points.push(p);
+                }
+                const poly = points.map((p) => `${p.x},${p.y}`).join(' ');
+                svgParts.push(`<polygon points="${poly}" fill="color-mix(in srgb,${color} 18%,transparent)" stroke="${color}" stroke-width="2" />`);
+                points.forEach((p) => {
+                    svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}" />`);
+                });
+            });
+            chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgParts.join('')}</svg>`;
+            legendItems = series.map((serie, idx) => ({
+                label: serie.name || `Série ${idx + 1}`,
+                color: SlidesShared._diagramColor(idx),
+            }));
+        } else if (chartType === 'funnel') {
+            const values = categories.map((_, idx) => Math.max(0, (series[0]?.values || [])[idx] || 0));
+            const maxV = Math.max(1, ...values);
+            const n = Math.max(1, values.length);
+            const gap = 6;
+            const rowH = (plotH - ((n - 1) * gap)) / n;
+            const svgParts = [];
+            for (let i = 0; i < n; i++) {
+                const v = values[i] || 0;
+                const nextV = i < n - 1 ? values[i + 1] : (v * 0.65);
+                const wTop = (v / maxV) * (plotW * 0.88);
+                const wBottom = (nextV / maxV) * (plotW * 0.88);
+                const cx = margin.left + (plotW / 2);
+                const y = margin.top + (i * (rowH + gap));
+                const x1 = cx - (wTop / 2);
+                const x2 = cx + (wTop / 2);
+                const x3 = cx + (wBottom / 2);
+                const x4 = cx - (wBottom / 2);
+                const color = SlidesShared._diagramColor(i);
+                const label = categories[i] || `Étape ${i + 1}`;
+                svgParts.push(`<path d="M ${x1} ${y} L ${x2} ${y} L ${x3} ${y + rowH} L ${x4} ${y + rowH} Z" fill="color-mix(in srgb,${color} 76%,transparent)" stroke="${color}" stroke-width="1.2" />`);
+                svgParts.push(`<text x="${cx}" y="${y + (rowH / 2) + 4}" text-anchor="middle" fill="var(--sl-heading,#f1f5f9)" font-size="${Math.max(10, Math.round(axisSize * 1.02))}">${SlidesShared.esc(`${label} (${round2(v)})`)}</text>`);
+            }
+            chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgParts.join('')}</svg>`;
+        } else if (chartType === 'treemap') {
+            const values = categories.map((_, idx) => Math.max(0, (series[0]?.values || [])[idx] || 0));
+            const sum = values.reduce((acc, v) => acc + v, 0);
+            if (sum > 0) {
+                const svgParts = [];
+                let xCursor = margin.left;
+                for (let i = 0; i < values.length; i++) {
+                    const value = values[i];
+                    const width = i === values.length - 1
+                        ? (margin.left + plotW) - xCursor
+                        : Math.max(8, (value / sum) * plotW);
+                    const color = SlidesShared._diagramColor(i);
+                    const label = categories[i] || `Bloc ${i + 1}`;
+                    svgParts.push(`<rect x="${xCursor}" y="${margin.top}" width="${width}" height="${plotH}" rx="2" fill="color-mix(in srgb,${color} 76%,transparent)" stroke="${color}" stroke-width="1" />`);
+                    if (width > 56) {
+                        svgParts.push(`<text x="${xCursor + 8}" y="${margin.top + 18}" fill="var(--sl-heading,#f1f5f9)" font-size="${Math.max(10, Math.round(axisSize * 0.98))}" font-weight="600">${SlidesShared.esc(label)}</text>`);
+                        svgParts.push(`<text x="${xCursor + 8}" y="${margin.top + 36}" fill="var(--sl-text,#cbd5e1)" font-size="${Math.max(9, Math.round(axisSize * 0.86))}">${SlidesShared.esc(String(round2(value)))}</text>`);
+                    }
+                    xCursor += width;
+                }
+                chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgParts.join('')}</svg>`;
+                legendItems = categories.map((label, i) => ({ label, value: values[i], color: SlidesShared._diagramColor(i) }));
+            } else {
+                chartBody = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--sl-muted,#94a3b8);font-size:${Math.round(base * 0.8)}px;">Aucune valeur positive à afficher.</div>`;
+            }
+        } else if (chartType === 'sankey') {
+            const flows = rowData
+                .map((row) => ({
+                    source: String(row[0] || '').trim(),
+                    target: String(row[1] || '').trim(),
+                    value: Math.max(0, parseNum(row[2])),
+                }))
+                .filter((f) => f.source && f.target && f.value > 0);
+            if (!flows.length) {
+                chartBody = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--sl-muted,#94a3b8);font-size:${Math.round(base * 0.8)}px;">Format attendu: Source | Cible | Valeur.</div>`;
+            } else {
+                const sourceNames = Array.from(new Set(flows.map((f) => f.source)));
+                const targetNames = Array.from(new Set(flows.map((f) => f.target)));
+                const nodeW = 18;
+                const sourceTotals = new Map(sourceNames.map((name) => [name, 0]));
+                const targetTotals = new Map(targetNames.map((name) => [name, 0]));
+                flows.forEach((flow) => {
+                    sourceTotals.set(flow.source, (sourceTotals.get(flow.source) || 0) + flow.value);
+                    targetTotals.set(flow.target, (targetTotals.get(flow.target) || 0) + flow.value);
+                });
+                const maxSide = Math.max(
+                    1,
+                    Array.from(sourceTotals.values()).reduce((a, b) => a + b, 0),
+                    Array.from(targetTotals.values()).reduce((a, b) => a + b, 0)
+                );
+                const scale = plotH / maxSide;
+                const layoutNodes = (names, totals, x) => {
+                    const nodes = new Map();
+                    let yCursor = margin.top;
+                    names.forEach((name) => {
+                        const h = Math.max(10, (totals.get(name) || 0) * scale);
+                        nodes.set(name, { x, y: yCursor, h });
+                        yCursor += h + 8;
+                    });
+                    return nodes;
+                };
+                const sourceX = margin.left + 40;
+                const targetX = margin.left + plotW - 58;
+                const srcNodes = layoutNodes(sourceNames, sourceTotals, sourceX);
+                const tgtNodes = layoutNodes(targetNames, targetTotals, targetX);
+                const srcOffset = new Map(sourceNames.map((name) => [name, 0]));
+                const tgtOffset = new Map(targetNames.map((name) => [name, 0]));
+                const svgParts = [];
+                flows.forEach((flow, i) => {
+                    const s = srcNodes.get(flow.source);
+                    const t = tgtNodes.get(flow.target);
+                    if (!s || !t) return;
+                    const thickness = Math.max(2, flow.value * scale);
+                    const sy = s.y + (srcOffset.get(flow.source) || 0) + (thickness / 2);
+                    const ty = t.y + (tgtOffset.get(flow.target) || 0) + (thickness / 2);
+                    srcOffset.set(flow.source, (srcOffset.get(flow.source) || 0) + thickness);
+                    tgtOffset.set(flow.target, (tgtOffset.get(flow.target) || 0) + thickness);
+                    const sx = s.x + nodeW;
+                    const tx = t.x;
+                    const c1x = sx + 170;
+                    const c2x = tx - 170;
+                    const color = SlidesShared._diagramColor(i);
+                    svgParts.push(`<path d="M ${sx} ${sy} C ${c1x} ${sy}, ${c2x} ${ty}, ${tx} ${ty}" fill="none" stroke="color-mix(in srgb,${color} 70%,transparent)" stroke-width="${thickness}" stroke-linecap="round" opacity="0.78" />`);
+                });
+                sourceNames.forEach((name, i) => {
+                    const node = srcNodes.get(name);
+                    if (!node) return;
+                    const color = SlidesShared._diagramColor(i);
+                    svgParts.push(`<rect x="${node.x}" y="${node.y}" width="${nodeW}" height="${node.h}" rx="2" fill="${color}" />`);
+                    svgParts.push(`<text x="${node.x - 6}" y="${node.y + (node.h / 2) + 4}" text-anchor="end" fill="var(--sl-muted,#94a3b8)" font-size="${Math.max(9, Math.round(axisSize * 0.9))}">${SlidesShared.esc(name)}</text>`);
+                });
+                targetNames.forEach((name, i) => {
+                    const node = tgtNodes.get(name);
+                    if (!node) return;
+                    const color = SlidesShared._diagramColor(i + sourceNames.length);
+                    svgParts.push(`<rect x="${node.x}" y="${node.y}" width="${nodeW}" height="${node.h}" rx="2" fill="${color}" />`);
+                    svgParts.push(`<text x="${node.x + nodeW + 6}" y="${node.y + (node.h / 2) + 4}" text-anchor="start" fill="var(--sl-muted,#94a3b8)" font-size="${Math.max(9, Math.round(axisSize * 0.9))}">${SlidesShared.esc(name)}</text>`);
+                });
+                chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgParts.join('')}</svg>`;
+            }
+        } else if (chartType === 'gantt') {
+            const parseTime = (value) => {
+                const raw = String(value ?? '').trim();
+                if (!raw) return NaN;
+                const numeric = Number(raw.replace(',', '.'));
+                if (Number.isFinite(numeric)) return numeric;
+                const date = Date.parse(raw.replace(/\//g, '-'));
+                return Number.isFinite(date) ? date : NaN;
+            };
+            const tasks = rowData
+                .map((row) => ({
+                    label: String(row[0] || '').trim(),
+                    start: parseTime(row[1]),
+                    end: parseTime(row[2]),
+                    group: String(row[3] || '').trim(),
+                }))
+                .filter((task) => task.label && Number.isFinite(task.start) && Number.isFinite(task.end) && task.end >= task.start);
+            if (!tasks.length) {
+                chartBody = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--sl-muted,#94a3b8);font-size:${Math.round(base * 0.8)}px;">Format attendu: Tâche | Début | Fin | Groupe.</div>`;
+            } else {
+                const minStart = Math.min(...tasks.map((task) => task.start));
+                let maxEnd = Math.max(...tasks.map((task) => task.end));
+                if (maxEnd <= minStart) maxEnd = minStart + 1;
+                const isDateScale = maxEnd > 10_000_000_000;
+                const fmtTick = (value) => {
+                    if (!isDateScale) return String(round2(value));
+                    const d = new Date(value);
+                    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+                };
+                const groups = Array.from(new Set(tasks.map((task) => task.group).filter(Boolean)));
+                const groupIndex = new Map(groups.map((name, idx) => [name, idx]));
+                const rowH = plotH / tasks.length;
+                const svgParts = [];
+                for (let i = 0; i <= gridSteps; i++) {
+                    const ratio = i / gridSteps;
+                    const x = margin.left + (plotW * ratio);
+                    const value = minStart + ((maxEnd - minStart) * ratio);
+                    svgParts.push(`<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + plotH}" stroke="rgba(255,255,255,0.1)" stroke-width="1" />`);
+                    svgParts.push(`<text x="${x}" y="${chartH - 8}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(fmtTick(value))}</text>`);
+                }
+                tasks.forEach((task, idx) => {
+                    const y = margin.top + (idx * rowH) + (rowH * 0.18);
+                    const h = rowH * 0.64;
+                    const x1 = margin.left + (((task.start - minStart) / (maxEnd - minStart)) * plotW);
+                    const x2 = margin.left + (((task.end - minStart) / (maxEnd - minStart)) * plotW);
+                    const color = task.group
+                        ? SlidesShared._diagramColor(groupIndex.get(task.group) || 0)
+                        : SlidesShared._diagramColor(idx);
+                    svgParts.push(`<rect x="${x1}" y="${y}" width="${Math.max(2, x2 - x1)}" height="${h}" rx="3" fill="color-mix(in srgb,${color} 76%,transparent)" stroke="${color}" stroke-width="1.1" />`);
+                    svgParts.push(`<text x="${margin.left - 6}" y="${y + (h / 2) + 4}" text-anchor="end" fill="var(--sl-muted,#94a3b8)" font-size="${Math.max(9, Math.round(axisSize * 0.9))}">${SlidesShared.esc(task.label)}</text>`);
+                });
+                chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgParts.join('')}</svg>`;
+                if (groups.length) {
+                    legendItems = groups.map((name, idx) => ({ label: name, color: SlidesShared._diagramColor(idx) }));
+                }
+            }
+        } else if (chartType === 'heatmap') {
+            const xLabels = header.slice(1).map((cell, idx) => String(cell || '').trim() || `Col ${idx + 1}`);
+            const yLabels = rowData.map((row, idx) => String(row[0] || '').trim() || `Ligne ${idx + 1}`);
+            const matrix = rowData.map((row) => xLabels.map((_, xi) => parseNum(row[xi + 1])));
+            const values = matrix.flat().filter((v) => Number.isFinite(v));
+            const minV = values.length ? Math.min(...values) : 0;
+            const maxV = values.length ? Math.max(...values) : 1;
+            const range = Math.max(1e-9, maxV - minV);
+            const nRows = Math.max(1, matrix.length);
+            const nCols = Math.max(1, xLabels.length);
+            const cellW = plotW / nCols;
+            const cellH = plotH / nRows;
+            const svgParts = [];
+            for (let yi = 0; yi < nRows; yi++) {
+                for (let xi = 0; xi < nCols; xi++) {
+                    const value = matrix[yi]?.[xi] || 0;
+                    const ratio = clamp((value - minV) / range, 0, 1);
+                    const x = margin.left + (xi * cellW);
+                    const y = margin.top + (yi * cellH);
+                    const fill = `color-mix(in srgb,var(--sl-primary,#818cf8) ${20 + (ratio * 72)}%,var(--sl-slide-bg,#1a1d27))`;
+                    const txt = ratio > 0.62 ? '#ffffff' : 'var(--sl-text,#cbd5e1)';
+                    svgParts.push(`<rect x="${x}" y="${y}" width="${cellW}" height="${cellH}" fill="${fill}" stroke="${borderColor}" stroke-width="0.8" />`);
+                    svgParts.push(`<text x="${x + (cellW / 2)}" y="${y + (cellH / 2) + 4}" text-anchor="middle" fill="${txt}" font-size="${Math.max(9, Math.round(axisSize * 0.9))}">${SlidesShared.esc(String(round2(value)))}</text>`);
+                }
+            }
+            xLabels.forEach((label, i) => {
+                const x = margin.left + (i * cellW) + (cellW / 2);
+                svgParts.push(`<text x="${x}" y="${margin.top - 6}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(label)}</text>`);
+            });
+            yLabels.forEach((label, i) => {
+                const y = margin.top + (i * cellH) + (cellH / 2) + 4;
+                svgParts.push(`<text x="${margin.left - 8}" y="${y}" text-anchor="end" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(label)}</text>`);
+            });
+            chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgParts.join('')}</svg>`;
+            legendItems = [
+                { label: `Min ${round2(minV)}`, color: 'color-mix(in srgb,var(--sl-primary,#818cf8) 20%,var(--sl-slide-bg,#1a1d27))' },
+                { label: `Max ${round2(maxV)}`, color: 'color-mix(in srgb,var(--sl-primary,#818cf8) 92%,var(--sl-slide-bg,#1a1d27))' },
+            ];
+        } else {
+            let svgParts = [];
+            let axisMin = 0;
+            let axisMax = maxValue;
+
+            const toYRange = (value, minV, maxV) => {
+                const range = Math.max(1e-9, maxV - minV);
+                return margin.top + plotH - (((value - minV) / range) * plotH);
+            };
+
+            if (chartType === 'waterfall') {
+                const deltas = categories.map((_, idx) => (series[0]?.values || [])[idx] || 0);
+                let acc = 0;
+                let minAcc = 0;
+                let maxAcc = 0;
+                deltas.forEach((delta) => {
+                    acc += delta;
+                    minAcc = Math.min(minAcc, acc);
+                    maxAcc = Math.max(maxAcc, acc);
+                });
+                axisMin = Math.min(0, minAcc);
+                axisMax = Math.max(1, maxAcc);
+            }
+
+            for (let t = 0; t <= gridSteps; t++) {
+                const ratio = t / gridSteps;
+                const value = axisMin + ((axisMax - axisMin) * ratio);
+                const y = toYRange(value, axisMin, axisMax);
+                svgParts.push(`<line x1="${margin.left}" y1="${y}" x2="${chartW - margin.right}" y2="${y}" stroke="rgba(255,255,255,0.11)" stroke-width="1" />`);
+                svgParts.push(`<text x="${margin.left - 8}" y="${y + 4}" text-anchor="end" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(String(round2(value)))}</text>`);
+            }
+            svgParts.push(`<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + plotH}" stroke="rgba(255,255,255,0.2)" stroke-width="1.2" />`);
+            svgParts.push(`<line x1="${margin.left}" y1="${toYRange(0, axisMin, axisMax)}" x2="${chartW - margin.right}" y2="${toYRange(0, axisMin, axisMax)}" stroke="rgba(255,255,255,0.2)" stroke-width="1.2" />`);
+
+            if (chartType === 'bar') {
+                const groupW = plotW / nCategories;
+                const clusterW = groupW * 0.76;
+                const barW = Math.max(5, clusterW / Math.max(1, series.length));
+                for (let i = 0; i < nCategories; i++) {
+                    const gx = margin.left + (i * groupW);
+                    const startX = gx + ((groupW - clusterW) / 2);
+                    for (let si = 0; si < series.length; si++) {
+                        const value = Math.max(0, series[si].values[i] || 0);
+                        const h = (value / axisMax) * plotH;
+                        const x = startX + (si * barW);
+                        const y = margin.top + plotH - h;
+                        svgParts.push(`<rect x="${x + 0.8}" y="${y}" width="${Math.max(1, barW - 1.6)}" height="${h}" fill="${SlidesShared._diagramColor(si)}" rx="1.5" />`);
+                    }
+                    const cx = gx + (groupW / 2);
+                    svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
+                }
+            } else if (chartType === 'stacked-bar' || chartType === 'stacked-100') {
+                const groupW = plotW / nCategories;
+                const barW = Math.max(10, groupW * 0.48);
+                for (let i = 0; i < nCategories; i++) {
+                    const cx = margin.left + (i * groupW) + (groupW / 2);
+                    const x = cx - (barW / 2);
+                    let accumulated = 0;
+                    const total = series.reduce((sum, serie) => sum + Math.max(0, serie.values[i] || 0), 0);
+                    for (let si = 0; si < series.length; si++) {
+                        const raw = Math.max(0, series[si].values[i] || 0);
+                        const value = chartType === 'stacked-100'
+                            ? (total > 0 ? ((raw / total) * 100) : 0)
+                            : raw;
+                        const h = (value / axisMax) * plotH;
+                        const y = margin.top + plotH - h - accumulated;
+                        svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${SlidesShared._diagramColor(si)}" />`);
+                        accumulated += h;
+                    }
+                    svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
+                }
+            } else if (chartType === 'histogram') {
+                const values = categories.map((_, idx) => Math.max(0, (series[0]?.values || [])[idx] || 0));
+                const groupW = plotW / nCategories;
+                const barW = groupW * 0.92;
+                for (let i = 0; i < nCategories; i++) {
+                    const value = values[i] || 0;
+                    const h = (value / axisMax) * plotH;
+                    const x = margin.left + (i * groupW) + ((groupW - barW) / 2);
+                    const y = margin.top + plotH - h;
+                    svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${SlidesShared._diagramColor(0)}" rx="1.2" />`);
+                    const cx = margin.left + (i * groupW) + (groupW / 2);
+                    svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Bin ${i + 1}`)}</text>`);
+                }
+                legendItems = [{ label: series[0]?.name || 'Fréquence', color: SlidesShared._diagramColor(0) }];
+            } else if (chartType === 'combo') {
+                const groupW = plotW / nCategories;
+                const barW = groupW * 0.42;
+                const barSerie = series[0] || { name: 'Barres', values: [] };
+                for (let i = 0; i < nCategories; i++) {
+                    const value = Math.max(0, barSerie.values[i] || 0);
+                    const h = (value / axisMax) * plotH;
+                    const x = margin.left + (i * groupW) + ((groupW - barW) / 2);
+                    const y = margin.top + plotH - h;
+                    svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${SlidesShared._diagramColor(0)}" rx="1.4" />`);
+                }
+                const lineSeries = series.slice(1).length ? series.slice(1) : [barSerie];
+                lineSeries.forEach((serie, idx) => {
+                    const colorIdx = series.slice(1).length ? idx + 1 : 0;
+                    const color = SlidesShared._diagramColor(colorIdx);
+                    const points = [];
+                    for (let i = 0; i < nCategories; i++) {
+                        points.push({
+                            x: margin.left + (i * groupW) + (groupW / 2),
+                            y: margin.top + plotH - ((Math.max(0, serie.values[i] || 0) / axisMax) * plotH),
+                        });
+                    }
+                    svgParts.push(`<polyline points="${points.map((p) => `${p.x},${p.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />`);
+                    points.forEach((p) => svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="2.9" fill="${color}" />`));
+                });
+                for (let i = 0; i < nCategories; i++) {
+                    const cx = margin.left + (i * groupW) + (groupW / 2);
+                    svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
+                }
+                legendItems = series.map((serie, idx) => ({ label: serie.name || `Série ${idx + 1}`, color: SlidesShared._diagramColor(idx) }));
+            } else if (chartType === 'scatter') {
+                const xSeries = series[0] || { name: 'X', values: [] };
+                const ySeries = series[1] || { name: 'Y', values: [] };
+                const pointCount = Math.max(nCategories, xSeries.values.length, ySeries.values.length);
+                for (let i = 0; i <= gridSteps; i++) {
+                    const ratio = i / gridSteps;
+                    const x = margin.left + (plotW * ratio);
+                    const value = xMax * ratio;
+                    svgParts.push(`<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + plotH}" stroke="rgba(255,255,255,0.08)" stroke-width="1" />`);
+                    svgParts.push(`<text x="${x}" y="${chartH - 6}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(String(round2(value)))}</text>`);
+                }
+                for (let i = 0; i < pointCount; i++) {
+                    const xv = Math.max(0, xSeries.values[i] || 0);
+                    const yv = Math.max(0, ySeries.values[i] || 0);
+                    const px = toX(xv, xMax);
+                    const py = toY(yv, yMax);
+                    const color = SlidesShared._diagramColor(i);
+                    const label = categories[i] || `P${i + 1}`;
+                    svgParts.push(`<circle cx="${px}" cy="${py}" r="4.2" fill="${color}" />`);
+                    svgParts.push(`<text x="${px + 7}" y="${py - 6}" fill="var(--sl-muted,#94a3b8)" font-size="${Math.max(9, Math.round(axisSize * 0.92))}">${SlidesShared.esc(label)}</text>`);
+                }
+                legendItems = [
+                    { label: `X : ${xSeries.name || 'Série A'}`, color: SlidesShared._diagramColor(0) },
+                    { label: `Y : ${ySeries.name || 'Série B'}`, color: SlidesShared._diagramColor(1) },
+                ];
+            } else if (chartType === 'bubble') {
+                const xSeries = series[0] || { name: 'X', values: [] };
+                const ySeries = series[1] || { name: 'Y', values: [] };
+                const sizeSeries = series[2] || { name: 'Taille', values: [] };
+                const pointCount = Math.max(nCategories, xSeries.values.length, ySeries.values.length, sizeSeries.values.length);
+                const sizeMax = Math.max(1, ...sizeSeries.values.map((v) => Math.max(0, v || 0)));
+                for (let i = 0; i <= gridSteps; i++) {
+                    const ratio = i / gridSteps;
+                    const x = margin.left + (plotW * ratio);
+                    const value = xMax * ratio;
+                    svgParts.push(`<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + plotH}" stroke="rgba(255,255,255,0.08)" stroke-width="1" />`);
+                    svgParts.push(`<text x="${x}" y="${chartH - 6}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(String(round2(value)))}</text>`);
+                }
+                for (let i = 0; i < pointCount; i++) {
+                    const xv = Math.max(0, xSeries.values[i] || 0);
+                    const yv = Math.max(0, ySeries.values[i] || 0);
+                    const sv = Math.max(0, sizeSeries.values[i] || 0);
+                    const px = toX(xv, xMax);
+                    const py = toY(yv, yMax);
+                    const radius = 4 + ((sv / sizeMax) * 14);
+                    const color = SlidesShared._diagramColor(i);
+                    const label = categories[i] || `P${i + 1}`;
+                    svgParts.push(`<circle cx="${px}" cy="${py}" r="${radius}" fill="color-mix(in srgb,${color} 62%,transparent)" stroke="${color}" stroke-width="1.2" />`);
+                    svgParts.push(`<text x="${px + radius + 4}" y="${py - 4}" fill="var(--sl-muted,#94a3b8)" font-size="${Math.max(9, Math.round(axisSize * 0.9))}">${SlidesShared.esc(label)}</text>`);
+                }
+                legendItems = [
+                    { label: `X : ${xSeries.name || 'Série A'}`, color: SlidesShared._diagramColor(0) },
+                    { label: `Y : ${ySeries.name || 'Série B'}`, color: SlidesShared._diagramColor(1) },
+                    { label: `Taille : ${sizeSeries.name || 'Série C'}`, color: SlidesShared._diagramColor(2) },
+                ];
+            } else if (chartType === 'boxplot') {
+                if (series.length < 5) {
+                    chartBody = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--sl-muted,#94a3b8);font-size:${Math.round(base * 0.8)}px;">Format attendu: Catégorie | Min | Q1 | Médiane | Q3 | Max.</div>`;
+                } else {
+                    const groupW = plotW / nCategories;
+                    for (let i = 0; i < nCategories; i++) {
+                        const vals = [
+                            parseNum(series[0].values[i]),
+                            parseNum(series[1].values[i]),
+                            parseNum(series[2].values[i]),
+                            parseNum(series[3].values[i]),
+                            parseNum(series[4].values[i]),
+                        ].sort((a, b) => a - b);
+                        const minV = vals[0];
+                        const q1 = vals[1];
+                        const med = vals[2];
+                        const q3 = vals[3];
+                        const maxV = vals[4];
+                        const cx = margin.left + (i * groupW) + (groupW / 2);
+                        const boxW = Math.max(10, groupW * 0.38);
+                        const yMin = toYRange(minV, axisMin, axisMax);
+                        const yQ1 = toYRange(q1, axisMin, axisMax);
+                        const yMed = toYRange(med, axisMin, axisMax);
+                        const yQ3 = toYRange(q3, axisMin, axisMax);
+                        const yMax = toYRange(maxV, axisMin, axisMax);
+                        const color = SlidesShared._diagramColor(i);
+                        svgParts.push(`<line x1="${cx}" y1="${yMax}" x2="${cx}" y2="${yMin}" stroke="${color}" stroke-width="1.2" />`);
+                        svgParts.push(`<line x1="${cx - (boxW * 0.35)}" y1="${yMax}" x2="${cx + (boxW * 0.35)}" y2="${yMax}" stroke="${color}" stroke-width="1.2" />`);
+                        svgParts.push(`<line x1="${cx - (boxW * 0.35)}" y1="${yMin}" x2="${cx + (boxW * 0.35)}" y2="${yMin}" stroke="${color}" stroke-width="1.2" />`);
+                        svgParts.push(`<rect x="${cx - (boxW / 2)}" y="${yQ3}" width="${boxW}" height="${Math.max(1.6, yQ1 - yQ3)}" fill="color-mix(in srgb,${color} 20%,transparent)" stroke="${color}" stroke-width="1.3" />`);
+                        svgParts.push(`<line x1="${cx - (boxW / 2)}" y1="${yMed}" x2="${cx + (boxW / 2)}" y2="${yMed}" stroke="${color}" stroke-width="1.8" />`);
+                        svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
+                    }
+                    legendItems = [
+                        { label: series[0]?.name || 'Min', color: SlidesShared._diagramColor(0) },
+                        { label: series[1]?.name || 'Q1', color: SlidesShared._diagramColor(1) },
+                        { label: series[2]?.name || 'Médiane', color: SlidesShared._diagramColor(2) },
+                        { label: series[3]?.name || 'Q3', color: SlidesShared._diagramColor(3) },
+                        { label: series[4]?.name || 'Max', color: SlidesShared._diagramColor(4) },
+                    ];
+                }
+            } else if (chartType === 'waterfall') {
+                const deltas = categories.map((_, idx) => (series[0]?.values || [])[idx] || 0);
+                const labels = categories.slice();
+                let running = 0;
+                const bars = [];
+                for (let i = 0; i < deltas.length; i++) {
+                    const delta = deltas[i];
+                    const start = running;
+                    const end = running + delta;
+                    bars.push({ label: labels[i] || `Étape ${i + 1}`, start, end, delta, total: false });
+                    running = end;
+                }
+                bars.push({ label: 'Total', start: 0, end: running, delta: running, total: true });
+                const groupW = plotW / bars.length;
+                const barW = Math.max(10, groupW * 0.56);
+                for (let i = 0; i < bars.length; i++) {
+                    const bar = bars[i];
+                    const top = Math.max(bar.start, bar.end);
+                    const bottom = Math.min(bar.start, bar.end);
+                    const yTop = toYRange(top, axisMin, axisMax);
+                    const yBottom = toYRange(bottom, axisMin, axisMax);
+                    const cx = margin.left + (i * groupW) + (groupW / 2);
+                    const x = cx - (barW / 2);
+                    const color = bar.total
+                        ? SlidesShared._diagramColor(0)
+                        : (bar.delta >= 0 ? 'var(--sl-success,#22c55e)' : 'var(--sl-danger,#ef4444)');
+                    svgParts.push(`<rect x="${x}" y="${yTop}" width="${barW}" height="${Math.max(1.6, yBottom - yTop)}" fill="${color}" rx="1.2" />`);
+                    svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(bar.label)}</text>`);
+                    if (!bar.total && i < bars.length - 2) {
+                        const next = bars[i + 1];
+                        const yConn = toYRange(next.start, axisMin, axisMax);
+                        svgParts.push(`<line x1="${x + barW}" y1="${yConn}" x2="${x + groupW + (groupW - barW) / 2}" y2="${yConn}" stroke="rgba(255,255,255,0.28)" stroke-width="1" stroke-dasharray="3 2" />`);
+                    }
+                }
+                legendItems = [
+                    { label: 'Hausse', color: 'var(--sl-success,#22c55e)' },
+                    { label: 'Baisse', color: 'var(--sl-danger,#ef4444)' },
+                    { label: 'Total', color: SlidesShared._diagramColor(0) },
+                ];
+            } else {
+                const stepX = nCategories > 1 ? (plotW / (nCategories - 1)) : 0;
+                for (let i = 0; i < nCategories; i++) {
+                    const x = margin.left + (i * stepX);
+                    svgParts.push(`<text x="${x}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
+                }
+                for (let si = 0; si < series.length; si++) {
+                    const color = SlidesShared._diagramColor(si);
+                    const points = [];
+                    for (let i = 0; i < nCategories; i++) {
+                        points.push({
+                            x: margin.left + (i * stepX),
+                            y: toYRange(series[si].values[i] || 0, axisMin, axisMax),
+                        });
+                    }
+                    const pointsAttr = points.map((p) => `${p.x},${p.y}`).join(' ');
+                    if (chartType === 'area' && points.length) {
+                        const first = points[0];
+                        const last = points[points.length - 1];
+                        const areaPath = `M ${first.x} ${margin.top + plotH} L ${points.map((p) => `${p.x} ${p.y}`).join(' L ')} L ${last.x} ${margin.top + plotH} Z`;
+                        svgParts.push(`<path d="${areaPath}" fill="color-mix(in srgb,${color} 24%,transparent)" stroke="none" />`);
+                    }
+                    svgParts.push(`<polyline points="${pointsAttr}" fill="none" stroke="${color}" stroke-width="${chartType === 'line' ? 2.6 : 2.2}" stroke-linecap="round" stroke-linejoin="round" />`);
+                    points.forEach((p) => {
+                        svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="3.1" fill="${color}" />`);
+                    });
+                }
+            }
+
+            if (!chartBody) {
+                chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgParts.join('')}</svg>`;
+            }
+            if (!legendItems.length && series.length) {
+                legendItems = series.map((serie, idx) => ({
+                    label: serie.name || `Série ${idx + 1}`,
+                    color: SlidesShared._diagramColor(idx),
+                }));
+            }
+        }
+
+        const legendHtml = legendItems.length
+            ? `<div style="display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;">
+                ${legendItems.map((item) => {
+                    const suffix = Object.prototype.hasOwnProperty.call(item, 'value')
+                        ? ` (${round2(item.value || 0)})`
+                        : '';
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;font-size:${legendSize}px;color:${textColor};"><span style="width:10px;height:10px;border-radius:2px;background:${item.color};display:inline-block;"></span>${SlidesShared.esc(`${item.label}${suffix}`)}</span>`;
+                }).join('')}
+            </div>`
+            : '';
+
+        return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.5rem;padding:0.8rem;box-sizing:border-box;border:1px solid ${borderColor};border-radius:10px;background:var(--sl-slide-bg,#1a1d27);overflow:hidden;">
+            <div style="font-size:${titleSize}px;font-weight:700;color:${headingColor};line-height:1.2;">${SlidesShared.esc(title)}</div>
+            <div style="flex:1;min-height:120px;border:1px solid ${borderColor};border-radius:8px;background:${chartBg};overflow:hidden;">
+                ${chartBody}
+            </div>
+            ${legendHtml}
+        </div>`;
+    }
+
     /* ── Caption & Cross-reference system ──────────────── */
 
     static CAPTION_PREFIXES = {
         image: 'Figure', table: 'Tableau', code: 'Code', highlight: 'Code',
-        mermaid: 'Diagramme', latex: 'Équation', video: 'Vidéo',
+        'terminal-session': 'Code',
+        mermaid: 'Diagramme', diagramme: 'Diagramme', latex: 'Équation', video: 'Vidéo',
         smartart: 'Schéma', qrcode: 'QR Code', iframe: 'Contenu',
     };
 
@@ -1009,7 +1899,9 @@ class SlidesRenderer {
 
     static _code(s) {
         const lang    = SlidesRenderer.esc(s.language || 'text');
-        const label   = SlidesRenderer.esc(String(s.label ?? 'Code').trim() || 'Code');
+        const labelRaw = String(s.label ?? 'Code').trim() || 'Code';
+        const label   = SlidesRenderer.esc(labelRaw);
+        const tone = SlidesShared.tonePalette(s.labelTone ?? s.tone, labelRaw);
         const rawCode = s.code || '';
         const gutter  = rawCode.split('\n').map((_, i) => i + 1).join('\n');
         const code    = SlidesRenderer.esc(rawCode);
@@ -1019,7 +1911,7 @@ class SlidesRenderer {
                 <div class="sl-code-dot sl-code-dot-y"></div>
                 <div class="sl-code-dot sl-code-dot-g"></div>
                 <span class="sl-code-tbar-lang">${lang}</span>
-                <span style="margin-left:auto;font-size:0.68rem;font-weight:700;color:var(--sl-primary);text-transform:uppercase;letter-spacing:0.04em;">${label}</span>
+                <span style="margin-left:auto;font-size:0.68rem;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${label}</span>
             </div>
             <div class="sl-code-scroll" style="max-height:100%;overflow:auto;">
                 <div class="sl-code-gutter">${gutter}</div>
@@ -1066,12 +1958,14 @@ class SlidesRenderer {
 
     static _definition(s) {
         const title = s.title ? `<h2>${SlidesRenderer.esc(s.title)}</h2>` : '';
-        const label = SlidesRenderer.esc(String(s.label ?? s.blockLabel ?? 'Definition').trim() || 'Definition');
+        const labelRaw = String(s.label ?? s.blockLabel ?? 'Definition').trim() || 'Definition';
+        const label = SlidesRenderer.esc(labelRaw);
+        const tone = SlidesShared.tonePalette(s.labelTone ?? s.tone, labelRaw);
         const exampleLabel = SlidesRenderer.esc(String(s.exampleLabel ?? 'Exemple').trim() || 'Exemple');
-        const term = s.term ? `<div class="sl-def-term">${SlidesRenderer.esc(s.term)}</div>` : '';
+        const term = s.term ? `<div class="sl-def-term" style="color:${tone.accent}">${SlidesRenderer.esc(s.term)}</div>` : '';
         const body = s.definition ? `<div class="sl-def-body">${s.definition}</div>` : '';
         const example = s.example ? `<div class="sl-def-example"><strong>${exampleLabel} :</strong> ${s.example}</div>` : '';
-        return `${title}<div class="sl-def-box"><div style="font-size:0.72rem;font-weight:700;color:var(--sl-primary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.25rem;">${label}</div>${term}${body}${example}</div>`;
+        return `${title}<div class="sl-def-box" style="background:${tone.strongBg};border-left-color:${tone.accent};border-color:${tone.border};"><div style="font-size:0.72rem;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.25rem;">${label}</div>${term}${body}${example}</div>`;
     }
 
     static _comparison(s) {
@@ -3546,9 +4440,11 @@ class SlidesRenderer {
                 const base = SlidesShared.resolveElementFontSize('code', s, opts.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
-                const label = String(el.data?.label ?? 'Code').trim() || 'Code';
+                const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
+                const label = labelRaw;
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
-                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;">${SlidesRenderer.esc(label)}</div>
+                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${SlidesRenderer.esc(label)}</div>
                     <div style="flex:1;min-height:0;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'sl')}</div>
                 </div>`;
                 break;
@@ -3581,16 +4477,142 @@ class SlidesRenderer {
             case 'definition': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('definition', s, opts.typography, 16);
-                const label = String(el.data?.label ?? el.data?.blockLabel ?? 'Definition').trim() || 'Definition';
+                const labelRaw = String(el.data?.label ?? el.data?.blockLabel ?? 'Definition').trim() || 'Definition';
+                const label = labelRaw;
                 const exampleLabel = String(el.data?.exampleLabel ?? 'Exemple').trim() || 'Exemple';
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 const termSize = Math.round(base * 1.06);
                 const bodySize = Math.round(base);
                 const exampleSize = Math.round(base * 0.78);
-                content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 8%,var(--sl-slide-bg));border-left:4px solid var(--sl-primary);border-radius:0 8px 8px 0;padding:0.75rem 1rem;overflow:auto;box-sizing:border-box;">
-                    <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${SlidesRenderer.esc(label)}</div>
-                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);margin-bottom:0.35rem;font-size:${termSize}px;">${SlidesRenderer.esc(el.data?.term||'')}</div>
+                content = `<div style="width:100%;height:100%;background:${tone.strongBg};border-left:4px solid ${tone.accent};border:1px solid ${tone.border};border-left-width:4px;border-radius:0 8px 8px 0;padding:0.75rem 1rem;overflow:auto;box-sizing:border-box;">
+                    <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${SlidesRenderer.esc(label)}</div>
+                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:${tone.accent};margin-bottom:0.35rem;font-size:${termSize}px;">${SlidesRenderer.esc(el.data?.term||'')}</div>
                     <div style="color:var(--sl-text);line-height:1.5;font-size:${bodySize}px;">${el.data?.definition||''}</div>
                     ${el.data?.example ? `<div style="margin-top:0.5rem;font-size:${exampleSize}px;color:var(--sl-muted);">${SlidesRenderer.esc(exampleLabel)} : ${SlidesRenderer.esc(el.data.example)}</div>` : ''}
+                </div>`;
+                break;
+            }
+            case 'callout-box': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('callout-box', s, opts.typography, 18);
+                const labelRaw = String(el.data?.label || 'Info').trim() || 'Info';
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
+                content = `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:5px solid ${tone.accent};border-radius:8px;padding:0.9rem 1rem;box-sizing:border-box;overflow:auto;">
+                    <div style="font-size:${Math.round(base * 0.78)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.45rem;">${SlidesRenderer.esc(labelRaw)}</div>
+                    <div style="font-size:${base}px;line-height:1.5;color:${s.color || 'var(--sl-text)'};">${el.data?.text || ''}</div>
+                </div>`;
+                break;
+            }
+            case 'exercise-block': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('exercise-block', s, opts.typography, 18);
+                const title = String(el.data?.title || 'Exercice').trim() || 'Exercice';
+                const objective = String(el.data?.objective || '').trim();
+                const instructions = Array.isArray(el.data?.instructions) ? el.data.instructions : [];
+                const hints = Array.isArray(el.data?.hints) ? el.data.hints : [];
+                const correction = String(el.data?.correction || '').trim();
+                const showCorrection = !!el.data?.showCorrection;
+                const liHtml = (items) => items.map((item) => `<li>${SlidesRenderer.esc(item)}</li>`).join('');
+                content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary,#818cf8) 7%,var(--sl-slide-bg,#1a1d27));border:1px solid var(--sl-border,#2d3347);border-radius:10px;padding:0.85rem 1rem;box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;gap:0.65rem;">
+                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${SlidesRenderer.esc(title)}</div>
+                    ${objective ? `<div style="font-size:${Math.round(base * 0.85)}px;color:var(--sl-text,#cbd5e1);line-height:1.45;"><strong style="color:var(--sl-primary,#818cf8);">Objectif :</strong> ${SlidesRenderer.esc(objective)}</div>` : ''}
+                    ${instructions.length ? `<div><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Consignes</div><ul style="margin:0;padding-left:1.25em;font-size:${Math.round(base * 0.85)}px;color:var(--sl-text,#cbd5e1);line-height:1.45;">${liHtml(instructions)}</ul></div>` : ''}
+                    ${hints.length ? `<div><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-info,#38bdf8);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Indices</div><ul style="margin:0;padding-left:1.25em;font-size:${Math.round(base * 0.8)}px;color:var(--sl-muted,#94a3b8);line-height:1.4;">${liHtml(hints)}</ul></div>` : ''}
+                    ${correction ? `<div style="margin-top:auto;border-top:1px dashed var(--sl-border,#2d3347);padding-top:0.5rem;"><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Correction</div><div style="font-size:${Math.round(base * 0.82)}px;color:${showCorrection ? 'var(--sl-text,#cbd5e1)' : 'var(--sl-muted,#94a3b8)'};line-height:1.4;">${showCorrection ? SlidesRenderer.esc(correction) : 'Masquée (activez "Afficher la correction").'}</div></div>` : '' }
+                </div>`;
+                break;
+            }
+            case 'before-after': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('before-after', s, opts.typography, 17);
+                const title = String(el.data?.title || 'Avant / Après').trim() || 'Avant / Après';
+                const beforeLabel = String(el.data?.beforeLabel || 'Avant').trim() || 'Avant';
+                const afterLabel = String(el.data?.afterLabel || 'Après').trim() || 'Après';
+                const beforeText = String(el.data?.before || '').trim();
+                const afterText = String(el.data?.after || '').trim();
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
+                content = `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;">
+                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${SlidesRenderer.esc(title)}</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,${tone.accent} 34%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,${tone.accent} 10%,var(--sl-slide-bg,#1a1d27));">
+                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.03em;">${SlidesRenderer.esc(beforeLabel)}</div>
+                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;">${SlidesRenderer.esc(beforeText)}</div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 36%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
+                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">${SlidesRenderer.esc(afterLabel)}</div>
+                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;">${SlidesRenderer.esc(afterText)}</div>
+                        </div>
+                    </div>
+                </div>`;
+                break;
+            }
+            case 'mistake-fix': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('mistake-fix', s, opts.typography, 17);
+                const title = String(el.data?.title || 'Erreur fréquente vs correction').trim() || 'Erreur fréquente vs correction';
+                const lang = String(el.data?.language || 'python').trim() || 'python';
+                const mistake = String(el.data?.mistake || '').trim();
+                const fix = String(el.data?.fix || '').trim();
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
+                content = `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.5rem;">
+                    <div style="font-size:${Math.round(base * 0.92)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${SlidesRenderer.esc(title)}</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-danger,#ef4444) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-danger,#ef4444) 9%,var(--sl-slide-bg,#1a1d27));">
+                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-danger,#ef4444);text-transform:uppercase;letter-spacing:0.03em;">Erreur fréquente</div>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(mistake)}</code></pre>
+                        </div>
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
+                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">Correction</div>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(fix)}</code></pre>
+                        </div>
+                    </div>
+                </div>`;
+                break;
+            }
+            case 'rubric-block':
+            case 'rubrick-block': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('rubric-block', s, opts.typography, 16);
+                const title = String(el.data?.title || 'Grille d’évaluation').trim() || 'Grille d’évaluation';
+                const levels = (Array.isArray(el.data?.levels) ? el.data.levels : [])
+                    .map((level) => String(level || '').trim())
+                    .filter(Boolean)
+                    .slice(0, 5);
+                const rowsRaw = Array.isArray(el.data?.rows) ? el.data.rows : [];
+                const rows = rowsRaw
+                    .map((row) => {
+                        const criterion = String(row?.criterion || '').trim();
+                        const descriptors = (Array.isArray(row?.descriptors) ? row.descriptors : [])
+                            .map((value) => String(value || '').trim())
+                            .slice(0, levels.length || 3);
+                        return { criterion, descriptors };
+                    })
+                    .filter((row) => row.criterion || row.descriptors.some(Boolean))
+                    .slice(0, 8);
+                const safeLevels = levels.length ? levels : ['Niveau 1', 'Niveau 2', 'Niveau 3'];
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
+                const cellSize = Math.round(base * 0.78);
+                let tableHtml = `<table style="width:100%;border-collapse:collapse;table-layout:fixed;">`;
+                tableHtml += `<tr><th style="padding:6px 8px;text-align:left;border:1px solid ${tone.border};background:color-mix(in srgb,${tone.accent} 20%,transparent);font-size:${cellSize}px;color:var(--sl-heading,#f1f5f9);">Critère</th>`;
+                safeLevels.forEach((level) => {
+                    tableHtml += `<th style="padding:6px 8px;text-align:left;border:1px solid ${tone.border};background:color-mix(in srgb,${tone.accent} 20%,transparent);font-size:${cellSize}px;color:var(--sl-heading,#f1f5f9);">${SlidesRenderer.esc(level)}</th>`;
+                });
+                tableHtml += `</tr>`;
+                rows.forEach((row) => {
+                    tableHtml += `<tr><td style="padding:6px 8px;border:1px solid ${tone.border};font-size:${cellSize}px;font-weight:600;color:${s.color || 'var(--sl-text,#cbd5e1)'};background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 86%,#000);">${SlidesRenderer.esc(row.criterion)}</td>`;
+                    safeLevels.forEach((_, idx) => {
+                        const value = row.descriptors[idx] || '';
+                        tableHtml += `<td style="padding:6px 8px;border:1px solid ${tone.border};font-size:${cellSize}px;line-height:1.35;color:${s.color || 'var(--sl-text,#cbd5e1)'};background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);">${SlidesRenderer.esc(value)}</td>`;
+                    });
+                    tableHtml += `</tr>`;
+                });
+                if (!rows.length) {
+                    tableHtml += `<tr><td colspan="${safeLevels.length + 1}" style="padding:10px;border:1px solid ${tone.border};font-size:${cellSize}px;color:var(--sl-muted,#94a3b8);text-align:center;">Ajoutez des critères dans le panneau de propriétés.</td></tr>`;
+                }
+                tableHtml += `</table>`;
+                content = `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:4px solid ${tone.accent};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.5rem;overflow:hidden;">
+                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:${tone.accent};">${SlidesRenderer.esc(title)}</div>
+                    <div style="flex:1;min-height:0;overflow:auto;">${tableHtml}</div>
                 </div>`;
                 break;
             }
@@ -3598,15 +4620,17 @@ class SlidesRenderer {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('code-example', s, opts.typography, 16);
                 const mode = ['terminal', 'live', 'stepper'].includes(el.data?.widgetType) ? el.data.widgetType : 'terminal';
-                const label = String(el.data?.label ?? el.data?.blockTitle ?? 'Exemple').trim() || 'Exemple';
+                const labelRaw = String(el.data?.label ?? el.data?.blockTitle ?? 'Exemple').trim() || 'Exemple';
+                const label = labelRaw;
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 let widget = `<div style="height:100%;--sl-code-font-size:${Math.round(base * 0.82)}px;--sl-code-gutter-size:${Math.round(base * 0.82)}px;--sl-code-lang-size:${Math.round(base * 0.64)}px;">${SlidesShared.codeTerminal(code, lang, 'sl')}</div>`;
                 if (mode === 'live') {
                     widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
                         <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:${Math.round(base * 0.66)}px;">
                             <span style="font-family:var(--sl-font-mono);color:var(--sl-muted);text-transform:uppercase;">${SlidesRenderer.esc(lang)}</span>
-                            <span style="margin-left:auto;color:var(--sl-primary);font-weight:700;text-transform:uppercase;">Live</span>
+                            <span style="margin-left:auto;color:${tone.accent};font-weight:700;text-transform:uppercase;">Live</span>
                         </div>
                         <pre style="margin:0;padding:8px 10px;font-size:${Math.round(base * 0.82)}px;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;flex:1;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(code)}</code></pre>
                     </div>`;
@@ -3616,7 +4640,7 @@ class SlidesRenderer {
                     widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
                         <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:${Math.round(base * 0.66)}px;">
                             <span>${SlidesRenderer.esc(el.data?.stepperTitle || 'Exécution pas à pas')}</span>
-                            <span style="margin-left:auto;color:var(--sl-primary);font-weight:700;text-transform:uppercase;">Stepper</span>
+                            <span style="margin-left:auto;color:${tone.accent};font-weight:700;text-transform:uppercase;">Stepper</span>
                         </div>
                         <div style="display:flex;flex-direction:column;gap:6px;padding:8px 10px;min-height:0;overflow:auto;">
                             <div style="font-size:${Math.round(base * 0.74)}px;color:var(--sl-heading);font-weight:600;">${SlidesRenderer.esc(first.title || 'Étape 1')}</div>
@@ -3625,10 +4649,24 @@ class SlidesRenderer {
                         </div>
                     </div>`;
                 }
-                content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 8%,var(--sl-slide-bg));border-left:4px solid var(--sl-primary);border-radius:0 8px 8px 0;padding:0.75rem 1rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;overflow:hidden;">
-                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:var(--sl-primary);font-size:${Math.round(base * 1.02)}px;text-transform:uppercase;letter-spacing:0.03em;">${SlidesRenderer.esc(label)}</div>
+                content = `<div style="width:100%;height:100%;background:${tone.strongBg};border-left:4px solid ${tone.accent};border:1px solid ${tone.border};border-left-width:4px;border-radius:0 8px 8px 0;padding:0.75rem 1rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;overflow:hidden;--ce-accent:${tone.accent};">
+                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:${tone.accent};font-size:${Math.round(base * 1.02)}px;text-transform:uppercase;letter-spacing:0.03em;">${SlidesRenderer.esc(label)}</div>
                     <div style="color:var(--sl-text);font-size:${Math.round(base * 0.92)}px;line-height:1.45;max-height:36%;overflow:auto;">${el.data?.text || ''}</div>
                     <div style="flex:1;min-height:110px;border:1px solid var(--sl-border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-slide-bg) 82%,#000);">${widget}</div>
+                </div>`;
+                break;
+            }
+            case 'terminal-session': {
+                const s = el.style || {};
+                const base = SlidesShared.resolveElementFontSize('terminal-session', s, opts.typography, 16);
+                const codeSize = Math.round(base * 0.82);
+                const langSize = Math.round(base * 0.64);
+                const labelRaw = String(el.data?.label ?? 'Session terminal').trim() || 'Session terminal';
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
+                const script = String(el.data?.script || '').replace(/\r\n/g, '\n');
+                content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
+                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${SlidesRenderer.esc(labelRaw)}</div>
+                    <div style="flex:1;min-height:0;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(script, el.data?.language || 'bash', 'sl')}</div>
                 </div>`;
                 break;
             }
@@ -3651,12 +4689,14 @@ class SlidesRenderer {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('card', s, opts.typography, 18);
                 const titleSize = Math.round(base * 0.76);
+                const titleRaw = String(el.data?.title || '').trim();
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, titleRaw);
                 const cardTitle = el.data?.title
-                    ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||'var(--sl-primary)'};border-bottom:1px solid var(--sl-border);padding-bottom:0.5rem;margin-bottom:0.75rem;">${SlidesRenderer.esc(el.data.title)}</div>`
+                    ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||tone.accent};border-bottom:1px solid ${tone.border};padding-bottom:0.5rem;margin-bottom:0.75rem;">${SlidesRenderer.esc(el.data.title)}</div>`
                     : '';
                 const liCls = el.data?.revealItems ? ' class="fragment"' : '';
                 const items = (el.data?.items || []).map(i => `<li${liCls}>${SlidesRenderer.esc(i)}</li>`).join('');
-                content = `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary) 5%,var(--sl-slide-bg));border:1px solid var(--sl-border);border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
+                content = `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:3px solid ${tone.accent};border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
                     ${cardTitle}
                     <ul style="margin:0;padding-left:1.4em;font-size:${base}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>
                 </div>`;
@@ -3703,6 +4743,14 @@ class SlidesRenderer {
                 content = `<div class="sl-mermaid-pending" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><pre style="display:none">${SlidesRenderer.esc(code)}</pre><div class="sl-mermaid-render" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"></div></div>`;
                 break;
             }
+            case 'diagramme': {
+                const s = el.style || {};
+                content = SlidesShared.renderDiagrammeBlock(el.data || {}, s, opts.typography, {
+                    prefix: 'sl',
+                    fallbackFontSize: 16,
+                });
+                break;
+            }
             case 'latex': {
                 const s = el.style || {};
                 const expr = el.data?.expression || '';
@@ -3743,13 +4791,15 @@ class SlidesRenderer {
                 const langSize = Math.round(base * 0.64);
                 const lang = SlidesRenderer.esc(el.data?.language || 'python');
                 const code = SlidesRenderer.esc(el.data?.code || '');
-                const label = SlidesRenderer.esc(String(el.data?.label ?? 'Code').trim() || 'Code');
+                const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
+                const label = SlidesRenderer.esc(labelRaw);
+                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 const highlights = (el.data?.highlights || []).map(h => h.lines).join('|');
                 // Use Reveal.js native <pre><code> (no sl-code-terminal wrapper)
                 // to avoid flex layout conflicts with Reveal's fragment cloning.
                 // Wrap in .sl-highlight-block to apply terminal-like styling.
                 content = `<div class="sl-highlight-block" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;">
-                    <div class="sl-code-tbar"><div class="sl-code-dot sl-code-dot-r"></div><div class="sl-code-dot sl-code-dot-y"></div><div class="sl-code-dot sl-code-dot-g"></div><span class="sl-code-tbar-lang">${lang}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.04em;">${label}</span></div>
+                    <div class="sl-code-tbar"><div class="sl-code-dot sl-code-dot-r"></div><div class="sl-code-dot sl-code-dot-y"></div><div class="sl-code-dot sl-code-dot-g"></div><span class="sl-code-tbar-lang">${lang}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${label}</span></div>
                     <pre><code class="language-${lang}" data-line-numbers="${highlights}">${code}</code></pre>
                 </div>`;
                 break;
