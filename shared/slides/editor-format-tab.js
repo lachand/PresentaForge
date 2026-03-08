@@ -27,19 +27,55 @@ function _fmtDefaultFontSizeForType(type, explicitSize) {
     return byType[type] || 22;
 }
 
+function _fmtSetIntraSlideControlsEnabled(enabled, hintText = '') {
+    const typeSelect = document.getElementById('fmt-anim-type');
+    const orderInput = document.getElementById('fmt-anim-order');
+    const listReveal = document.getElementById('fmt-list-fragments');
+    const listRevealWrap = document.getElementById('fmt-list-fragments-wrap');
+    const hintEl = document.getElementById('fmt-anim-empty-hint');
+
+    if (typeSelect) typeSelect.disabled = !enabled;
+    if (orderInput) orderInput.disabled = !enabled;
+    if (listReveal) listReveal.disabled = !enabled;
+    if (listRevealWrap) listRevealWrap.classList.toggle('is-disabled', !enabled);
+    if (hintEl) {
+        hintEl.textContent = hintText || 'Sélectionnez un élément pour configurer son apparition.';
+        hintEl.style.display = enabled ? 'none' : '';
+    }
+}
+
 function updateFormatTab() {
     const tabEl = document.getElementById('tab-format');
     const isCanvas = editor.currentSlide?.type === 'canvas';
     const hasSelection = isCanvas && canvasEditor?.selectedId;
     const hasConnector = isCanvas && canvasEditor?._selectedConnectorId;
 
-    if (tabEl) tabEl.classList.toggle('visible', !!(hasSelection || hasConnector));
+    if (tabEl) tabEl.classList.toggle('visible', !!isCanvas);
 
-    // When nothing is selected and Format tab is active, switch back to Accueil
-    if (!hasSelection && !hasConnector) {
+    // Outside canvas slides, fallback to Accueil.
+    if (!isCanvas) {
         if (tabEl && tabEl.classList.contains('active')) {
             switchRibbonTab('accueil');
         }
+        return;
+    }
+
+    // When nothing is selected: keep Format visible and show Intra-slide guidance.
+    if (!hasSelection && !hasConnector) {
+        ['fmt-x','fmt-y','fmt-w','fmt-h'].forEach(id => {
+            const inp = document.getElementById(id);
+            if (inp) inp.value = '';
+        });
+        ['fmt-text-group','fmt-paragraph-group','fmt-image-group','fmt-shape-group','fmt-code-group','fmt-align-group'].forEach(id => {
+            const g = document.getElementById(id);
+            if (g) g.style.display = 'none';
+        });
+        const animGroup = document.getElementById('fmt-anim-group');
+        if (animGroup) animGroup.style.display = '';
+        const fmtListFragmentsWrap = document.getElementById('fmt-list-fragments-wrap');
+        if (fmtListFragmentsWrap) fmtListFragmentsWrap.style.display = 'none';
+        _fmtSetIntraSlideControlsEnabled(false, "Sélectionnez un bloc (ex: code-example), puis choisissez son effet d'apparition.");
+        cleanFormatSeparators();
         return;
     }
 
@@ -52,6 +88,7 @@ function updateFormatTab() {
             const g = document.getElementById(id);
             if (g) g.style.display = 'none';
         });
+        _fmtSetIntraSlideControlsEnabled(false, "La transition intra-slide s'applique aux éléments, pas aux connecteurs.");
         cleanFormatSeparators();
         return;
     }
@@ -80,6 +117,7 @@ function updateFormatTab() {
             if (fmtFW) fmtFW.value = String(s.fontWeight || 400);
 
             // Enhanced format tab fields
+            _fmtSetIntraSlideControlsEnabled(true);
             updateFormatTabEnhanced();
         }
     }

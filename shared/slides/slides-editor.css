@@ -1890,6 +1890,17 @@ html, body {
 .fmt-check-inline:hover {
     border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
 }
+.fmt-check-inline.is-disabled {
+    opacity: 0.55;
+    pointer-events: none;
+}
+.fmt-inline-hint {
+    display: none;
+    max-width: 220px;
+    font-size: 0.62rem;
+    line-height: 1.35;
+    color: var(--muted);
+}
 .fmt-toggle {
     width: 30px; height: 30px; border-radius: var(--radius-sm);
     border: 1px solid transparent; background: transparent;
