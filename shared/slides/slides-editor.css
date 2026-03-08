@@ -233,6 +233,23 @@ html, body {
 }
 .is-hidden { display: none; }
 .theme-modal-header { margin-bottom: 16px; }
+.ribbon-brand {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+.ribbon-brand-logo {
+    height: 18px;
+    width: auto;
+    display: none;
+    object-fit: contain;
+    object-position: left center;
+}
+[data-theme="dark"] .ribbon-brand-logo-dark { display: block; }
+[data-theme="dark"] .ribbon-brand-logo-light { display: none; }
+[data-theme="light"] .ribbon-brand-logo-dark { display: none; }
+[data-theme="light"] .ribbon-brand-logo-light { display: block; }
 .ribbon-pres-title {
     font-size: 0.76rem; font-weight: 600; color: var(--heading);
     cursor: pointer; transition: color var(--transition-fast);

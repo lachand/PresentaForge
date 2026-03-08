@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Éditeur de présentations</title>
+    <title>slideForge — Éditeur</title>
+    <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
+    <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -18,6 +20,10 @@
     <div id="ribbon">
         <!-- Ribbon tabs + title + controls -->
         <div class="ribbon-tabs" id="ribbon-tabs">
+            <a class="ribbon-brand" aria-label="slideForge" href="index.html" title="Retour à l’index des présentations">
+                <img class="ribbon-brand-logo ribbon-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="slideForge">
+                <img class="ribbon-brand-logo ribbon-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="slideForge">
+            </a>
             <span class="ribbon-pres-title" id="pres-title" title="Cliquer pour renommer">Présentation sans titre</span>
             <div class="ribbon-tabs-sep"></div>
             <button class="ribbon-tab active" data-ribbon="accueil">Accueil</button>

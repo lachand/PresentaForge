@@ -3,9 +3,11 @@
 Ce dépôt contient uniquement le nécessaire pour faire tourner l'écosystème Slides en local:
 
 - `slides/` (éditeur, viewer, étudiant, remote, scripts)
+- `slides/assets/brand/` (logos, favicon, identité visuelle)
 - `shared/slides/` (runtime et UI Slides)
 - `shared/components/` (widgets référencés par le registre)
 - `data/slides/` (fichiers JSON de démo)
+- `docs/user/` (guide utilisateur + captures)
 - `vendor/` (assets front vendorisés pour mode offline)
 
 ## Lancer en local

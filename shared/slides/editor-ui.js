@@ -38,8 +38,8 @@ function toggleEditorTheme() {
     updateThemeToggleIcon(next);
 }
 function updateThemeToggleIcon(theme) {
-    document.getElementById('icon-sun').style.display = theme === 'dark' ? '' : 'none';
-    document.getElementById('icon-moon').style.display = theme === 'light' ? '' : 'none';
+    document.getElementById('icon-sun').style.display = theme === 'dark' ? 'block' : 'none';
+    document.getElementById('icon-moon').style.display = theme === 'light' ? 'block' : 'none';
 }
 
 /* ── F3: Rich Tooltip System ───────────────────────────── */
