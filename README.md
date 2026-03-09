@@ -9,6 +9,7 @@ Ce depot contient uniquement le necessaire pour faire tourner `presentaForge` en
 - `data/slides/` (fichiers JSON de démo)
 - `docs/user/` (guide utilisateur + captures)
 - `vendor/` (assets front vendorisés pour mode offline)
+- `render.yaml` + `tools/slides/relay-server.mjs` (relay WebSocket deployable, ex: Render)
 
 ## Lancer en local
 
@@ -27,3 +28,15 @@ npx serve -l 8080
 ```
 
 Puis ouvrir `http://localhost:8080/slides/index.html`.
+
+## Relay WebSocket (Render)
+
+Le repo inclut un blueprint `render.yaml` qui démarre:
+
+```bash
+node tools/slides/relay-server.mjs
+```
+
+Configurer la variable `RELAY_TOKEN` sur Render, puis utiliser l'URL relay côté viewer:
+
+`?relayWs=wss://<service>.onrender.com&relayToken=<token>`

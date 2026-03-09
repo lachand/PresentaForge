@@ -26,6 +26,57 @@ python3 -m http.server 8080
 - `http://localhost:8080/slides/editor.html`
 - `http://localhost:8080/slides/viewer.html`
 
+### 1.1 Démarrage "campus/eduroam" avec relay (gratuit)
+
+Quand le P2P est bloqué sur le Wi-Fi campus, lancez le kit relay :
+
+```bash
+npm run relay:kit
+```
+
+Le script démarre :
+
+- le serveur web (`python3 -m http.server`),
+- un relay WebSocket local compatible avec la salle,
+- une URL présentateur déjà configurée avec `relayWs`.
+
+Variables utiles :
+
+- `HTTP_PORT` (défaut `8080`)
+- `RELAY_PORT` (défaut `8787`)
+- `PUBLIC_HOST` (IP/hostname à partager, sinon auto-détection)
+- `RELAY_TOKEN` (optionnel, recommandé hors LAN privé)
+
+Exemple :
+
+```bash
+PUBLIC_HOST=10.42.0.15 RELAY_TOKEN=mon-token npm run relay:kit
+```
+
+Ensuite dans `Mode présentateur > Salle > Diagnostic réseau` :
+
+- utiliser `Copier lien relay` pour les étudiants bloqués,
+- ou forcer `transport=relay` si besoin.
+
+### 1.2 Déploiement relay sur Render (gratuit)
+
+Le dépôt contient un blueprint prêt à l'emploi : `render.yaml`.
+
+Étapes :
+
+1. Pousser le dépôt sur GitHub.
+2. Dans Render : `New` > `Blueprint`, sélectionner le dépôt.
+3. Créer la variable d'environnement `RELAY_TOKEN` (valeur secrète).
+4. Déployer.
+5. Récupérer l'URL Render, par exemple `https://presentaforge-relay.onrender.com`.
+
+Utilisation côté présentateur :
+
+- ouvrir `viewer.html` avec :
+  - `relayWs=wss://presentaforge-relay.onrender.com`
+  - `relayToken=<votre_token>`
+- puis partager le `lien relay` depuis le diagnostic réseau.
+
 Illustration (index) :
 
 ![Index presentaForge](./images/slides-index.png)

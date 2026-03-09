@@ -974,6 +974,7 @@ function updatePropsPanel() {
                 </div>
                 <div style="font-size:0.64rem;color:var(--muted);margin-top:6px">${normalizedRows.length} ligne(s) × ${colCount} colonne(s)</div>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:2px">${esc(constraints)}</div>
+                <div style="font-size:0.6rem;color:var(--muted);margin-top:2px">Astuce: copie depuis Excel puis Ctrl+V directement dans une cellule de la grille.</div>
                 <div class="sp-diag-invalid-summary${validation.issues.length ? ' has-errors' : ''}">
                     ${validation.issues.length
                         ? `${validation.issues.length} cellule(s) invalide(s) detectee(s): ${esc(invalidSummary)}${validation.issues.length > 8 ? '…' : ''}`
@@ -1842,6 +1843,74 @@ function _bindPropsPanel(el) {
 
             document.querySelectorAll('[data-diag-r][data-diag-c]').forEach((input) => {
                 input.addEventListener('input', () => applyDiagramData({ rows: getDiagRows(), presetId: '' }));
+            });
+            const detectDelimitedClipboard = (text) => {
+                const raw = String(text || '');
+                if (raw.includes('\t')) return '\t';
+                const commas = (raw.match(/,/g) || []).length;
+                const semicolons = (raw.match(/;/g) || []).length;
+                if (semicolons > commas) return ';';
+                return ',';
+            };
+            const pasteBlockIntoGrid = (startRow, startCol, text) => {
+                const chartType = getDiagType();
+                const schema = _getDiagramSchema(chartType);
+                const delimiter = detectDelimitedClipboard(text);
+                const parsed = _diagramParseDelimited(text, delimiter);
+                if (!parsed.length) return false;
+                const maxPasteCols = Math.max(1, ...parsed.map((row) => Array.isArray(row) ? row.length : 0));
+                const base = getDiagRows().map((row) => (Array.isArray(row) ? row.slice() : []));
+                const baseCols = Math.max(2, ...base.map((row) => row.length || 0));
+                const wantedRows = Math.max(base.length, startRow + parsed.length);
+                const wantedCols = Math.max(baseCols, startCol + maxPasteCols);
+                const targetRows = Number.isFinite(schema.fixedRows)
+                    ? schema.fixedRows
+                    : wantedRows;
+                const targetCols = Number.isFinite(schema.fixedCols)
+                    ? schema.fixedCols
+                    : wantedCols;
+
+                for (let ri = 0; ri < targetRows; ri++) {
+                    if (!Array.isArray(base[ri])) base[ri] = [];
+                    while (base[ri].length < targetCols) base[ri].push('');
+                }
+                base.length = targetRows;
+
+                let appliedCells = 0;
+                for (let pri = 0; pri < parsed.length; pri++) {
+                    const row = Array.isArray(parsed[pri]) ? parsed[pri] : [];
+                    const tr = startRow + pri;
+                    if (tr < 0 || tr >= targetRows) continue;
+                    for (let pci = 0; pci < row.length; pci++) {
+                        const tc = startCol + pci;
+                        if (tc < 0 || tc >= targetCols) continue;
+                        base[tr][tc] = String(row[pci] ?? '');
+                        appliedCells++;
+                    }
+                }
+
+                if (!appliedCells) return false;
+
+                applyDiagramData({
+                    rows: base,
+                    chartType,
+                    forceHeaders: false,
+                    presetId: '',
+                });
+                return true;
+            };
+            document.querySelectorAll('[data-diag-r][data-diag-c]').forEach((input) => {
+                input.addEventListener('paste', (event) => {
+                    const text = event.clipboardData?.getData('text/plain') || '';
+                    if (!String(text).trim()) return;
+                    const startRow = Number(input.dataset.diagR) || 0;
+                    const startCol = Number(input.dataset.diagC) || 0;
+                    const applied = pasteBlockIntoGrid(startRow, startCol, text);
+                    if (!applied) return;
+                    event.preventDefault();
+                    notify('Collage Excel applique dans la grille', 'success');
+                    updatePropsPanel();
+                });
             });
             document.querySelectorAll('[data-diag-style]').forEach((input) => {
                 const eventName = input.getAttribute('type') === 'checkbox' ? 'change' : 'input';

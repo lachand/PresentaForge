@@ -1587,9 +1587,23 @@ body { background: var(--sl-bg); }
 .reveal ul, .reveal ol { margin: 0; padding-left: 1.4em; text-align: left; }
 .reveal li { margin-bottom: 0.5em; }
 .reveal li::marker { color: var(--sl-primary); }
-.reveal pre { width: 100%; margin: 0; background: var(--sl-code-bg); border-radius: 8px; border: 1px solid var(--sl-border); }
+.reveal pre {
+    width: 100%;
+    margin: 0;
+    background: color-mix(in srgb, var(--sl-code-bg, #0d1117) 35%, #000 65%);
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--sl-border, #2d3347) 45%, #cbd5e1 55%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
 .reveal code { font-family: var(--sl-font-mono); font-size: 0.85em; }
-.reveal pre code { font-size: var(--sl-code-size, 16px); padding: 1rem 1.2rem; line-height: 1.6; color: var(--sl-code-text); background: transparent; }
+.reveal pre code {
+    font-size: var(--sl-code-size, 16px);
+    padding: 1rem 1.2rem;
+    line-height: 1.6;
+    color: color-mix(in srgb, var(--sl-code-text, #e2e8f0) 70%, #fff 30%);
+    background: transparent;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
 .reveal a { color: var(--sl-primary); }
 .reveal .sl-muted { color: var(--sl-muted); font-size: 0.85em; }
 .reveal .sl-accent { color: var(--sl-accent); }
@@ -1730,42 +1744,42 @@ section.sl-canvas {
     text-align: left !important;
 }
 /* Canvas code terminal block (viewer) */
-.sl-code-terminal { width:100%;height:100%;background:#0d1117;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;border:1px solid #21262d; }
-.sl-code-tbar { background:#161b22;display:flex;align-items:center;padding:0 12px;height:34px;gap:6px;flex-shrink:0;border-bottom:1px solid #21262d; }
+.sl-code-terminal { width:100%;height:100%;background:#020617;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;border:1px solid #334155; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03); }
+.sl-code-tbar { background:#0b1220;display:flex;align-items:center;padding:0 12px;height:34px;gap:6px;flex-shrink:0;border-bottom:1px solid #334155; }
 .sl-code-dot { width:11px;height:11px;border-radius:50%;flex-shrink:0; }
 .sl-code-dot-r{background:#ff5f57}.sl-code-dot-y{background:#febc2e}.sl-code-dot-g{background:#28c840}
-.sl-code-tbar-lang { margin-left:auto;font-size:var(--sl-code-lang-size,10px);color:#6e7681;font-family:var(--sl-font-mono,monospace);letter-spacing:0.04em; }
+.sl-code-tbar-lang { margin-left:auto;font-size:var(--sl-code-lang-size,10px);color:#cbd5e1;font-family:var(--sl-font-mono,monospace);letter-spacing:0.04em; }
 .sl-code-scroll { flex:1;overflow:auto;display:flex;min-height:0;position:relative; }
-.sl-code-gutter { padding:0.65rem 0.6rem 0.65rem 0.85rem;color:#3d4451;font-size:var(--sl-code-gutter-size,13px);line-height:1.6;user-select:none;text-align:right;font-family:var(--sl-font-mono,monospace);white-space:pre;border-right:1px solid #21262d;min-width:2.2em;flex-shrink:0; }
+.sl-code-gutter { padding:0.65rem 0.6rem 0.65rem 0.85rem;color:#94a3b8;font-size:var(--sl-code-gutter-size,13px);line-height:1.6;user-select:none;text-align:right;font-family:var(--sl-font-mono,monospace);white-space:pre;border-right:1px solid #334155;min-width:2.2em;flex-shrink:0;background:#0b1220; }
 .sl-code-scroll pre { flex:1;margin:0;padding:0.65rem 1rem;background:transparent!important;overflow:visible;min-width:0;border:none!important; }
-.sl-code-scroll pre code { font-family:var(--sl-font-mono,monospace);font-size:var(--sl-code-font-size,13px);line-height:1.6;color:#e6edf3;background:transparent!important;white-space:pre;display:block;padding:0!important; }
+.sl-code-scroll pre code { font-family:var(--sl-font-mono,monospace);font-size:var(--sl-code-font-size,13px);line-height:1.6;color:#f8fafc;background:transparent!important;white-space:pre;display:block;padding:0!important;text-shadow:0 1px 0 rgba(0,0,0,0.35); }
 /* Reveal.js highlight plugin: line-number table wrapper */
 .sl-code-scroll .hljs-ln { width:100%; }
 .sl-code-scroll .hljs-ln td { padding:0 4px; vertical-align:top; }
-.sl-code-scroll .hljs-ln-numbers { user-select:none; color:#3d4451; text-align:right; width:2.2em; padding-right:0.6rem; border-right:1px solid #21262d; }
+.sl-code-scroll .hljs-ln-numbers { user-select:none; color:#94a3b8; text-align:right; width:2.2em; padding-right:0.6rem; border-right:1px solid #334155; }
 .reveal .sl-code-scroll pre { margin:0!important; }
 .reveal .sl-code-scroll table { border-collapse:collapse; }
 /* Reveal.js clones <code> as .fragment children of <pre> for each highlight step.
    Fragments use opacity:0/visibility:hidden (still in flow) which causes ghost stacking.
    Fix: overlay fragment codes on top of the first one via absolute positioning. */
 .sl-code-scroll pre.code-wrapper { position:relative; }
-.sl-code-scroll pre.code-wrapper > code.fragment { position:absolute; top:0; left:0; width:100%; height:100%; background:#0d1117!important; }
-.sl-code-scroll .highlight-line { background:rgba(255,255,255,0.1); }
+.sl-code-scroll pre.code-wrapper > code.fragment { position:absolute; top:0; left:0; width:100%; height:100%; background:#020617!important; }
+.sl-code-scroll .highlight-line { background:rgba(248,250,252,0.16); }
 
 /* Highlight element – terminal-like wrapper that is fully compatible with Reveal.js
    fragment cloning for data-line-numbers step-through animation.
    Unlike sl-code-terminal, this does NOT use flex layout on the code area. */
-.sl-highlight-block { width:100%;height:100%;background:#0d1117;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;border:1px solid #21262d; }
-.sl-highlight-block .sl-code-tbar { border-bottom:1px solid #21262d; }
-.sl-highlight-block pre { flex:1;margin:0!important;padding:0!important;background:#0d1117!important;box-shadow:none!important;width:100%!important;border:none!important;position:relative;overflow:hidden; }
-.sl-highlight-block pre code { font-family:var(--sl-font-mono,monospace)!important;font-size:var(--sl-code-font-size,13px)!important;line-height:1.6!important;color:#e6edf3!important;padding:0.65rem 1rem!important;background:#0d1117!important;max-height:none!important;overflow:visible!important;text-align:left!important; }
-.sl-highlight-block pre.code-wrapper > code.fragment { position:absolute;top:0;left:0;width:100%;height:100%;background:#0d1117!important;box-sizing:border-box; }
+.sl-highlight-block { width:100%;height:100%;background:#020617;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;border:1px solid #334155; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03); }
+.sl-highlight-block .sl-code-tbar { border-bottom:1px solid #334155; }
+.sl-highlight-block pre { flex:1;margin:0!important;padding:0!important;background:#020617!important;box-shadow:none!important;width:100%!important;border:none!important;position:relative;overflow:hidden; }
+.sl-highlight-block pre code { font-family:var(--sl-font-mono,monospace)!important;font-size:var(--sl-code-font-size,13px)!important;line-height:1.6!important;color:#f8fafc!important;padding:0.65rem 1rem!important;background:#020617!important;max-height:none!important;overflow:visible!important;text-align:left!important;text-shadow:0 1px 0 rgba(0,0,0,0.35); }
+.sl-highlight-block pre.code-wrapper > code.fragment { position:absolute;top:0;left:0;width:100%;height:100%;background:#020617!important;box-sizing:border-box; }
 .sl-highlight-block .hljs-ln { width:100%;border-collapse:collapse; }
 .sl-highlight-block .hljs-ln td { padding:0 4px;vertical-align:top; }
-.sl-highlight-block .hljs-ln-numbers { user-select:none;color:#6e7681;text-align:right;width:2.2em;padding-right:0.6rem;border-right:1px solid #21262d;font-size:var(--sl-code-gutter-size,13px); }
-.sl-highlight-block .highlight-line { background:rgba(255,255,255,0.12); }
+.sl-highlight-block .hljs-ln-numbers { user-select:none;color:#94a3b8;text-align:right;width:2.2em;padding-right:0.6rem;border-right:1px solid #334155;font-size:var(--sl-code-gutter-size,13px); }
+.sl-highlight-block .highlight-line { background:rgba(248,250,252,0.16); }
 .sl-highlight-block .has-highlights tr:not(.highlight-line) { opacity:1; }
-.sl-highlight-block .has-highlights .highlight-line .hljs-ln-numbers { color:#8b949e; }
+.sl-highlight-block .has-highlights .highlight-line .hljs-ln-numbers { color:#e2e8f0; }
 /* Caption & cross-reference */
 .sl-caption { position:absolute;top:100%;left:0;right:0;text-align:center;font-size:13px;color:var(--sl-muted,#94a3b8);font-style:italic;line-height:1.3;pointer-events:none;padding:4px 6px 0; }
 .sl-caption b { font-style:normal;color:var(--sl-primary,#818cf8); }
@@ -4702,13 +4716,13 @@ class SlidesRenderer {
                 content = `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;">
                     <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${SlidesRenderer.esc(title)}</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
-                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,${tone.accent} 34%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,${tone.accent} 10%,var(--sl-slide-bg,#1a1d27));">
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,${tone.accent} 34%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:var(--sl-code-bg,#0d1117);">
                             <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.03em;">${SlidesRenderer.esc(beforeLabel)}</div>
-                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;">${SlidesRenderer.esc(beforeText)}</div>
+                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:var(--sl-code-text,#f8fafc);white-space:pre-wrap;">${SlidesRenderer.esc(beforeText)}</div>
                         </div>
-                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 36%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 36%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:var(--sl-code-bg,#0d1117);">
                             <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">${SlidesRenderer.esc(afterLabel)}</div>
-                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;">${SlidesRenderer.esc(afterText)}</div>
+                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:var(--sl-code-text,#f8fafc);white-space:pre-wrap;">${SlidesRenderer.esc(afterText)}</div>
                         </div>
                     </div>
                 </div>`;
@@ -4725,13 +4739,13 @@ class SlidesRenderer {
                 content = `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.5rem;">
                     <div style="font-size:${Math.round(base * 0.92)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${SlidesRenderer.esc(title)}</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
-                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-danger,#ef4444) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-danger,#ef4444) 9%,var(--sl-slide-bg,#1a1d27));">
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-danger,#ef4444) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:var(--sl-code-bg,#0d1117);">
                             <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-danger,#ef4444);text-transform:uppercase;letter-spacing:0.03em;">Erreur fréquente</div>
-                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(mistake)}</code></pre>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:var(--sl-code-text,#f8fafc);white-space:pre-wrap;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(mistake)}</code></pre>
                         </div>
-                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
+                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:var(--sl-code-bg,#0d1117);">
                             <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">Correction</div>
-                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(fix)}</code></pre>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:var(--sl-code-text,#f8fafc);white-space:pre-wrap;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(fix)}</code></pre>
                         </div>
                     </div>
                 </div>`;
@@ -4796,31 +4810,31 @@ class SlidesRenderer {
                 let widget = `<div style="height:100%;--sl-code-font-size:${Math.round(base * 0.82)}px;--sl-code-gutter-size:${Math.round(base * 0.82)}px;--sl-code-lang-size:${Math.round(base * 0.64)}px;">${SlidesShared.codeTerminal(code, lang, 'sl')}</div>`;
                 if (mode === 'live') {
                     widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
-                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:${Math.round(base * 0.66)}px;">
+                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);background:color-mix(in srgb,var(--sl-code-bg,#0d1117) 60%,#000);font-size:${Math.round(base * 0.66)}px;">
                             <span style="font-family:var(--sl-font-mono);color:var(--sl-muted);text-transform:uppercase;">${SlidesRenderer.esc(lang)}</span>
                             <span style="margin-left:auto;color:${tone.accent};font-weight:700;text-transform:uppercase;">Live</span>
                         </div>
-                        <pre style="margin:0;padding:8px 10px;font-size:${Math.round(base * 0.82)}px;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;flex:1;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(code)}</code></pre>
+                        <pre style="margin:0;padding:8px 10px;font-size:${Math.round(base * 0.82)}px;font-family:var(--sl-font-mono);color:var(--sl-code-text,#f8fafc);background:var(--sl-code-bg,#0d1117);white-space:pre;overflow:auto;flex:1;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(code)}</code></pre>
                     </div>`;
                 } else if (mode === 'stepper') {
                     const steps = Array.isArray(el.data?.stepperSteps) ? el.data.stepperSteps : [];
                     const first = steps[0] || {};
                     widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
-                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--sl-border);background:color-mix(in srgb,var(--sl-surface) 88%,#000);font-size:${Math.round(base * 0.66)}px;">
+                        <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);background:color-mix(in srgb,var(--sl-code-bg,#0d1117) 60%,#000);font-size:${Math.round(base * 0.66)}px;">
                             <span>${SlidesRenderer.esc(el.data?.stepperTitle || 'Exécution pas à pas')}</span>
                             <span style="margin-left:auto;color:${tone.accent};font-weight:700;text-transform:uppercase;">Stepper</span>
                         </div>
                         <div style="display:flex;flex-direction:column;gap:6px;padding:8px 10px;min-height:0;overflow:auto;">
                             <div style="font-size:${Math.round(base * 0.74)}px;color:var(--sl-heading);font-weight:600;">${SlidesRenderer.esc(first.title || 'Étape 1')}</div>
                             <div style="font-size:${Math.round(base * 0.69)}px;color:var(--sl-muted);">${SlidesRenderer.esc(first.detail || '')}</div>
-                            <pre style="margin:0;margin-top:auto;padding:7px 8px;border:1px solid var(--sl-border);border-radius:7px;background:color-mix(in srgb,var(--sl-slide-bg) 80%,#000);font-size:${Math.round(base * 0.82)}px;font-family:var(--sl-font-mono);color:var(--sl-text);white-space:pre;overflow:auto;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(first.code || '')}</code></pre>
+                            <pre style="margin:0;margin-top:auto;padding:7px 8px;border:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);border-radius:7px;background:var(--sl-code-bg,#0d1117);font-size:${Math.round(base * 0.82)}px;font-family:var(--sl-font-mono);color:var(--sl-code-text,#f8fafc);white-space:pre;overflow:auto;"><code class="language-${SlidesRenderer.esc(lang)}">${SlidesRenderer.esc(first.code || '')}</code></pre>
                         </div>
                     </div>`;
                 }
                 content = `<div style="width:100%;height:100%;background:${tone.strongBg};border-left:4px solid ${tone.accent};border:1px solid ${tone.border};border-left-width:4px;border-radius:0 8px 8px 0;padding:0.75rem 1rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;overflow:hidden;--ce-accent:${tone.accent};">
                     <div style="font-family:var(--sl-font-mono);font-weight:700;color:${tone.accent};font-size:${Math.round(base * 1.02)}px;text-transform:uppercase;letter-spacing:0.03em;">${SlidesRenderer.esc(label)}</div>
                     <div style="color:var(--sl-text);font-size:${Math.round(base * 0.92)}px;line-height:1.45;max-height:36%;overflow:auto;">${el.data?.text || ''}</div>
-                    <div style="flex:1;min-height:110px;border:1px solid var(--sl-border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-slide-bg) 82%,#000);">${widget}</div>
+                    <div style="flex:1;min-height:110px;border:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);border-radius:8px;overflow:hidden;background:var(--sl-code-bg,#0d1117);">${widget}</div>
                 </div>`;
                 break;
             }

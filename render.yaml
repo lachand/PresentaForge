@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: presentaforge-relay
+    runtime: node
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install --omit=dev
+    startCommand: node tools/slides/relay-server.mjs
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RELAY_TOKEN
+        sync: false
+      - key: RELAY_ROOM_IDLE_TTL_MS
+        value: "2700000"
