@@ -112,6 +112,139 @@ const IDB_STORE = 'revisions';
 const IDB_VERSION = 1;
 const MAX_REVISIONS = 30;
 
+function _revisionTypeLabel(type) {
+    const map = {
+        title: 'Titre',
+        chapter: 'Chapitre',
+        bullets: 'Contenu',
+        code: 'Code',
+        split: 'Split',
+        definition: 'Definition',
+        comparison: 'Comparaison',
+        simulation: 'Simulation',
+        image: 'Image',
+        quote: 'Citation',
+        quiz: 'Quiz',
+        blank: 'Libre',
+        canvas: 'Canvas',
+    };
+    return map[String(type || '').toLowerCase()] || String(type || 'Slide');
+}
+
+function _revisionExtractCanvasPreview(slide) {
+    const elements = Array.isArray(slide?.elements) ? [...slide.elements] : [];
+    elements.sort((a, b) => (Number(a?.z) || 0) - (Number(b?.z) || 0));
+
+    const textByElement = (el) => {
+        const data = el?.data || {};
+        if (typeof data.text === 'string' && data.text.trim()) return data.text.trim();
+        if (typeof data.title === 'string' && data.title.trim()) return data.title.trim();
+        if (typeof data.question === 'string' && data.question.trim()) return data.question.trim();
+        if (typeof data.term === 'string' && data.term.trim()) return data.term.trim();
+        if (Array.isArray(data.items) && data.items.length) return String(data.items[0] || '').trim();
+        if (Array.isArray(data.rows) && data.rows.length > 1) return String(data.rows[1]?.[0] || '').trim();
+        return '';
+    };
+
+    const heading = elements.find((el) => el?.type === 'heading');
+    const title = heading ? textByElement(heading) : '';
+
+    const lines = [];
+    for (const el of elements) {
+        if (el?.type === 'heading') continue;
+        const txt = textByElement(el);
+        if (!txt) continue;
+        lines.push(txt);
+        if (lines.length >= 3) break;
+    }
+
+    return {
+        title: title || 'Slide canvas',
+        lines,
+    };
+}
+
+function _revisionBuildPreviewFromData(data, activeSlideIndex = 0) {
+    const slides = Array.isArray(data?.slides) ? data.slides : [];
+    if (!slides.length) {
+        return {
+            slideIndex: 0,
+            type: 'slide',
+            typeLabel: 'Slide',
+            title: 'Presentation vide',
+            lines: ['Aucun slide'],
+        };
+    }
+
+    const idxRaw = Number(activeSlideIndex);
+    const idx = Number.isFinite(idxRaw)
+        ? Math.max(0, Math.min(slides.length - 1, Math.trunc(idxRaw)))
+        : 0;
+    const slide = slides[idx] || {};
+    const type = String(slide.type || 'slide');
+    const typeLabel = _revisionTypeLabel(type);
+
+    let title = '';
+    const lines = [];
+
+    if (type === 'canvas') {
+        const canvasPreview = _revisionExtractCanvasPreview(slide);
+        title = canvasPreview.title;
+        lines.push(...canvasPreview.lines);
+    } else {
+        const directTitle = [
+            slide.title,
+            slide.term,
+            slide.quote,
+            slide.question,
+        ].find((value) => typeof value === 'string' && value.trim());
+        title = String(directTitle || typeLabel || 'Slide').trim();
+
+        if (Array.isArray(slide.items) && slide.items.length) {
+            lines.push(...slide.items.slice(0, 3).map((item) => String(item || '').trim()).filter(Boolean));
+        }
+        if (typeof slide.subtitle === 'string' && slide.subtitle.trim()) lines.push(slide.subtitle.trim());
+        if (typeof slide.definition === 'string' && slide.definition.trim()) lines.push(slide.definition.trim());
+        if (typeof slide.code === 'string' && slide.code.trim()) {
+            const firstLine = slide.code.split('\n').map((line) => line.trim()).find(Boolean);
+            if (firstLine) lines.push(firstLine);
+        }
+    }
+
+    const compactLines = [];
+    for (const line of lines) {
+        const txt = String(line || '').replace(/\s+/g, ' ').trim();
+        if (!txt) continue;
+        compactLines.push(txt);
+        if (compactLines.length >= 3) break;
+    }
+
+    if (!compactLines.length) compactLines.push('Contenu du slide');
+
+    return {
+        slideIndex: idx,
+        type,
+        typeLabel,
+        title: title || typeLabel || 'Slide',
+        lines: compactLines,
+    };
+}
+
+function _revisionPreviewFromSerialized(serializedData, activeSlideIndex = 0) {
+    try {
+        const parsed = JSON.parse(String(serializedData || '{}'));
+        return _revisionBuildPreviewFromData(parsed, activeSlideIndex);
+    } catch (_) {
+        return {
+            slideIndex: 0,
+            type: 'slide',
+            typeLabel: 'Slide',
+            title: 'Revision',
+            lines: ['Apercu indisponible'],
+        };
+    }
+}
+
 function _openIDB() {
     return new Promise((resolve, reject) => {
         const req = indexedDB.open(IDB_NAME, IDB_VERSION);
@@ -138,14 +271,21 @@ async function saveRevision(reason = 'auto') {
         const tx = db.transaction(IDB_STORE, 'readwrite');
         const store = tx.objectStore(IDB_STORE);
         const presId = editor.data.metadata?.id || editor.data.metadata?.title || 'untitled';
+        const snapshot = JSON.parse(JSON.stringify(editor.data));
+        const activeSlideIndex = Number.isFinite(Number(editor.selectedIndex))
+            ? Math.trunc(Number(editor.selectedIndex))
+            : 0;
+        const preview = _revisionBuildPreviewFromData(snapshot, activeSlideIndex);
 
         store.add({
             presentationId: presId,
             timestamp: Date.now(),
             reason,
-            title: editor.data.metadata?.title || 'Sans titre',
-            slideCount: editor.data.slides.length,
-            data: JSON.stringify(editor.data)
+            title: snapshot.metadata?.title || 'Sans titre',
+            slideCount: Array.isArray(snapshot.slides) ? snapshot.slides.length : 0,
+            activeSlideIndex,
+            preview,
+            data: JSON.stringify(snapshot)
         });
 
         // Prune old revisions for this presentation
@@ -261,7 +401,7 @@ async function openRevisionHistory() {
     modal.id = 'revision-modal';
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal revision-modal" style="max-width:560px">
+        <div class="modal revision-modal">
             <div class="modal-header">
                 <h3 class="modal-title" style="margin:0;flex:1">Historique des révisions</h3>
                 <button class="modal-close" id="close-revision-modal" aria-label="Fermer">${icons.close}</button>
@@ -273,13 +413,29 @@ async function openRevisionHistory() {
                         const d = new Date(r.timestamp);
                         const date = d.toLocaleDateString('fr-FR');
                         const time = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                        const preview = (r.preview && typeof r.preview === 'object')
+                            ? r.preview
+                            : _revisionPreviewFromSerialized(r.data, r.activeSlideIndex || 0);
+                        const previewLines = Array.isArray(preview?.lines)
+                            ? preview.lines.slice(0, 3).map(line => `<li>${esc(line)}</li>`).join('')
+                            : '<li>Contenu du slide</li>';
+                        const previewSlideNo = Number.isFinite(Number(preview?.slideIndex))
+                            ? (Number(preview.slideIndex) + 1)
+                            : ((Number.isFinite(Number(r.activeSlideIndex)) ? Number(r.activeSlideIndex) + 1 : 1));
                         return `<div class="revision-item" data-rev-id="${r.id}">
+                            <div class="revision-thumb" role="img" aria-label="Aperçu de la révision">
+                                <span class="revision-thumb-type">${esc(preview?.typeLabel || 'Slide')}</span>
+                                <div class="revision-thumb-title">${esc(preview?.title || 'Slide')}</div>
+                                <ul class="revision-thumb-lines">${previewLines}</ul>
+                            </div>
                             <div class="revision-info">
                                 <span class="revision-reason">${reasonLabels[r.reason] || `<span>${esc(r.reason)}</span>`}</span>
-                                <span class="revision-date">${date} à ${time}</span>
+                                <span class="revision-date">${date} à ${time} · Slide ${previewSlideNo}</span>
                             </div>
-                            <div class="revision-meta">${r.slideCount} slides · ${r.title}</div>
-                            <button class="tb-btn revision-restore">Restaurer</button>
+                            <div class="revision-actions">
+                                <div class="revision-meta">${r.slideCount} slides · ${esc(r.title)}</div>
+                                <button class="tb-btn revision-restore">Restaurer</button>
+                            </div>
                         </div>`;
                     }).join('')
                 }

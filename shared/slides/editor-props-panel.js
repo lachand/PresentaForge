@@ -46,6 +46,425 @@ function _toneOptionsHtml(selectedTone = 'auto') {
         .join('');
 }
 
+const DIAGRAM_CHART_TYPES = Object.freeze([
+    'bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'combo',
+    'scatter', 'bubble', 'histogram', 'boxplot', 'waterfall', 'funnel',
+    'radar', 'pie', 'donut', 'heatmap', 'treemap', 'sankey', 'gantt', 'radial-gauge',
+]);
+
+const DIAGRAM_TYPE_LABELS = Object.freeze({
+    bar: 'Barres',
+    'stacked-bar': 'Barres empilees',
+    'stacked-100': 'Barres empilees 100%',
+    line: 'Lignes',
+    area: 'Aires',
+    combo: 'Combo barres + ligne',
+    scatter: 'Nuage (X,Y)',
+    bubble: 'Bulles (X,Y,Taille)',
+    histogram: 'Histogramme',
+    boxplot: 'Boite a moustaches',
+    waterfall: 'Waterfall',
+    funnel: 'Entonnoir',
+    radar: 'Radar',
+    pie: 'Camembert',
+    donut: 'Anneau',
+    heatmap: 'Heatmap',
+    treemap: 'Treemap',
+    sankey: 'Sankey',
+    gantt: 'Gantt',
+    'radial-gauge': 'Jauge radiale',
+});
+
+const DIAGRAM_TYPE_SCHEMAS = Object.freeze({
+    bar: { minRows: 4, minCols: 3, headers: ['Categorie', 'Serie A', 'Serie B'], rowPrefix: 'Cat.' },
+    'stacked-bar': { minRows: 4, minCols: 3, headers: ['Categorie', 'Serie A', 'Serie B'], rowPrefix: 'Cat.' },
+    'stacked-100': { minRows: 4, minCols: 3, headers: ['Categorie', 'Serie A', 'Serie B'], rowPrefix: 'Cat.' },
+    line: { minRows: 4, minCols: 3, headers: ['Categorie', 'Serie A', 'Serie B'], rowPrefix: 'Cat.' },
+    area: { minRows: 4, minCols: 3, headers: ['Categorie', 'Serie A', 'Serie B'], rowPrefix: 'Cat.' },
+    combo: { minRows: 4, minCols: 3, headers: ['Categorie', 'Barres', 'Ligne'], rowPrefix: 'Cat.' },
+    scatter: { minRows: 4, minCols: 3, fixedCols: 3, headers: ['Point', 'X', 'Y'], rowPrefix: 'P' },
+    bubble: { minRows: 4, minCols: 4, fixedCols: 4, headers: ['Point', 'X', 'Y', 'Taille'], rowPrefix: 'P' },
+    histogram: { minRows: 6, minCols: 2, fixedCols: 2, headers: ['Classe', 'Frequence'], rowPrefix: 'Bin' },
+    boxplot: { minRows: 4, minCols: 6, fixedCols: 6, headers: ['Categorie', 'Min', 'Q1', 'Mediane', 'Q3', 'Max'], rowPrefix: 'Cat.' },
+    waterfall: { minRows: 5, minCols: 2, fixedCols: 2, headers: ['Etape', 'Variation'], rowPrefix: 'Etape' },
+    funnel: { minRows: 5, minCols: 2, fixedCols: 2, headers: ['Etape', 'Valeur'], rowPrefix: 'Etape' },
+    radar: { minRows: 4, minCols: 3, headers: ['Categorie', 'Serie A', 'Serie B'], rowPrefix: 'Axe' },
+    pie: { minRows: 5, minCols: 2, fixedCols: 2, headers: ['Categorie', 'Valeur'], rowPrefix: 'Part' },
+    donut: { minRows: 5, minCols: 2, fixedCols: 2, headers: ['Categorie', 'Valeur'], rowPrefix: 'Part' },
+    heatmap: { minRows: 4, minCols: 4, headers: ['Ligne/Colonne', 'C1', 'C2', 'C3'], rowPrefix: 'Ligne' },
+    treemap: { minRows: 5, minCols: 2, fixedCols: 2, headers: ['Bloc', 'Valeur'], rowPrefix: 'Bloc' },
+    sankey: { minRows: 6, minCols: 3, fixedCols: 3, headers: ['Source', 'Cible', 'Valeur'], rowPrefix: 'Flux' },
+    gantt: { minRows: 5, minCols: 4, fixedCols: 4, headers: ['Tache', 'Debut', 'Fin', 'Groupe'], rowPrefix: 'Tache' },
+    'radial-gauge': { minRows: 2, minCols: 4, fixedCols: 4, fixedRows: 2, headers: ['Mesure', 'Valeur', 'Min', 'Max'], rowPrefix: 'Mesure' },
+});
+
+const DIAGRAM_ROW_TEMPLATES = Object.freeze({
+    bar: [['Categorie', 'Serie A', 'Serie B'], ['A', '12', '8'], ['B', '18', '11'], ['C', '9', '14']],
+    'stacked-bar': [['Categorie', 'Serie A', 'Serie B'], ['A', '12', '8'], ['B', '18', '11'], ['C', '9', '14']],
+    'stacked-100': [['Categorie', 'Serie A', 'Serie B'], ['A', '40', '60'], ['B', '70', '30'], ['C', '55', '45']],
+    line: [['Categorie', 'Serie A', 'Serie B'], ['S1', '10', '8'], ['S2', '12', '11'], ['S3', '9', '14']],
+    area: [['Categorie', 'Serie A', 'Serie B'], ['S1', '10', '8'], ['S2', '12', '11'], ['S3', '9', '14']],
+    combo: [['Categorie', 'Barres', 'Ligne'], ['S1', '120', '18'], ['S2', '95', '21'], ['S3', '140', '17']],
+    scatter: [['Point', 'X', 'Y'], ['P1', '3', '9'], ['P2', '6', '12'], ['P3', '9', '7']],
+    bubble: [['Point', 'X', 'Y', 'Taille'], ['P1', '3', '9', '8'], ['P2', '6', '12', '18'], ['P3', '9', '7', '5']],
+    histogram: [['Classe', 'Frequence'], ['0-10', '2'], ['10-20', '7'], ['20-30', '10'], ['30-40', '5'], ['40-50', '2']],
+    boxplot: [['Categorie', 'Min', 'Q1', 'Mediane', 'Q3', 'Max'], ['A', '3', '6', '8', '10', '14'], ['B', '2', '5', '7', '9', '12'], ['C', '1', '4', '6', '8', '11']],
+    waterfall: [['Etape', 'Variation'], ['Ventes', '120'], ['Couts', '-65'], ['Taxes', '-18'], ['Upsell', '24']],
+    funnel: [['Etape', 'Valeur'], ['Visites', '1200'], ['Leads', '420'], ['Essais', '180'], ['Clients', '72']],
+    radar: [['Axe', 'Serie A', 'Serie B'], ['Qualite', '8', '6'], ['Prix', '6', '9'], ['Support', '7', '5']],
+    pie: [['Categorie', 'Valeur'], ['A', '35'], ['B', '25'], ['C', '20'], ['D', '20']],
+    donut: [['Categorie', 'Valeur'], ['A', '35'], ['B', '25'], ['C', '20'], ['D', '20']],
+    heatmap: [['Ligne/Colonne', 'C1', 'C2', 'C3'], ['Ligne 1', '12', '5', '18'], ['Ligne 2', '8', '14', '3'], ['Ligne 3', '19', '7', '10']],
+    treemap: [['Bloc', 'Valeur'], ['Backend', '40'], ['Frontend', '30'], ['DevOps', '20'], ['QA', '10']],
+    sankey: [['Source', 'Cible', 'Valeur'], ['Visites', 'Leads', '420'], ['Leads', 'Essais', '180'], ['Essais', 'Clients', '72'], ['Leads', 'Abandon', '240'], ['Essais', 'Abandon', '108']],
+    gantt: [['Tache', 'Debut', 'Fin', 'Groupe'], ['Analyse', '2026-03-10', '2026-03-15', 'Phase 1'], ['Dev', '2026-03-16', '2026-03-28', 'Phase 2'], ['Recette', '2026-03-29', '2026-04-03', 'Phase 3'], ['Lancement', '2026-04-04', '2026-04-06', 'Phase 3']],
+    'radial-gauge': [['Mesure', 'Valeur', 'Min', 'Max'], ['Progression', '68', '0', '100']],
+});
+
+const DIAGRAM_SERIES_COLOR_FALLBACK = Object.freeze([
+    '#818cf8',
+    '#38bdf8',
+    '#22c55e',
+    '#f59e0b',
+    '#ef4444',
+    '#f472b6',
+]);
+
+const DIAGRAM_TRANSFORM_MODES = Object.freeze([
+    'none',
+    'percent',
+    'cumulative',
+    'average',
+]);
+
+const DIAGRAM_TRANSFORM_LABELS = Object.freeze({
+    none: 'Aucune',
+    percent: 'Pourcentage par categorie',
+    cumulative: 'Cumul par serie',
+    average: 'Moyenne par serie',
+});
+
+const DIAGRAM_PEDAGOGICAL_PRESETS = Object.freeze({
+    evolution: {
+        id: 'evolution',
+        label: 'Evolution',
+        chartType: 'line',
+        transformMode: 'none',
+        rows: [['Periode', 'Serie A', 'Serie B'], ['S1', '12', '9'], ['S2', '15', '11'], ['S3', '17', '13'], ['S4', '19', '15']],
+    },
+    distribution: {
+        id: 'distribution',
+        label: 'Distribution',
+        chartType: 'histogram',
+        transformMode: 'none',
+        rows: [['Classe', 'Frequence'], ['0-10', '3'], ['10-20', '8'], ['20-30', '14'], ['30-40', '9'], ['40-50', '4']],
+    },
+    conversion: {
+        id: 'conversion',
+        label: 'Conversion',
+        chartType: 'funnel',
+        transformMode: 'none',
+        rows: [['Etape', 'Valeur'], ['Visites', '1200'], ['Leads', '420'], ['Essais', '180'], ['Clients', '72']],
+    },
+    planification: {
+        id: 'planification',
+        label: 'Planification',
+        chartType: 'gantt',
+        transformMode: 'none',
+        rows: [['Tache', 'Debut', 'Fin', 'Groupe'], ['Analyse', '2026-03-10', '2026-03-14', 'Phase 1'], ['Implementation', '2026-03-15', '2026-03-28', 'Phase 2'], ['Recette', '2026-03-29', '2026-04-04', 'Phase 3']],
+    },
+});
+
+function _normalizeDiagramTransformMode(mode = 'none') {
+    const normalized = String(mode || '').trim().toLowerCase();
+    return DIAGRAM_TRANSFORM_MODES.includes(normalized) ? normalized : 'none';
+}
+
+function _diagramTransformOptionsHtml(selectedMode = 'none') {
+    const current = _normalizeDiagramTransformMode(selectedMode);
+    return DIAGRAM_TRANSFORM_MODES
+        .map((mode) => `<option value="${mode}"${mode === current ? ' selected' : ''}>${esc(DIAGRAM_TRANSFORM_LABELS[mode] || mode)}</option>`)
+        .join('');
+}
+
+function _diagramPresetOptionsHtml(selectedPreset = '') {
+    const current = String(selectedPreset || '').trim().toLowerCase();
+    const options = Object.values(DIAGRAM_PEDAGOGICAL_PRESETS)
+        .map((preset) => `<option value="${escAttr(preset.id)}"${preset.id === current ? ' selected' : ''}>${esc(preset.label)}</option>`)
+        .join('');
+    return `<option value="">Aucun</option>${options}`;
+}
+
+function _diagramTryNumber(value) {
+    const normalized = String(value ?? '')
+        .trim()
+        .replace(/\s+/g, '')
+        .replace(',', '.');
+    if (!normalized) return null;
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : null;
+}
+
+function _diagramLooksDate(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return false;
+    const ts = Date.parse(raw.replace(/\//g, '-'));
+    return Number.isFinite(ts);
+}
+
+function _normalizeDiagramSeriesStyles(seriesStyles, seriesCount = 1, chartType = 'bar') {
+    const count = Math.max(1, Number(seriesCount) || 1);
+    const src = Array.isArray(seriesStyles) ? seriesStyles : [];
+    const isLineFamily = ['line', 'area', 'combo', 'radar'].includes(chartType);
+    const defaultPoints = ['line', 'combo', 'radar', 'scatter', 'bubble'].includes(chartType);
+    const defaultSmooth = ['line', 'area', 'combo'].includes(chartType);
+
+    return Array.from({ length: count }, (_, idx) => {
+        const raw = (src[idx] && typeof src[idx] === 'object') ? src[idx] : {};
+        const fallbackColor = DIAGRAM_SERIES_COLOR_FALLBACK[idx % DIAGRAM_SERIES_COLOR_FALLBACK.length];
+        const widthRaw = Number(raw.width);
+        const width = Number.isFinite(widthRaw)
+            ? Math.max(0.5, Math.min(10, Math.round(widthRaw * 10) / 10))
+            : (isLineFamily ? 2.4 : 1.8);
+        const axisRaw = String(raw.axis || '').trim().toLowerCase();
+        const axis = chartType === 'combo' && axisRaw === 'secondary'
+            ? 'secondary'
+            : 'primary';
+        return {
+            color: String(raw.color || fallbackColor).trim() || fallbackColor,
+            width,
+            points: raw.points == null ? defaultPoints : !!raw.points,
+            smooth: raw.smooth == null ? defaultSmooth : !!raw.smooth,
+            axis,
+        };
+    });
+}
+
+function _diagramColorInputValue(color, fallback = '#818cf8') {
+    const raw = String(color || '').trim();
+    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw)) return raw;
+    return fallback;
+}
+
+function _diagramStylesPreviewRowsHtml(seriesNames, seriesStyles, chartType = 'bar') {
+    const showAxis = chartType === 'combo';
+    return seriesNames.map((name, idx) => {
+        const style = seriesStyles[idx] || _normalizeDiagramSeriesStyles([], seriesNames.length, chartType)[idx];
+        const colorValue = _diagramColorInputValue(style.color, DIAGRAM_SERIES_COLOR_FALLBACK[idx % DIAGRAM_SERIES_COLOR_FALLBACK.length]);
+        return `<div class="sp-diag-series-row" data-diag-series-row="${idx}">
+            <div class="sp-diag-series-name" title="${escAttr(name)}">${esc(name)}</div>
+            <div class="sp-diag-series-controls">
+                <label class="sp-diag-series-inline"><span>Couleur</span><input type="color" data-diag-style="color" data-series-idx="${idx}" value="${escAttr(colorValue)}"></label>
+                <label class="sp-diag-series-inline"><span>Ep.</span><input type="number" min="0.5" max="10" step="0.1" data-diag-style="width" data-series-idx="${idx}" value="${escAttr(style.width)}"></label>
+                <label class="sp-diag-series-check"><input type="checkbox" data-diag-style="points" data-series-idx="${idx}"${style.points ? ' checked' : ''}> Points</label>
+                <label class="sp-diag-series-check"><input type="checkbox" data-diag-style="smooth" data-series-idx="${idx}"${style.smooth ? ' checked' : ''}> Lisse</label>
+                ${showAxis ? `<label class="sp-diag-series-check"><input type="checkbox" data-diag-style="axis-secondary" data-series-idx="${idx}"${style.axis === 'secondary' ? ' checked' : ''}> Axe 2</label>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function _diagramParseDelimited(text, delimiter = ',') {
+    const src = String(text ?? '');
+    if (!src.trim()) return [];
+    const rows = [];
+    let row = [];
+    let cell = '';
+    let inQuotes = false;
+    for (let i = 0; i < src.length; i++) {
+        const ch = src[i];
+        if (ch === '"') {
+            if (inQuotes && src[i + 1] === '"') {
+                cell += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+            continue;
+        }
+        if (!inQuotes && ch === delimiter) {
+            row.push(cell);
+            cell = '';
+            continue;
+        }
+        if (!inQuotes && (ch === '\n' || ch === '\r')) {
+            row.push(cell);
+            rows.push(row);
+            row = [];
+            cell = '';
+            if (ch === '\r' && src[i + 1] === '\n') i++;
+            continue;
+        }
+        cell += ch;
+    }
+    row.push(cell);
+    rows.push(row);
+    return rows
+        .map((r) => r.map((c) => String(c ?? '').trim()))
+        .filter((r) => r.some((c) => c.length > 0));
+}
+
+function _diagramRowsToDelimited(rows, delimiter = ',') {
+    const safeRows = Array.isArray(rows) ? rows : [];
+    const escCell = (value) => {
+        const cell = String(value ?? '');
+        if (cell.includes('"')) return `"${cell.replace(/"/g, '""')}"`;
+        if (cell.includes(delimiter) || cell.includes('\n') || cell.includes('\r')) return `"${cell}"`;
+        return cell;
+    };
+    return safeRows.map((row) => {
+        const arr = Array.isArray(row) ? row : [];
+        return arr.map((cell) => escCell(cell)).join(delimiter);
+    }).join('\n');
+}
+
+function _diagramInvalidCells(rows, chartType = 'bar') {
+    const invalid = new Set();
+    const issues = [];
+    const matrix = Array.isArray(rows) ? rows : [];
+    const mark = (ri, ci, reason) => {
+        const key = `${ri}:${ci}`;
+        if (!invalid.has(key)) {
+            invalid.add(key);
+            issues.push({ row: ri, col: ci, reason });
+        }
+    };
+    const rowHasAny = (row) => (Array.isArray(row) ? row.some((cell) => String(cell ?? '').trim().length > 0) : false);
+    const requireNumeric = (ri, ci, allowDate = false) => {
+        const value = matrix[ri]?.[ci];
+        const raw = String(value ?? '').trim();
+        if (!raw) return mark(ri, ci, 'vide');
+        if (_diagramTryNumber(raw) != null) return;
+        if (allowDate && _diagramLooksDate(raw)) return;
+        mark(ri, ci, 'nombre');
+    };
+    const requireText = (ri, ci) => {
+        const raw = String(matrix[ri]?.[ci] ?? '').trim();
+        if (!raw) mark(ri, ci, 'texte');
+    };
+
+    for (let ri = 1; ri < matrix.length; ri++) {
+        const row = matrix[ri];
+        if (!rowHasAny(row)) continue;
+        const cols = Array.isArray(row) ? row.length : 0;
+        const numericAll = () => {
+            for (let ci = 1; ci < cols; ci++) requireNumeric(ri, ci, false);
+        };
+        switch (chartType) {
+            case 'sankey':
+                requireText(ri, 0);
+                requireText(ri, 1);
+                requireNumeric(ri, 2, false);
+                break;
+            case 'gantt':
+                requireText(ri, 0);
+                requireNumeric(ri, 1, true);
+                requireNumeric(ri, 2, true);
+                break;
+            case 'scatter':
+                requireText(ri, 0);
+                requireNumeric(ri, 1, false);
+                requireNumeric(ri, 2, false);
+                break;
+            case 'bubble':
+                requireText(ri, 0);
+                requireNumeric(ri, 1, false);
+                requireNumeric(ri, 2, false);
+                requireNumeric(ri, 3, false);
+                break;
+            case 'boxplot':
+                requireText(ri, 0);
+                requireNumeric(ri, 1, false);
+                requireNumeric(ri, 2, false);
+                requireNumeric(ri, 3, false);
+                requireNumeric(ri, 4, false);
+                requireNumeric(ri, 5, false);
+                break;
+            case 'radial-gauge':
+                requireText(ri, 0);
+                requireNumeric(ri, 1, false);
+                requireNumeric(ri, 2, false);
+                requireNumeric(ri, 3, false);
+                break;
+            default:
+                numericAll();
+                break;
+        }
+    }
+    return { invalid, issues };
+}
+
+function _getDiagramSchema(chartType = 'bar') {
+    const key = DIAGRAM_CHART_TYPES.includes(String(chartType || '').toLowerCase())
+        ? String(chartType).toLowerCase()
+        : 'bar';
+    return DIAGRAM_TYPE_SCHEMAS[key] || DIAGRAM_TYPE_SCHEMAS.bar;
+}
+
+function _getDiagramTemplateRows(chartType = 'bar') {
+    const key = DIAGRAM_CHART_TYPES.includes(String(chartType || '').toLowerCase())
+        ? String(chartType).toLowerCase()
+        : 'bar';
+    const template = DIAGRAM_ROW_TEMPLATES[key] || DIAGRAM_ROW_TEMPLATES.bar;
+    return template.map((row) => row.slice());
+}
+
+function _diagramTypeOptionsHtml(selectedType = 'bar') {
+    const selected = DIAGRAM_CHART_TYPES.includes(String(selectedType || '').toLowerCase())
+        ? String(selectedType).toLowerCase()
+        : 'bar';
+    return DIAGRAM_CHART_TYPES
+        .map((type) => `<option value="${type}"${type === selected ? ' selected' : ''}>${esc(DIAGRAM_TYPE_LABELS[type] || type)}</option>`)
+        .join('');
+}
+
+function _diagramFormatHint(chartType = 'bar') {
+    const type = DIAGRAM_CHART_TYPES.includes(String(chartType || '').toLowerCase())
+        ? String(chartType).toLowerCase()
+        : 'bar';
+    if (type === 'scatter') return 'Format: Point, X, Y.';
+    if (type === 'bubble') return 'Format: Point, X, Y, Taille (colonne Taille obligatoire).';
+    if (type === 'boxplot') return 'Format: Categorie, Min, Q1, Mediane, Q3, Max.';
+    if (type === 'sankey') return 'Format: Source, Cible, Valeur.';
+    if (type === 'gantt') return 'Format: Tache, Debut, Fin, Groupe(optionnel).';
+    if (type === 'radial-gauge') return 'Format: Mesure, Valeur, Min, Max.';
+    if (type === 'pie' || type === 'donut') return 'Format: Categorie, Valeur.';
+    return 'Ligne 1: en-tetes. Colonne 1: categories.';
+}
+
+function _normalizeDiagramRows(rows, chartType = 'bar', forceHeaders = false) {
+    const schema = _getDiagramSchema(chartType);
+    const baseRows = Array.isArray(rows) && rows.length
+        ? rows.map((row) => Array.isArray(row) ? row.map((cell) => String(cell ?? '')) : [])
+        : _getDiagramTemplateRows(chartType);
+    const inferredCols = Math.max(...baseRows.map((row) => row.length), 0);
+    const colCount = Number.isFinite(schema.fixedCols)
+        ? schema.fixedCols
+        : Math.max(schema.minCols || 2, inferredCols || 0);
+    const rowCount = Number.isFinite(schema.fixedRows)
+        ? schema.fixedRows
+        : Math.max(schema.minRows || 2, baseRows.length || 0);
+    const normalized = Array.from({ length: rowCount }, (_, ri) => {
+        const source = baseRows[ri] || [];
+        const row = source.slice(0, colCount);
+        while (row.length < colCount) row.push('');
+        return row;
+    });
+    if (schema.headers?.length) {
+        for (let ci = 0; ci < colCount; ci++) {
+            const headerLabel = schema.headers[ci] || (ci === 0 ? 'Categorie' : `Serie ${ci}`);
+            if (forceHeaders || !String(normalized[0][ci] || '').trim()) normalized[0][ci] = headerLabel;
+        }
+    }
+    for (let ri = 1; ri < normalized.length; ri++) {
+        if (!String(normalized[ri][0] || '').trim()) {
+            const prefix = schema.rowPrefix || 'Cat.';
+            normalized[ri][0] = `${prefix} ${ri}`;
+        }
+    }
+    return normalized;
+}
+
 function updatePropsPanel() {
     const panel = document.getElementById('props-content');
     const propsPanel = document.getElementById('props-panel');
@@ -483,38 +902,52 @@ function updatePropsPanel() {
             break;
 
         case 'diagramme': {
-            const rawRows = Array.isArray(d.rows) ? d.rows : [];
-            const colCount = Math.max(2, rawRows.reduce((max, row) => {
-                if (!Array.isArray(row)) return max;
-                return Math.max(max, row.length);
-            }, 0));
-            const normalizedRows = rawRows.length
-                ? rawRows
-                    .filter((row) => Array.isArray(row))
-                    .map((row) => {
-                        const next = row.slice(0, colCount).map((cell) => String(cell ?? ''));
-                        while (next.length < colCount) next.push('');
-                        return next;
-                    })
-                : [
-                    ['Catégorie', 'Série A', 'Série B'],
-                    ['A', '12', '8'],
-                    ['B', '18', '11'],
-                    ['C', '9', '14'],
-                ];
-            const rowCount = Math.max(2, normalizedRows.length);
-            while (normalizedRows.length < rowCount) normalizedRows.push(Array(colCount).fill(''));
-            const chartType = ['bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'combo', 'scatter', 'bubble', 'histogram', 'boxplot', 'waterfall', 'funnel', 'radar', 'pie', 'donut', 'heatmap', 'treemap', 'sankey', 'gantt', 'radial-gauge'].includes(String(d.chartType || '').toLowerCase())
+            const chartType = DIAGRAM_CHART_TYPES.includes(String(d.chartType || '').toLowerCase())
                 ? String(d.chartType).toLowerCase()
                 : 'bar';
+            const schema = _getDiagramSchema(chartType);
+            const normalizedRows = _normalizeDiagramRows(d.rows, chartType, false);
+            const colCount = Math.max(2, normalizedRows[0]?.length || 0);
+            const rowCount = Math.max(2, normalizedRows.length);
+            const seriesNames = Array.from({ length: Math.max(1, colCount - 1) }, (_, idx) => {
+                const raw = String(normalizedRows[0]?.[idx + 1] || '').trim();
+                return raw || `Serie ${idx + 1}`;
+            });
+            const seriesStyles = _normalizeDiagramSeriesStyles(d.seriesStyles, seriesNames.length, chartType);
+            const transformMode = _normalizeDiagramTransformMode(d.transformMode || 'none');
+            const presetId = String(d.presetId || '').trim().toLowerCase();
+            const validation = _diagramInvalidCells(normalizedRows, chartType);
+            const invalidSummary = validation.issues
+                .slice(0, 8)
+                .map((issue) => `L${issue.row + 1}C${issue.col + 1}`)
+                .join(', ');
+            const fixedRows = Number.isFinite(schema.fixedRows) ? schema.fixedRows : null;
+            const fixedCols = Number.isFinite(schema.fixedCols) ? schema.fixedCols : null;
+            const canAddRow = !fixedRows;
+            const canDelRow = !fixedRows && rowCount > Math.max(2, schema.minRows || 2);
+            const canAddCol = !fixedCols;
+            const canDelCol = !fixedCols && colCount > Math.max(2, schema.minCols || 2);
+            const constraints = [
+                fixedRows ? `${fixedRows} lignes fixes` : `min ${Math.max(2, schema.minRows || 2)} lignes`,
+                fixedCols ? `${fixedCols} colonnes fixes` : `min ${Math.max(2, schema.minCols || 2)} colonnes`,
+            ].join(' | ');
+            const optionsHtml = _diagramTypeOptionsHtml(chartType);
+            const transformOptionsHtml = _diagramTransformOptionsHtml(transformMode);
+            const presetOptionsHtml = _diagramPresetOptionsHtml(presetId);
+            const seriesStyleHtml = _diagramStylesPreviewRowsHtml(seriesNames, seriesStyles, chartType);
+            const sourceSeriesOptions = seriesNames
+                .map((name, idx) => `<option value="${idx}">${esc(name)}</option>`)
+                .join('');
             const gridHtml = normalizedRows.map((row, ri) => `<tr>
                 ${row.map((cell, ci) => {
                     const isHeader = ri === 0 || ci === 0;
-                    const cellClasses = `sp-diag-cell${isHeader ? ' is-header' : ''}`;
-                    const inputClasses = `sp-diag-input${isHeader ? ' is-header' : ''}`;
+                    const invalidKey = `${ri}:${ci}`;
+                    const isInvalid = validation.invalid.has(invalidKey);
+                    const cellClasses = `sp-diag-cell${isHeader ? ' is-header' : ''}${isInvalid ? ' is-invalid' : ''}`;
+                    const inputClasses = `sp-diag-input${isHeader ? ' is-header' : ''}${isInvalid ? ' is-invalid' : ''}`;
                     const placeholder = ri === 0
-                        ? (ci === 0 ? 'Catégorie' : `Série ${ci}`)
-                        : (ci === 0 ? `Cat. ${ri}` : '0');
+                        ? (schema.headers?.[ci] || (ci === 0 ? 'Categorie' : `Serie ${ci}`))
+                        : (ci === 0 ? `${schema.rowPrefix || 'Cat.'} ${ri}` : '0');
                     return `<td class="${cellClasses}">
                         <input class="${inputClasses}" type="text" data-diag-r="${ri}" data-diag-c="${ci}" value="${escAttr(cell)}" placeholder="${escAttr(placeholder)}" style="min-width:${ci === 0 ? 90 : 72}px;">
                     </td>`;
@@ -523,21 +956,43 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Diagramme</div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-diag-title" value="${escAttr(d.title || 'Diagramme')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Type</label><select id="sp-diag-type"><option value="bar"${chartType === 'bar' ? ' selected' : ''}>Barres</option><option value="stacked-bar"${chartType === 'stacked-bar' ? ' selected' : ''}>Barres empilées</option><option value="stacked-100"${chartType === 'stacked-100' ? ' selected' : ''}>Barres empilées 100%</option><option value="line"${chartType === 'line' ? ' selected' : ''}>Lignes</option><option value="area"${chartType === 'area' ? ' selected' : ''}>Aires</option><option value="combo"${chartType === 'combo' ? ' selected' : ''}>Combo barres + ligne</option><option value="scatter"${chartType === 'scatter' ? ' selected' : ''}>Nuage (X,Y)</option><option value="bubble"${chartType === 'bubble' ? ' selected' : ''}>Bulles (X,Y,Taille)</option><option value="histogram"${chartType === 'histogram' ? ' selected' : ''}>Histogramme</option><option value="boxplot"${chartType === 'boxplot' ? ' selected' : ''}>Boîte à moustaches</option><option value="waterfall"${chartType === 'waterfall' ? ' selected' : ''}>Waterfall</option><option value="funnel"${chartType === 'funnel' ? ' selected' : ''}>Entonnoir</option><option value="radar"${chartType === 'radar' ? ' selected' : ''}>Radar</option><option value="pie"${chartType === 'pie' ? ' selected' : ''}>Camembert</option><option value="donut"${chartType === 'donut' ? ' selected' : ''}>Anneau</option><option value="heatmap"${chartType === 'heatmap' ? ' selected' : ''}>Heatmap</option><option value="treemap"${chartType === 'treemap' ? ' selected' : ''}>Treemap</option><option value="sankey"${chartType === 'sankey' ? ' selected' : ''}>Sankey</option><option value="gantt"${chartType === 'gantt' ? ' selected' : ''}>Gantt</option><option value="radial-gauge"${chartType === 'radial-gauge' ? ' selected' : ''}>Jauge radiale</option></select></div>
+                <div class="props-row"><label>Type</label><select id="sp-diag-type">${optionsHtml}</select></div>
+                <div class="props-row"><label>Transformation</label><select id="sp-diag-transform">${transformOptionsHtml}</select></div>
+                <div class="props-row"><label>Preset</label><select id="sp-diag-preset">${presetOptionsHtml}</select></div>
+                <button class="tb-btn" id="sp-diag-apply-preset" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px">Appliquer preset pedagogique</button>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">
-                    <button class="tb-btn" id="sp-diag-add-row" style="font-size:0.68rem;justify-content:center">+ Ligne</button>
-                    <button class="tb-btn" id="sp-diag-add-col" style="font-size:0.68rem;justify-content:center">+ Colonne</button>
-                    <button class="tb-btn" id="sp-diag-del-row" style="font-size:0.68rem;justify-content:center">− Ligne</button>
-                    <button class="tb-btn" id="sp-diag-del-col" style="font-size:0.68rem;justify-content:center">− Colonne</button>
+                    <button class="tb-btn" id="sp-diag-add-row" style="font-size:0.68rem;justify-content:center"${canAddRow ? '' : ' disabled'}>+ Ligne</button>
+                    <button class="tb-btn" id="sp-diag-add-col" style="font-size:0.68rem;justify-content:center"${canAddCol ? '' : ' disabled'}>+ Colonne</button>
+                    <button class="tb-btn" id="sp-diag-del-row" style="font-size:0.68rem;justify-content:center"${canDelRow ? '' : ' disabled'}>− Ligne</button>
+                    <button class="tb-btn" id="sp-diag-del-col" style="font-size:0.68rem;justify-content:center"${canDelCol ? '' : ' disabled'}>− Colonne</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+                    <button class="tb-btn" id="sp-diag-import-csv" style="font-size:0.68rem;justify-content:center">Importer CSV (presse-papiers)</button>
+                    <button class="tb-btn" id="sp-diag-export-csv" style="font-size:0.68rem;justify-content:center">Exporter CSV</button>
+                    <button class="tb-btn" id="sp-diag-import-tsv" style="font-size:0.68rem;justify-content:center">Importer TSV (presse-papiers)</button>
+                    <button class="tb-btn" id="sp-diag-export-tsv" style="font-size:0.68rem;justify-content:center">Exporter TSV</button>
                 </div>
                 <div style="font-size:0.64rem;color:var(--muted);margin-top:6px">${normalizedRows.length} ligne(s) × ${colCount} colonne(s)</div>
+                <div style="font-size:0.6rem;color:var(--muted);margin-top:2px">${esc(constraints)}</div>
+                <div class="sp-diag-invalid-summary${validation.issues.length ? ' has-errors' : ''}">
+                    ${validation.issues.length
+                        ? `${validation.issues.length} cellule(s) invalide(s) detectee(s): ${esc(invalidSummary)}${validation.issues.length > 8 ? '…' : ''}`
+                        : 'Donnees valides: pret pour le rendu.'}
+                </div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Données (tableau)</label>
                 <div class="sp-diag-grid-wrap">
                     <table class="sp-diag-grid">
                         ${gridHtml}
                     </table>
                 </div>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px;line-height:1.4">Ligne 1: en-têtes de séries. Colonne 1: catégories. Exemples: Scatter=Série A(X)+Série B(Y), Bubble + Série C(taille), Boxplot=Min/Q1/Médiane/Q3/Max, Sankey=Source/Cible/Valeur, Gantt=Tâche/Début/Fin.</div>
+                <div class="props-row" style="margin-top:6px"><label>Serie source</label><select id="sp-diag-series-source">${sourceSeriesOptions}</select></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+                    <button class="tb-btn" id="sp-diag-series-dup" style="font-size:0.68rem;justify-content:center">Dupliquer serie</button>
+                    <button class="tb-btn" id="sp-diag-series-mirror" style="font-size:0.68rem;justify-content:center">Miroir serie (negatif)</button>
+                </div>
+                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:8px 0 3px">Styles par serie</label>
+                <div class="sp-diag-series-wrap">${seriesStyleHtml}</div>
+                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px;line-height:1.4">${esc(_diagramFormatHint(chartType))}</div>
             </div>`;
             break;
         }
@@ -1274,22 +1729,22 @@ function _bindPropsPanel(el) {
 
         case 'diagramme':
             bind('sp-diag-title', inp => canvasEditor.updateData(id, { data: { title: inp.value || 'Diagramme' } }));
-            bindChange('sp-diag-type', inp => {
-                const chartType = ['bar', 'stacked-bar', 'stacked-100', 'line', 'area', 'combo', 'scatter', 'bubble', 'histogram', 'boxplot', 'waterfall', 'funnel', 'radar', 'pie', 'donut', 'heatmap', 'treemap', 'sankey', 'gantt', 'radial-gauge'].includes(String(inp.value || '').toLowerCase())
-                    ? String(inp.value).toLowerCase()
-                    : 'bar';
-                canvasEditor.updateData(id, { data: { chartType } });
-            });
+
+            const getDiagType = () => {
+                const typeInput = document.getElementById('sp-diag-type');
+                const raw = String(typeInput?.value || canvasEditor.getSelected()?.data?.chartType || 'bar').toLowerCase();
+                return DIAGRAM_CHART_TYPES.includes(raw) ? raw : 'bar';
+            };
+            const getDiagTransform = () => {
+                const input = document.getElementById('sp-diag-transform');
+                return _normalizeDiagramTransformMode(input?.value || canvasEditor.getSelected()?.data?.transformMode || 'none');
+            };
             const getDiagRows = () => {
+                const chartType = getDiagType();
                 const inputs = Array.from(document.querySelectorAll('[data-diag-r][data-diag-c]'));
                 if (!inputs.length) {
                     const fallbackRows = canvasEditor.getSelected()?.data?.rows;
-                    if (Array.isArray(fallbackRows) && fallbackRows.length) return fallbackRows;
-                    return [
-                        ['Catégorie', 'Série A', 'Série B'],
-                        ['A', '12', '8'],
-                        ['B', '18', '11'],
-                    ];
+                    return _normalizeDiagramRows(fallbackRows, chartType, false);
                 }
                 const maxRow = inputs.reduce((max, input) => Math.max(max, Number(input.dataset.diagR) || 0), 0);
                 const maxCol = inputs.reduce((max, input) => Math.max(max, Number(input.dataset.diagC) || 0), 0);
@@ -1299,55 +1754,243 @@ function _bindPropsPanel(el) {
                     const c = Number(input.dataset.diagC) || 0;
                     rows[r][c] = String(input.value ?? '');
                 });
-                return rows;
+                return _normalizeDiagramRows(rows, chartType, false);
             };
-            const applyDiagRows = (rows) => {
-                if (!Array.isArray(rows) || !rows.length) return;
-                canvasEditor.updateData(id, { data: { rows } });
-            };
-            document.querySelectorAll('[data-diag-r][data-diag-c]').forEach((input) => {
-                input.addEventListener('input', () => applyDiagRows(getDiagRows()));
-            });
-            document.getElementById('sp-diag-add-row')?.addEventListener('click', () => {
+            const getDiagSeriesStyles = (seriesCount = null, chartType = getDiagType()) => {
                 const rows = getDiagRows();
-                const colCount = Math.max(2, rows[0]?.length || 0);
-                const next = rows.map((row) => {
-                    const clone = Array.isArray(row) ? row.slice(0, colCount) : [];
-                    while (clone.length < colCount) clone.push('');
-                    return clone;
+                const count = Math.max(1, seriesCount || ((rows[0]?.length || 2) - 1));
+                const current = _normalizeDiagramSeriesStyles(canvasEditor.getSelected()?.data?.seriesStyles, count, chartType);
+                for (let idx = 0; idx < count; idx++) {
+                    const colorInput = document.querySelector(`[data-diag-style="color"][data-series-idx="${idx}"]`);
+                    const widthInput = document.querySelector(`[data-diag-style="width"][data-series-idx="${idx}"]`);
+                    const pointsInput = document.querySelector(`[data-diag-style="points"][data-series-idx="${idx}"]`);
+                    const smoothInput = document.querySelector(`[data-diag-style="smooth"][data-series-idx="${idx}"]`);
+                    const axisInput = document.querySelector(`[data-diag-style="axis-secondary"][data-series-idx="${idx}"]`);
+                    const fallback = current[idx] || {};
+                    current[idx] = {
+                        color: _diagramColorInputValue(colorInput?.value || fallback.color, DIAGRAM_SERIES_COLOR_FALLBACK[idx % DIAGRAM_SERIES_COLOR_FALLBACK.length]),
+                        width: Math.max(0.5, Math.min(10, Number(widthInput?.value || fallback.width || 2.4))),
+                        points: pointsInput ? !!pointsInput.checked : !!fallback.points,
+                        smooth: smoothInput ? !!smoothInput.checked : !!fallback.smooth,
+                        axis: chartType === 'combo' && axisInput?.checked ? 'secondary' : 'primary',
+                    };
+                }
+                return _normalizeDiagramSeriesStyles(current, count, chartType);
+            };
+            const applyDiagramData = ({ rows, chartType = getDiagType(), forceHeaders = false, presetId = '', seriesStyles = null, transformMode = getDiagTransform() } = {}) => {
+                const normalizedRows = _normalizeDiagramRows(rows || getDiagRows(), chartType, !!forceHeaders);
+                const seriesCount = Math.max(1, (normalizedRows[0]?.length || 2) - 1);
+                const normalizedStyles = _normalizeDiagramSeriesStyles(
+                    Array.isArray(seriesStyles) ? seriesStyles : getDiagSeriesStyles(seriesCount, chartType),
+                    seriesCount,
+                    chartType
+                );
+                canvasEditor.updateData(id, {
+                    data: {
+                        chartType,
+                        rows: normalizedRows,
+                        seriesStyles: normalizedStyles,
+                        transformMode: _normalizeDiagramTransformMode(transformMode),
+                        presetId: String(presetId || ''),
+                    },
                 });
+            };
+            const applyPreset = (presetId) => {
+                const preset = DIAGRAM_PEDAGOGICAL_PRESETS[String(presetId || '').toLowerCase()];
+                if (!preset) return;
+                const chartType = preset.chartType;
+                const rows = _normalizeDiagramRows(_getDiagramTemplateRows(chartType), chartType, true);
+                const templateRows = Array.isArray(preset.rows) && preset.rows.length ? preset.rows : rows;
+                const normalizedRows = _normalizeDiagramRows(templateRows, chartType, true);
+                const styles = _normalizeDiagramSeriesStyles(preset.seriesStyles, Math.max(1, (normalizedRows[0]?.length || 2) - 1), chartType);
+                applyDiagramData({
+                    rows: normalizedRows,
+                    chartType,
+                    forceHeaders: true,
+                    presetId: preset.id,
+                    seriesStyles: styles,
+                    transformMode: preset.transformMode || 'none',
+                });
+                notify(`Preset ${preset.label} applique`, 'success');
+                updatePropsPanel();
+            };
+
+            bindChange('sp-diag-type', inp => {
+                const chartType = DIAGRAM_CHART_TYPES.includes(String(inp.value || '').toLowerCase())
+                    ? String(inp.value).toLowerCase()
+                    : 'bar';
+                const rows = getDiagRows();
+                const merged = _normalizeDiagramRows(rows, chartType, true);
+                const template = _getDiagramTemplateRows(chartType);
+                for (let ri = 1; ri < merged.length; ri++) {
+                    for (let ci = 1; ci < merged[ri].length; ci++) {
+                        if (String(merged[ri][ci] || '').trim()) continue;
+                        if (template[ri] && String(template[ri][ci] || '').trim()) merged[ri][ci] = String(template[ri][ci]);
+                    }
+                }
+                applyDiagramData({ rows: merged, chartType, forceHeaders: true, presetId: '' });
+                updatePropsPanel();
+            });
+            bindChange('sp-diag-transform', inp => {
+                canvasEditor.updateData(id, { data: { transformMode: _normalizeDiagramTransformMode(inp.value || 'none') } });
+            });
+
+            document.getElementById('sp-diag-apply-preset')?.addEventListener('click', () => {
+                const presetSelect = document.getElementById('sp-diag-preset');
+                applyPreset(presetSelect?.value || '');
+            });
+
+            document.querySelectorAll('[data-diag-r][data-diag-c]').forEach((input) => {
+                input.addEventListener('input', () => applyDiagramData({ rows: getDiagRows(), presetId: '' }));
+            });
+            document.querySelectorAll('[data-diag-style]').forEach((input) => {
+                const eventName = input.getAttribute('type') === 'checkbox' ? 'change' : 'input';
+                input.addEventListener(eventName, () => {
+                    applyDiagramData({
+                        rows: getDiagRows(),
+                        seriesStyles: getDiagSeriesStyles(),
+                        presetId: '',
+                    });
+                });
+            });
+
+            document.getElementById('sp-diag-add-row')?.addEventListener('click', () => {
+                const chartType = getDiagType();
+                const schema = _getDiagramSchema(chartType);
+                const rows = getDiagRows();
+                const next = _normalizeDiagramRows(rows, chartType, false);
+                if (Number.isFinite(schema.fixedRows) && next.length >= schema.fixedRows) return;
+                const colCount = Math.max(2, next[0]?.length || schema.minCols || 2);
                 const newRow = Array(colCount).fill('');
-                newRow[0] = `Cat. ${Math.max(1, next.length)}`;
+                const template = _getDiagramTemplateRows(chartType);
+                newRow[0] = `${schema.rowPrefix || 'Cat.'} ${Math.max(1, next.length)}`;
+                for (let ci = 1; ci < colCount; ci++) {
+                    if (template[next.length] && String(template[next.length][ci] || '').trim()) {
+                        newRow[ci] = String(template[next.length][ci]);
+                    }
+                }
                 next.push(newRow);
-                applyDiagRows(next);
+                applyDiagramData({ rows: next, chartType, forceHeaders: false, presetId: '' });
                 updatePropsPanel();
             });
             document.getElementById('sp-diag-del-row')?.addEventListener('click', () => {
+                const chartType = getDiagType();
+                const schema = _getDiagramSchema(chartType);
                 const rows = getDiagRows();
-                if (rows.length <= 2) return;
+                if (Number.isFinite(schema.fixedRows)) return;
+                const minRows = Math.max(2, schema.minRows || 2);
+                if (rows.length <= minRows) return;
                 rows.pop();
-                applyDiagRows(rows);
+                applyDiagramData({ rows, chartType, forceHeaders: false, presetId: '' });
                 updatePropsPanel();
             });
             document.getElementById('sp-diag-add-col')?.addEventListener('click', () => {
+                const chartType = getDiagType();
+                const schema = _getDiagramSchema(chartType);
+                if (Number.isFinite(schema.fixedCols)) return;
                 const rows = getDiagRows();
                 const next = rows.map((row) => Array.isArray(row) ? row.slice() : []);
-                next.forEach((row, ri) => row.push(ri === 0 ? `Série ${Math.max(1, row.length)}` : ''));
-                applyDiagRows(next);
+                next.forEach((row, ri) => {
+                    if (ri === 0) {
+                        const ci = row.length;
+                        row.push(schema.headers?.[ci] || `Serie ${Math.max(1, ci)}`);
+                        return;
+                    }
+                    row.push('');
+                });
+                applyDiagramData({ rows: next, chartType, forceHeaders: false, presetId: '' });
                 updatePropsPanel();
             });
             document.getElementById('sp-diag-del-col')?.addEventListener('click', () => {
+                const chartType = getDiagType();
+                const schema = _getDiagramSchema(chartType);
+                if (Number.isFinite(schema.fixedCols)) return;
                 const rows = getDiagRows();
                 const colCount = Math.max(...rows.map((row) => Array.isArray(row) ? row.length : 0));
-                if (colCount <= 2) return;
+                const minCols = Math.max(2, schema.minCols || 2);
+                if (colCount <= minCols) return;
                 const next = rows.map((row) => {
                     const clone = Array.isArray(row) ? row.slice() : [];
                     clone.pop();
                     return clone;
                 });
-                applyDiagRows(next);
+                applyDiagramData({ rows: next, chartType, forceHeaders: false, presetId: '' });
                 updatePropsPanel();
             });
+
+            const importDelimitedFromClipboard = async (delimiter = ',') => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (!String(text || '').trim()) {
+                        notify('Le presse-papiers est vide', 'info');
+                        return;
+                    }
+                    const parsed = _diagramParseDelimited(text, delimiter);
+                    if (!parsed.length) {
+                        notify('Aucune ligne exploitable detectee', 'error');
+                        return;
+                    }
+                    const chartType = getDiagType();
+                    applyDiagramData({
+                        rows: parsed,
+                        chartType,
+                        forceHeaders: true,
+                        presetId: '',
+                    });
+                    notify(`${parsed.length} ligne(s) importee(s)`, 'success');
+                    updatePropsPanel();
+                } catch (error) {
+                    notify(`Import impossible: ${error?.message || 'clipboard inaccessible'}`, 'error');
+                }
+            };
+            const exportDelimitedToClipboard = async (delimiter = ',') => {
+                try {
+                    const rows = getDiagRows();
+                    const text = _diagramRowsToDelimited(rows, delimiter);
+                    await navigator.clipboard.writeText(text);
+                    notify(`Donnees ${delimiter === '\t' ? 'TSV' : 'CSV'} copiees`, 'success');
+                } catch (error) {
+                    notify(`Export impossible: ${error?.message || 'clipboard inaccessible'}`, 'error');
+                }
+            };
+            document.getElementById('sp-diag-import-csv')?.addEventListener('click', () => importDelimitedFromClipboard(','));
+            document.getElementById('sp-diag-import-tsv')?.addEventListener('click', () => importDelimitedFromClipboard('\t'));
+            document.getElementById('sp-diag-export-csv')?.addEventListener('click', () => exportDelimitedToClipboard(','));
+            document.getElementById('sp-diag-export-tsv')?.addEventListener('click', () => exportDelimitedToClipboard('\t'));
+
+            const duplicateOrMirrorSeries = (mirror = false) => {
+                const chartType = getDiagType();
+                const sourceInput = document.getElementById('sp-diag-series-source');
+                const sourceIdx = Math.max(0, Number(sourceInput?.value || 0));
+                const rows = getDiagRows().map((row) => Array.isArray(row) ? row.slice() : []);
+                if (!rows.length || !rows[0] || sourceIdx + 1 >= rows[0].length) return;
+                const header = String(rows[0][sourceIdx + 1] || `Serie ${sourceIdx + 1}`).trim() || `Serie ${sourceIdx + 1}`;
+                rows[0].push(mirror ? `${header} (miroir)` : `${header} (copie)`);
+                for (let ri = 1; ri < rows.length; ri++) {
+                    const raw = rows[ri][sourceIdx + 1];
+                    if (!mirror) {
+                        rows[ri].push(String(raw ?? ''));
+                        continue;
+                    }
+                    const num = _diagramTryNumber(raw);
+                    rows[ri].push(num == null ? '' : String(-num));
+                }
+                const currentStyles = getDiagSeriesStyles(Math.max(1, rows[0].length - 2), chartType);
+                const cloned = { ...(currentStyles[sourceIdx] || {}) };
+                if (mirror) cloned.axis = 'secondary';
+                currentStyles.push(cloned);
+                applyDiagramData({
+                    rows,
+                    chartType,
+                    forceHeaders: false,
+                    presetId: '',
+                    seriesStyles: currentStyles,
+                });
+                notify(mirror ? 'Serie miroir ajoutee' : 'Serie dupliquee', 'success');
+                updatePropsPanel();
+            };
+            document.getElementById('sp-diag-series-dup')?.addEventListener('click', () => duplicateOrMirrorSeries(false));
+            document.getElementById('sp-diag-series-mirror')?.addEventListener('click', () => duplicateOrMirrorSeries(true));
             break;
 
         case 'latex':

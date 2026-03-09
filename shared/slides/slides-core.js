@@ -287,6 +287,76 @@ class SlidesShared {
         return out;
     }
 
+    static _diagramTransformMode(mode) {
+        const normalized = String(mode || '').trim().toLowerCase();
+        return ['none', 'percent', 'cumulative', 'average'].includes(normalized) ? normalized : 'none';
+    }
+
+    static _diagramSeriesStyles(seriesStyles, count = 1, chartType = 'bar') {
+        const src = Array.isArray(seriesStyles) ? seriesStyles : [];
+        const n = Math.max(1, Number(count) || 1);
+        const lineFamily = ['line', 'area', 'combo', 'radar'].includes(chartType);
+        const defaultPoints = ['line', 'combo', 'radar', 'scatter', 'bubble'].includes(chartType);
+        const defaultSmooth = ['line', 'area', 'combo'].includes(chartType);
+        return Array.from({ length: n }, (_, idx) => {
+            const raw = (src[idx] && typeof src[idx] === 'object') ? src[idx] : {};
+            const widthRaw = Number(raw.width);
+            const width = Number.isFinite(widthRaw)
+                ? Math.max(0.5, Math.min(10, widthRaw))
+                : (lineFamily ? 2.4 : 1.8);
+            const axisRaw = String(raw.axis || '').trim().toLowerCase();
+            return {
+                color: String(raw.color || SlidesShared._diagramColor(idx)).trim() || SlidesShared._diagramColor(idx),
+                width,
+                points: raw.points == null ? defaultPoints : !!raw.points,
+                smooth: raw.smooth == null ? defaultSmooth : !!raw.smooth,
+                axis: chartType === 'combo' && axisRaw === 'secondary' ? 'secondary' : 'primary',
+            };
+        });
+    }
+
+    static _diagramApplyTransform(series, mode = 'none') {
+        const transformMode = SlidesShared._diagramTransformMode(mode);
+        if (!Array.isArray(series) || !series.length || transformMode === 'none') return series;
+
+        if (transformMode === 'percent') {
+            const n = Math.max(...series.map((s) => (Array.isArray(s.values) ? s.values.length : 0)), 0);
+            for (let i = 0; i < n; i++) {
+                const sum = series.reduce((acc, s) => acc + Math.max(0, Number(s.values?.[i]) || 0), 0);
+                for (let si = 0; si < series.length; si++) {
+                    const value = Math.max(0, Number(series[si].values?.[i]) || 0);
+                    series[si].values[i] = sum > 0 ? (value / sum) * 100 : 0;
+                }
+            }
+            return series;
+        }
+
+        if (transformMode === 'cumulative') {
+            for (let si = 0; si < series.length; si++) {
+                let running = 0;
+                const values = Array.isArray(series[si].values) ? series[si].values : [];
+                for (let i = 0; i < values.length; i++) {
+                    running += Number(values[i]) || 0;
+                    values[i] = running;
+                }
+            }
+            return series;
+        }
+
+        if (transformMode === 'average') {
+            for (let si = 0; si < series.length; si++) {
+                const values = Array.isArray(series[si].values) ? series[si].values : [];
+                const avg = values.length
+                    ? (values.reduce((acc, v) => acc + (Number(v) || 0), 0) / values.length)
+                    : 0;
+                for (let i = 0; i < values.length; i++) values[i] = avg;
+            }
+            return series;
+        }
+
+        return series;
+    }
+
     static _diagramDataset(data = {}) {
         const rows = SlidesShared._diagramRows(data?.rows || []);
         const chartType = [
@@ -297,8 +367,9 @@ class SlidesShared {
             ? String(data.chartType).toLowerCase()
             : 'bar';
         const title = String(data?.title || 'Diagramme').trim() || 'Diagramme';
+        const transformMode = SlidesShared._diagramTransformMode(data?.transformMode || 'none');
         if (!rows.length) {
-            return { chartType, title, rows: [], categories: [], series: [] };
+            return { chartType, title, rows: [], categories: [], series: [], seriesStyles: [], transformMode };
         }
         const header = rows[0];
         const seriesNames = header
@@ -320,7 +391,9 @@ class SlidesShared {
                 series[si].values.push(SlidesShared._diagramNumber(row[si + 1]));
             }
         });
-        return { chartType, title, rows, categories, series };
+        SlidesShared._diagramApplyTransform(series, transformMode);
+        const seriesStyles = SlidesShared._diagramSeriesStyles(data?.seriesStyles, series.length, chartType);
+        return { chartType, title, rows, categories, series, seriesStyles, transformMode };
     }
 
     static renderDiagrammeBlock(data = {}, style = {}, typography = null, options = {}) {
@@ -330,6 +403,7 @@ class SlidesShared {
         const rowData = rows.slice(1).filter((row) => Array.isArray(row) && row.some((cell) => String(cell ?? '').trim()));
         const categories = dataset.categories || [];
         const series = dataset.series || [];
+        const seriesStyles = SlidesShared._diagramSeriesStyles(dataset.seriesStyles, series.length || 1, chartType);
         const title = dataset.title || 'Diagramme';
         const fallbackFontSize = Number(options?.fallbackFontSize);
         const base = SlidesShared.resolveElementFontSize(
@@ -351,6 +425,37 @@ class SlidesShared {
         const round2 = (value) => Math.round((Number(value) || 0) * 100) / 100;
         const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
         const parseNum = (value) => SlidesShared._diagramNumber(value);
+        const seriesStyle = (index) => seriesStyles[index] || SlidesShared._diagramSeriesStyles([], series.length || 1, chartType)[index] || {};
+        const seriesColor = (index) => String(seriesStyle(index).color || SlidesShared._diagramColor(index)).trim() || SlidesShared._diagramColor(index);
+        const seriesWidth = (index, fallback = 2) => {
+            const raw = Number(seriesStyle(index).width);
+            if (!Number.isFinite(raw)) return fallback;
+            return Math.max(0.5, Math.min(10, raw));
+        };
+        const seriesPointsVisible = (index, defaultValue = true) => {
+            const st = seriesStyle(index);
+            return st.points == null ? !!defaultValue : !!st.points;
+        };
+        const seriesSmoothEnabled = (index, defaultValue = false) => {
+            const st = seriesStyle(index);
+            return st.smooth == null ? !!defaultValue : !!st.smooth;
+        };
+        const smoothPath = (points = []) => {
+            if (!Array.isArray(points) || points.length < 2) return '';
+            let d = `M ${points[0].x} ${points[0].y}`;
+            for (let i = 0; i < points.length - 1; i++) {
+                const p0 = points[i - 1] || points[i];
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                const p3 = points[i + 2] || p2;
+                const cp1x = p1.x + ((p2.x - p0.x) / 6);
+                const cp1y = p1.y + ((p2.y - p0.y) / 6);
+                const cp2x = p2.x - ((p3.x - p1.x) / 6);
+                const cp2y = p2.y - ((p3.y - p1.y) / 6);
+                d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+            }
+            return d;
+        };
 
         if (!rows.length) {
             return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.5rem;padding:0.8rem;box-sizing:border-box;border:1px solid ${borderColor};border-radius:10px;background:var(--sl-slide-bg,#1a1d27);overflow:hidden;">
@@ -403,9 +508,9 @@ class SlidesShared {
             const pieValues = categories.map((_, idx) => Math.max(0, firstSeries.values[idx] || 0));
             const sum = pieValues.reduce((acc, v) => acc + v, 0);
             if (sum > 0) {
-                const cx = 320;
-                const cy = 208;
-                const r = 138;
+                const cx = chartW / 2;
+                const cy = chartH / 2;
+                const r = Math.min(plotW, plotH) * 0.44;
                 const innerR = chartType === 'donut' ? Math.round(r * 0.56) : 0;
                 let start = -Math.PI / 2;
                 const slices = [];
@@ -465,7 +570,7 @@ class SlidesShared {
             const label = String(rowData[0]?.[0] || header[1] || 'Valeur');
             chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">
                 <path d="${arcPath(start, end)}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="20" stroke-linecap="round" />
-                <path d="${arcPath(start, valEnd)}" fill="none" stroke="${SlidesShared._diagramColor(0)}" stroke-width="20" stroke-linecap="round" />
+                <path d="${arcPath(start, valEnd)}" fill="none" stroke="${seriesColor(0)}" stroke-width="20" stroke-linecap="round" />
                 <text x="${cx}" y="${cy - 16}" text-anchor="middle" fill="var(--sl-heading,#f1f5f9)" font-size="${Math.round(base * 1.15)}" font-weight="700">${SlidesShared.esc(String(round2(value)))}</text>
                 <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${Math.round(base * 0.66)}">${SlidesShared.esc(label)}</text>
                 <text x="${cx - r}" y="${cy + 30}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${Math.round(base * 0.54)}">${SlidesShared.esc(String(round2(minV)))}</text>
@@ -503,7 +608,9 @@ class SlidesShared {
                 svgParts.push(`<text x="${labelPoint.x}" y="${labelPoint.y}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(label)}</text>`);
             }
             series.forEach((serie, si) => {
-                const color = SlidesShared._diagramColor(si);
+                const color = seriesColor(si);
+                const strokeW = seriesWidth(si, 2);
+                const showPoints = seriesPointsVisible(si, true);
                 const points = [];
                 for (let i = 0; i < nAxis; i++) {
                     const value = Math.max(0, serie.values[i] || 0);
@@ -512,15 +619,18 @@ class SlidesShared {
                     points.push(p);
                 }
                 const poly = points.map((p) => `${p.x},${p.y}`).join(' ');
-                svgParts.push(`<polygon points="${poly}" fill="color-mix(in srgb,${color} 18%,transparent)" stroke="${color}" stroke-width="2" />`);
-                points.forEach((p) => {
-                    svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}" />`);
-                });
+                svgParts.push(`<polygon points="${poly}" fill="color-mix(in srgb,${color} 18%,transparent)" stroke="${color}" stroke-width="${strokeW}" />`);
+                if (showPoints) {
+                    const pointR = Math.max(2.2, Math.min(5.8, strokeW + 0.6));
+                    points.forEach((p) => {
+                        svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="${pointR}" fill="${color}" />`);
+                    });
+                }
             });
             chartBody = `<svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${svgParts.join('')}</svg>`;
             legendItems = series.map((serie, idx) => ({
                 label: serie.name || `Série ${idx + 1}`,
-                color: SlidesShared._diagramColor(idx),
+                color: seriesColor(idx),
             }));
         } else if (chartType === 'funnel') {
             const values = categories.map((_, idx) => Math.max(0, (series[0]?.values || [])[idx] || 0));
@@ -744,6 +854,8 @@ class SlidesShared {
             let svgParts = [];
             let axisMin = 0;
             let axisMax = maxValue;
+            let comboSecondaryMax = axisMax;
+            let comboHasSecondaryAxis = false;
 
             const toYRange = (value, minV, maxV) => {
                 const range = Math.max(1e-9, maxV - minV);
@@ -764,6 +876,23 @@ class SlidesShared {
                 axisMax = Math.max(1, maxAcc);
             }
 
+            if (chartType === 'combo') {
+                const primaryValues = [];
+                const secondaryValues = [];
+                for (let si = 0; si < series.length; si++) {
+                    const values = Array.isArray(series[si]?.values) ? series[si].values : [];
+                    const isSecondary = si > 0 && String(seriesStyle(si).axis || '').toLowerCase() === 'secondary';
+                    values.forEach((value) => {
+                        const safe = Math.max(0, Number(value) || 0);
+                        if (isSecondary) secondaryValues.push(safe);
+                        else primaryValues.push(safe);
+                    });
+                }
+                axisMax = Math.max(1, ...primaryValues);
+                comboSecondaryMax = Math.max(1, ...(secondaryValues.length ? secondaryValues : primaryValues));
+                comboHasSecondaryAxis = secondaryValues.length > 0;
+            }
+
             for (let t = 0; t <= gridSteps; t++) {
                 const ratio = t / gridSteps;
                 const value = axisMin + ((axisMax - axisMin) * ratio);
@@ -773,6 +902,15 @@ class SlidesShared {
             }
             svgParts.push(`<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + plotH}" stroke="rgba(255,255,255,0.2)" stroke-width="1.2" />`);
             svgParts.push(`<line x1="${margin.left}" y1="${toYRange(0, axisMin, axisMax)}" x2="${chartW - margin.right}" y2="${toYRange(0, axisMin, axisMax)}" stroke="rgba(255,255,255,0.2)" stroke-width="1.2" />`);
+            if (chartType === 'combo' && comboHasSecondaryAxis) {
+                svgParts.push(`<line x1="${chartW - margin.right}" y1="${margin.top}" x2="${chartW - margin.right}" y2="${margin.top + plotH}" stroke="rgba(255,255,255,0.2)" stroke-width="1.1" />`);
+                for (let t = 0; t <= gridSteps; t++) {
+                    const ratio = t / gridSteps;
+                    const value = ratio * comboSecondaryMax;
+                    const y = margin.top + plotH - (ratio * plotH);
+                    svgParts.push(`<text x="${chartW - margin.right + 8}" y="${y + 4}" text-anchor="start" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(String(round2(value)))}</text>`);
+                }
+            }
 
             if (chartType === 'bar') {
                 const groupW = plotW / nCategories;
@@ -786,7 +924,7 @@ class SlidesShared {
                         const h = (value / axisMax) * plotH;
                         const x = startX + (si * barW);
                         const y = margin.top + plotH - h;
-                        svgParts.push(`<rect x="${x + 0.8}" y="${y}" width="${Math.max(1, barW - 1.6)}" height="${h}" fill="${SlidesShared._diagramColor(si)}" rx="1.5" />`);
+                        svgParts.push(`<rect x="${x + 0.8}" y="${y}" width="${Math.max(1, barW - 1.6)}" height="${h}" fill="${seriesColor(si)}" rx="1.5" />`);
                     }
                     const cx = gx + (groupW / 2);
                     svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
@@ -806,7 +944,7 @@ class SlidesShared {
                             : raw;
                         const h = (value / axisMax) * plotH;
                         const y = margin.top + plotH - h - accumulated;
-                        svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${SlidesShared._diagramColor(si)}" />`);
+                        svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${seriesColor(si)}" />`);
                         accumulated += h;
                     }
                     svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
@@ -820,11 +958,11 @@ class SlidesShared {
                     const h = (value / axisMax) * plotH;
                     const x = margin.left + (i * groupW) + ((groupW - barW) / 2);
                     const y = margin.top + plotH - h;
-                    svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${SlidesShared._diagramColor(0)}" rx="1.2" />`);
+                    svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${seriesColor(0)}" rx="1.2" />`);
                     const cx = margin.left + (i * groupW) + (groupW / 2);
                     svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Bin ${i + 1}`)}</text>`);
                 }
-                legendItems = [{ label: series[0]?.name || 'Fréquence', color: SlidesShared._diagramColor(0) }];
+                legendItems = [{ label: series[0]?.name || 'Fréquence', color: seriesColor(0) }];
             } else if (chartType === 'combo') {
                 const groupW = plotW / nCategories;
                 const barW = groupW * 0.42;
@@ -834,27 +972,44 @@ class SlidesShared {
                     const h = (value / axisMax) * plotH;
                     const x = margin.left + (i * groupW) + ((groupW - barW) / 2);
                     const y = margin.top + plotH - h;
-                    svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${SlidesShared._diagramColor(0)}" rx="1.4" />`);
+                    svgParts.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${seriesColor(0)}" rx="1.4" />`);
                 }
-                const lineSeries = series.slice(1).length ? series.slice(1) : [barSerie];
-                lineSeries.forEach((serie, idx) => {
-                    const colorIdx = series.slice(1).length ? idx + 1 : 0;
-                    const color = SlidesShared._diagramColor(colorIdx);
+                const lineSeries = series.slice(1).length
+                    ? series.slice(1).map((serie, idx) => ({ serie, sourceIdx: idx + 1 }))
+                    : [{ serie: barSerie, sourceIdx: 0 }];
+                lineSeries.forEach(({ serie, sourceIdx }) => {
+                    const color = seriesColor(sourceIdx);
+                    const strokeW = seriesWidth(sourceIdx, 2.4);
+                    const showPoints = seriesPointsVisible(sourceIdx, true);
+                    const smooth = seriesSmoothEnabled(sourceIdx, false);
+                    const isSecondary = comboHasSecondaryAxis
+                        && sourceIdx > 0
+                        && String(seriesStyle(sourceIdx).axis || '').toLowerCase() === 'secondary';
+                    const axisForSeries = isSecondary ? comboSecondaryMax : axisMax;
                     const points = [];
                     for (let i = 0; i < nCategories; i++) {
+                        const value = Math.max(0, serie.values[i] || 0);
                         points.push({
                             x: margin.left + (i * groupW) + (groupW / 2),
-                            y: margin.top + plotH - ((Math.max(0, serie.values[i] || 0) / axisMax) * plotH),
+                            y: margin.top + plotH - ((value / Math.max(1e-9, axisForSeries)) * plotH),
                         });
                     }
-                    svgParts.push(`<polyline points="${points.map((p) => `${p.x},${p.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />`);
-                    points.forEach((p) => svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="2.9" fill="${color}" />`));
+                    if (smooth && points.length > 2) {
+                        const d = smoothPath(points);
+                        if (d) svgParts.push(`<path d="${d}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round" />`);
+                    } else {
+                        svgParts.push(`<polyline points="${points.map((p) => `${p.x},${p.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round" />`);
+                    }
+                    if (showPoints) {
+                        const pointR = Math.max(2.2, Math.min(5.8, strokeW + 0.6));
+                        points.forEach((p) => svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="${pointR}" fill="${color}" />`));
+                    }
                 });
                 for (let i = 0; i < nCategories; i++) {
                     const cx = margin.left + (i * groupW) + (groupW / 2);
                     svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
                 }
-                legendItems = series.map((serie, idx) => ({ label: serie.name || `Série ${idx + 1}`, color: SlidesShared._diagramColor(idx) }));
+                legendItems = series.map((serie, idx) => ({ label: serie.name || `Série ${idx + 1}`, color: seriesColor(idx) }));
             } else if (chartType === 'scatter') {
                 const xSeries = series[0] || { name: 'X', values: [] };
                 const ySeries = series[1] || { name: 'Y', values: [] };
@@ -871,14 +1026,14 @@ class SlidesShared {
                     const yv = Math.max(0, ySeries.values[i] || 0);
                     const px = toX(xv, xMax);
                     const py = toY(yv, yMax);
-                    const color = SlidesShared._diagramColor(i);
+                    const color = seriesColor(0);
                     const label = categories[i] || `P${i + 1}`;
                     svgParts.push(`<circle cx="${px}" cy="${py}" r="4.2" fill="${color}" />`);
                     svgParts.push(`<text x="${px + 7}" y="${py - 6}" fill="var(--sl-muted,#94a3b8)" font-size="${Math.max(9, Math.round(axisSize * 0.92))}">${SlidesShared.esc(label)}</text>`);
                 }
                 legendItems = [
-                    { label: `X : ${xSeries.name || 'Série A'}`, color: SlidesShared._diagramColor(0) },
-                    { label: `Y : ${ySeries.name || 'Série B'}`, color: SlidesShared._diagramColor(1) },
+                    { label: `X : ${xSeries.name || 'Série A'}`, color: seriesColor(0) },
+                    { label: `Y : ${ySeries.name || 'Série B'}`, color: seriesColor(1) },
                 ];
             } else if (chartType === 'bubble') {
                 const xSeries = series[0] || { name: 'X', values: [] };
@@ -900,15 +1055,15 @@ class SlidesShared {
                     const px = toX(xv, xMax);
                     const py = toY(yv, yMax);
                     const radius = 4 + ((sv / sizeMax) * 14);
-                    const color = SlidesShared._diagramColor(i);
+                    const color = seriesColor(0);
                     const label = categories[i] || `P${i + 1}`;
                     svgParts.push(`<circle cx="${px}" cy="${py}" r="${radius}" fill="color-mix(in srgb,${color} 62%,transparent)" stroke="${color}" stroke-width="1.2" />`);
                     svgParts.push(`<text x="${px + radius + 4}" y="${py - 4}" fill="var(--sl-muted,#94a3b8)" font-size="${Math.max(9, Math.round(axisSize * 0.9))}">${SlidesShared.esc(label)}</text>`);
                 }
                 legendItems = [
-                    { label: `X : ${xSeries.name || 'Série A'}`, color: SlidesShared._diagramColor(0) },
-                    { label: `Y : ${ySeries.name || 'Série B'}`, color: SlidesShared._diagramColor(1) },
-                    { label: `Taille : ${sizeSeries.name || 'Série C'}`, color: SlidesShared._diagramColor(2) },
+                    { label: `X : ${xSeries.name || 'Série A'}`, color: seriesColor(0) },
+                    { label: `Y : ${ySeries.name || 'Série B'}`, color: seriesColor(1) },
+                    { label: `Taille : ${sizeSeries.name || 'Série C'}`, color: seriesColor(2) },
                 ];
             } else if (chartType === 'boxplot') {
                 if (series.length < 5) {
@@ -944,11 +1099,11 @@ class SlidesShared {
                         svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
                     }
                     legendItems = [
-                        { label: series[0]?.name || 'Min', color: SlidesShared._diagramColor(0) },
-                        { label: series[1]?.name || 'Q1', color: SlidesShared._diagramColor(1) },
-                        { label: series[2]?.name || 'Médiane', color: SlidesShared._diagramColor(2) },
-                        { label: series[3]?.name || 'Q3', color: SlidesShared._diagramColor(3) },
-                        { label: series[4]?.name || 'Max', color: SlidesShared._diagramColor(4) },
+                        { label: series[0]?.name || 'Min', color: seriesColor(0) },
+                        { label: series[1]?.name || 'Q1', color: seriesColor(1) },
+                        { label: series[2]?.name || 'Médiane', color: seriesColor(2) },
+                        { label: series[3]?.name || 'Q3', color: seriesColor(3) },
+                        { label: series[4]?.name || 'Max', color: seriesColor(4) },
                     ];
                 }
             } else if (chartType === 'waterfall') {
@@ -975,7 +1130,7 @@ class SlidesShared {
                     const cx = margin.left + (i * groupW) + (groupW / 2);
                     const x = cx - (barW / 2);
                     const color = bar.total
-                        ? SlidesShared._diagramColor(0)
+                        ? seriesColor(0)
                         : (bar.delta >= 0 ? 'var(--sl-success,#22c55e)' : 'var(--sl-danger,#ef4444)');
                     svgParts.push(`<rect x="${x}" y="${yTop}" width="${barW}" height="${Math.max(1.6, yBottom - yTop)}" fill="${color}" rx="1.2" />`);
                     svgParts.push(`<text x="${cx}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(bar.label)}</text>`);
@@ -988,7 +1143,7 @@ class SlidesShared {
                 legendItems = [
                     { label: 'Hausse', color: 'var(--sl-success,#22c55e)' },
                     { label: 'Baisse', color: 'var(--sl-danger,#ef4444)' },
-                    { label: 'Total', color: SlidesShared._diagramColor(0) },
+                    { label: 'Total', color: seriesColor(0) },
                 ];
             } else {
                 const stepX = nCategories > 1 ? (plotW / (nCategories - 1)) : 0;
@@ -997,7 +1152,10 @@ class SlidesShared {
                     svgParts.push(`<text x="${x}" y="${chartH - 18}" text-anchor="middle" fill="var(--sl-muted,#94a3b8)" font-size="${axisSize}">${SlidesShared.esc(categories[i] || `Cat. ${i + 1}`)}</text>`);
                 }
                 for (let si = 0; si < series.length; si++) {
-                    const color = SlidesShared._diagramColor(si);
+                    const color = seriesColor(si);
+                    const strokeW = seriesWidth(si, chartType === 'line' ? 2.6 : 2.2);
+                    const showPoints = seriesPointsVisible(si, chartType === 'line');
+                    const smooth = seriesSmoothEnabled(si, chartType === 'line' || chartType === 'area');
                     const points = [];
                     for (let i = 0; i < nCategories; i++) {
                         points.push({
@@ -1006,16 +1164,26 @@ class SlidesShared {
                         });
                     }
                     const pointsAttr = points.map((p) => `${p.x},${p.y}`).join(' ');
+                    const smoothLineD = smooth && points.length > 2 ? smoothPath(points) : '';
                     if (chartType === 'area' && points.length) {
                         const first = points[0];
                         const last = points[points.length - 1];
-                        const areaPath = `M ${first.x} ${margin.top + plotH} L ${points.map((p) => `${p.x} ${p.y}`).join(' L ')} L ${last.x} ${margin.top + plotH} Z`;
+                        const areaPath = smoothLineD
+                            ? `${smoothLineD} L ${last.x} ${margin.top + plotH} L ${first.x} ${margin.top + plotH} Z`
+                            : `M ${first.x} ${margin.top + plotH} L ${points.map((p) => `${p.x} ${p.y}`).join(' L ')} L ${last.x} ${margin.top + plotH} Z`;
                         svgParts.push(`<path d="${areaPath}" fill="color-mix(in srgb,${color} 24%,transparent)" stroke="none" />`);
                     }
-                    svgParts.push(`<polyline points="${pointsAttr}" fill="none" stroke="${color}" stroke-width="${chartType === 'line' ? 2.6 : 2.2}" stroke-linecap="round" stroke-linejoin="round" />`);
-                    points.forEach((p) => {
-                        svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="3.1" fill="${color}" />`);
-                    });
+                    if (smoothLineD) {
+                        svgParts.push(`<path d="${smoothLineD}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round" />`);
+                    } else {
+                        svgParts.push(`<polyline points="${pointsAttr}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round" />`);
+                    }
+                    if (showPoints) {
+                        const pointR = Math.max(2.2, Math.min(5.8, strokeW + 0.5));
+                        points.forEach((p) => {
+                            svgParts.push(`<circle cx="${p.x}" cy="${p.y}" r="${pointR}" fill="${color}" />`);
+                        });
+                    }
                 }
             }
 
@@ -1025,7 +1193,7 @@ class SlidesShared {
             if (!legendItems.length && series.length) {
                 legendItems = series.map((serie, idx) => ({
                     label: serie.name || `Série ${idx + 1}`,
-                    color: SlidesShared._diagramColor(idx),
+                    color: seriesColor(idx),
                 }));
             }
         }

@@ -531,6 +531,7 @@ function bindRibbon() {
 
     // Revision history
     document.getElementById('btn-revision-history')?.addEventListener('click', openRevisionHistory);
+    document.getElementById('btn-review-comments')?.addEventListener('click', openReviewCommentsModal);
 
     // Markdown mode
     document.getElementById('btn-markdown-mode')?.addEventListener('click', toggleMarkdownMode);

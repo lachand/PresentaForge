@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
-    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=24">
+    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=26">
     <style id="sl-preview-theme"></style>
     <style id="sl-thumb-css"></style>
 </head>
@@ -39,6 +39,9 @@
             </div>
             <button class="tb-btn tb-btn-compact-history" id="btn-revision-history" title="Historique des révisions" aria-label="Historique des révisions">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+            </button>
+            <button class="tb-btn tb-btn-compact-history" id="btn-review-comments" title="Commentaires de relecture" aria-label="Commentaires de relecture">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </button>
             <button class="tb-theme-toggle theme-toggle-compact" id="btn-toggle-theme" title="Thème clair/sombre de l'éditeur">
                 <svg id="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
@@ -766,7 +769,7 @@
 <script src="../shared/slides/widget-plugins.js?v=2"></script>
 <script src="../shared/slides/design-tokens.js?v=2"></script>
 <script src="../shared/slides/background-utils.js?v=1"></script>
-<script src="../shared/slides/slides-core.js?v=23"></script>
+<script src="../shared/slides/slides-core.js?v=25"></script>
 <script src="../shared/slides/slides-editor.js?v=12"></script>
 <script src="../shared/slides/slides-canvas.js?v=19"></script>
 <!-- Editor controller modules (dependency order: utils first, bindings last) -->
@@ -781,7 +784,7 @@
 <script src="../shared/slides/editor-slide-styling.js?v=8"></script>
 <script src="../shared/slides/editor-zoom-view.js?v=9"></script>
 <script src="../shared/slides/editor-widget-picker.js?v=2"></script>
-<script src="../shared/slides/editor-props-panel.js?v=17"></script>
+<script src="../shared/slides/editor-props-panel.js?v=19"></script>
 <script src="../shared/slides/editor-format-tab.js?v=12"></script>
 <script src="../shared/slides/editor-insert.js?v=10"></script>
 <script src="../shared/slides/editor-block-presets.js?v=4"></script>
@@ -789,7 +792,8 @@
 <script src="../shared/slides/editor-preview.js?v=13"></script>
 <script src="../shared/slides/editor-file-io.js?v=9"></script>
 <script src="../shared/slides/ui-icons.js?v=2"></script>
-<script src="../shared/slides/editor-save.js?v=8"></script>
+<script src="../shared/slides/editor-review-comments.js?v=1"></script>
+<script src="../shared/slides/editor-save.js?v=9"></script>
 <script src="../shared/slides/editor-import-pptx.js?v=10"></script>
 <script src="../shared/slides/editor-import-pdf.js?v=1"></script>
 <script src="../shared/slides/editor-markdown.js?v=8"></script>
@@ -801,7 +805,7 @@
 <script src="../shared/slides/editor-enhancements.js?v=3"></script>
 <script src="../shared/slides/editor-resize.js?v=10"></script>
 <script src="../shared/slides/editor-checker.js?v=12"></script>
-<script src="../shared/slides/editor-bindings.js?v=21"></script>
+<script src="../shared/slides/editor-bindings.js?v=22"></script>
 <script>
 /* =========================================================
    EDITOR CONTROLLER — Shared state & orchestration
@@ -997,6 +1001,7 @@ function onUpdate(reason) {
         renderQuickPalette();
     }
     if (typeof window.updateCheckerLiveBadge === 'function') window.updateCheckerLiveBadge();
+    if (typeof window.updateReviewCommentsBadge === 'function') window.updateReviewCommentsBadge();
     document.getElementById('pres-title').textContent = editor.data.metadata?.title || 'Sans titre';
     document.getElementById('slide-count').textContent = `(${editor.data.slides.length})`;
     const themeData = window.OEIDesignTokens?.resolvePresentationTheme
