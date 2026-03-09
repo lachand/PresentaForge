@@ -14,3 +14,16 @@ services:
         sync: false
       - key: RELAY_ROOM_IDLE_TTL_MS
         value: "2700000"
+  - type: web
+    name: presentaforge-replay-api
+    runtime: node
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install --omit=dev
+    startCommand: node tools/slides/replay-api-server.mjs
+    healthCheckPath: /api/replay/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REPLAY_API_MAX_BODY
+        value: "31457280"

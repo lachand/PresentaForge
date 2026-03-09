@@ -58,17 +58,22 @@ Ensuite dans `Mode présentateur > Salle > Diagnostic réseau` :
 - utiliser `Copier lien relay` pour les étudiants bloqués,
 - ou forcer `transport=relay` si besoin.
 
-### 1.2 Déploiement relay sur Render (gratuit)
+### 1.2 Déploiement Render (relay + replay API)
 
-Le dépôt contient un blueprint prêt à l'emploi : `render.yaml`.
+Le dépôt contient un blueprint prêt à l'emploi : `render.yaml` (2 services):
+
+- `presentaforge-relay`
+- `presentaforge-replay-api`
 
 Étapes :
 
 1. Pousser le dépôt sur GitHub.
 2. Dans Render : `New` > `Blueprint`, sélectionner le dépôt.
-3. Créer la variable d'environnement `RELAY_TOKEN` (valeur secrète).
+3. Créer la variable d'environnement `RELAY_TOKEN` (valeur secrète) pour le service relay.
 4. Déployer.
-5. Récupérer l'URL Render, par exemple `https://presentaforge-relay.onrender.com`.
+5. Récupérer les URLs Render, par exemple:
+   - `https://presentaforge-relay.onrender.com`
+   - `https://presentaforge-replay-api.onrender.com`
 
 Utilisation côté présentateur :
 
@@ -76,6 +81,11 @@ Utilisation côté présentateur :
   - `relayWs=wss://presentaforge-relay.onrender.com`
   - `relayToken=<votre_token>`
 - puis partager le `lien relay` depuis le diagnostic réseau.
+
+Replay API:
+
+- `GET https://presentaforge-replay-api.onrender.com/api/replay/healthz`
+- `POST https://presentaforge-replay-api.onrender.com/api/replay/build`
 
 Illustration (index) :
 
@@ -192,6 +202,54 @@ Depuis l'éditeur (`Affichage`) :
 - Export PNG/PPTX/Markdown selon usage.
 
 Conseil : valider visuellement le rendu sur 2-3 slides avant diffusion.
+
+### 7.1 Générer un replay autonome (API CLI)
+
+Pour générer un HTML de replay (timeline + audio synchronisé) depuis des fichiers, utiliser :
+
+```bash
+npm run replay:build -- --slides data/slides/exemple-git.json --out replay.html --audio session.webm
+```
+
+Avec une timeline d'enregistrement exportée (`session.json`) :
+
+```bash
+npm run replay:build -- --slides data/slides/exemple-git.json --session session.json --audio session.webm --out replay.html
+```
+
+Avec plusieurs pistes audio (découpage par segments) :
+
+```bash
+npm run replay:build -- --slides data/slides/exemple-git.json --session session.json --audio part1.webm --audio part2.webm --audio-start 0 --audio-start 240000 --out replay.html
+```
+
+Le fichier HTML généré est autonome (un seul fichier) et inclut les données slides, la timeline et l'audio encodé.
+
+Niveaux pédagogiques par slide (optionnel) :
+
+- `slide.level`: niveau unique (`1`, `2`, `3`, `4`)
+- `slide.levels`: plusieurs niveaux (ex: `[2,4]`)
+
+Le générateur normalise automatiquement en `slide.levels` et affiche les badges de niveaux dans le replay.
+
+### 7.2 API HTTP + Swagger
+
+Lancer l'API locale :
+
+```bash
+npm run replay:api
+```
+
+Endpoints :
+
+- `GET /api/replay/healthz`
+- `POST /api/replay/build`
+- `GET /api/replay/openapi.yaml`
+
+Documentation Swagger :
+
+- `docs/developer/replay-api/openapi.yaml`
+- `docs/developer/replay-api/swagger-ui.html`
 
 ## 8. Métadonnées et accessibilité
 

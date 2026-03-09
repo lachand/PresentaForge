@@ -1,0 +1,301 @@
+openapi: 3.1.0
+info:
+  title: PresentaForge Replay Build API
+  version: 1.0.0
+  description: API pour générer un HTML replay autonome à partir d'un JSON de slides, d'une timeline/session et d'une ou plusieurs pistes audio.
+servers:
+  - url: http://localhost:8090
+    description: Local dev
+paths:
+  /api/replay/healthz:
+    get:
+      summary: Healthcheck
+      operationId: healthReplay
+      responses:
+        '200':
+          description: Service OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                  service:
+                    type: string
+                    example: replay-api
+                required: [ok, service]
+  /api/replay/build:
+    post:
+      summary: Générer un replay HTML autonome
+      operationId: buildReplay
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplayBuildRequest'
+            examples:
+              withSessionAndSingleAudio:
+                summary: Session exportée + 1 audio
+                value:
+                  slidesData:
+                    metadata:
+                      title: Cours d'algorithmique
+                    slides:
+                      - type: title
+                        title: Intro
+                        levels: [1]
+                      - type: bullets
+                        title: Tri fusion
+                        levels: [2, 3]
+                  sessionData:
+                    version: 2
+                    durationMs: 120000
+                    events:
+                      - type: record:start
+                        t: 0
+                        payload: { index: 0, fragmentIndex: -1 }
+                      - type: goTo
+                        t: 45000
+                        payload: { index: 1 }
+                  inlineAudioTracks:
+                    - startMs: 0
+                      mimeType: audio/webm
+                      base64: AAAA
+              withTimestampsAndMultiAudio:
+                summary: Timestamps par slide + 2 audios
+                value:
+                  slidesData:
+                    metadata:
+                      title: Séance 4
+                    slides:
+                      - type: chapter
+                        title: Partie 1
+                        timestampMs: 0
+                        level: 1
+                      - type: chapter
+                        title: Partie 2
+                        timestampMs: 180000
+                        levels: [2, 4]
+                  inlineAudioTracks:
+                    - startMs: 0
+                      dataUrl: data:audio/webm;base64,AAAA
+                    - startMs: 180000
+                      dataUrl: data:audio/webm;base64,BBBB
+      responses:
+        '200':
+          description: Replay généré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayBuildResponse'
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required: [error]
+components:
+  schemas:
+    ReplayBuildRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        slidesData:
+          $ref: '#/components/schemas/SlidesData'
+        sessionData:
+          $ref: '#/components/schemas/ReplaySession'
+        inlineAudioTracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InlineAudioTrackInput'
+        title:
+          type: string
+          maxLength: 200
+        defaultSlideMs:
+          type: integer
+          minimum: 1000
+          default: 8000
+      required: [slidesData]
+    ReplayBuildResponse:
+      type: object
+      properties:
+        html:
+          type: string
+          description: HTML standalone complet (inclut slides/timeline/audio)
+        stats:
+          type: object
+          properties:
+            slideCount:
+              type: integer
+              minimum: 0
+            eventCount:
+              type: integer
+              minimum: 0
+            audioTrackCount:
+              type: integer
+              minimum: 0
+            durationMs:
+              type: integer
+              minimum: 0
+          required: [slideCount, eventCount, audioTrackCount, durationMs]
+      required: [html, stats]
+    SlidesData:
+      type: object
+      properties:
+        metadata:
+          type: object
+          additionalProperties: true
+          properties:
+            title:
+              type: string
+        theme:
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+        autoNumberChapters:
+          type: boolean
+        slides:
+          type: array
+          items:
+            $ref: '#/components/schemas/SlideItem'
+        timeline:
+          type: array
+          description: Timeline optionnelle (si pas de sessionData)
+          items:
+            $ref: '#/components/schemas/TimelineAnchor'
+      required: [slides]
+      additionalProperties: true
+    SlideItem:
+      type: object
+      description: Slide PresentaForge (schéma ouvert volontairement, seules certaines extensions sont contraintes ici).
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        heading:
+          type: string
+        timestampMs:
+          type: integer
+          minimum: 0
+        timestamp:
+          oneOf:
+            - type: string
+            - type: integer
+              minimum: 0
+        level:
+          type: integer
+          enum: [1, 2, 3, 4]
+          description: Niveau unique de la slide.
+        levels:
+          type: array
+          description: Un ou plusieurs niveaux pour la slide.
+          items:
+            type: integer
+            enum: [1, 2, 3, 4]
+          minItems: 1
+          uniqueItems: true
+        metadata:
+          type: object
+          additionalProperties: true
+          properties:
+            level:
+              type: integer
+              enum: [1, 2, 3, 4]
+            levels:
+              type: array
+              items:
+                type: integer
+                enum: [1, 2, 3, 4]
+              uniqueItems: true
+      additionalProperties: true
+    TimelineAnchor:
+      type: object
+      properties:
+        slideIndex:
+          type: integer
+          minimum: 0
+        index:
+          type: integer
+          minimum: 0
+        slide:
+          type: integer
+          minimum: 0
+        at:
+          oneOf:
+            - type: integer
+              minimum: 0
+            - type: string
+              description: Horodatage (ms, mm:ss, hh:mm:ss(.ms), ou ISO)
+      additionalProperties: true
+    ReplaySession:
+      type: object
+      properties:
+        version:
+          type: integer
+          default: 2
+        durationMs:
+          type: integer
+          minimum: 0
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReplayEvent'
+        captions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required: [events]
+      additionalProperties: true
+    ReplayEvent:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [record:start, goTo, fragment, black, caption, record:pause, record:resume, record:stop, timer]
+        t:
+          type: integer
+          minimum: 0
+        payload:
+          type: object
+          additionalProperties: true
+      required: [type, t]
+      additionalProperties: false
+    InlineAudioTrackInput:
+      type: object
+      properties:
+        startMs:
+          type: integer
+          minimum: 0
+          default: 0
+        endMs:
+          type: integer
+          minimum: 0
+        offsetMs:
+          type: integer
+          minimum: 0
+          default: 0
+        label:
+          type: string
+        dataUrl:
+          type: string
+          description: Data URL complet `data:<mime>;base64,...`
+        base64:
+          type: string
+          description: Base64 brut (sans préfixe data:)
+        mimeType:
+          type: string
+          default: audio/webm
+      anyOf:
+        - required: [dataUrl]
+        - required: [base64]
+      additionalProperties: false

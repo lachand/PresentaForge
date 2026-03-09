@@ -3097,6 +3097,95 @@
                 .replace(/-{2,}/g, '-')
                 .replace(/^-+|-+$/g, '')
                 .slice(0, 80) || 'session';
+            const _recordAudioKbps = (() => {
+                const fromQuery = Number(params.get('recAudioKbps'));
+                const fallback = 48;
+                const value = Number.isFinite(fromQuery) ? fromQuery : fallback;
+                return Math.max(16, Math.min(160, Math.trunc(value)));
+            })();
+            const _recordAudioTargetBps = _recordAudioKbps * 1000;
+            const _recordingMimeCandidates = [
+                'audio/webm;codecs=opus',
+                'audio/ogg;codecs=opus',
+                'audio/webm',
+                'audio/ogg',
+                'audio/mp4',
+                'audio/mpeg',
+            ];
+            const _recordingAudioConstraints = {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                channelCount: { ideal: 1 },
+                sampleRate: { ideal: 48000 },
+            };
+            const _audioExtFromMime = mime => {
+                const safe = String(mime || '').toLowerCase();
+                if (safe.includes('ogg')) return 'ogg';
+                if (safe.includes('mpeg')) return 'mp3';
+                if (safe.includes('mp4')) return 'm4a';
+                if (safe.includes('wav')) return 'wav';
+                return 'webm';
+            };
+            const _audioCodecLabelFromMime = mime => {
+                const safe = String(mime || '').toLowerCase();
+                if (safe.includes('opus')) return 'Opus';
+                if (safe.includes('ogg')) return 'Ogg';
+                if (safe.includes('mpeg')) return 'MP3';
+                if (safe.includes('mp4')) return 'AAC/MP4';
+                if (safe.includes('wav')) return 'WAV';
+                return 'WebM';
+            };
+            const _audioBitrateLabel = bitsPerSecond => {
+                const bps = Number(bitsPerSecond);
+                if (!Number.isFinite(bps) || bps <= 0) return '';
+                return `${Math.round(bps / 1000)} kbps`;
+            };
+            const _createCompressedRecorder = stream => {
+                const supports = type => {
+                    try {
+                        if (typeof MediaRecorder?.isTypeSupported !== 'function') return true;
+                        return MediaRecorder.isTypeSupported(type);
+                    } catch (_) {
+                        return false;
+                    }
+                };
+                const selectedMime = _recordingMimeCandidates.find(type => supports(type)) || '';
+                const bitrateCandidates = Array.from(new Set([
+                    _recordAudioTargetBps,
+                    64000,
+                    48000,
+                    32000,
+                ].map(v => Math.trunc(Number(v) || 0)).filter(v => v > 0)));
+                const optionsToTry = [];
+                for (const bps of bitrateCandidates) {
+                    if (selectedMime) {
+                        optionsToTry.push({ mimeType: selectedMime, audioBitsPerSecond: bps, bitsPerSecond: bps });
+                    } else {
+                        optionsToTry.push({ audioBitsPerSecond: bps, bitsPerSecond: bps });
+                    }
+                }
+                if (selectedMime) optionsToTry.push({ mimeType: selectedMime });
+                optionsToTry.push({});
+
+                let lastError = null;
+                for (const opts of optionsToTry) {
+                    try {
+                        const recorder = new MediaRecorder(stream, opts);
+                        const effectiveMime = recorder.mimeType || selectedMime || 'audio/webm';
+                        const effectiveBps = Number(
+                            recorder.audioBitsPerSecond
+                            || opts.audioBitsPerSecond
+                            || opts.bitsPerSecond
+                            || 0
+                        ) || 0;
+                        return { recorder, mimeType: effectiveMime, bitsPerSecond: effectiveBps };
+                    } catch (err) {
+                        lastError = err;
+                    }
+                }
+                throw (lastError || new Error('MediaRecorder indisponible'));
+            };
             const _downloadBlob = (blob, filename) => {
                 if (!blob) return;
                 const url = URL.createObjectURL(blob);
@@ -3171,6 +3260,9 @@
                 audioChunks: [],
                 audioBlob: null,
                 audioMimeType: 'audio/webm',
+                audioTargetBitsPerSecond: _recordAudioTargetBps,
+                audioBitsPerSecond: 0,
+                audioCodecLabel: '',
                 speechRecognition: null,
                 speechEnabled: false,
                 replayTimers: [],
@@ -3273,6 +3365,9 @@
                     parts.push(_sessionRec.paused
                         ? `Enregistrement en pause · ${_pvClock(elapsed)}`
                         : `Enregistrement en cours · ${_pvClock(elapsed)}`);
+                    const codecLabel = _sessionRec.audioCodecLabel || 'audio auto';
+                    const bitrateLabel = _audioBitrateLabel(_sessionRec.audioBitsPerSecond || _sessionRec.audioTargetBitsPerSecond);
+                    parts.push(bitrateLabel ? `Codec: ${codecLabel} (${bitrateLabel})` : `Codec: ${codecLabel}`);
                     parts.push(_sessionRec.speechEnabled ? 'Sous-titres auto: actif' : 'Sous-titres auto: indisponible');
                     status.textContent = parts.join(' · ');
                     status.classList.add('recording');
@@ -3286,7 +3381,12 @@
                     return;
                 }
                 if (_sessionRec.lastSession) {
-                    status.textContent = `Dernière session: ${_pvClock(_sessionRec.lastSession.durationMs || 0)} · ${(_sessionRec.lastSession.events || []).length} événements · ${(_sessionRec.lastSession.captions || []).length} sous-titres`;
+                    const codec = String(_sessionRec.lastSession.audioCodec || _audioCodecLabelFromMime(_sessionRec.lastSession.audioMimeType || ''));
+                    const bitrate = _audioBitrateLabel(_sessionRec.lastSession.audioBitsPerSecond || 0);
+                    const audioInfo = _sessionRec.lastSession.hasAudio
+                        ? (bitrate ? `${codec} ${bitrate}` : codec || 'audio')
+                        : 'sans audio';
+                    status.textContent = `Dernière session: ${_pvClock(_sessionRec.lastSession.durationMs || 0)} · ${(_sessionRec.lastSession.events || []).length} événements · ${(_sessionRec.lastSession.captions || []).length} sous-titres · ${audioInfo}`;
                     return;
                 }
                 status.textContent = '';
@@ -3434,6 +3534,8 @@
                     autoNotesBySlide: JSON.parse(JSON.stringify(_sessionRec.autoNotesBySlide || {})),
                     hasAudio: !!_sessionRec.audioBlob,
                     audioMimeType: _sessionRec.audioMimeType || 'audio/webm',
+                    audioBitsPerSecond: Number(_sessionRec.audioBitsPerSecond || _sessionRec.audioTargetBitsPerSecond || 0) || 0,
+                    audioCodec: _sessionRec.audioCodecLabel || '',
                 };
             };
 
@@ -3453,19 +3555,22 @@
                 _sessionRec.autoNotesBySlide = {};
                 _sessionRec.audioChunks = [];
                 _sessionRec.audioBlob = null;
+                _sessionRec.audioBitsPerSecond = 0;
+                _sessionRec.audioCodecLabel = '';
                 _sessionRec.lastSession = null;
                 _recordEvent('record:start', { index: currentIndex, fragmentIndex: currentFragmentIndex });
                 _updateRecordingUi();
 
                 if (navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== 'undefined') {
                     try {
-                        _sessionRec.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
-                        const mimeType = preferredTypes.find(type => MediaRecorder.isTypeSupported?.(type)) || '';
-                        _sessionRec.mediaRecorder = mimeType
-                            ? new MediaRecorder(_sessionRec.mediaStream, { mimeType })
-                            : new MediaRecorder(_sessionRec.mediaStream);
-                        _sessionRec.audioMimeType = _sessionRec.mediaRecorder.mimeType || 'audio/webm';
+                        _sessionRec.mediaStream = await navigator.mediaDevices.getUserMedia({
+                            audio: _recordingAudioConstraints,
+                        });
+                        const recorderSetup = _createCompressedRecorder(_sessionRec.mediaStream);
+                        _sessionRec.mediaRecorder = recorderSetup.recorder;
+                        _sessionRec.audioMimeType = recorderSetup.mimeType || 'audio/webm';
+                        _sessionRec.audioBitsPerSecond = Number(recorderSetup.bitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
+                        _sessionRec.audioCodecLabel = _audioCodecLabelFromMime(_sessionRec.audioMimeType);
                         _sessionRec.mediaRecorder.ondataavailable = ev => {
                             if (ev.data && ev.data.size > 0) _sessionRec.audioChunks.push(ev.data);
                         };
@@ -3478,13 +3583,19 @@
                             if (_sessionRec.lastSession) {
                                 _sessionRec.lastSession.hasAudio = !!_sessionRec.audioBlob;
                                 _sessionRec.lastSession.audioMimeType = _sessionRec.audioMimeType || 'audio/webm';
+                                _sessionRec.lastSession.audioBitsPerSecond = Number(_sessionRec.audioBitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
+                                _sessionRec.lastSession.audioCodec = _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType);
                             }
                             _updateRecordingUi();
                         };
                         _sessionRec.mediaRecorder.start(1000);
-                    } catch (_) {
+                    } catch (err) {
+                        console.warn('Session recording audio setup fallback:', err?.message || err);
                         _sessionRec.mediaStream = null;
                         _sessionRec.mediaRecorder = null;
+                        _sessionRec.audioMimeType = 'audio/webm';
+                        _sessionRec.audioBitsPerSecond = 0;
+                        _sessionRec.audioCodecLabel = '';
                     }
                 }
                 _startSpeechRecognition();
@@ -3590,13 +3701,15 @@
                     });
                     _sessionRec.lastSession.hasAudio = true;
                     _sessionRec.lastSession.audioMimeType = _sessionRec.audioMimeType || 'audio/webm';
+                    _sessionRec.lastSession.audioBitsPerSecond = Number(_sessionRec.audioBitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
+                    _sessionRec.lastSession.audioCodec = _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType);
                 }
                 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
                 const base = `${_safeFilePart(title)}-${stamp}`;
                 const jsonBlob = new Blob([JSON.stringify(_sessionRec.lastSession, null, 2)], { type: 'application/json' });
                 _downloadBlob(jsonBlob, `${base}.json`);
                 if (_sessionRec.audioBlob) {
-                    const ext = String(_sessionRec.audioMimeType || '').includes('ogg') ? 'ogg' : 'webm';
+                    const ext = _audioExtFromMime(_sessionRec.audioMimeType);
                     _downloadBlob(_sessionRec.audioBlob, `${base}.${ext}`);
                 }
             };
@@ -4035,6 +4148,8 @@ body{min-height:100vh;display:flex;flex-direction:column}
                         });
                         _sessionRec.lastSession.hasAudio = true;
                         _sessionRec.lastSession.audioMimeType = _sessionRec.audioMimeType || 'audio/webm';
+                        _sessionRec.lastSession.audioBitsPerSecond = Number(_sessionRec.audioBitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
+                        _sessionRec.lastSession.audioCodec = _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType);
                     }
                     const audioDataUrl = await _blobToDataUrl(_sessionRec.audioBlob);
                     const html = _buildReplayStandaloneHtml({

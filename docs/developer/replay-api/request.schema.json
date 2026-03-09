@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oei.local/schemas/replay-build-request.schema.json",
+  "title": "ReplayBuildRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["slidesData"],
+  "properties": {
+    "slidesData": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["slides"],
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "title": { "type": "string" }
+          }
+        },
+        "slides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "type": { "type": "string" },
+              "title": { "type": "string" },
+              "heading": { "type": "string" },
+              "timestampMs": { "type": "integer", "minimum": 0 },
+              "timestamp": {
+                "oneOf": [
+                  { "type": "integer", "minimum": 0 },
+                  { "type": "string" }
+                ]
+              },
+              "level": { "type": "integer", "enum": [1, 2, 3, 4] },
+              "levels": {
+                "type": "array",
+                "items": { "type": "integer", "enum": [1, 2, 3, 4] },
+                "uniqueItems": true,
+                "minItems": 1
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "level": { "type": "integer", "enum": [1, 2, 3, 4] },
+                  "levels": {
+                    "type": "array",
+                    "items": { "type": "integer", "enum": [1, 2, 3, 4] },
+                    "uniqueItems": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "timeline": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "slideIndex": { "type": "integer", "minimum": 0 },
+              "index": { "type": "integer", "minimum": 0 },
+              "slide": { "type": "integer", "minimum": 0 },
+              "at": {
+                "oneOf": [
+                  { "type": "integer", "minimum": 0 },
+                  { "type": "string" }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "sessionData": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "version": { "type": "integer" },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "t"],
+            "properties": {
+              "type": { "type": "string" },
+              "t": { "type": "integer", "minimum": 0 },
+              "payload": { "type": "object", "additionalProperties": true }
+            }
+          }
+        },
+        "captions": {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "inlineAudioTracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "startMs": { "type": "integer", "minimum": 0 },
+          "endMs": { "type": "integer", "minimum": 0 },
+          "offsetMs": { "type": "integer", "minimum": 0 },
+          "label": { "type": "string" },
+          "dataUrl": { "type": "string" },
+          "base64": { "type": "string" },
+          "mimeType": { "type": "string" }
+        },
+        "anyOf": [
+          { "required": ["dataUrl"] },
+          { "required": ["base64"] }
+        ]
+      }
+    },
+    "title": { "type": "string", "maxLength": 200 },
+    "defaultSlideMs": { "type": "integer", "minimum": 1000, "default": 8000 }
+  }
+}
