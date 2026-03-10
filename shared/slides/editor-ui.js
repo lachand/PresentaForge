@@ -158,6 +158,19 @@ function initSplitButtons() {
     document.getElementById('btn-open-clipboard')?.addEventListener('click', async () => {
         try {
             const text = await navigator.clipboard.readText();
+            if (window.OEIImportPipeline?.importFromText) {
+                const result = await window.OEIImportPipeline.importFromText(text);
+                const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: 'Presse-papier' });
+                if (!ok) return;
+                editor.load(result.data);
+                notify(
+                    result.report?.fixes?.length
+                        ? `Importé (${result.report.fixes.length} correction(s))`
+                        : 'Importé depuis le presse-papier',
+                    result.report?.fixes?.length ? 'warning' : 'success'
+                );
+                return;
+            }
             const data = JSON.parse(_repairJsonText(text));
             editor.load(data);
             notify('Importé depuis le presse-papier', 'success');

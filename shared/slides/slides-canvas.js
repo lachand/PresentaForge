@@ -358,6 +358,26 @@ class CanvasEditor {
     z-index: 9999;
     white-space: nowrap;
 }
+.cel-overflow-badge {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    padding: 0 5px;
+    background: #ef4444;
+    color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    pointer-events: none;
+    z-index: 9999;
+}
+.cel.has-overflow { outline-color: rgba(239, 68, 68, 0.65) !important; }
 .cel.is-locked .cel-handle { display: none !important; }
 .cel-inner { width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; pointer-events: none; }
 .cel.editing .cel-inner { pointer-events: auto; }
@@ -1216,6 +1236,7 @@ class CanvasEditor {
         if (el.type === 'widget') this._mountWidget(div, el);
         if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example' || el.type === 'terminal-session') this._highlightCodeBlock(div);
         this._postRenderElement(el);
+        requestAnimationFrame(() => this._updateOverflowVisual(div, el));
         return div;
     }
 
@@ -1224,6 +1245,42 @@ class CanvasEditor {
         if (el.type === 'latex')   this._renderLatexElements();
         if (el.type === 'qrcode')  this._renderQRElements();
         if (el.type === 'timer')   this._initTimerElements();
+    }
+
+    _shouldCheckOverflow(el) {
+        const type = String(el?.type || '');
+        return ![
+            'code', 'highlight', 'code-example', 'terminal-session', 'table', 'list',
+            'mermaid', 'diagramme', 'image', 'video', 'iframe', 'widget', 'quiz-live',
+            'poll-likert', 'mcq-single', 'mcq-multi', 'rank-order', 'flashcards-auto'
+        ].includes(type);
+    }
+
+    _updateOverflowVisual(div, el) {
+        if (!div || !el) return;
+        let badge = div.querySelector('.cel-overflow-badge');
+        if (!this._shouldCheckOverflow(el)) {
+            div.classList.remove('has-overflow');
+            if (badge) badge.remove();
+            return;
+        }
+        const inner = div.querySelector('.cel-inner');
+        if (!inner) return;
+        const deltaY = inner.scrollHeight - inner.clientHeight;
+        const deltaX = inner.scrollWidth - inner.clientWidth;
+        const hasOverflow = deltaX > 2 || deltaY > 2;
+        div.classList.toggle('has-overflow', hasOverflow);
+        if (!hasOverflow) {
+            if (badge) badge.remove();
+            return;
+        }
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'cel-overflow-badge';
+            badge.title = 'Contenu rogné : agrandissez le bloc ou réduisez le texte';
+            badge.textContent = '!';
+            div.appendChild(badge);
+        }
     }
 
     _renderContent(el) {
@@ -2418,6 +2475,7 @@ class CanvasEditor {
         if (el.type === 'widget') this._mountWidget(div, el);
         if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example' || el.type === 'terminal-session') this._highlightCodeBlock(div);
         this._postRenderElement(el);
+        requestAnimationFrame(() => this._updateOverflowVisual(div, el));
         // Animation badge
         let badge = div.querySelector('.cel-anim-badge');
         if (el.animation && el.animation.type && el.animation.type !== 'none') {

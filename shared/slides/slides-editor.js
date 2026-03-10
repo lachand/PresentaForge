@@ -128,6 +128,8 @@ window._repairJsonText = _repairJsonText;
 
 class SlidesEditor {
     static STORAGE_KEY = window.OEIStorage?.KEYS?.SLIDE_DRAFT || 'oei-slide-draft';
+    static WORKDOCS_KEY = window.OEIStorage?.KEYS?.SLIDE_WORKDOCS || 'oei-slide-workdocs';
+    static MAX_WORKDOCS = 10;
 
     static SLIDE_TYPES = [
         { id: 'canvas',     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h3v3H8zM14 8h3v2h-3M7 15h5v2H7"/></svg>',  label: 'Canvas libre' },
@@ -202,6 +204,7 @@ class SlidesEditor {
         this._historyStack = [];
         this._historyIndex = -1;
         this._pushDebounceTimer = null;
+        this._lastRevisionSnapshotAt = 0;
     }
 
     // ── Lifecycle ──────────────────────────────────────────
@@ -632,10 +635,64 @@ class SlidesEditor {
 
     // ── Persistence ────────────────────────────────────────
 
+    _computeWorkdocId(data) {
+        const metaId = String(data?.metadata?.id || '').trim();
+        if (metaId) return metaId.slice(0, 120);
+        const title = String(data?.metadata?.title || 'sans-titre').toLowerCase();
+        const slug = title
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 80) || 'sans-titre';
+        const slideCount = Array.isArray(data?.slides) ? data.slides.length : 0;
+        return `${slug}-${slideCount}`;
+    }
+
+    _updateWorkdocsIndex() {
+        try {
+            const payload = JSON.parse(JSON.stringify(this.data || {}));
+            const now = Date.now();
+            const id = this._computeWorkdocId(payload);
+            const raw = window.OEIStorage?.getRaw
+                ? window.OEIStorage.getRaw(SlidesEditor.WORKDOCS_KEY)
+                : localStorage.getItem(SlidesEditor.WORKDOCS_KEY);
+            const list = raw ? JSON.parse(raw) : [];
+            const safeList = Array.isArray(list) ? list : [];
+            const entry = {
+                id,
+                title: String(payload?.metadata?.title || 'Présentation sans titre'),
+                updatedAt: now,
+                slideCount: Array.isArray(payload?.slides) ? payload.slides.length : 0,
+                theme: (typeof payload?.theme === 'string' ? payload.theme : 'custom'),
+                level: String(payload?.metadata?.level || '').trim(),
+                institution: String(payload?.metadata?.institution || '').trim(),
+                data: JSON.stringify(payload),
+            };
+            const merged = [entry, ...safeList.filter(item => item && item.id !== id)]
+                .slice(0, SlidesEditor.MAX_WORKDOCS);
+            if (window.OEIStorage?.setRaw) window.OEIStorage.setRaw(SlidesEditor.WORKDOCS_KEY, JSON.stringify(merged));
+            else localStorage.setItem(SlidesEditor.WORKDOCS_KEY, JSON.stringify(merged));
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    _maybeSaveRevisionSnapshot() {
+        const now = Date.now();
+        if (now - this._lastRevisionSnapshotAt < 90_000) return;
+        if (typeof window.saveRevision !== 'function') return;
+        this._lastRevisionSnapshotAt = now;
+        try { window.saveRevision('auto'); } catch (_) {}
+    }
+
     _autosave() {
         try {
             if (window.OEIStorage?.setJSON) window.OEIStorage.setJSON(SlidesEditor.STORAGE_KEY, this.data);
             else localStorage.setItem(SlidesEditor.STORAGE_KEY, JSON.stringify(this.data));
+            this._updateWorkdocsIndex();
+            this._maybeSaveRevisionSnapshot();
             return true;
         } catch(e) {
             console.error('[SlidesEditor] Autosave failed:', e.name, e.message);
@@ -677,7 +734,17 @@ class SlidesEditor {
             input.type = 'file'; input.accept = '.json';
             input.onchange = async e => {
                 try {
-                    const text = await e.target.files[0].text();
+                    const file = e.target.files?.[0];
+                    if (!file) throw new Error('Aucun fichier sélectionné');
+                    const text = await file.text();
+                    if (window.OEIImportPipeline?.importFromText) {
+                        const result = await window.OEIImportPipeline.importFromText(text);
+                        const confirmed = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name });
+                        if (!confirmed) throw new Error('Import annulé');
+                        this.load(result.data);
+                        resolve(result.data);
+                        return;
+                    }
                     const data = JSON.parse(_repairJsonText(text));
                     if (!Array.isArray(data.slides)) throw new Error('Format invalide : champ slides manquant');
                     this.load(data);

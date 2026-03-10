@@ -124,6 +124,20 @@ async function _eeOptimizeDataImageUrl(url, options = {}) {
     return best;
 }
 
+async function _eeFetchUrlAsDataUrl(url) {
+    const src = String(url || '').trim();
+    if (!/^https?:\/\//i.test(src)) throw new Error('URL web attendue (http/https)');
+    const res = await fetch(src, { mode: 'cors' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    return await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result || ''));
+        fr.onerror = () => reject(new Error('Conversion data URI impossible'));
+        fr.readAsDataURL(blob);
+    });
+}
+
 function openAssetsManager() {
     let modal = document.getElementById('assets-modal');
     if (!modal) {
@@ -140,6 +154,8 @@ function openAssetsManager() {
                 <button class="tb-btn" id="assets-refresh" style="height:32px">Actualiser</button>
                 <button class="tb-btn" id="assets-duplicates" style="height:32px">Doublons</button>
                 <button class="tb-btn" id="assets-compress-data" style="height:32px">Optimiser data URI</button>
+                <button class="tb-btn" id="assets-embed-http" style="height:32px">Intégrer URL web</button>
+                <button class="tb-btn" id="assets-add-svg-url" style="height:32px">Ajouter SVG URL</button>
             </div>
             <div id="assets-stats" style="font-size:0.75rem;color:var(--muted)"></div>
             <div id="assets-table" style="border:1px solid var(--border);border-radius:8px;overflow:auto;max-height:58vh"></div>
@@ -197,6 +213,7 @@ function openAssetsManager() {
                         <button class="tb-btn" data-act="copy" style="height:26px;padding:0 8px;font-size:0.7rem">Copier</button>
                         <button class="tb-btn" data-act="replace" style="height:26px;padding:0 8px;font-size:0.7rem">Remplacer</button>
                         <button class="tb-btn" data-act="replace-all" style="height:26px;padding:0 8px;font-size:0.7rem">Partout</button>
+                        ${/^https?:\/\//i.test(a.url) ? '<button class="tb-btn" data-act="embed" style="height:26px;padding:0 8px;font-size:0.7rem">Intégrer</button>' : ''}
                         ${/^data:image\//i.test(a.url) ? '<button class="tb-btn" data-act="optimize" style="height:26px;padding:0 8px;font-size:0.7rem">Optimiser</button>' : ''}
                     </td>
                 </tr>`).join('')}
@@ -239,6 +256,21 @@ function openAssetsManager() {
                     notify(`${changed} occurrence(s) mises à jour`, 'success');
                 } else {
                     notify('Aucune occurrence remplacée', 'info');
+                }
+            });
+            row.querySelector('[data-act="embed"]')?.addEventListener('click', async () => {
+                try {
+                    const dataUrl = await _eeFetchUrlAsDataUrl(asset.url);
+                    if (!dataUrl) throw new Error('Conversion vide');
+                    if (_eeSetAssetUrl(asset, dataUrl)) {
+                        editor._push();
+                        onUpdate('slide-update');
+                        state.assets = _eeCollectAssets(editor.data);
+                        render();
+                        notify('Asset intégré en data URI', 'success');
+                    }
+                } catch (err) {
+                    notify(`Intégration impossible: ${err?.message || 'erreur réseau/CORS'}`, 'error');
                 }
             });
             row.querySelector('[data-act="optimize"]')?.addEventListener('click', async () => {
@@ -296,6 +328,49 @@ function openAssetsManager() {
             notify(`Optimisation terminée: ${changed} asset(s)`, 'success');
         } else {
             notify('Optimisation terminée: aucun gain mesurable', 'info');
+        }
+    };
+    const embedBtn = modal.querySelector('#assets-embed-http');
+    if (embedBtn) embedBtn.onclick = async () => {
+        const candidates = state.assets.filter(asset => /^https?:\/\//i.test(String(asset.url || '')));
+        if (!candidates.length) {
+            notify('Aucune URL web à intégrer', 'info');
+            return;
+        }
+        let changed = 0;
+        for (const asset of candidates) {
+            try {
+                const dataUrl = await _eeFetchUrlAsDataUrl(asset.url);
+                if (!dataUrl) continue;
+                if (_eeSetAssetUrl(asset, dataUrl)) changed += 1;
+            } catch (_) {}
+        }
+        if (changed > 0) {
+            editor._push();
+            onUpdate('slide-update');
+            state.assets = _eeCollectAssets(editor.data);
+            render();
+            notify(`Intégration URL web: ${changed} asset(s)`, 'success');
+        } else {
+            notify('Intégration URL web: aucun asset converti', 'warning');
+        }
+    };
+    const addSvgBtn = modal.querySelector('#assets-add-svg-url');
+    if (addSvgBtn) addSvgBtn.onclick = async () => {
+        const url = prompt('URL SVG à importer dans le slide canvas courant :', 'https://');
+        if (!url || !/^https?:\/\//i.test(url.trim())) return;
+        if (editor.currentSlide?.type !== 'canvas' || !window.canvasEditor) {
+            notify('Passez sur un slide canvas pour insérer un SVG', 'warning');
+            return;
+        }
+        try {
+            const dataUrl = await _eeFetchUrlAsDataUrl(url.trim());
+            const alt = prompt('Texte alternatif (accessibilité) :', 'Icône SVG') || 'Icône SVG';
+            const el = window.canvasEditor.add('image');
+            window.canvasEditor.updateData(el.id, { data: { src: dataUrl, alt } });
+            notify('SVG intégré au canvas courant', 'success');
+        } catch (err) {
+            notify(`Import SVG impossible: ${err?.message || 'erreur réseau/CORS'}`, 'error');
         }
     };
     if (elSearch) elSearch.oninput = () => {

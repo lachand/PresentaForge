@@ -61,15 +61,26 @@ function initFileDrop() {
                 reader.readAsDataURL(file);
             } else if (file.name.endsWith('.json')) {
                 const reader = new FileReader();
-                reader.onload = () => {
+                reader.onload = async () => {
                     try {
-                        const data = JSON.parse(_repairJsonText(reader.result));
-                        if (data.metadata && data.slides) {
-                            editor.load(data);
-                            notify('Présentation chargée', 'success');
-                        } else {
-                            notify('Format JSON invalide', 'error');
+                        const rawText = String(reader.result || '');
+                        if (window.OEIImportPipeline?.importFromText) {
+                            const result = await window.OEIImportPipeline.importFromText(rawText);
+                            const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name });
+                            if (!ok) return;
+                            editor.load(result.data);
+                            notify(
+                                result.report?.fixes?.length
+                                    ? `Présentation chargée (${result.report.fixes.length} correction(s))`
+                                    : 'Présentation chargée',
+                                result.report?.fixes?.length ? 'warning' : 'success'
+                            );
+                            return;
                         }
+                        const data = JSON.parse(_repairJsonText(rawText));
+                        if (!Array.isArray(data?.slides)) throw new Error('Format JSON invalide');
+                        editor.load(data);
+                        notify('Présentation chargée', 'success');
                     } catch(e) { notify('Erreur JSON: ' + e.message, 'error'); }
                 };
                 reader.readAsText(file);

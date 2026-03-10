@@ -23,6 +23,7 @@
     const KEYS = Object.freeze({
         PRESENT_DATA: `${PREFIX}-slide-present-data`,
         SLIDE_DRAFT: `${PREFIX}-slide-draft`,
+        SLIDE_WORKDOCS: `${PREFIX}-slide-workdocs`,
         RECENT_PRESENTATIONS: `${PREFIX}-recent-presentations`,
         SLIDE_THEMES: `${PREFIX}-slide-themes`,
         EDITOR_THEME: `${PREFIX}-editor-theme`,
@@ -43,6 +44,7 @@
     const LEGACY_KEYS = Object.freeze({
         [KEYS.PRESENT_DATA]: 'oei-slide-present-data',
         [KEYS.SLIDE_DRAFT]: 'oei-slide-draft',
+        [KEYS.SLIDE_WORKDOCS]: 'oei-slide-workdocs',
         [KEYS.RECENT_PRESENTATIONS]: 'oei-recent-presentations',
         [KEYS.SLIDE_THEMES]: 'oei-slide-themes',
         [KEYS.EDITOR_THEME]: 'oei-editor-theme',

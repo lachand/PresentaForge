@@ -75,6 +75,31 @@ class SlidesShared {
         return Number.isFinite(fb) ? Math.max(8, Math.round(fb)) : t.text;
     }
 
+    /**
+     * Build a normalized render options object used across editor/viewer/export/replay.
+     * @param {any} data
+     * @param {any} overrides
+     * @returns {any}
+     */
+    static buildRenderOptions(data = {}, overrides = {}) {
+        const src = (data && typeof data === 'object') ? data : {};
+        const slides = Array.isArray(src.slides) ? src.slides : [];
+        const chapterNumbers = (typeof SlidesRenderer !== 'undefined' && typeof SlidesRenderer._buildChapterNumbers === 'function')
+            ? SlidesRenderer._buildChapterNumbers(slides, src.autoNumberChapters)
+            : null;
+        const base = {
+            showSlideNumber: !!src.showSlideNumber,
+            footerText: src.footerText || null,
+            footerConfig: (src.footerConfig && typeof src.footerConfig === 'object') ? src.footerConfig : null,
+            metadata: (src.metadata && typeof src.metadata === 'object') ? src.metadata : {},
+            totalSlides: slides.length,
+            chapterNumbers,
+            captionRegistry: SlidesShared.buildCaptionRegistry(slides),
+            typography: SlidesShared.resolveTypographyDefaults(src.typography),
+        };
+        return Object.assign(base, overrides && typeof overrides === 'object' ? overrides : {});
+    }
+
     static LABEL_TONE_HINTS = Object.freeze({
         'attention': 'warning',
         'consigne': 'warning',
@@ -1865,20 +1890,7 @@ class SlidesRenderer {
     /** Render all slides into a Reveal.js container */
     static renderToReveal(data, container) {
         const slides = data.slides || [];
-        // Build caption registry for cross-references
-        const captionRegistry = SlidesShared.buildCaptionRegistry(slides);
-        // Auto-number chapter slides if enabled
-        const chapterNumbers = SlidesRenderer._buildChapterNumbers(slides, data.autoNumberChapters);
-        const opts = {
-            showSlideNumber: data.showSlideNumber || false,
-            footerText: data.footerText || null,
-            footerConfig: (data && typeof data.footerConfig === 'object' && data.footerConfig) ? data.footerConfig : null,
-            metadata: (data && typeof data.metadata === 'object' && data.metadata) ? data.metadata : {},
-            totalSlides: slides.length,
-            captionRegistry,
-            chapterNumbers,
-            typography: SlidesShared.resolveTypographyDefaults(data.typography),
-        };
+        const opts = SlidesShared.buildRenderOptions(data);
         container.innerHTML = slides.map((s, i) => SlidesRenderer.renderSlide(s, i, opts)).join('\n');
     }
 

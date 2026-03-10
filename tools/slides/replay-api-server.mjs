@@ -58,11 +58,11 @@ async function readJsonBody(req) {
     return JSON.parse(raw);
 }
 
-async function handleBuild(req, res) {
+async function readBuildRequest(req, res) {
     const contentType = String(req.headers['content-type'] || '').toLowerCase();
     if (!contentType.includes('application/json')) {
         sendJson(res, 415, { error: 'Content-Type attendu: application/json' });
-        return;
+        return null;
     }
 
     let body;
@@ -71,38 +71,67 @@ async function handleBuild(req, res) {
     } catch (err) {
         const code = err?.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400;
         sendJson(res, code, { error: err?.message || 'Body JSON invalide' });
-        return;
+        return null;
     }
 
     if (!body || typeof body !== 'object') {
         sendJson(res, 400, { error: 'Body JSON invalide' });
-        return;
+        return null;
     }
     if (!body.slidesData || typeof body.slidesData !== 'object') {
         sendJson(res, 400, { error: 'Champ requis manquant: slidesData (objet)' });
-        return;
+        return null;
     }
+    return body;
+}
+
+async function buildReplayPayloadFromRequest(body) {
+    return buildReplayPayload({
+        slidesData: body.slidesData,
+        sessionData: body.sessionData && typeof body.sessionData === 'object' ? body.sessionData : null,
+        inlineAudioTracks: Array.isArray(body.inlineAudioTracks) ? body.inlineAudioTracks : [],
+        defaultSlideMs: Number(body.defaultSlideMs) || undefined,
+        title: typeof body.title === 'string' ? body.title : '',
+    });
+}
+
+function buildReplayStats(payload) {
+    return {
+        slideCount: Array.isArray(payload.slidesData?.slides) ? payload.slidesData.slides.length : 0,
+        eventCount: Array.isArray(payload.session?.events) ? payload.session.events.length : 0,
+        audioTrackCount: Array.isArray(payload.audioTracks) ? payload.audioTracks.length : 0,
+        durationMs: Number(payload.session?.durationMs || 0),
+    };
+}
+
+async function handleBuild(req, res) {
+    const body = await readBuildRequest(req, res);
+    if (!body) return;
 
     try {
-        const payload = await buildReplayPayload({
-            slidesData: body.slidesData,
-            sessionData: body.sessionData && typeof body.sessionData === 'object' ? body.sessionData : null,
-            inlineAudioTracks: Array.isArray(body.inlineAudioTracks) ? body.inlineAudioTracks : [],
-            defaultSlideMs: Number(body.defaultSlideMs) || undefined,
-            title: typeof body.title === 'string' ? body.title : '',
-        });
+        const payload = await buildReplayPayloadFromRequest(body);
         const html = await buildReplayStandaloneHtml(payload);
         sendJson(res, 200, {
             html,
-            stats: {
-                slideCount: Array.isArray(payload.slidesData?.slides) ? payload.slidesData.slides.length : 0,
-                eventCount: Array.isArray(payload.session?.events) ? payload.session.events.length : 0,
-                audioTrackCount: Array.isArray(payload.audioTracks) ? payload.audioTracks.length : 0,
-                durationMs: Number(payload.session?.durationMs || 0),
-            },
+            stats: buildReplayStats(payload),
         });
     } catch (err) {
         sendJson(res, 400, { error: err?.message || 'Erreur de génération replay' });
+    }
+}
+
+async function handleDryRun(req, res) {
+    const body = await readBuildRequest(req, res);
+    if (!body) return;
+
+    try {
+        const payload = await buildReplayPayloadFromRequest(body);
+        sendJson(res, 200, {
+            ok: true,
+            stats: buildReplayStats(payload),
+        });
+    } catch (err) {
+        sendJson(res, 400, { error: err?.message || 'Erreur de validation replay' });
     }
 }
 
@@ -131,6 +160,11 @@ export function createReplayApiServer() {
             return;
         }
 
+        if (method === 'POST' && samePath(url, '/api/replay/dry-run')) {
+            await handleDryRun(req, res);
+            return;
+        }
+
         sendJson(res, 404, { error: 'Not found' });
     });
 }
@@ -143,6 +177,7 @@ export function startReplayApiServer({ host = HOST, port = PORT } = {}) {
     server.listen(port, host, () => {
         console.log(`Replay API listening on http://${host}:${port}`);
         console.log('POST /api/replay/build');
+        console.log('POST /api/replay/dry-run');
         console.log('GET  /api/replay/healthz');
         console.log('GET  /api/replay/openapi.yaml');
     });

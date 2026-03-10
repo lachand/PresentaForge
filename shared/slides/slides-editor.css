@@ -1926,6 +1926,28 @@ html, body {
 .narration-status { font-size: 0.65rem; color: var(--muted); margin-top: auto; }
 .narration-status.recording { color: #e53e3e; font-weight: 600; animation: pulse 1.5s infinite; }
 .narration-status.has-narration { color: var(--success); }
+.narration-encoding {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    padding-top: 2px;
+}
+.narration-enc-label {
+    font-size: 0.62rem;
+    color: var(--muted);
+}
+.narration-enc-select,
+.narration-enc-input {
+    font-size: 0.64rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+.narration-enc-select { min-width: 92px; }
+.narration-enc-input { width: 58px; }
 
 /* I4: Slide breadcrumb */
 .slide-breadcrumb {

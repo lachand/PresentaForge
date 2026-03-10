@@ -17,15 +17,10 @@ let _canvasLoadedIndex = -1;
 
 function _slideRenderOpts() {
     if (!editor.data) return {};
-    return {
-        showSlideNumber: editor.data.showSlideNumber || false,
-        footerText: editor.data.footerText || null,
-        footerConfig: (editor.data && typeof editor.data.footerConfig === 'object' && editor.data.footerConfig) ? editor.data.footerConfig : null,
-        metadata: editor.data.metadata || {},
-        totalSlides: editor.data.slides?.length || 0,
-        chapterNumbers: SlidesRenderer._buildChapterNumbers(editor.data.slides || [], editor.data.autoNumberChapters),
-        typography: SlidesShared.resolveTypographyDefaults(editor.data.typography),
-    };
+    if (typeof SlidesShared?.buildRenderOptions === 'function') {
+        return SlidesShared.buildRenderOptions(editor.data);
+    }
+    return {};
 }
 
 function isSlideListInteractionContext() {

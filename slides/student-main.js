@@ -137,6 +137,12 @@
         let _connectionStateSince = Date.now();
         let _connectionWatchdogTimer = null;
         let _forceReconnectCooldownUntil = 0;
+        let _resyncMonitorTimer = null;
+        let _resyncPending = false;
+        let _resyncRetryCount = 0;
+        let _resyncLastReason = '';
+        const MAX_RESYNC_RETRY = 3;
+        const RESYNC_TIMEOUT_MS = 9000;
         const RELIABLE_QUEUE_PREFIX = `oei-v1-student-reliable-${toSafeString(roomId, 80)}-`;
         let _reliableQueueKey = RELIABLE_QUEUE_PREFIX + 'anon';
 
@@ -877,6 +883,45 @@
 
         function setConnected(connected) {
             _setConnectionState(connected ? CONNECTION_STATE.CONNECTED : CONNECTION_STATE.RETRYING);
+            if (!connected) _clearResyncMonitor();
+        }
+
+        function _clearResyncMonitor() {
+            if (_resyncMonitorTimer) {
+                clearTimeout(_resyncMonitorTimer);
+                _resyncMonitorTimer = null;
+            }
+            _resyncPending = false;
+        }
+
+        function _armResyncMonitor() {
+            _clearResyncMonitor();
+            _resyncPending = true;
+            _resyncMonitorTimer = setTimeout(() => {
+                _resyncMonitorTimer = null;
+                if (!_resyncPending) return;
+                _resyncRetryCount += 1;
+                const mode = transportMode === 'relay' ? 'Relay' : 'P2P';
+                setConnectionDetail(
+                    `${mode} · resync sans réponse (${_resyncRetryCount}/${MAX_RESYNC_RETRY})`,
+                    'warn'
+                );
+                if (_resyncRetryCount >= MAX_RESYNC_RETRY) {
+                    _clearResyncMonitor();
+                    forceReconnectNow('resync-timeout');
+                    return;
+                }
+                requestResync(`retry-${_resyncLastReason || 'sync'}`);
+            }, RESYNC_TIMEOUT_MS);
+        }
+
+        function _markResyncApplied(source = '') {
+            if (!_resyncPending) return;
+            _clearResyncMonitor();
+            _resyncRetryCount = 0;
+            const mode = transportMode === 'relay' ? 'Relay' : 'P2P';
+            const suffix = source ? ` (${source})` : '';
+            setConnectionDetail(`${mode} · resynchronisé${suffix}`, 'ok');
         }
 
         function transportCanSend() {
@@ -1693,6 +1738,13 @@
         function handleMessage(msg) {
             if (!msg?.type) return;
             if (!validateRoomMessage(msg)) return;
+            if (_resyncPending && (
+                msg.type === ROOM_MSG.INIT
+                || msg.type === ROOM_MSG.SLIDE_CHANGE
+                || msg.type === ROOM_MSG.SLIDE_FRAGMENT
+            )) {
+                _markResyncApplied(msg.type);
+            }
 
             switch (msg.type) {
                 case ROOM_MSG.ACK:
@@ -1861,14 +1913,16 @@
         }
 
         function requestResync(reason = 'manual') {
+            _resyncLastReason = toSafeString(reason, 40);
             const rid = sendReliable({
                 type: ROOM_MSG.SYNC_REQUEST,
-                reason: toSafeString(reason, 40),
+                reason: _resyncLastReason,
                 index: currentIndex,
                 fragmentOrder: currentFragmentOrder,
                 transport: transportMode,
             }, { maxRetries: 4, retryDelay: 1200 });
             if (rid) {
+                _armResyncMonitor();
                 const waitEl = document.getElementById('waiting-text');
                 const connected = transportCanSend();
                 if (waitEl) waitEl.textContent = connected

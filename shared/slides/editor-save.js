@@ -72,12 +72,27 @@ async function openFromFile() {
         });
         const file = await handle.getFile();
         const text = await file.text();
-        const data = JSON.parse(_repairJsonText(text));
-        if (!Array.isArray(data.slides)) throw new Error('Format invalide');
+        let data = null;
+        let report = null;
+        if (window.OEIImportPipeline?.importFromText) {
+            const result = await window.OEIImportPipeline.importFromText(text);
+            const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: handle.name || file.name || 'Fichier JSON' });
+            if (!ok) return;
+            data = result.data;
+            report = result.report || null;
+        } else {
+            data = JSON.parse(_repairJsonText(text));
+            if (!Array.isArray(data.slides)) throw new Error('Format invalide');
+        }
         _fileHandle = handle;
         editor.load(data);
         _updateFileIndicator(handle.name);
-        notify('Ouvert : ' + handle.name, 'success');
+        notify(
+            report?.fixes?.length
+                ? `Ouvert : ${handle.name} (${report.fixes.length} correction(s))`
+                : ('Ouvert : ' + handle.name),
+            report?.fixes?.length ? 'warning' : 'success'
+        );
         saveRevision('open');
     } catch (err) {
         if (err.name === 'AbortError') return;

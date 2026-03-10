@@ -568,17 +568,19 @@ body{min-height:100vh;display:flex;flex-direction:column}
     themeEl.textContent = '';
   }
 
-  var replayOpts = {
-    showSlideNumber: false,
-    footerText: null,
-    totalSlides: totalSlides,
-    chapterNumbers: (window.SlidesRenderer && window.SlidesRenderer._buildChapterNumbers)
-      ? window.SlidesRenderer._buildChapterNumbers(slides, !!slidesData.autoNumberChapters)
-      : {},
-    typography: (window.SlidesShared && window.SlidesShared.resolveTypographyDefaults)
-      ? window.SlidesShared.resolveTypographyDefaults(slidesData.typography)
-      : {},
-  };
+  var replayOpts = (window.SlidesShared && window.SlidesShared.buildRenderOptions)
+    ? window.SlidesShared.buildRenderOptions(slidesData, { showSlideNumber: false, footerText: null })
+    : {
+      showSlideNumber: false,
+      footerText: null,
+      totalSlides: totalSlides,
+      chapterNumbers: (window.SlidesRenderer && window.SlidesRenderer._buildChapterNumbers)
+        ? window.SlidesRenderer._buildChapterNumbers(slides, !!slidesData.autoNumberChapters)
+        : {},
+      typography: (window.SlidesShared && window.SlidesShared.resolveTypographyDefaults)
+        ? window.SlidesShared.resolveTypographyDefaults(slidesData.typography)
+        : {},
+    };
 
   var slideCache = new Map();
   function renderSlideHtml(index) {

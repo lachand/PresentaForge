@@ -293,6 +293,32 @@
             padding: 1rem;
         }
 
+        .local-tools {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) 180px 180px;
+            gap: 0.55rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .local-filter-input,
+        .local-filter-select {
+            height: 34px;
+            border-radius: 9px;
+            border: 1px solid var(--border);
+            background: var(--card-2);
+            color: var(--text);
+            font-size: 0.78rem;
+            padding: 0 0.68rem;
+            outline: none;
+        }
+
+        .local-filter-input::placeholder { color: var(--muted); }
+        .local-filter-input:focus,
+        .local-filter-select:focus {
+            border-color: color-mix(in srgb, var(--primary) 56%, var(--border));
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+        }
+
         .pres-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -510,6 +536,7 @@
             .panel-head { padding: 0.75rem 0.82rem; }
             .panel-body { padding: 0.82rem; }
             .pres-grid { grid-template-columns: 1fr; }
+            .local-tools { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -572,7 +599,21 @@
             </h2>
             <span class="meta" id="local-count"></span>
         </div>
-        <div class="panel-body" id="local-grid"></div>
+        <div class="panel-body">
+            <div class="local-tools">
+                <input type="search" id="local-search" class="local-filter-input" placeholder="Rechercher par titre, tag, niveau, institution">
+                <select id="local-sort" class="local-filter-select">
+                    <option value="updated-desc">Plus récentes</option>
+                    <option value="updated-asc">Plus anciennes</option>
+                    <option value="title-asc">Titre A → Z</option>
+                    <option value="slides-desc">Plus de slides</option>
+                </select>
+                <select id="local-tag" class="local-filter-select">
+                    <option value="">Tous les tags</option>
+                </select>
+            </div>
+            <div id="local-grid"></div>
+        </div>
     </section>
 </div>
 
@@ -580,6 +621,7 @@
 <script src="../shared/slides/background-utils.js?v=1"></script>
 <script src="../shared/slides/slides-core.js?v=15"></script>
 <script src="../shared/slides/editor-dialog.js"></script>
+<script src="../shared/slides/import-pipeline.js?v=1"></script>
 <script>
     const Storage = window.OEIStorage || null;
 
@@ -618,6 +660,7 @@
     const EDITOR_THEME_KEY = Storage?.KEYS?.EDITOR_THEME || 'oei-editor-theme';
     const DRAFT_KEY = Storage?.KEYS?.PRESENT_DATA || 'oei-slide-present-data';
     const LOCAL_KEY = Storage?.KEYS?.SLIDE_LIBRARY || 'oei-slide-library';
+    const WORKDOCS_KEY = Storage?.KEYS?.SLIDE_WORKDOCS || 'oei-slide-workdocs';
     const RECENT_KEY = Storage?.KEYS?.RECENT_PRESENTATIONS || 'oei-recent-presentations';
 
     const EXAMPLES = [
@@ -626,6 +669,7 @@
     ];
 
     let _localDecks = [];
+    const _localFilters = { search: '', sort: 'updated-desc', tag: '' };
 
     function icon(name) {
         const icons = {
@@ -668,19 +712,60 @@
         return builtIn?.colors?.slideBg || fallback;
     }
 
+    function _toTimestamp(value, fallback = 0) {
+        const n = Number(value);
+        if (Number.isFinite(n) && n > 0) return n;
+        const t = Date.parse(String(value || ''));
+        return Number.isFinite(t) ? t : fallback;
+    }
+
+    function _extractDeckMeta(rawData) {
+        try {
+            const parsed = JSON.parse(String(rawData || '{}'));
+            const metadata = parsed?.metadata && typeof parsed.metadata === 'object' ? parsed.metadata : {};
+            const theme = typeof parsed?.theme === 'string' ? parsed.theme : '';
+            const tags = [];
+            if (theme) tags.push(`theme:${theme}`);
+            if (metadata.level) tags.push(`niveau:${String(metadata.level)}`);
+            if (metadata.institution) tags.push(String(metadata.institution));
+            return {
+                title: String(metadata.title || ''),
+                theme,
+                tags: [...new Set(tags.filter(Boolean))],
+            };
+        } catch (_) {
+            return { title: '', theme: '', tags: [] };
+        }
+    }
+
+    const esc = value => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    const escAttr = value => esc(value).replace(/\"/g, '&quot;');
+
     function readRecentDecks() {
         const recents = storageGetJSON(RECENT_KEY, []);
         if (!Array.isArray(recents)) return [];
         return recents
             .filter(r => r && typeof r.data === 'string' && r.data.trim())
-            .map((r, idx) => ({
-                source: 'recent',
-                sourceIndex: idx,
-                title: String(r.title || 'Présentation sans titre'),
-                date: String(r.date || ''),
-                slideCount: Number(r.slideCount) || 0,
-                rawData: r.data,
-            }));
+            .map((r, idx) => {
+                const rawData = String(r.data || '');
+                const meta = _extractDeckMeta(rawData);
+                const updatedAt = _toTimestamp(r.lastAccessAt || r.updatedAt || r.date, Date.now() - idx);
+                return {
+                    source: 'recent',
+                    sourceIndex: idx,
+                    sourceLabel: 'Récente',
+                    title: String(r.title || meta.title || 'Présentation sans titre'),
+                    date: String(r.date || ''),
+                    updatedAt,
+                    lastAccessAt: _toTimestamp(r.lastAccessAt, 0),
+                    slideCount: Number(r.slideCount) || 0,
+                    tags: [...new Set(['recent', ...meta.tags])],
+                    rawData,
+                };
+            });
     }
 
     function readLibraryDecks() {
@@ -693,33 +778,129 @@
                     ? r.data
                     : (r.deck ? JSON.stringify(r.deck) : '');
                 if (!rawData) return null;
+                const meta = _extractDeckMeta(rawData);
                 const title = String(r.title || r.metadata?.title || 'Présentation locale');
                 const date = String(r.date || r.modified || '');
                 const slideCount = Number(r.slideCount) || Number(r.metadata?.slides) || 0;
+                const updatedAt = _toTimestamp(r.lastAccessAt || r.updatedAt || date, Date.now() - idx - 2000);
                 return {
                     source: 'library',
                     sourceIndex: idx,
+                    sourceLabel: 'Bibliothèque',
                     title,
                     date,
+                    updatedAt,
+                    lastAccessAt: _toTimestamp(r.lastAccessAt, 0),
                     slideCount,
+                    tags: [...new Set(['library', ...meta.tags])],
                     rawData,
                 };
             })
             .filter(Boolean);
     }
 
+    function readWorkdocs() {
+        const docs = storageGetJSON(WORKDOCS_KEY, []);
+        if (!Array.isArray(docs)) return [];
+        return docs
+            .filter(r => r && typeof r.data === 'string' && r.data.trim())
+            .map((r, idx) => {
+                const rawData = String(r.data || '');
+                const meta = _extractDeckMeta(rawData);
+                const updatedAt = _toTimestamp(r.updatedAt || r.lastAccessAt, Date.now() - idx - 4000);
+                const title = String(r.title || meta.title || 'Document en cours');
+                const date = new Date(updatedAt).toLocaleDateString('fr-FR');
+                return {
+                    source: 'workdoc',
+                    sourceIndex: idx,
+                    sourceLabel: 'En cours',
+                    workdocId: String(r.id || ''),
+                    title,
+                    date,
+                    updatedAt,
+                    lastAccessAt: _toTimestamp(r.lastAccessAt, 0),
+                    slideCount: Number(r.slideCount) || 0,
+                    tags: [...new Set(['workdoc', ...(Array.isArray(r.tags) ? r.tags : []), ...meta.tags])],
+                    rawData,
+                };
+            });
+    }
+
     function loadLocalDecks() {
         const seen = new Set();
         const merged = [];
         const add = entry => {
-            const key = `${entry.title}::${entry.slideCount}`;
+            const key = `${entry.source}:${entry.title}::${entry.slideCount}`;
             if (seen.has(key)) return;
             seen.add(key);
             merged.push(entry);
         };
         readRecentDecks().forEach(add);
         readLibraryDecks().forEach(add);
+        readWorkdocs().forEach(add);
         return merged;
+    }
+
+    function _syncLocalTagOptions() {
+        const select = document.getElementById('local-tag');
+        if (!select) return;
+        const tags = [...new Set(_localDecks.flatMap(deck => Array.isArray(deck.tags) ? deck.tags : []))]
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+        const prev = _localFilters.tag;
+        select.innerHTML = `<option value=\"\">Tous les tags</option>${tags.map(tag => `<option value=\"${escAttr(tag)}\">${esc(tag)}</option>`).join('')}`;
+        if (prev && tags.includes(prev)) select.value = prev;
+        else _localFilters.tag = '';
+    }
+
+    function _applyLocalFilters() {
+        const q = String(_localFilters.search || '').trim().toLowerCase();
+        const tag = String(_localFilters.tag || '').trim();
+        const sort = String(_localFilters.sort || 'updated-desc');
+        const filtered = _localDecks.filter(deck => {
+            if (tag && !(Array.isArray(deck.tags) && deck.tags.includes(tag))) return false;
+            if (!q) return true;
+            const haystack = `${deck.title} ${deck.sourceLabel || ''} ${(deck.tags || []).join(' ')}`.toLowerCase();
+            return haystack.includes(q);
+        });
+        filtered.sort((a, b) => {
+            if (sort === 'updated-asc') return (a.updatedAt || 0) - (b.updatedAt || 0);
+            if (sort === 'title-asc') return String(a.title || '').localeCompare(String(b.title || ''), 'fr', { sensitivity: 'base' });
+            if (sort === 'slides-desc') return (b.slideCount || 0) - (a.slideCount || 0);
+            return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
+        return filtered;
+    }
+
+    function _touchDeckAccess(deck) {
+        if (!deck) return;
+        const now = Date.now();
+        if (deck.source === 'recent') {
+            const recents = storageGetJSON(RECENT_KEY, []);
+            if (Array.isArray(recents) && recents[deck.sourceIndex]) {
+                recents[deck.sourceIndex].lastAccessAt = now;
+                recents[deck.sourceIndex].updatedAt = now;
+                storageSetJSON(RECENT_KEY, recents);
+            }
+            return;
+        }
+        if (deck.source === 'library') {
+            const library = storageGetJSON(LOCAL_KEY, []);
+            if (Array.isArray(library) && library[deck.sourceIndex]) {
+                library[deck.sourceIndex].lastAccessAt = now;
+                library[deck.sourceIndex].updatedAt = now;
+                storageSetJSON(LOCAL_KEY, library);
+            }
+            return;
+        }
+        if (deck.source === 'workdoc') {
+            const docs = storageGetJSON(WORKDOCS_KEY, []);
+            if (Array.isArray(docs) && docs[deck.sourceIndex]) {
+                docs[deck.sourceIndex].lastAccessAt = now;
+                docs[deck.sourceIndex].updatedAt = now;
+                storageSetJSON(WORKDOCS_KEY, docs);
+            }
+        }
     }
 
     function openViewerFile(file) {
@@ -733,11 +914,16 @@
     function openDeckFromLocal(idx, mode) {
         const deck = _localDecks[idx];
         if (!deck || !deck.rawData) return;
+        _touchDeckAccess(deck);
         storageSetRaw(DRAFT_KEY, deck.rawData);
         if (mode === 'viewer') {
             window.open('viewer.html?file=__draft__', '_blank');
+            _localDecks = loadLocalDecks();
+            renderLocalDecks();
             return;
         }
+        _localDecks = loadLocalDecks();
+        renderLocalDecks();
         location.href = 'editor.html';
     }
 
@@ -758,6 +944,12 @@
             if (Array.isArray(library) && library[deck.sourceIndex]) {
                 library.splice(deck.sourceIndex, 1);
                 storageSetJSON(LOCAL_KEY, library);
+            }
+        } else if (deck.source === 'workdoc') {
+            const docs = storageGetJSON(WORKDOCS_KEY, []);
+            if (Array.isArray(docs) && docs[deck.sourceIndex]) {
+                docs.splice(deck.sourceIndex, 1);
+                storageSetJSON(WORKDOCS_KEY, docs);
             }
         }
 
@@ -817,36 +1009,43 @@
 
     function renderLocalDecks() {
         const host = document.getElementById('local-grid');
-        document.getElementById('local-count').textContent = `${_localDecks.length} entrée${_localDecks.length > 1 ? 's' : ''}`;
+        _syncLocalTagOptions();
+        const rows = _applyLocalFilters();
+        document.getElementById('local-count').textContent = rows.length === _localDecks.length
+            ? `${rows.length} entrée${rows.length > 1 ? 's' : ''}`
+            : `${rows.length}/${_localDecks.length} entrées`;
 
-        if (!_localDecks.length) {
+        if (!rows.length) {
             host.innerHTML = `
                 <div class="empty-state">
                     <strong>Aucune présentation locale</strong>
-                    Crée une présentation, exporte-la, ou ouvre un fichier <code>.json</code> pour commencer.
+                    Ajuste les filtres ou crée/importe une présentation.
                 </div>
             `;
             return;
         }
 
-        host.innerHTML = `<div class="pres-grid">${_localDecks.map((deck, idx) => `
+        host.innerHTML = `<div class="pres-grid">${rows.map((deck, idx) => `
             <article class="pres-card">
                 <div class="pres-cover" style="--cover:${themeColor('dark')}">
-                    <span class="cover-kicker">${deck.source === 'recent' ? 'Récente' : 'Bibliothèque'}</span>
+                    <span class="cover-kicker">${deck.sourceLabel || (deck.source === 'recent' ? 'Récente' : 'Bibliothèque')}</span>
                     <span class="cover-icon" aria-hidden="true">${icon('slide')}</span>
                 </div>
                 <div class="pres-content">
-                    <h3 class="pres-title">${deck.title}</h3>
+                    <h3 class="pres-title">${esc(deck.title)}</h3>
                     <div class="pres-meta">
-                        <span class="chip">${icon('count')} ${deck.slideCount || '?'} slides</span>
-                        <span class="chip">${icon('clock')} ${deck.date || 'date inconnue'}</span>
+                        <span class="chip">${icon('count')} ${Number(deck.slideCount) || '?'} slides</span>
+                        <span class="chip">${icon('clock')} ${deck.updatedAt ? new Date(deck.updatedAt).toLocaleDateString('fr-FR') : (deck.date || 'date inconnue')}</span>
                     </div>
+                    ${(deck.tags || []).length
+                        ? `<div class="pres-meta">${deck.tags.slice(0, 2).map(tag => `<span class=\"chip\">${esc(tag)}</span>`).join('')}</div>`
+                        : ''}
                     <div class="pres-actions">
-                        <button type="button" class="card-btn primary" data-action="present-local" data-local-index="${idx}">${icon('play')} Présenter</button>
-                        <button type="button" class="card-btn" data-action="edit-local" data-local-index="${idx}">${icon('edit')} Éditer</button>
+                        <button type="button" class="card-btn primary" data-action="present-local" data-local-id="${escAttr(deck.source + ':' + deck.sourceIndex)}">${icon('play')} Présenter</button>
+                        <button type="button" class="card-btn" data-action="edit-local" data-local-id="${escAttr(deck.source + ':' + deck.sourceIndex)}">${icon('edit')} Éditer</button>
                     </div>
                     <div class="pres-actions" style="grid-template-columns: 1fr; margin-top: 0.45rem;">
-                        <button type="button" class="card-btn warn" data-action="remove-local" data-local-index="${idx}">${icon('trash')} Retirer de la liste</button>
+                        <button type="button" class="card-btn warn" data-action="remove-local" data-local-id="${escAttr(deck.source + ':' + deck.sourceIndex)}">${icon('trash')} Retirer de la liste</button>
                     </div>
                 </div>
             </article>
@@ -869,9 +1068,16 @@
                 const file = e.target.files?.[0];
                 if (!file) return;
                 const text = await file.text();
-                const data = JSON.parse(text);
-                if (!Array.isArray(data.slides)) throw new Error('Format invalide');
-                storageSetRaw(DRAFT_KEY, text);
+                if (window.OEIImportPipeline?.importFromText) {
+                    const result = await window.OEIImportPipeline.importFromText(text);
+                    const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name || 'Fichier JSON' });
+                    if (!ok) return;
+                    storageSetRaw(DRAFT_KEY, JSON.stringify(result.data));
+                } else {
+                    const data = JSON.parse(text);
+                    if (!Array.isArray(data.slides)) throw new Error('Format invalide');
+                    storageSetRaw(DRAFT_KEY, text);
+                }
                 location.href = 'editor.html';
             } catch (err) {
                 await OEIDialog.alert('Erreur : ' + (err?.message || 'fichier invalide'));
@@ -882,13 +1088,28 @@
 
     document.getElementById('btn-toggle-theme').addEventListener('click', toggleTheme);
     document.getElementById('btn-open-file').addEventListener('click', onOpenFile);
+    document.getElementById('local-search')?.addEventListener('input', e => {
+        _localFilters.search = String(e.target.value || '');
+        renderLocalDecks();
+    });
+    document.getElementById('local-sort')?.addEventListener('change', e => {
+        _localFilters.sort = String(e.target.value || 'updated-desc');
+        renderLocalDecks();
+    });
+    document.getElementById('local-tag')?.addEventListener('change', e => {
+        _localFilters.tag = String(e.target.value || '');
+        renderLocalDecks();
+    });
 
     document.addEventListener('click', e => {
         const target = e.target.closest('[data-action]');
         if (!target) return;
         const action = target.dataset.action;
         const exampleIdx = Number(target.dataset.exampleIndex);
-        const localIdx = Number(target.dataset.localIndex);
+        const localId = String(target.dataset.localId || '');
+        const localIdx = localId
+            ? _localDecks.findIndex(deck => `${deck.source}:${deck.sourceIndex}` === localId)
+            : Number(target.dataset.localIndex);
 
         if (action === 'present-example' && Number.isFinite(exampleIdx) && EXAMPLES[exampleIdx]) {
             openViewerFile(EXAMPLES[exampleIdx].file);

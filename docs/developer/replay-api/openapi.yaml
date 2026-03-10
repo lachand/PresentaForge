@@ -101,6 +101,33 @@ paths:
                   error:
                     type: string
                 required: [error]
+  /api/replay/dry-run:
+    post:
+      summary: Valider les entrées replay sans générer le HTML
+      operationId: dryRunReplay
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplayBuildRequest'
+      responses:
+        '200':
+          description: Entrées valides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayDryRunResponse'
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required: [error]
 components:
   schemas:
     ReplayBuildRequest:
@@ -146,6 +173,29 @@ components:
               minimum: 0
           required: [slideCount, eventCount, audioTrackCount, durationMs]
       required: [html, stats]
+    ReplayDryRunResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        stats:
+          type: object
+          properties:
+            slideCount:
+              type: integer
+              minimum: 0
+            eventCount:
+              type: integer
+              minimum: 0
+            audioTrackCount:
+              type: integer
+              minimum: 0
+            durationMs:
+              type: integer
+              minimum: 0
+          required: [slideCount, eventCount, audioTrackCount, durationMs]
+      required: [ok, stats]
     SlidesData:
       type: object
       properties:
