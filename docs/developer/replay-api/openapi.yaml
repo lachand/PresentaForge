@@ -128,8 +128,110 @@ paths:
                   error:
                     type: string
                 required: [error]
+  /api/slides/build:
+    post:
+      summary: Générer un visualiseur de slides HTML autonome
+      description: Prend uniquement les données de slides et génère un HTML standalone auto-suffisant avec navigation (prev/next, clavier, fragments, plein écran). Aucun audio ni timeline.
+      operationId: buildSlides
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlidesBuildRequest'
+            examples:
+              minimal:
+                summary: Présentation minimaliste
+                value:
+                  slidesData:
+                    metadata:
+                      title: Introduction à Python
+                    slides:
+                      - type: title
+                        title: Introduction à Python
+                      - type: bullets
+                        title: Plan
+                        bullets: ["Variables", "Fonctions", "Boucles"]
+      responses:
+        '200':
+          description: HTML standalone généré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlidesBuildResponse'
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required: [error]
+        '415':
+          description: Content-Type incorrect (attendre application/json)
+  /api/slides/dry-run:
+    post:
+      summary: Valider les données de slides sans générer le HTML
+      operationId: dryRunSlides
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlidesBuildRequest'
+      responses:
+        '200':
+          description: Données valides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                  stats:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      slideCount:
+                        type: integer
+                required: [ok, stats]
+        '400':
+          description: Requête invalide
 components:
   schemas:
+    SlidesBuildRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        slidesData:
+          $ref: '#/components/schemas/SlidesData'
+        title:
+          type: string
+          maxLength: 200
+          description: Titre à afficher (prend le dessus sur slidesData.metadata.title)
+      required: [slidesData]
+    SlidesBuildResponse:
+      type: object
+      properties:
+        html:
+          type: string
+          description: HTML standalone complet avec navigation slides intégrée
+        stats:
+          type: object
+          properties:
+            title:
+              type: string
+            slideCount:
+              type: integer
+            generatedAt:
+              type: string
+              format: date-time
+      required: [html, stats]
     ReplayBuildRequest:
       type: object
       additionalProperties: false

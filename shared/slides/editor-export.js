@@ -554,6 +554,7 @@ async function exportPDF() {
             totalSlides: data.slides.length,
             chapterNumbers: SlidesRenderer._buildChapterNumbers(data.slides, data.autoNumberChapters),
             typography: SlidesShared.resolveTypographyDefaults(data.typography),
+            includeNotes: false, // Vue étudiant : pas de notes présentateur
         };
 
         for (let i = 0; i < data.slides.length; i++) {
@@ -620,6 +621,7 @@ function _exportPDFPrint() {
         totalSlides: data.slides.length,
         chapterNumbers: SlidesRenderer._buildChapterNumbers(data.slides, data.autoNumberChapters),
         typography: SlidesShared.resolveTypographyDefaults(data.typography),
+        includeNotes: false, // Vue étudiant : pas de notes présentateur
     };
     const slidesHTML = data.slides.map((slide, i) =>
         `<div class="pdf-slide">${SlidesRenderer.renderSlide(slide, i, pdfOpts)}</div>`

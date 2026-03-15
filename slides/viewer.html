@@ -44,6 +44,8 @@
         <button class="wb-btn active" id="wb-pen" title="Stylo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h6"/><path d="M14.5 3.5l6 6L9 21H3v-6z"/></svg></button>
         <button class="wb-btn" id="wb-highlighter" title="Surligneur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l4 4"/><path d="M4 20l6-1 9-9-5-5-9 9z"/><path d="M3 21h7"/></svg></button>
         <button class="wb-btn" id="wb-eraser" title="Gomme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 21h13"/><path d="M5.2 15.2L12 8.4a2 2 0 0 1 2.8 0l4.8 4.8a2 2 0 0 1 0 2.8L14 21H8a2 2 0 0 1-1.4-.6l-1.4-1.4a2 2 0 0 1 0-2.8z"/></svg></button>
+        <button class="wb-btn" id="wb-select" title="Sélectionner / Supprimer un trait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-7 1-4 7z"/></svg></button>
+        <button class="wb-btn hidden" id="wb-delete" title="Supprimer le trait sélectionné (Suppr)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         <div class="wb-separator"></div>
         <button class="wb-btn" id="wb-rect" title="Rectangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></button>
         <button class="wb-btn" id="wb-circle" title="Cercle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/></svg></button>
@@ -375,8 +377,14 @@
     <script src="../shared/slides/realtime-contract.js?v=3"></script>
     <script src="../shared/slides/network-session.js?v=2"></script>
     <script src="../shared/slides/background-utils.js?v=1"></script>
+    <script src="../shared/slides/slides-special-math-runtime.js?v=1"></script>
+    <script src="../shared/slides/slides-special-code-runtime.js?v=1"></script>
+    <script src="../shared/slides/slides-special-quiz-runtime.js?v=1"></script>
+    <script src="../shared/slides/slides-special-live-runtime.js?v=1"></script>
     <script src="../shared/slides/slides-special-runtime.js?v=1"></script>
-    <script src="../shared/slides/slides-core.js?v=28"></script>
+    <script src="../shared/slides/slides-core.js?v=30"></script>
+    <script src="../shared/slides/slides-themes.js?v=1"></script>
+    <script src="../shared/slides/slides-renderer-canvas.js?v=1"></script>
     <script src="../shared/slides/ui-icons.js?v=2"></script>
     <script src="../vendor/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script type="module" src="viewer-main.js?v=15"></script>

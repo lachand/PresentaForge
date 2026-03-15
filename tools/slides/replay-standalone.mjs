@@ -8,6 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SLIDES_CORE_PATH = path.join(REPO_ROOT, 'shared', 'slides', 'slides-core.js');
+const SLIDES_THEMES_PATH = path.join(REPO_ROOT, 'shared', 'slides', 'slides-themes.js');
 const DEFAULT_SLIDE_MS = 8000;
 const LEVEL_VALUES = [1, 2, 3, 4];
 
@@ -434,6 +435,7 @@ function escHtml(value) {
 
 export async function buildReplayStandaloneHtml(payload) {
     const slidesCoreCode = await fs.readFile(SLIDES_CORE_PATH, 'utf8');
+    const slidesThemesCode = await fs.readFile(SLIDES_THEMES_PATH, 'utf8');
     const payloadJson = JSON.stringify(payload).replace(/</g, '\\u003c');
     const safeTitle = escHtml(payload?.title || 'Replay de session');
 
@@ -513,6 +515,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
 </div>
 <audio id="rp-audio" preload="auto" style="display:none"></audio>
 <script>${slidesCoreCode}</script>
+<script>${slidesThemesCode}</script>
 <script id="rp-data" type="application/json">${payloadJson}</script>
 <script>
 (function(){
@@ -1025,6 +1028,193 @@ async function main() {
     console.log(`Slides: ${Array.isArray(payload.slidesData?.slides) ? payload.slidesData.slides.length : 0}`);
     console.log(`Événements timeline: ${Array.isArray(payload.session?.events) ? payload.session.events.length : 0}`);
     console.log(`Pistes audio: ${Array.isArray(payload.audioTracks) ? payload.audioTracks.length : 0}`);
+}
+
+/**
+ * Build a self-contained slide viewer HTML from slides data only.
+ * No audio, no session replay — pure slide navigation.
+ * @param {{ slidesData: object, title?: string }} options
+ * @returns {Promise<string>} standalone HTML
+ */
+export async function buildSlidesStandaloneHtml({ slidesData, title = '' }) {
+    const slidesCoreCode = await fs.readFile(SLIDES_CORE_PATH, 'utf8');
+    const slidesThemesCode = await fs.readFile(SLIDES_THEMES_PATH, 'utf8');
+
+    const normalizedSlidesData = sanitizeSlidesDataWithLevels(slidesData);
+    const slides = Array.isArray(normalizedSlidesData?.slides) ? normalizedSlidesData.slides : [];
+    const resolvedTitle = String(title || normalizedSlidesData?.metadata?.title || 'Présentation');
+    const safeTitle = escHtml(resolvedTitle);
+    const slidesDataJson = JSON.stringify(normalizedSlidesData).replace(/</g, '\\u003c');
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${safeTitle}</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#0b1120;color:#e2e8f0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column}
+.sv-app{width:min(1400px,100%);margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sv-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.sv-title{font-size:1rem;font-weight:700;line-height:1.2}
+.sv-stage-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#020617;border:1px solid rgba(148,163,184,.35);border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(2,6,23,.45)}
+.sv-reveal{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:top left}
+.sv-reveal .slides{position:relative;width:100%;height:100%}
+.sv-reveal .slides > section{position:absolute;inset:0}
+.sv-controls{display:flex;align-items:center;gap:8px}
+.sv-controls-right{margin-left:auto}
+.sv-btn{height:34px;border-radius:8px;border:1px solid rgba(148,163,184,.4);background:#0f172a;color:#e2e8f0;padding:0 12px;font-size:.78rem;cursor:pointer}
+.sv-btn:hover{background:#111c34}
+.sv-btn svg{width:14px;height:14px;vertical-align:-2px}
+.sv-count{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:.74rem;color:#cbd5e1;min-width:80px;text-align:center}
+.fragment{opacity:0;visibility:hidden;transition:opacity .2s ease}
+.fragment.visible{opacity:1;visibility:inherit}
+</style>
+<style id="sv-theme"></style>
+</head>
+<body>
+<div class="sv-app">
+  <div class="sv-head">
+    <div class="sv-title" id="sv-title"></div>
+    <div style="font-size:.72rem;color:#94a3b8" id="sv-meta"></div>
+  </div>
+  <div class="sv-stage-wrap" id="sv-stage-wrap">
+    <div class="reveal sv-reveal" id="sv-reveal"><div class="slides" id="sv-slide-root"></div></div>
+  </div>
+  <div class="sv-controls">
+    <button class="sv-btn" id="sv-prev" type="button" title="Slide précédente (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button class="sv-btn" id="sv-next" type="button" title="Slide suivante (→ ou Espace)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <div class="sv-count" id="sv-count"></div>
+    <div class="sv-controls-right">
+      <button class="sv-btn" id="sv-fullscreen" type="button" title="Plein écran">&#x26F6;</button>
+    </div>
+  </div>
+</div>
+<script>${slidesCoreCode}</script>
+<script>${slidesThemesCode}</script>
+<script id="sv-data" type="application/json">${slidesDataJson}</script>
+<script>
+(function(){
+  var slidesData;
+  try { slidesData = JSON.parse((document.getElementById('sv-data')||{}).textContent||'{}'); }
+  catch(_){ slidesData = {}; }
+
+  var slides = Array.isArray(slidesData.slides) ? slidesData.slides : [];
+  var totalSlides = slides.length;
+  var currentIndex = 0;
+
+  var stageWrap = document.getElementById('sv-stage-wrap');
+  var reveal = document.getElementById('sv-reveal');
+  var slideRoot = document.getElementById('sv-slide-root');
+  var prevBtn = document.getElementById('sv-prev');
+  var nextBtn = document.getElementById('sv-next');
+  var countEl = document.getElementById('sv-count');
+  var titleEl = document.getElementById('sv-title');
+  var metaEl = document.getElementById('sv-meta');
+  var themeEl = document.getElementById('sv-theme');
+  var fsBtn = document.getElementById('sv-fullscreen');
+
+  titleEl.textContent = String(slidesData.metadata && slidesData.metadata.title || '');
+  var level = String(slidesData.metadata && slidesData.metadata.level || '').trim();
+  metaEl.textContent = totalSlides + ' slide' + (totalSlides > 1 ? 's' : '') + (level ? ' \u00b7 Niveau\u00a0' + level : '');
+
+  var allThemes = (window.SlidesThemes && window.SlidesThemes.list) ? window.SlidesThemes.list()
+    : (window.SlidesThemes && window.SlidesThemes.BUILT_IN ? window.SlidesThemes.BUILT_IN : {});
+  var themeInput = (typeof slidesData.theme === 'string')
+    ? (allThemes[slidesData.theme] || allThemes.dark || slidesData.theme)
+    : (slidesData.theme || allThemes.dark || {});
+  try {
+    themeEl.textContent = (window.SlidesThemes && window.SlidesThemes.generateCSS)
+      ? window.SlidesThemes.generateCSS(themeInput) : '';
+  } catch(_){ themeEl.textContent = ''; }
+
+  var replayOpts = (window.SlidesShared && window.SlidesShared.buildRenderOptions)
+    ? window.SlidesShared.buildRenderOptions(slidesData, { showSlideNumber: false, footerText: null })
+    : { showSlideNumber: false, footerText: null, totalSlides: totalSlides,
+        chapterNumbers: {}, typography: (window.SlidesShared && window.SlidesShared.resolveTypographyDefaults)
+          ? window.SlidesShared.resolveTypographyDefaults(slidesData.typography) : {} };
+
+  function scaleReveal() {
+    var w = stageWrap.clientWidth || 1280;
+    reveal.style.transform = 'scale(' + (w / 1280) + ')';
+  }
+  scaleReveal();
+  new ResizeObserver(scaleReveal).observe(stageWrap);
+
+  var slideCache = new Map();
+  function renderSlideHtml(index) {
+    if (slideCache.has(index)) return slideCache.get(index);
+    var html = '';
+    try {
+      html = (window.SlidesRenderer && window.SlidesRenderer.renderSlide)
+        ? window.SlidesRenderer.renderSlide(slides[index] || {}, index, replayOpts)
+        : '<section><h2>Slide ' + (index + 1) + '</h2></section>';
+    } catch(_) { html = '<section><h2>Slide ' + (index + 1) + '</h2></section>'; }
+    slideCache.set(index, html);
+    return html;
+  }
+
+  function getFragments(el) {
+    return Array.from(el.querySelectorAll('.fragment'));
+  }
+  var fragmentIndex = -1;
+
+  function showSlide(index) {
+    if (index < 0 || index >= totalSlides) return;
+    currentIndex = index;
+    slideRoot.innerHTML = renderSlideHtml(currentIndex);
+    if (window.SlidesRenderer && window.SlidesRenderer.mountWidgets) {
+      try { window.SlidesRenderer.mountWidgets(slideRoot); } catch(_) {}
+    }
+    fragmentIndex = -1;
+    countEl.textContent = (currentIndex + 1) + ' / ' + totalSlides;
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === totalSlides - 1 && fragmentIndex >= getFragments(slideRoot).length - 1;
+  }
+
+  function advance() {
+    var frags = getFragments(slideRoot);
+    var nextFrag = fragmentIndex + 1;
+    if (nextFrag < frags.length) {
+      frags[nextFrag].classList.add('visible');
+      fragmentIndex = nextFrag;
+    } else if (currentIndex < totalSlides - 1) {
+      showSlide(currentIndex + 1);
+    }
+  }
+
+  function retreat() {
+    var frags = getFragments(slideRoot);
+    if (fragmentIndex >= 0) {
+      frags[fragmentIndex].classList.remove('visible');
+      fragmentIndex--;
+    } else if (currentIndex > 0) {
+      showSlide(currentIndex - 1);
+      var newFrags = getFragments(slideRoot);
+      newFrags.forEach(function(f){ f.classList.add('visible'); });
+      fragmentIndex = newFrags.length - 1;
+    }
+  }
+
+  prevBtn.addEventListener('click', retreat);
+  nextBtn.addEventListener('click', advance);
+  fsBtn.addEventListener('click', function() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function(){});
+    else document.exitFullscreen().catch(function(){});
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); advance(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); retreat(); }
+  });
+
+  showSlide(0);
+})();
+</script>
+</body>
+</html>`;
 }
 
 const cliEntryUrl = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : '';

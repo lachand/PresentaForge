@@ -61,7 +61,7 @@
  */
 export function createWhiteboardController(deps) {
     const WB_SHAPE_TOOLS = ['rect', 'circle', 'arrow'];
-    const WB_ALL_TOOLS = ['pen', 'highlighter', 'eraser', 'rect', 'circle', 'arrow'];
+    const WB_ALL_TOOLS = ['pen', 'highlighter', 'eraser', 'rect', 'circle', 'arrow', 'select'];
     const PERSIST_VERSION = 1;
     const BASE_WIDTH = 1280;
     const BASE_HEIGHT = 720;
@@ -81,10 +81,12 @@ export function createWhiteboardController(deps) {
         startX: 0,
         startY: 0,
         currentPath: null,
+        eraserSnapshot: /** @type {ImageData|null} */ (null),
         drawings: /** @type {Record<string, WhiteboardCommand[]>} */ ({}),
         currentSlide: 0,
         persistTimer: null,
         drawRect: /** @type {WhiteboardDrawRect} */ ({ left: 0, top: 0, width: BASE_WIDTH, height: BASE_HEIGHT }),
+        selectedCommandIdx: -1,
     };
     const canPersist = !!deps.storageKey && typeof deps.storageGetJSON === 'function' && typeof deps.storageSetJSON === 'function';
     let initialized = false;
@@ -183,12 +185,16 @@ export function createWhiteboardController(deps) {
         document.getElementById('wb-rect')?.addEventListener('click', () => setTool('rect'));
         document.getElementById('wb-circle')?.addEventListener('click', () => setTool('circle'));
         document.getElementById('wb-arrow')?.addEventListener('click', () => setTool('arrow'));
+        document.getElementById('wb-select')?.addEventListener('click', () => setTool('select'));
+        document.getElementById('wb-delete')?.addEventListener('click', deleteSelected);
         document.querySelectorAll('.wb-color-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.wb-color-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 wb.color = /** @type {HTMLElement} */ (btn).dataset.color || '#ffffff';
-                setTool('pen');
+                // Only switch to pen if we were on eraser or select — keep highlighter/shapes
+                const keepTools = ['pen', 'highlighter', 'rect', 'circle', 'arrow'];
+                if (!keepTools.includes(wb.tool)) setTool('pen');
             });
         });
         document.getElementById('wb-size')?.addEventListener('input', e => {
@@ -197,6 +203,12 @@ export function createWhiteboardController(deps) {
         document.getElementById('wb-clear')?.addEventListener('click', clearCurrent);
         document.getElementById('wb-close')?.addEventListener('click', toggle);
         document.getElementById('btn-whiteboard')?.addEventListener('click', toggle);
+        document.addEventListener('keydown', e => {
+            if (!wb.active) return;
+            if ((e.key === 'Delete' || e.key === 'Backspace') && wb.tool === 'select') {
+                deleteSelected();
+            }
+        });
 
         emitSyncState('init', false);
     }
@@ -231,13 +243,149 @@ export function createWhiteboardController(deps) {
             ctx.globalCompositeOperation = 'source-over';
             ctx.strokeStyle = color;
             ctx.lineWidth = size * 2.5;
-            ctx.globalAlpha = 0.35;
+            ctx.globalAlpha = 0.25;
             return;
         }
         ctx.globalCompositeOperation = 'source-over';
         ctx.strokeStyle = color;
         ctx.lineWidth = size;
         ctx.globalAlpha = 1;
+    }
+
+    /**
+     * Draw a smooth Bézier path through the given points.
+     * Uses midpoint quadratic curves so strokes look fluid instead of polygonal.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {{ x: number, y: number }[]} pts
+     */
+    function drawSmoothPath(ctx, pts) {
+        if (pts.length < 2) return;
+        ctx.moveTo(pts[0].x, pts[0].y);
+        if (pts.length === 2) {
+            ctx.lineTo(pts[1].x, pts[1].y);
+            return;
+        }
+        for (let i = 1; i < pts.length - 1; i++) {
+            const mx = (pts[i].x + pts[i + 1].x) / 2;
+            const my = (pts[i].y + pts[i + 1].y) / 2;
+            ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+        }
+        ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    }
+
+    /**
+     * Point-to-segment distance (2D).
+     * @param {number} px @param {number} py
+     * @param {number} ax @param {number} ay
+     * @param {number} bx @param {number} by
+     * @returns {number}
+     */
+    function distToSegment(px, py, ax, ay, bx, by) {
+        const dx = bx - ax;
+        const dy = by - ay;
+        const lenSq = dx * dx + dy * dy;
+        if (lenSq === 0) return Math.hypot(px - ax, py - ay);
+        const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+        return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+    }
+
+    /**
+     * Hit-test stored commands in canonical space. Returns last (topmost) matching index or -1.
+     * @param {WhiteboardCommand[]} commands
+     * @param {number} cx @param {number} cy
+     * @returns {number}
+     */
+    function hitTestCommands(commands, cx, cy) {
+        const BASE_THRESHOLD = 10;
+        for (let i = commands.length - 1; i >= 0; i--) {
+            const cmd = commands[i];
+            const threshold = BASE_THRESHOLD + (cmd.size || 3);
+            if (cmd.kind === 'stroke') {
+                const pts = cmd.points;
+                for (let j = 0; j < pts.length - 1; j++) {
+                    if (distToSegment(cx, cy, pts[j].x, pts[j].y, pts[j + 1].x, pts[j + 1].y) <= threshold) {
+                        return i;
+                    }
+                }
+            } else if (cmd.kind === 'shape') {
+                if (cmd.shape === 'rect') {
+                    const x1 = Math.min(cmd.startX, cmd.endX);
+                    const y1 = Math.min(cmd.startY, cmd.endY);
+                    const x2 = Math.max(cmd.startX, cmd.endX);
+                    const y2 = Math.max(cmd.startY, cmd.endY);
+                    const dLeft   = distToSegment(cx, cy, x1, y1, x1, y2);
+                    const dRight  = distToSegment(cx, cy, x2, y1, x2, y2);
+                    const dTop    = distToSegment(cx, cy, x1, y1, x2, y1);
+                    const dBottom = distToSegment(cx, cy, x1, y2, x2, y2);
+                    if (Math.min(dLeft, dRight, dTop, dBottom) <= threshold) return i;
+                } else if (cmd.shape === 'circle') {
+                    const r = Math.hypot(cmd.endX - cmd.startX, cmd.endY - cmd.startY);
+                    if (Math.abs(Math.hypot(cx - cmd.startX, cy - cmd.startY) - r) <= threshold) return i;
+                } else if (cmd.shape === 'arrow') {
+                    if (distToSegment(cx, cy, cmd.startX, cmd.startY, cmd.endX, cmd.endY) <= threshold) return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Draw a selection highlight for the command at index on the preview canvas.
+     * @param {number} idx
+     */
+    function drawSelectionHighlight(idx) {
+        if (!wb.pCtx || !wb.preview || idx < 0) return;
+        const commands = storageGetCommands(wb.currentSlide);
+        const cmd = commands[idx];
+        if (!cmd) return;
+        wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+        wb.pCtx.save();
+        wb.pCtx.translate(wb.drawRect.left, wb.drawRect.top);
+        wb.pCtx.scale(wb.drawRect.width / BASE_WIDTH, wb.drawRect.height / BASE_HEIGHT);
+        // Draw thick semi-transparent cyan halo
+        wb.pCtx.globalAlpha = 0.45;
+        wb.pCtx.globalCompositeOperation = 'source-over';
+        wb.pCtx.strokeStyle = '#00e5ff';
+        wb.pCtx.lineCap = 'round';
+        wb.pCtx.lineJoin = 'round';
+        if (cmd.kind === 'stroke') {
+            wb.pCtx.lineWidth = (cmd.size + 8) * (cmd.tool === 'highlighter' ? 2.5 : 1);
+            wb.pCtx.beginPath();
+            drawSmoothPath(wb.pCtx, cmd.points);
+            wb.pCtx.stroke();
+        } else if (cmd.kind === 'shape') {
+            wb.pCtx.lineWidth = cmd.size + 8;
+            if (cmd.shape === 'rect') {
+                wb.pCtx.strokeRect(cmd.startX, cmd.startY, cmd.endX - cmd.startX, cmd.endY - cmd.startY);
+            } else if (cmd.shape === 'circle') {
+                const r = Math.hypot(cmd.endX - cmd.startX, cmd.endY - cmd.startY);
+                wb.pCtx.beginPath();
+                wb.pCtx.arc(cmd.startX, cmd.startY, r, 0, Math.PI * 2);
+                wb.pCtx.stroke();
+            } else if (cmd.shape === 'arrow') {
+                drawArrow(wb.pCtx, cmd.startX, cmd.startY, cmd.endX, cmd.endY, cmd.size + 8);
+            }
+        }
+        wb.pCtx.restore();
+        // Show delete button
+        document.getElementById('wb-delete')?.classList.remove('hidden');
+    }
+
+    function clearSelection() {
+        if (wb.selectedCommandIdx < 0) return;
+        wb.selectedCommandIdx = -1;
+        if (wb.pCtx && wb.preview) wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+        document.getElementById('wb-delete')?.classList.add('hidden');
+    }
+
+    function deleteSelected() {
+        if (wb.selectedCommandIdx < 0) return;
+        const commands = storageGetCommands(wb.currentSlide);
+        commands.splice(wb.selectedCommandIdx, 1);
+        clearSelection();
+        renderSlide(wb.currentSlide);
+        persistSoon();
+        emitSyncState('delete', true);
     }
 
     function drawArrow(ctx, x1, y1, x2, y2, lineWidth) {
@@ -261,17 +409,11 @@ export function createWhiteboardController(deps) {
         if (!command || typeof command !== 'object') return;
         if (command.kind === 'stroke') {
             if (!Array.isArray(command.points) || command.points.length < 2) return;
-            const first = command.points[0];
             ctx.save();
             applyStrokeStyle(ctx, command.tool, command.color, command.size);
             ctx.beginPath();
-            ctx.moveTo(first.x, first.y);
-            for (let i = 1; i < command.points.length; i++) {
-                const p = command.points[i];
-                ctx.lineTo(p.x, p.y);
-            }
+            drawSmoothPath(ctx, command.points);
             ctx.stroke();
-            ctx.closePath();
             ctx.restore();
             return;
         }
@@ -324,6 +466,9 @@ export function createWhiteboardController(deps) {
         const commands = storageGetCommands(idx);
         commands.forEach(cmd => drawCommandInRect(wb.ctx, cmd, wb.drawRect));
         wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+        if (wb.selectedCommandIdx >= 0) {
+            drawSelectionHighlight(wb.selectedCommandIdx);
+        }
     }
 
     function resize() {
@@ -522,6 +667,7 @@ export function createWhiteboardController(deps) {
     }
 
     function setTool(tool) {
+        if (tool !== 'select') clearSelection();
         wb.tool = tool;
         document.querySelectorAll('.wb-btn').forEach(b => b.classList.remove('active'));
         const activeBtn = document.getElementById(`wb-${tool}`);
@@ -537,6 +683,21 @@ export function createWhiteboardController(deps) {
         const point = pointerToBasePoint(event, false);
         if (!point) return;
 
+        if (wb.tool === 'select') {
+            // Hit test in canonical space
+            const commands = storageGetCommands(wb.currentSlide);
+            const idx = hitTestCommands(commands, point.x, point.y);
+            if (idx !== wb.selectedCommandIdx) {
+                clearSelection();
+            }
+            wb.selectedCommandIdx = idx;
+            if (idx >= 0) {
+                drawSelectionHighlight(idx);
+            }
+            return;
+        }
+
+        clearSelection();
         wb.drawing = true;
         wb.startX = point.x;
         wb.startY = point.y;
@@ -550,11 +711,47 @@ export function createWhiteboardController(deps) {
                 size: wb.size,
                 points: [point],
             };
-            const vp = toViewportPoint(point, wb.drawRect);
-            applyStrokeStyle(wb.ctx, wb.currentPath.tool, wb.currentPath.color, wb.currentPath.size);
-            wb.ctx.beginPath();
-            wb.ctx.moveTo(vp.x, vp.y);
+            // Eraser: snapshot the main canvas so we can restore+redraw on every move
+            if (wb.tool === 'eraser' && wb.canvas) {
+                wb.eraserSnapshot = wb.ctx.getImageData(0, 0, wb.canvas.width, wb.canvas.height);
+            }
         }
+    }
+
+    /**
+     * Redraw the current in-progress stroke on the preview canvas using smooth Bézier curves.
+     * Called every pointermove — clears preview and redraws from scratch for smooth result.
+     */
+    function redrawLiveStroke() {
+        if (!wb.currentPath || !wb.pCtx || !wb.preview) return;
+        const pts = wb.currentPath.points;
+        if (pts.length < 2) return;
+
+        // Eraser: restore snapshot on main canvas then draw the eraser path there
+        if (wb.currentPath.tool === 'eraser' && wb.eraserSnapshot && wb.ctx && wb.canvas) {
+            wb.ctx.putImageData(wb.eraserSnapshot, 0, 0);
+            wb.ctx.save();
+            wb.ctx.translate(wb.drawRect.left, wb.drawRect.top);
+            wb.ctx.scale(wb.drawRect.width / BASE_WIDTH, wb.drawRect.height / BASE_HEIGHT);
+            applyStrokeStyle(wb.ctx, 'eraser', wb.currentPath.color, wb.currentPath.size);
+            wb.ctx.beginPath();
+            drawSmoothPath(wb.ctx, pts);
+            wb.ctx.stroke();
+            wb.ctx.restore();
+            wb.ctx.globalCompositeOperation = 'source-over';
+            return;
+        }
+
+        // Other strokes: draw on preview canvas
+        wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+        wb.pCtx.save();
+        wb.pCtx.translate(wb.drawRect.left, wb.drawRect.top);
+        wb.pCtx.scale(wb.drawRect.width / BASE_WIDTH, wb.drawRect.height / BASE_HEIGHT);
+        applyStrokeStyle(wb.pCtx, wb.currentPath.tool, wb.currentPath.color, wb.currentPath.size);
+        wb.pCtx.beginPath();
+        drawSmoothPath(wb.pCtx, pts);
+        wb.pCtx.stroke();
+        wb.pCtx.restore();
     }
 
     /**
@@ -584,10 +781,8 @@ export function createWhiteboardController(deps) {
 
         if (!wb.currentPath) return;
         wb.currentPath.points.push(point);
-        const vp = toViewportPoint(point, wb.drawRect);
-        applyStrokeStyle(wb.ctx, wb.currentPath.tool, wb.currentPath.color, wb.currentPath.size);
-        wb.ctx.lineTo(vp.x, vp.y);
-        wb.ctx.stroke();
+        // All strokes: clear preview and redraw smooth Bézier path from scratch
+        redrawLiveStroke();
     }
 
     /**
@@ -623,7 +818,13 @@ export function createWhiteboardController(deps) {
         if (wb.currentPath && wb.currentPath.points.length > 1) {
             wb.currentPath.points.push(point);
             storageGetCommands(wb.currentSlide).push(wb.currentPath);
-            wb.ctx.closePath();
+            // Commit: clear preview canvas, render final smooth stroke once on main canvas
+            wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+            // Eraser: main canvas already up-to-date from last redrawLiveStroke call
+            if (wb.currentPath.tool !== 'eraser') {
+                drawCommandInRect(wb.ctx, wb.currentPath, wb.drawRect);
+            }
+            wb.eraserSnapshot = null;
             wb.ctx.globalAlpha = 1;
             wb.ctx.globalCompositeOperation = 'source-over';
             persistSoon();
@@ -633,6 +834,7 @@ export function createWhiteboardController(deps) {
     }
 
     function clearCurrent() {
+        clearSelection();
         delete wb.drawings[String(wb.currentSlide)];
         renderSlide(wb.currentSlide);
         persistSoon();

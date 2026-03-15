@@ -17,8 +17,74 @@
         return elements.find(el => el && el.id === id) || null;
     };
 
+    // A connector goes "behind" when at least one anchor is 'center' (or conn.behind === true)
+    const _isBehindConnector = conn =>
+        conn.behind === true ||
+        conn.sourceAnchor === 'center' ||
+        conn.targetAnchor === 'center';
+
+    const _renderConnectorGroup = (conn, context, { pathsG, defs }) => {
+        const pathD = context.getConnectorPathData(conn);
+        if (!pathD) return false;
+
+        const documentRef = context.documentRef || root.document;
+        const elements = Array.isArray(context.elements) ? context.elements : [];
+        const selectedConnectorId = context.selectedConnectorId || null;
+        const getAnchorPos = context.getAnchorPos;
+        const esc = context.escapeHtml;
+
+        const style = conn.style || {};
+        const stroke = style.stroke || '#818cf8';
+        const strokeWidth = style.strokeWidth || 3;
+        const opacity = style.opacity != null ? style.opacity : 1;
+        const isSelected = conn.id === selectedConnectorId;
+
+        const markerEndId = 'cme-' + conn.id;
+        const markerStartId = 'cms-' + conn.id;
+        if (conn.arrowEnd) {
+            defs.innerHTML += `<marker id="${markerEndId}" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto" markerUnits="strokeWidth"><polygon points="0 0,10 3.5,0 7" fill="${stroke}"/></marker>`;
+        }
+        if (conn.arrowStart) {
+            defs.innerHTML += `<marker id="${markerStartId}" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto" markerUnits="strokeWidth"><polygon points="10 0,0 3.5,10 7" fill="${stroke}"/></marker>`;
+        }
+        const markerEnd = conn.arrowEnd ? `marker-end="url(#${markerEndId})"` : '';
+        const markerStart = conn.arrowStart ? `marker-start="url(#${markerStartId})"` : '';
+
+        const group = documentRef.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', 'conn-g' + (isSelected ? ' conn-selected' : ''));
+        group.dataset.connId = conn.id;
+        group.innerHTML = `<path class="conn-hit" d="${pathD}"/>`;
+        group.innerHTML += `<path class="conn-line-bg" d="${pathD}" fill="none" stroke="transparent" stroke-width="8"/>`;
+        const dashAttr = style.dashArray ? `stroke-dasharray="${style.dashArray}"` : '';
+        group.innerHTML += `<path class="conn-line" d="${pathD}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}" ${dashAttr} ${markerEnd} ${markerStart}/>`;
+
+        const source = resolveElement(elements, conn.sourceId);
+        const target = resolveElement(elements, conn.targetId);
+
+        if (conn.label && source && target) {
+            const p1 = getAnchorPos(source, conn.sourceAnchor);
+            const p2 = getAnchorPos(target, conn.targetAnchor);
+            const lx = (p1.x + p2.x) / 2;
+            const ly = (p1.y + p2.y) / 2;
+            const label = String(conn.label);
+            group.innerHTML += `<rect x="${lx - label.length * 4 - 4}" y="${ly - 11}" width="${label.length * 8 + 8}" height="22" rx="4" fill="var(--sl-slide-bg, #1a1d27)" opacity="0.85"/>`;
+            group.innerHTML += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${stroke}" font-size="13" font-family="var(--sl-font-body, system-ui)" style="pointer-events:none;">${esc(label)}</text>`;
+        }
+
+        if (isSelected && source && target) {
+            const p1 = getAnchorPos(source, conn.sourceAnchor);
+            const p2 = getAnchorPos(target, conn.targetAnchor);
+            group.innerHTML += `<circle cx="${p1.x}" cy="${p1.y}" r="5" fill="${stroke}" opacity="0.6" style="pointer-events:none;"/>`;
+            group.innerHTML += `<circle cx="${p2.x}" cy="${p2.y}" r="5" fill="${stroke}" opacity="0.6" style="pointer-events:none;"/>`;
+        }
+
+        pathsG.appendChild(group);
+        return true;
+    };
+
     const refreshConnectors = context => {
         const connOverlay = context?.connOverlay;
+        const connBackOverlay = context?.connBackOverlay || null;
         if (!connOverlay) return 0;
         const pathsG = connOverlay.querySelector?.('.conn-paths');
         const defs = connOverlay.querySelector?.('defs');
@@ -28,71 +94,29 @@
         if (!documentRef?.createElementNS) return 0;
 
         const connectors = Array.isArray(context.connectors) ? context.connectors : [];
-        const elements = Array.isArray(context.elements) ? context.elements : [];
-        const selectedConnectorId = context.selectedConnectorId || null;
-        const getConnectorPathData = typeof context.getConnectorPathData === 'function'
-            ? context.getConnectorPathData
-            : () => null;
-        const getAnchorPos = typeof context.getAnchorPos === 'function'
-            ? context.getAnchorPos
-            : () => ({ x: 0, y: 0 });
         const esc = typeof context.escapeHtml === 'function' ? context.escapeHtml : escapeHtml;
+        const renderCtx = {
+            ...context,
+            getConnectorPathData: typeof context.getConnectorPathData === 'function' ? context.getConnectorPathData : () => null,
+            getAnchorPos: typeof context.getAnchorPos === 'function' ? context.getAnchorPos : () => ({ x: 0, y: 0 }),
+            escapeHtml: esc,
+        };
 
         pathsG.innerHTML = '';
         defs.innerHTML = '';
 
+        // Also clear the back overlay if present
+        const backPathsG = connBackOverlay?.querySelector?.('.conn-paths');
+        const backDefs = connBackOverlay?.querySelector?.('defs');
+        if (backPathsG) backPathsG.innerHTML = '';
+        if (backDefs) backDefs.innerHTML = '';
+
         let rendered = 0;
         for (const conn of connectors) {
-            const pathD = getConnectorPathData(conn);
-            if (!pathD) continue;
-
-            const style = conn.style || {};
-            const stroke = style.stroke || '#818cf8';
-            const strokeWidth = style.strokeWidth || 3;
-            const opacity = style.opacity != null ? style.opacity : 1;
-            const isSelected = conn.id === selectedConnectorId;
-
-            const markerEndId = 'cme-' + conn.id;
-            const markerStartId = 'cms-' + conn.id;
-            if (conn.arrowEnd) {
-                defs.innerHTML += `<marker id="${markerEndId}" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto" markerUnits="strokeWidth"><polygon points="0 0,10 3.5,0 7" fill="${stroke}"/></marker>`;
-            }
-            if (conn.arrowStart) {
-                defs.innerHTML += `<marker id="${markerStartId}" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto" markerUnits="strokeWidth"><polygon points="10 0,0 3.5,10 7" fill="${stroke}"/></marker>`;
-            }
-            const markerEnd = conn.arrowEnd ? `marker-end="url(#${markerEndId})"` : '';
-            const markerStart = conn.arrowStart ? `marker-start="url(#${markerStartId})"` : '';
-
-            const group = documentRef.createElementNS('http://www.w3.org/2000/svg', 'g');
-            group.setAttribute('class', 'conn-g' + (isSelected ? ' conn-selected' : ''));
-            group.dataset.connId = conn.id;
-            group.innerHTML = `<path class="conn-hit" d="${pathD}"/>`;
-            group.innerHTML += `<path class="conn-line-bg" d="${pathD}" fill="none" stroke="transparent" stroke-width="8"/>`;
-            const dashAttr = style.dashArray ? `stroke-dasharray="${style.dashArray}"` : '';
-            group.innerHTML += `<path class="conn-line" d="${pathD}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}" ${dashAttr} ${markerEnd} ${markerStart}/>`;
-
-            const source = resolveElement(elements, conn.sourceId);
-            const target = resolveElement(elements, conn.targetId);
-
-            if (conn.label && source && target) {
-                const p1 = getAnchorPos(source, conn.sourceAnchor);
-                const p2 = getAnchorPos(target, conn.targetAnchor);
-                const lx = (p1.x + p2.x) / 2;
-                const ly = (p1.y + p2.y) / 2;
-                const label = String(conn.label);
-                group.innerHTML += `<rect x="${lx - label.length * 4 - 4}" y="${ly - 11}" width="${label.length * 8 + 8}" height="22" rx="4" fill="var(--sl-slide-bg, #1a1d27)" opacity="0.85"/>`;
-                group.innerHTML += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${stroke}" font-size="13" font-family="var(--sl-font-body, system-ui)" style="pointer-events:none;">${esc(label)}</text>`;
-            }
-
-            if (isSelected && source && target) {
-                const p1 = getAnchorPos(source, conn.sourceAnchor);
-                const p2 = getAnchorPos(target, conn.targetAnchor);
-                group.innerHTML += `<circle cx="${p1.x}" cy="${p1.y}" r="5" fill="${stroke}" opacity="0.6" style="pointer-events:none;"/>`;
-                group.innerHTML += `<circle cx="${p2.x}" cy="${p2.y}" r="5" fill="${stroke}" opacity="0.6" style="pointer-events:none;"/>`;
-            }
-
-            pathsG.appendChild(group);
-            rendered += 1;
+            const isBehind = _isBehindConnector(conn);
+            const targetPathsG = isBehind && backPathsG ? backPathsG : pathsG;
+            const targetDefs = isBehind && backDefs ? backDefs : defs;
+            if (_renderConnectorGroup(conn, renderCtx, { pathsG: targetPathsG, defs: targetDefs })) rendered += 1;
         }
 
         return rendered;

@@ -128,11 +128,22 @@ function updateFormatTab() {
     }
 
     if (hasConnector && !hasSelection) {
-        // Connector selected — hide element-specific format groups
+        // Connector selected — show appearance group with stroke color
         if (tabEl && !tabEl.classList.contains('active')) tabEl.click();
         ['fmt-x','fmt-y','fmt-w','fmt-h'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         _fmtSetGroupsVisible(allContextGroups, false);
         _fmtSetGroupsVisible(['fmt-size-group', 'fmt-appearance-group', 'fmt-organize-group'], true);
+        // Show connector stroke color in fmt-color
+        const conn = runtimeCanvas?.getSelectedConnector?.();
+        const fmtColor = document.getElementById('fmt-color');
+        if (fmtColor && conn) {
+            fmtColor.value = colorToHex(conn.style?.stroke || '#818cf8');
+            document.getElementById('fmt-text-group')?.style && (document.getElementById('fmt-text-group').style.display = '');
+        }
+        const opSlider = document.getElementById('fmt-opacity');
+        const opLabel = document.getElementById('fmt-opacity-label');
+        if (conn && opSlider) opSlider.value = (conn.style?.opacity ?? 1) * 100;
+        if (conn && opLabel) opLabel.textContent = Math.round((conn.style?.opacity ?? 1) * 100) + '%';
         _fmtSetIntraSlideControlsEnabled(false, "La transition intra-slide s'applique aux éléments, pas aux connecteurs.");
         cleanFormatSeparators();
         return;
@@ -156,7 +167,7 @@ function updateFormatTab() {
             if (fmtW && document.activeElement !== fmtW) fmtW.value = el.w;
             if (fmtH && document.activeElement !== fmtH) fmtH.value = el.h;
             const fmtColor = document.getElementById('fmt-color');
-            if (fmtColor) fmtColor.value = colorToHex(s.color || s.fill || '#ffffff');
+            if (fmtColor) fmtColor.value = colorToHex(s.color || '#ffffff');
             const fmtFS = document.getElementById('fmt-font-size');
             if (fmtFS && document.activeElement !== fmtFS) fmtFS.value = _fmtDefaultFontSizeForType(el.type, s.fontSize);
             const fmtFW = document.getElementById('fmt-font-weight');
@@ -170,32 +181,70 @@ function updateFormatTab() {
 }
 
 function bindFormatTab() {
+    // Apply fn to ALL selected elements (multi-selection support)
     const bindFmt = (id, fn) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => {
             const runtimeCanvas = _formatCanvas();
-            const selected = runtimeCanvas?.getSelected();
-            if (selected) fn(runtimeCanvas, selected, el);
+            if (!runtimeCanvas) return;
+            const allSelected = runtimeCanvas.getSelectedElements?.() || [];
+            if (allSelected.length >= 2) {
+                allSelected.forEach(s => fn(runtimeCanvas, s, el));
+            } else {
+                const selected = runtimeCanvas.getSelected();
+                if (selected) fn(runtimeCanvas, selected, el);
+            }
         });
     };
     bindFmt('fmt-x', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { x: +el.value }));
     bindFmt('fmt-y', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { y: +el.value }));
     bindFmt('fmt-w', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { w: +el.value }));
     bindFmt('fmt-h', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { h: +el.value }));
-    bindFmt('fmt-color', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { style: { color: el.value, fill: el.value } }));
+    // fmt-color : couleur texte/contenu pour les éléments (multi-sél.), stroke pour les connecteurs
+    const fmtColorEl = document.getElementById('fmt-color');
+    if (fmtColorEl) {
+        fmtColorEl.addEventListener('input', () => {
+            const runtimeCanvas = _formatCanvas();
+            if (!runtimeCanvas) return;
+            const conn = runtimeCanvas?.getSelectedConnector?.();
+            if (conn) {
+                runtimeCanvas.updateConnector(conn.id, { style: { stroke: fmtColorEl.value } });
+                return;
+            }
+            const allSelected = runtimeCanvas.getSelectedElements?.() || [];
+            if (allSelected.length >= 2) {
+                allSelected.forEach(s => runtimeCanvas.updateData(s.id, { style: { color: fmtColorEl.value } }));
+            } else {
+                const selected = runtimeCanvas.getSelected();
+                if (selected) runtimeCanvas.updateData(selected.id, { style: { color: fmtColorEl.value } });
+            }
+        });
+    }
     bindFmt('fmt-font-size', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { style: { fontSize: +el.value } }));
 
     document.getElementById('fmt-font-weight')?.addEventListener('change', function() {
         const runtimeCanvas = _formatCanvas();
-        const s = runtimeCanvas?.getSelected();
-        if (s) runtimeCanvas.updateData(s.id, { style: { fontWeight: +this.value } });
+        if (!runtimeCanvas) return;
+        const allSelected = runtimeCanvas.getSelectedElements?.() || [];
+        if (allSelected.length >= 2) {
+            allSelected.forEach(s => runtimeCanvas.updateData(s.id, { style: { fontWeight: +this.value } }));
+        } else {
+            const s = runtimeCanvas.getSelected();
+            if (s) runtimeCanvas.updateData(s.id, { style: { fontWeight: +this.value } });
+        }
     });
 
     ['left', 'center', 'right'].forEach(align => {
         document.getElementById('fmt-align-' + align)?.addEventListener('click', () => {
             const runtimeCanvas = _formatCanvas();
-            const s = runtimeCanvas?.getSelected();
-            if (s) runtimeCanvas.updateData(s.id, { style: { textAlign: align } });
+            if (!runtimeCanvas) return;
+            const allSelected = runtimeCanvas.getSelectedElements?.() || [];
+            if (allSelected.length >= 2) {
+                allSelected.forEach(s => runtimeCanvas.updateData(s.id, { style: { textAlign: align } }));
+            } else {
+                const s = runtimeCanvas.getSelected();
+                if (s) runtimeCanvas.updateData(s.id, { style: { textAlign: align } });
+            }
         });
     });
 
@@ -274,10 +323,11 @@ function updateFormatTabEnhanced() {
     // Show/hide contextual groups
     const type = el.type;
     const textTypes = ['heading', 'text', 'list', 'code', 'highlight', 'definition', 'callout-box', 'exercise-block', 'mistake-fix', 'code-example', 'terminal-session', 'quote', 'card', 'table'];
-    document.getElementById('fmt-text-group').style.display = textTypes.includes(type) ? '' : 'none';
+    // Types where style.color has a visual effect in the renderer (shape text, latex formula, timer display…)
+    const colorTypes = [...textTypes, 'shape', 'latex', 'timer', 'before-after', 'rubric-block', 'rubrick-block', 'steps', 'pyramid'];
+    document.getElementById('fmt-text-group').style.display = colorTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-paragraph-group').style.display = textTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-image-group').style.display = type === 'image' ? '' : 'none';
-    document.getElementById('fmt-shape-group').style.display = type === 'shape' ? '' : 'none';
     document.getElementById('fmt-code-group').style.display = type === 'code' ? '' : 'none';
 
     // Animation group (always shown when element selected)
@@ -304,11 +354,9 @@ function updateFormatTabEnhanced() {
         document.querySelectorAll('#fmt-image-group .filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter));
     }
 
-    // Shape fill
-    if (type === 'shape') {
-        const fc = document.getElementById('fmt-fill-color');
-        if (fc) fc.value = colorToHex(s.fill || '#818cf8');
-    }
+    // Fill / background color (all element types)
+    const fc = document.getElementById('fmt-fill-color');
+    if (fc) fc.value = colorToHex(s.fill || (type === 'shape' ? '#818cf8' : '#1a1d27'));
 
     // Code theme
     if (type === 'code') {
@@ -361,12 +409,19 @@ function cleanFormatSeparators() {
 }
 
 function bindFormatTabEnhanced() {
+    // Apply fn to ALL selected elements (multi-selection support)
     const bindFmt = (id, fn) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => {
             const runtimeCanvas = _formatCanvas();
-            const selected = runtimeCanvas?.getSelected();
-            if (selected) fn(runtimeCanvas, selected, el);
+            if (!runtimeCanvas) return;
+            const allSelected = runtimeCanvas.getSelectedElements?.() || [];
+            if (allSelected.length >= 2) {
+                allSelected.forEach(s => fn(runtimeCanvas, s, el));
+            } else {
+                const selected = runtimeCanvas.getSelected();
+                if (selected) fn(runtimeCanvas, selected, el);
+            }
         });
     };
 
@@ -377,12 +432,25 @@ function bindFormatTabEnhanced() {
         if (label) label.textContent = el.value + '°';
     });
 
-    // Opacity
-    bindFmt('fmt-opacity', (runtimeCanvas, s, el) => {
-        runtimeCanvas.updateData(s.id, { style: { opacity: +el.value / 100 } });
-        const label = document.getElementById('fmt-opacity-label');
-        if (label) label.textContent = el.value + '%';
-    });
+    // Opacity (works for elements, connectors, and multi-selection)
+    const fmtOpacityEl = document.getElementById('fmt-opacity');
+    if (fmtOpacityEl) {
+        fmtOpacityEl.addEventListener('input', () => {
+            const runtimeCanvas = _formatCanvas();
+            if (!runtimeCanvas) return;
+            const label = document.getElementById('fmt-opacity-label');
+            if (label) label.textContent = fmtOpacityEl.value + '%';
+            const conn = runtimeCanvas?.getSelectedConnector?.();
+            if (conn) { runtimeCanvas.updateConnector(conn.id, { style: { opacity: +fmtOpacityEl.value / 100 } }); return; }
+            const allSelected = runtimeCanvas.getSelectedElements?.() || [];
+            if (allSelected.length >= 2) {
+                allSelected.forEach(s => runtimeCanvas.updateData(s.id, { style: { opacity: +fmtOpacityEl.value / 100 } }));
+            } else {
+                const s = runtimeCanvas.getSelected();
+                if (s) runtimeCanvas.updateData(s.id, { style: { opacity: +fmtOpacityEl.value / 100 } });
+            }
+        });
+    }
 
     // Border
     bindFmt('fmt-border-color', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { style: { borderColor: el.value } }));
@@ -397,13 +465,20 @@ function bindFormatTabEnhanced() {
         if (label) label.textContent = el.value + 'px';
     });
 
-    // Shadow toggle
+    // Shadow toggle (multi-selection: based on primary selection state)
     document.getElementById('fmt-shadow')?.addEventListener('click', () => {
         const runtimeCanvas = _formatCanvas();
-        const s = runtimeCanvas?.getSelected();
+        if (!runtimeCanvas) return;
+        const s = runtimeCanvas.getSelected();
         if (!s) return;
         const hasShadow = s.style?.boxShadow && s.style.boxShadow !== 'none';
-        runtimeCanvas.updateData(s.id, { style: { boxShadow: hasShadow ? 'none' : '0 8px 32px rgba(0,0,0,0.4)' } });
+        const shadowVal = hasShadow ? 'none' : '0 8px 32px rgba(0,0,0,0.4)';
+        const allSelected = runtimeCanvas.getSelectedElements?.() || [];
+        if (allSelected.length >= 2) {
+            allSelected.forEach(el => runtimeCanvas.updateData(el.id, { style: { boxShadow: shadowVal } }));
+        } else {
+            runtimeCanvas.updateData(s.id, { style: { boxShadow: shadowVal } });
+        }
     });
 
     // Lock toggle

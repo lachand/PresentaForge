@@ -471,6 +471,7 @@
                 <div class="ribbon-group-content">
                     <div class="fmt-section"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M21 8A9 9 0 005.64 5.64"/></svg><input type="range" id="fmt-rotation" class="fmt-range" min="0" max="360" value="0"><span id="fmt-rotation-label" class="fmt-value-label">0°</span></div>
                     <div class="fmt-section"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.5"/></svg><input type="range" id="fmt-opacity" class="fmt-range" min="0" max="100" value="100"><span id="fmt-opacity-label" class="fmt-value-label">100%</span></div>
+                    <input type="color" id="fmt-fill-color" value="#818cf8" data-tooltip="Couleur de fond / remplissage">
                     <input type="color" id="fmt-border-color" value="#666666">
                     <div class="fmt-section"><input type="range" id="fmt-border-width" class="fmt-range" min="0" max="10" value="0"><span id="fmt-border-width-label" class="fmt-value-label">0px</span></div>
                     <div class="fmt-section"><input type="range" id="fmt-border-radius" class="fmt-range" min="0" max="50" value="0"><span id="fmt-border-radius-label" class="fmt-value-label">0px</span></div>
@@ -576,13 +577,6 @@
                     </div>
                 </div>
                 <span class="ribbon-group-label">Image</span>
-            </div>
-            <!-- Shape style contextual (fill only) -->
-            <div class="ribbon-group" id="fmt-shape-group">
-                <div class="ribbon-group-content">
-                    <input type="color" id="fmt-fill-color" value="#818cf8" data-tooltip="Couleur de remplissage">
-                </div>
-                <span class="ribbon-group-label">Remplissage</span>
             </div>
             <!-- Code style contextual (theme only) -->
             <div class="ribbon-group" id="fmt-code-group">

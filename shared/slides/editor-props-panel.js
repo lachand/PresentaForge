@@ -2462,8 +2462,8 @@ function _renderConnectorProps(panel, conn) {
     else if (conn.arrowEnd) arrowMode = 'end';
     else if (conn.arrowStart) arrowMode = 'start';
 
-    const anchors = ['top', 'right', 'bottom', 'left'];
-    const anchorLabels = { top: '↑ Haut', right: '→ Droite', bottom: '↓ Bas', left: '← Gauche' };
+    const anchors = ['top', 'right', 'bottom', 'left', 'center'];
+    const anchorLabels = { top: '↑ Haut', right: '→ Droite', bottom: '↓ Bas', left: '← Gauche', center: '⊙ Centre (derrière)' };
     const srcOpts = anchors.map(a => `<option value="${a}"${conn.sourceAnchor === a ? ' selected' : ''}>${anchorLabels[a]}</option>`).join('');
     const tgtOpts = anchors.map(a => `<option value="${a}"${conn.targetAnchor === a ? ' selected' : ''}>${anchorLabels[a]}</option>`).join('');
 

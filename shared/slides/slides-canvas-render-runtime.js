@@ -52,6 +52,17 @@
         container.innerHTML = '';
         if (bg) container.style.background = bg;
 
+        // Back overlay (z-index:0) for connectors anchored at center (passes behind elements)
+        const connBackOverlay = createConnectorOverlay(documentRef, {
+            onConnectorMouseDown: context.onConnectorMouseDown,
+            onConnectorDblClick: context.onConnectorDblClick,
+            resolveConnector: context.resolveConnector,
+        });
+        if (connBackOverlay) {
+            connBackOverlay.setAttribute('class', 'cel-connector-overlay-back');
+            container.appendChild?.(connBackOverlay);
+        }
+
         const connOverlay = createConnectorOverlay(documentRef, {
             onConnectorMouseDown: context.onConnectorMouseDown,
             onConnectorDblClick: context.onConnectorDblClick,
@@ -82,6 +93,7 @@
 
         return {
             connOverlay,
+            connBackOverlay: connBackOverlay || null,
             marqueeDiv,
         };
     };

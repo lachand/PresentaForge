@@ -1950,6 +1950,9 @@
             -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
             background: #fff; cursor: pointer;
         }
+        .wb-btn.hidden { display: none; }
+        #wb-delete { border-color: #ef4444; }
+        #wb-delete:hover { background: rgba(239,68,68,0.3); }
 
         /* ── Presenter tab system (Notes / Salle) ──────────── */
         .pv-tab-bar {

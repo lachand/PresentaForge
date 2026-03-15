@@ -34,6 +34,12 @@
         div.style.height = el.h + 'px';
         div.style.zIndex = el.z || 1;
         div.style.transform = (el.style?.rotate) ? `rotate(${el.style.rotate}deg)` : '';
+        // Background fill (for non-shape types; shapes use SVG fill internally)
+        if (el.type !== 'shape' && el.style?.fill) {
+            div.style.backgroundColor = el.style.fill;
+        } else if (el.type !== 'shape') {
+            div.style.backgroundColor = '';
+        }
 
         context.syncLockVisual?.(div, el);
 

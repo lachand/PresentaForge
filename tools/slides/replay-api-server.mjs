@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
     buildReplayPayload,
     buildReplayStandaloneHtml,
+    buildSlidesStandaloneHtml,
 } from './replay-standalone.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -135,6 +136,57 @@ async function handleDryRun(req, res) {
     }
 }
 
+async function handleSlidesBuild(req, res) {
+    const body = await readBuildRequest(req, res);
+    if (!body) return;
+
+    if (!body.slidesData || typeof body.slidesData !== 'object') {
+        sendJson(res, 400, { error: 'slidesData (objet) requis' });
+        return;
+    }
+
+    try {
+        const html = await buildSlidesStandaloneHtml({
+            slidesData: body.slidesData,
+            title: typeof body.title === 'string' ? body.title : '',
+        });
+        const slideCount = Array.isArray(body.slidesData?.slides) ? body.slidesData.slides.length : 0;
+        const level = String(body.slidesData?.metadata?.level ?? '').trim();
+        sendJson(res, 200, {
+            html,
+            stats: {
+                title: String(body.title || body.slidesData?.metadata?.title || ''),
+                slideCount,
+                ...(level ? { level } : {}),
+                generatedAt: new Date().toISOString(),
+            },
+        });
+    } catch (err) {
+        sendJson(res, 400, { error: err?.message || 'Erreur de génération slides' });
+    }
+}
+
+async function handleSlidesDryRun(req, res) {
+    const body = await readBuildRequest(req, res);
+    if (!body) return;
+
+    if (!body.slidesData || typeof body.slidesData !== 'object') {
+        sendJson(res, 400, { error: 'slidesData (objet) requis' });
+        return;
+    }
+
+    const slideCount = Array.isArray(body.slidesData?.slides) ? body.slidesData.slides.length : 0;
+    const level = String(body.slidesData?.metadata?.level ?? '').trim();
+    sendJson(res, 200, {
+        ok: true,
+        stats: {
+            title: String(body.title || body.slidesData?.metadata?.title || ''),
+            slideCount,
+            ...(level ? { level } : {}),
+        },
+    });
+}
+
 export function createReplayApiServer() {
     return createServer(async (req, res) => {
         const method = String(req.method || 'GET').toUpperCase();
@@ -142,6 +194,37 @@ export function createReplayApiServer() {
 
         if (method === 'GET' && samePath(url, '/api/replay/healthz')) {
             sendJson(res, 200, { ok: true, service: 'replay-api' });
+            return;
+        }
+
+        if (method === 'GET' && (samePath(url, '/api/replay/docs') || samePath(url, '/api/replay/docs/'))) {
+            const origin = `${url.protocol}//${url.host}`;
+            const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Replay API \u2014 Documentation</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"/>
+  <style>html,body{margin:0;padding:0;background:#0b1120}#swagger-ui{max-width:1280px;margin:0 auto}</style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    window.ui = SwaggerUIBundle({
+      url: '${origin}/api/replay/openapi.yaml',
+      dom_id: '#swagger-ui',
+      deepLinking: true,
+      docExpansion: 'list',
+      displayRequestDuration: true,
+      presets: [SwaggerUIBundle.presets.apis],
+      requestInterceptor: req => { req.headers['Content-Type'] = 'application/json'; return req; }
+    });
+  </script>
+</body>
+</html>`;
+            sendText(res, 200, html, 'text/html; charset=utf-8');
             return;
         }
 
@@ -165,6 +248,16 @@ export function createReplayApiServer() {
             return;
         }
 
+        if (method === 'POST' && samePath(url, '/api/slides/build')) {
+            await handleSlidesBuild(req, res);
+            return;
+        }
+
+        if (method === 'POST' && samePath(url, '/api/slides/dry-run')) {
+            await handleSlidesDryRun(req, res);
+            return;
+        }
+
         sendJson(res, 404, { error: 'Not found' });
     });
 }
@@ -176,10 +269,14 @@ export function startReplayApiServer({ host = HOST, port = PORT } = {}) {
     });
     server.listen(port, host, () => {
         console.log(`Replay API listening on http://${host}:${port}`);
+        console.log(`Swagger UI  → http://${host === '0.0.0.0' ? 'localhost' : host}:${port}/api/replay/docs`);
         console.log('POST /api/replay/build');
         console.log('POST /api/replay/dry-run');
+        console.log('POST /api/slides/build');
+        console.log('POST /api/slides/dry-run');
         console.log('GET  /api/replay/healthz');
         console.log('GET  /api/replay/openapi.yaml');
+        console.log('GET  /api/replay/docs');
     });
     return server;
 }
