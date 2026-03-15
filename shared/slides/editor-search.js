@@ -11,6 +11,18 @@
  * // <script src="../shared/slides/editor-search.js"></script>
  */
 /* editor-search.js — Search and replace functions for slide editor */
+const _searchRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _searchCtx = () => {
+    if (_searchRuntime?.resolveContext) {
+        return _searchRuntime.resolveContext({
+            editor,
+            notify,
+        });
+    }
+    return { editor, notify };
+};
 
 function openSearchDialog() {
     let dlg = document.getElementById('search-dialog');
@@ -49,58 +61,67 @@ function _getSearchableFields(slide) {
     return fields;
 }
 function searchNext() {
+    const ctx = _searchCtx();
     const q = document.getElementById('search-input')?.value;
     if (!q) return;
-    const slides = editor.data.slides;
+    const slides = Array.isArray(ctx.editor?.data?.slides) ? ctx.editor.data.slides : [];
     for (let si = _searchCursor.slideIdx; si < slides.length; si++) {
         const fields = _getSearchableFields(slides[si]);
         const startFi = si === _searchCursor.slideIdx ? _searchCursor.fieldIdx : 0;
         for (let fi = startFi; fi < fields.length; fi++) {
             const val = String(fields[fi].obj[fields[fi].key]);
             if (val.toLowerCase().includes(q.toLowerCase())) {
-                editor.selectSlide(si);
+                ctx.editor?.selectSlide(si);
                 renderSlideList(); renderPreview();
                 _searchCursor = { slideIdx: si, fieldIdx: fi + 1 };
                 highlightSearchTerm(q);
-                notify(`Trouvé slide ${si + 1}`, 'success');
+                if (typeof ctx.notify === 'function') ctx.notify(`Trouvé slide ${si + 1}`, 'success');
                 return;
             }
         }
     }
     _searchCursor = { slideIdx: 0, fieldIdx: 0 };
-    notify('Aucun résultat (rebouclé)', 'warning');
+    if (typeof ctx.notify === 'function') ctx.notify('Aucun résultat (rebouclé)', 'warning');
 }
 function replaceOne() {
+    const ctx = _searchCtx();
     const q = document.getElementById('search-input')?.value;
     const r = document.getElementById('replace-input')?.value ?? '';
     if (!q) return;
-    const slide = editor.currentSlide;
+    const slide = ctx.editor?.currentSlide;
     if (!slide) return;
     const fields = _getSearchableFields(slide);
     for (const f of fields) {
         const val = String(f.obj[f.key]);
         if (val.toLowerCase().includes(q.toLowerCase())) {
             f.obj[f.key] = val.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), r);
-            editor._push(); notify('Remplacé', 'success');
+            ctx.editor?._push();
+            if (typeof ctx.notify === 'function') ctx.notify('Remplacé', 'success');
             return;
         }
     }
 }
 function replaceAll() {
+    const ctx = _searchCtx();
     const q = document.getElementById('search-input')?.value;
     const r = document.getElementById('replace-input')?.value ?? '';
     if (!q) return;
     let count = 0;
     const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    for (const slide of editor.data.slides) {
+    const slides = Array.isArray(ctx.editor?.data?.slides) ? ctx.editor.data.slides : [];
+    for (const slide of slides) {
         for (const f of _getSearchableFields(slide)) {
             const val = String(f.obj[f.key]);
             if (re.test(val)) { f.obj[f.key] = val.replace(re, r); count++; }
             re.lastIndex = 0;
         }
     }
-    if (count) { editor._push(); notify(`${count} remplacement(s)`, 'success'); }
-    else notify('Aucun résultat', 'warning');
+    if (count) {
+        ctx.editor?._push();
+        if (typeof ctx.notify === 'function') ctx.notify(`${count} remplacement(s)`, 'success');
+    } else if (typeof ctx.notify === 'function') {
+        ctx.notify('Aucun résultat', 'warning');
+    }
 }
 
 function highlightSearchTerm(term) {

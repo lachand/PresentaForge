@@ -15,6 +15,18 @@
 const BLOCK_LIBRARY_VERSION = '2026.03';
 const _withPresetVersion = preset => ({ ...preset, version: preset.version || BLOCK_LIBRARY_VERSION });
 let _blockPresetTriggerBound = false;
+const _blockPresetRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _blockPresetCtx = () => {
+    if (_blockPresetRuntime?.resolveContext) {
+        return _blockPresetRuntime.resolveContext({
+            editor,
+            notify,
+        });
+    }
+    return { editor, notify };
+};
 
 function _setBlockPresetModalOpen(modal, isOpen) {
     if (!modal) return;
@@ -304,7 +316,8 @@ function closeBlockPresetsModal() {
 }
 
 function _collectBlockUsages() {
-    const slides = Array.isArray(editor?.data?.slides) ? editor.data.slides : [];
+    const ctx = _blockPresetCtx();
+    const slides = Array.isArray(ctx.editor?.data?.slides) ? ctx.editor.data.slides : [];
     let used = 0;
     let outdated = 0;
     for (const slide of slides) {
@@ -335,12 +348,13 @@ function _renderLibraryMeta(modal) {
 }
 
 function insertBlockPreset(blockId) {
+    const ctx = _blockPresetCtx();
     const preset = BLOCK_PRESETS.find(item => item.id === blockId);
-    if (!preset || !editor?.data?.slides) return;
+    if (!preset || !ctx.editor?.data?.slides) return;
 
-    const insertAt = Number.isFinite(Number(editor.selectedIndex))
-        ? Math.max(0, Number(editor.selectedIndex) + 1)
-        : editor.data.slides.length;
+    const insertAt = Number.isFinite(Number(ctx.editor.selectedIndex))
+        ? Math.max(0, Number(ctx.editor.selectedIndex) + 1)
+        : ctx.editor.data.slides.length;
     const slidesToInsert = _clone(preset.slides || []);
     if (!slidesToInsert.length) return;
 
@@ -355,19 +369,19 @@ function insertBlockPreset(blockId) {
             blockSize: slidesToInsert.length,
         };
     });
-    editor.data.blockLibrary = {
+    ctx.editor.data.blockLibrary = {
         version: BLOCK_LIBRARY_VERSION,
         updatedAt: insertedAt,
     };
 
-    editor.data.slides.splice(insertAt, 0, ...slidesToInsert);
-    editor.selectedIndex = insertAt;
-    editor._push();
-    editor.onUpdate('slides');
+    ctx.editor.data.slides.splice(insertAt, 0, ...slidesToInsert);
+    ctx.editor.selectedIndex = insertAt;
+    ctx.editor._push();
+    ctx.editor.onUpdate('slides');
 
     closeBlockPresetsModal();
-    if (typeof notify === 'function') {
-        notify(`Bloc « ${preset.name} » inséré (${slidesToInsert.length} slide${slidesToInsert.length > 1 ? 's' : ''})`, 'success');
+    if (typeof ctx.notify === 'function') {
+        ctx.notify(`Bloc « ${preset.name} » inséré (${slidesToInsert.length} slide${slidesToInsert.length > 1 ? 's' : ''})`, 'success');
     }
 }
 

@@ -708,16 +708,16 @@ function openMastersModal(tab) {
             <div style="display:flex;align-items:center;margin-bottom:12px;gap:8px;flex-shrink:0">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="opacity:0.6"><rect x="1" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="11" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
                 <span class="modal-title" style="margin:0;flex:1">Dispositions &amp; Masters</span>
-                <button class="tb-btn" id="btn-save-master" style="font-size:0.72rem;padding:4px 12px" title="Sauvegarder le slide actuel comme master">💾 Sauver comme master</button>
+                <button class="tb-btn ui-btn" id="btn-save-master" style="font-size:0.72rem;padding:4px 12px" title="Sauvegarder le slide actuel comme master">💾 Sauver comme master</button>
                 <button class="modal-close" id="masters-modal-close">✕</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 10px;flex-shrink:0">
-                <label class="tb-btn" style="height:30px;padding:0 10px;gap:6px;cursor:pointer">
+                <label class="tb-btn ui-btn" style="height:30px;padding:0 10px;gap:6px;cursor:pointer">
                     <input type="checkbox" id="masters-apply-locked" style="accent-color:var(--primary)">
                     Appliquer verrouillé
                 </label>
-                <button class="tb-btn" id="btn-sync-master" style="height:30px;padding:0 10px;font-size:0.72rem" title="Recharger la slide depuis son master">Re-synchroniser</button>
-                <button class="tb-btn" id="btn-detach-master" style="height:30px;padding:0 10px;font-size:0.72rem" title="Retirer le lien avec le master">Désolidariser</button>
+                <button class="tb-btn ui-btn" id="btn-sync-master" style="height:30px;padding:0 10px;font-size:0.72rem" title="Recharger la slide depuis son master">Re-synchroniser</button>
+                <button class="tb-btn ui-btn" id="btn-detach-master" style="height:30px;padding:0 10px;font-size:0.72rem" title="Retirer le lien avec le master">Désolidariser</button>
             </div>
             <div id="masters-slide-status" style="font-size:0.7rem;color:var(--muted);margin:-4px 0 8px;flex-shrink:0"></div>
             <div id="masters-gallery" class="masters-gallery" style="overflow-y:auto;flex:1;padding-right:4px"></div>

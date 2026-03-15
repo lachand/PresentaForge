@@ -23,7 +23,7 @@ RÈGLES :
 - Le JSON doit être valide et complet.
 - IMPORTANT : Les chaînes JSON ne doivent JAMAIS contenir de retour à la ligne littéral. Toujours écrire les valeurs sur UNE SEULE LIGNE. Pour mettre du HTML multi-paragraphe, concaténer tout sur une seule ligne : "html": "<p>Premier paragraphe.</p><p>Deuxième paragraphe.</p>"
 - IMPORTANT : Les guillemets doubles à l'intérieur des chaînes JSON doivent être échappés avec un antislash : \"mot\". Ne jamais écrire "mot" sans échappement dans une valeur JSON. Préférer les guillemets français « » ou les apostrophes pour les citations dans le texte.
-- Pour les images, génère des data URL base64 (PNG ou SVG inline). Format : "data:image/png;base64,..." ou "data:image/svg+xml;base64,...". Préfère le SVG pour les schémas, diagrammes et illustrations car c'est plus léger. Pour les photos ou images réalistes, utilise des images PNG/JPEG en base64.
+- Pour les images/illustrations, préfère les placeholders `asset://...` (ex: `asset://icon/usb?label=Clé USB`) qui seront matérialisés localement en base64 à l'import. Si tu fournis déjà une data URL base64 valide, elle est acceptée.
 - Utilise les variables CSS var(--sl-*) pour les couleurs (elles s'adaptent au thème).
 - Alterne entre slides template (title, bullets, code, etc.) et slides canvas pour varier le rythme.
 - Ajoute toujours des notes présentateur ("notes") pour guider l'orateur.
@@ -31,6 +31,28 @@ RÈGLES :
 - Vise 10-20 slides pour une présentation de cours.
 - Après chaque section, insère un élément "quiz-live" dans une slide canvas pour poser un QCM interactif aux étudiants.
 - Pour les slides canvas, utilise les structures des dispositions prédéfinies (voir section "Dispositions / Masters").
+
+PIPELINE INTERNE OBLIGATOIRE (5 passes):
+1) Plan pédagogique slide par slide.
+2) Identification des illustrations possibles (`illustrationPlan`).
+3) Génération JSON complet.
+4) Préparation de médias convertibles localement en base64 (placeholders `asset://...`).
+5) Validation + auto-correction finale avant réponse.
+
+`illustrationPlan` (optionnel mais recommandé):
+{
+  "illustrationPlan": [
+    {
+      "slideIndex": 3,
+      "intent": "Sauvegarde locale",
+      "keywords": ["usb", "hdd"],
+      "visualType": "icon",
+      "assetHint": "asset://icon/usb?label=Sauvegarde locale",
+      "placement": "right",
+      "priority": "normal"
+    }
+  ]
+}
 
 ═══════════════════════════════════════════════
 STRUCTURE RACINE

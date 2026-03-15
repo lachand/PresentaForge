@@ -12,6 +12,26 @@
  */
 /* editor-props-panel.js — Properties panel for canvas element and connector editing */
 
+const _propsRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _propsCtx = () => {
+    if (_propsRuntime?.resolveContext) {
+        return _propsRuntime.resolveContext({
+            editor,
+            notify,
+            canvasEditor,
+        });
+    }
+    return { editor, notify, canvasEditor };
+};
+const _propsEditor = () => _propsCtx().editor;
+const _propsCanvas = () => _propsCtx().canvasEditor || null;
+const _propsNotify = (message, type = '') => {
+    const fn = _propsCtx().notify;
+    if (typeof fn === 'function') fn(message, type);
+};
+
 const CODE_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Correction', 'Solution', 'Astuce', 'Bonnes pratiques', 'Erreur frequente', 'Demo', 'Synthese'];
 const CODE_LABEL_PRESETS = ['Code', 'Snippet', 'API', 'Debug', 'Performance', 'Bonnes pratiques', 'Correction', 'Erreur frequente', 'Analyse'];
 const DEFINITION_LABEL_PRESETS = ['Definition', 'Notion', 'Rappel', 'Theoreme', 'Propriete', 'Attention', 'Erreur frequente', 'A retenir', 'Vocabulaire'];
@@ -466,10 +486,12 @@ function _normalizeDiagramRows(rows, chartType = 'bar', forceHeaders = false) {
 }
 
 function updatePropsPanel() {
+    const editor = _propsEditor();
+    const canvasEditor = _propsCanvas();
     const panel = document.getElementById('props-content');
     const propsPanel = document.getElementById('props-panel');
     if (!panel || !propsPanel) return;
-    const isCanvas = editor.currentSlide?.type === 'canvas';
+    const isCanvas = editor?.currentSlide?.type === 'canvas';
     const el = isCanvas && canvasEditor?.getSelected();
 
     if (!el) {
@@ -691,7 +713,7 @@ function updatePropsPanel() {
                 <div class="props-row"><label>Titre</label><select id="sp-mf-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Texte titre</label><input type="text" id="sp-mf-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-mf-tone">${toneOptions}</select></div>
-                <div class="props-row"><label>Langage</label><select id="sp-mf-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
+                <div class="props-row"><label>Langage</label><select id="sp-mf-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Erreur frequente</div>
@@ -747,7 +769,7 @@ function updatePropsPanel() {
                 <div class="props-row"><label>Label</label><select id="sp-term-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-term-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-term-tone">${toneOptions}</select></div>
-                <div class="props-row"><label>Langage</label><select id="sp-term-lang"><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
+                <div class="props-row"><label>Langage</label><select id="sp-term-lang"><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Session</label>
                 <textarea id="sp-term-script" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.script || '')}</textarea>
             </div>`;
@@ -784,7 +806,7 @@ function updatePropsPanel() {
             } else {
                 html += `<div class="props-section">
                     <div class="props-section-title">${mode === 'live' ? 'Code Live' : 'Code / Terminal'}</div>
-                    <div class="props-row"><label>Langage</label><select id="sp-ce-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
+                    <div class="props-row"><label>Langage</label><select id="sp-ce-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
                     <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code</label>
                     <textarea id="sp-ce-code" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
                 </div>`;
@@ -813,7 +835,7 @@ function updatePropsPanel() {
                 <div class="props-row"><label>Label</label><select id="sp-code-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-code-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-code-tone">${toneOptions}</select></div>
-                <div class="props-row"><label>Lang</label><select id="sp-code-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JS</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
+                <div class="props-row"><label>Lang</label><select id="sp-code-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JS</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
             </div>`;
             break;
         }
@@ -856,10 +878,10 @@ function updatePropsPanel() {
                 <div id="sp-card-items">
                     ${cardItems.map((item, idx) => `<div class="props-row" style="margin-bottom:3px">
                         <input type="text" value="${escAttr(item)}" data-card-idx="${idx}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <button class="tb-btn" data-del-card="${idx}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
+                        <button class="tb-btn ui-btn" data-del-card="${idx}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
                     </div>`).join('')}
                 </div>
-                <button class="tb-btn" id="sp-card-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Ajouter</button>
+                <button class="tb-btn ui-btn" id="sp-card-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Ajouter</button>
             </div>`;
             break;
         }
@@ -875,10 +897,10 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Structure</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
-                    <button class="tb-btn" id="sp-table-add-row" style="font-size:0.68rem;justify-content:center">+ Ligne</button>
-                    <button class="tb-btn" id="sp-table-add-col" style="font-size:0.68rem;justify-content:center">+ Colonne</button>
-                    <button class="tb-btn" id="sp-table-del-row" style="font-size:0.68rem;justify-content:center">− Ligne</button>
-                    <button class="tb-btn" id="sp-table-del-col" style="font-size:0.68rem;justify-content:center">− Colonne</button>
+                    <button class="tb-btn ui-btn" id="sp-table-add-row" style="font-size:0.68rem;justify-content:center">+ Ligne</button>
+                    <button class="tb-btn ui-btn" id="sp-table-add-col" style="font-size:0.68rem;justify-content:center">+ Colonne</button>
+                    <button class="tb-btn ui-btn" id="sp-table-del-row" style="font-size:0.68rem;justify-content:center">− Ligne</button>
+                    <button class="tb-btn ui-btn" id="sp-table-del-col" style="font-size:0.68rem;justify-content:center">− Colonne</button>
                 </div>
                 <div style="font-size:0.65rem;color:var(--muted);margin-top:6px">${d.rows?.length || 0} lignes × ${d.rows?.[0]?.length || 0} colonnes</div>
             </div>`;
@@ -959,18 +981,18 @@ function updatePropsPanel() {
                 <div class="props-row"><label>Type</label><select id="sp-diag-type">${optionsHtml}</select></div>
                 <div class="props-row"><label>Transformation</label><select id="sp-diag-transform">${transformOptionsHtml}</select></div>
                 <div class="props-row"><label>Preset</label><select id="sp-diag-preset">${presetOptionsHtml}</select></div>
-                <button class="tb-btn" id="sp-diag-apply-preset" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px">Appliquer preset pedagogique</button>
+                <button class="tb-btn ui-btn" id="sp-diag-apply-preset" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px">Appliquer preset pedagogique</button>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">
-                    <button class="tb-btn" id="sp-diag-add-row" style="font-size:0.68rem;justify-content:center"${canAddRow ? '' : ' disabled'}>+ Ligne</button>
-                    <button class="tb-btn" id="sp-diag-add-col" style="font-size:0.68rem;justify-content:center"${canAddCol ? '' : ' disabled'}>+ Colonne</button>
-                    <button class="tb-btn" id="sp-diag-del-row" style="font-size:0.68rem;justify-content:center"${canDelRow ? '' : ' disabled'}>− Ligne</button>
-                    <button class="tb-btn" id="sp-diag-del-col" style="font-size:0.68rem;justify-content:center"${canDelCol ? '' : ' disabled'}>− Colonne</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-add-row" style="font-size:0.68rem;justify-content:center"${canAddRow ? '' : ' disabled'}>+ Ligne</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-add-col" style="font-size:0.68rem;justify-content:center"${canAddCol ? '' : ' disabled'}>+ Colonne</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-del-row" style="font-size:0.68rem;justify-content:center"${canDelRow ? '' : ' disabled'}>− Ligne</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-del-col" style="font-size:0.68rem;justify-content:center"${canDelCol ? '' : ' disabled'}>− Colonne</button>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
-                    <button class="tb-btn" id="sp-diag-import-csv" style="font-size:0.68rem;justify-content:center">Importer CSV (presse-papiers)</button>
-                    <button class="tb-btn" id="sp-diag-export-csv" style="font-size:0.68rem;justify-content:center">Exporter CSV</button>
-                    <button class="tb-btn" id="sp-diag-import-tsv" style="font-size:0.68rem;justify-content:center">Importer TSV (presse-papiers)</button>
-                    <button class="tb-btn" id="sp-diag-export-tsv" style="font-size:0.68rem;justify-content:center">Exporter TSV</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-import-csv" style="font-size:0.68rem;justify-content:center">Importer CSV (presse-papiers)</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-export-csv" style="font-size:0.68rem;justify-content:center">Exporter CSV</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-import-tsv" style="font-size:0.68rem;justify-content:center">Importer TSV (presse-papiers)</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-export-tsv" style="font-size:0.68rem;justify-content:center">Exporter TSV</button>
                 </div>
                 <div style="font-size:0.64rem;color:var(--muted);margin-top:6px">${normalizedRows.length} ligne(s) × ${colCount} colonne(s)</div>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:2px">${esc(constraints)}</div>
@@ -988,8 +1010,8 @@ function updatePropsPanel() {
                 </div>
                 <div class="props-row" style="margin-top:6px"><label>Serie source</label><select id="sp-diag-series-source">${sourceSeriesOptions}</select></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
-                    <button class="tb-btn" id="sp-diag-series-dup" style="font-size:0.68rem;justify-content:center">Dupliquer serie</button>
-                    <button class="tb-btn" id="sp-diag-series-mirror" style="font-size:0.68rem;justify-content:center">Miroir serie (negatif)</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-series-dup" style="font-size:0.68rem;justify-content:center">Dupliquer serie</button>
+                    <button class="tb-btn ui-btn" id="sp-diag-series-mirror" style="font-size:0.68rem;justify-content:center">Miroir serie (negatif)</button>
                 </div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:8px 0 3px">Styles par serie</label>
                 <div class="sp-diag-series-wrap">${seriesStyleHtml}</div>
@@ -1046,10 +1068,10 @@ function updatePropsPanel() {
                     ${hls.map((h, i) => `<div class="props-row" style="margin-bottom:3px">
                         <input type="text" value="${escAttr(h.lines||'')}" data-hl-lines="${i}" placeholder="1-3" style="width:50px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
                         <input type="text" value="${escAttr(h.label||'')}" data-hl-label="${i}" placeholder="Label" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <button class="tb-btn" data-del-hl="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
+                        <button class="tb-btn ui-btn" data-del-hl="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
                     </div>`).join('')}
                 </div>
-                <button class="tb-btn" id="sp-hl-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Zone</button>
+                <button class="tb-btn ui-btn" id="sp-hl-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Zone</button>
             </div>`;
             break;
         }
@@ -1074,10 +1096,10 @@ function updatePropsPanel() {
                 <div id="sp-sa-items">
                     ${saItems.map((item, i) => `<div class="props-row" style="margin-bottom:3px">
                         <input type="text" value="${escAttr(item)}" data-sa-idx="${i}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <button class="tb-btn" data-del-sa="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
+                        <button class="tb-btn ui-btn" data-del-sa="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
                     </div>`).join('')}
                 </div>
-                <button class="tb-btn" id="sp-sa-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Ajouter</button>
+                <button class="tb-btn ui-btn" id="sp-sa-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Ajouter</button>
             </div>`;
             break;
         }
@@ -1115,10 +1137,10 @@ function updatePropsPanel() {
                     ${qlOpts.map((item, i) => `<div class="props-row" style="margin-bottom:3px">
                         <span style="min-width:18px;font-weight:700;font-size:0.7rem;color:var(--primary)">${String.fromCharCode(65 + i)}</span>
                         <input type="text" value="${escAttr(item)}" data-ql-idx="${i}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <button class="tb-btn" data-del-ql="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
+                        <button class="tb-btn ui-btn" data-del-ql="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
                     </div>`).join('')}
                 </div>
-                <button class="tb-btn" id="sp-ql-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Option</button>
+                <button class="tb-btn ui-btn" id="sp-ql-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Option</button>
             </div>
             <div style="font-size:0.6rem;color:var(--muted);padding:0 4px;line-height:1.4">Quiz interactif : les étudiants répondent via QR code (P2P, aucun serveur). La durée limite le temps de réponse.</div>`;
             break;
@@ -1352,6 +1374,9 @@ function updatePropsPanel() {
 }
 
 function _bindPropsPanel(el) {
+    const canvasEditor = _propsCanvas();
+    const notify = _propsNotify;
+    if (!canvasEditor) return;
     const id = el.id;
     const type = el.type;
     const bind = (spId, fn) => {
@@ -2490,7 +2515,7 @@ function _renderConnectorProps(panel, conn) {
             <div class="props-row"><input type="text" id="sp-conn-label" value="${escAttr(conn.label || '')}" placeholder="Texte sur la flèche" style="width:100%;${inputStyle}"></div>
         </div>
         <div class="props-section" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
-            <button class="tb-btn" id="sp-conn-delete" style="width:100%;justify-content:center;color:var(--danger);font-size:0.72rem">
+            <button class="tb-btn ui-btn" id="sp-conn-delete" style="width:100%;justify-content:center;color:var(--danger);font-size:0.72rem">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 Supprimer le connecteur
             </button>
@@ -2498,6 +2523,8 @@ function _renderConnectorProps(panel, conn) {
 }
 
 function _bindConnectorProps(conn) {
+    const canvasEditor = _propsCanvas();
+    if (!canvasEditor) return;
     const id = conn.id;
     const upd = (patch) => { canvasEditor.updateConnector(id, patch); };
 

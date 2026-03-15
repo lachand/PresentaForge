@@ -65,6 +65,7 @@
         STUDENT_HAND: 'student:hand',
         STUDENT_QUESTION: 'student:question',
         STUDENT_FEEDBACK: 'student:feedback',
+        STUDENT_TELEMETRY: 'student:telemetry',
         AUDIENCE_NUDGE: 'audience:nudge',
         POLL_ANSWER: 'poll:answer',
         WORDCLOUD_WORD: 'wordcloud:word',
@@ -193,6 +194,16 @@
         [ROOM_MSG.STUDENT_HAND]: msg => isBoolean(msg.raised),
         [ROOM_MSG.STUDENT_QUESTION]: msg => isString(msg.text || '', 1600) && (msg.qid == null || isString(msg.qid, 120)),
         [ROOM_MSG.STUDENT_FEEDBACK]: msg => isString(msg.feedback || '', 80),
+        [ROOM_MSG.STUDENT_TELEMETRY]: msg => (msg.pseudo == null || isString(msg.pseudo, 160))
+            && (msg.state == null || isString(msg.state, 40))
+            && (msg.transport == null || isString(msg.transport, 40))
+            && (msg.reason == null || isString(msg.reason, 80))
+            && (msg.ts == null || isNonNegInt(msg.ts))
+            && (msg.slideIndex == null || isNonNegInt(msg.slideIndex))
+            && (msg.fragmentOrder == null || isInt(msg.fragmentOrder))
+            && (msg.followPresenter == null || isBoolean(msg.followPresenter))
+            && (msg.handRaised == null || isBoolean(msg.handRaised))
+            && (msg.queueDepth == null || isNonNegInt(msg.queueDepth)),
         [ROOM_MSG.AUDIENCE_NUDGE]: msg => (msg.message == null || isString(msg.message, 260))
             && (msg.level == null || isString(msg.level, 40))
             && (msg.kind == null || isString(msg.kind, 40))

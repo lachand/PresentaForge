@@ -22,6 +22,9 @@
     const APPLIED_MARK = '__pluginId';
     const APPLIED_IDS = new Set();
     const RUNTIME_STATUS = new Map();
+    const RUNTIME_ERRORS = [];
+    const RUNTIME_ERROR_LIMIT = 200;
+    const WIDGET_PLUGIN_API_VERSION = 2;
     const CURRENT_ORIGIN = (() => {
         try { return String(global.location?.origin || '').trim(); } catch (_) { return ''; }
     })();
@@ -39,6 +42,25 @@
         if (!raw) return '';
         try { return new URL(raw, CURRENT_ORIGIN || undefined).origin; }
         catch (_) { return ''; }
+    }
+
+    function _trimmed(value, maxLen = 240) {
+        const out = String(value || '').trim();
+        return maxLen > 0 ? out.slice(0, maxLen) : out;
+    }
+
+    function _toIntOrNull(value) {
+        if (value == null) return null;
+        if (typeof value === 'string' && !value.trim()) return null;
+        if (typeof value === 'boolean') return null;
+        const n = Number(value);
+        if (!Number.isFinite(n)) return null;
+        return Math.trunc(n);
+    }
+
+    function _isJsScriptPath(pathname) {
+        const p = String(pathname || '').toLowerCase();
+        return p.endsWith('.js') || p.endsWith('.mjs');
     }
 
     function _readStore() {
@@ -102,9 +124,22 @@
     function _evaluateScriptPolicy(script, policy) {
         const ref = String(script || '').trim();
         if (!ref) return { allowed: false, reason: 'missing-script', message: 'script manquant', origin: null };
+        if (/^(javascript|data|blob|file):/i.test(ref)) {
+            return { allowed: false, reason: 'forbidden-script-scheme', message: 'schéma script interdit', origin: null };
+        }
+        if (/[\r\n]/.test(ref)) {
+            return { allowed: false, reason: 'invalid-script-format', message: 'format script invalide', origin: null };
+        }
 
         const isRemote = /^(https?:)?\/\//i.test(ref);
         if (!isRemote) {
+            const cleanRef = ref.split(/[?#]/)[0];
+            if (/(^|[\\/])\.\.([\\/]|$)/.test(cleanRef) || cleanRef.includes('\\')) {
+                return { allowed: false, reason: 'forbidden-local-path', message: 'chemin local interdit', origin: CURRENT_ORIGIN || null };
+            }
+            if (!_isJsScriptPath(cleanRef)) {
+                return { allowed: false, reason: 'invalid-script-extension', message: 'extension script invalide (attendu .js/.mjs)', origin: CURRENT_ORIGIN || null };
+            }
             return { allowed: true, reason: 'local-script', message: 'script local', origin: CURRENT_ORIGIN || null };
         }
 
@@ -115,6 +150,13 @@
                 : new URL(ref);
         } catch (_) {
             return { allowed: false, reason: 'invalid-script-url', message: 'URL script invalide', origin: null };
+        }
+        const protocol = String(url.protocol || '').toLowerCase();
+        if (protocol !== 'http:' && protocol !== 'https:') {
+            return { allowed: false, reason: 'invalid-script-protocol', message: 'protocole script non supporté', origin: null };
+        }
+        if (!_isJsScriptPath(url.pathname || '')) {
+            return { allowed: false, reason: 'invalid-script-extension', message: 'extension script invalide (attendu .js/.mjs)', origin: String(url.origin || '').trim() || null };
         }
 
         const origin = String(url.origin || '').trim();
@@ -163,6 +205,24 @@
         };
     }
 
+    function _normalizeCompat(raw) {
+        const source = raw && typeof raw === 'object' ? raw : {};
+        const minWidgetApi = _toIntOrNull(source.minWidgetApi);
+        const maxWidgetApi = _toIntOrNull(source.maxWidgetApi);
+        return {
+            minWidgetApi: Number.isFinite(minWidgetApi) && minWidgetApi >= 0 ? minWidgetApi : null,
+            maxWidgetApi: Number.isFinite(maxWidgetApi) && maxWidgetApi >= 0 ? maxWidgetApi : null,
+        };
+    }
+
+    function _isCompatSatisfied(compat) {
+        const min = _toIntOrNull(compat?.minWidgetApi);
+        const max = _toIntOrNull(compat?.maxWidgetApi);
+        if (Number.isFinite(min) && WIDGET_PLUGIN_API_VERSION < min) return false;
+        if (Number.isFinite(max) && WIDGET_PLUGIN_API_VERSION > max) return false;
+        return true;
+    }
+
     function _normalizePlugin(raw) {
         const source = (typeof raw === 'string') ? JSON.parse(raw) : raw;
         if (!source || typeof source !== 'object') throw new Error('Manifest plugin invalide');
@@ -183,6 +243,7 @@
             name,
             version,
             description: String(source.description || '').trim(),
+            compat: _normalizeCompat(source.compat),
             enabled: source.enabled !== false,
             widgets: normalizedWidgets.map(w => ({
                 id: w.id,
@@ -219,10 +280,48 @@
         }
     }
 
+    function reportRuntimeError(raw) {
+        const source = raw && typeof raw === 'object' ? raw : {};
+        const entry = {
+            at: new Date().toISOString(),
+            source: _trimmed(source.source || 'widget-runtime', 80),
+            pluginId: _trimmed(source.pluginId || '', 120),
+            widgetId: _trimmed(source.widgetId || '', 120),
+            stage: _trimmed(source.stage || 'runtime', 80),
+            reason: _trimmed(source.reason || 'unknown', 120),
+            message: _trimmed(source.message || '', 500),
+            script: _trimmed(source.script || '', 260),
+            globalName: _trimmed(source.globalName || '', 160),
+        };
+        RUNTIME_ERRORS.push(entry);
+        if (RUNTIME_ERRORS.length > RUNTIME_ERROR_LIMIT) {
+            RUNTIME_ERRORS.splice(0, RUNTIME_ERRORS.length - RUNTIME_ERROR_LIMIT);
+        }
+        try {
+            global.dispatchEvent(new CustomEvent('oei:widget-plugin-runtime-error', { detail: _deepClone(entry) }));
+        } catch (_) {
+            // no-op in tests/non-browser contexts.
+        }
+        return _deepClone(entry);
+    }
+
+    function listRuntimeErrors(limit = 50) {
+        const requested = Number(limit);
+        const max = Number.isFinite(requested) ? Math.max(0, Math.trunc(requested)) : 50;
+        if (!max) return [];
+        return _deepClone(RUNTIME_ERRORS.slice(-max));
+    }
+
+    function clearRuntimeErrors() {
+        RUNTIME_ERRORS.splice(0, RUNTIME_ERRORS.length);
+        return true;
+    }
+
     function _buildStatusSnapshot() {
         const store = _readStore();
         return store.plugins.map(plugin => {
             const runtime = RUNTIME_STATUS.get(plugin.id) || {};
+            const runtimeErrorCount = RUNTIME_ERRORS.filter(err => err.pluginId === plugin.id).length;
             return {
                 id: plugin.id,
                 enabled: plugin.enabled !== false,
@@ -230,6 +329,7 @@
                 allowedWidgets: runtime.allowedWidgets || 0,
                 blockedWidgets: runtime.blockedWidgets || [],
                 warnings: runtime.warnings || [],
+                runtimeErrorCount,
             };
         });
     }
@@ -250,6 +350,22 @@
                 warnings: [],
             };
             const pluginWidgets = Array.isArray(plugin.widgets) ? plugin.widgets : [];
+            const compat = _normalizeCompat(plugin.compat);
+
+            if (!_isCompatSatisfied(compat)) {
+                const warning = `[${plugin.id}] plugin incompatible avec l'API widgets courante (api=${WIDGET_PLUGIN_API_VERSION}, min=${compat.minWidgetApi ?? 'n/a'}, max=${compat.maxWidgetApi ?? 'n/a'})`;
+                warnings.push(warning);
+                runtime.warnings.push(warning);
+                runtime.status = 'incompatible';
+                runtime.blockedWidgets = pluginWidgets.map(rawWidget => ({
+                    id: String(rawWidget?.id || '(inconnu)'),
+                    reason: 'incompatible-widget-api',
+                    message: 'plugin incompatible avec la version API widgets',
+                    origin: null,
+                }));
+                RUNTIME_STATUS.set(plugin.id, runtime);
+                continue;
+            }
 
             if (plugin.enabled !== false) {
                 for (const rawWidget of pluginWidgets) {
@@ -337,8 +453,10 @@
                     runtimeAllowedWidgets: status?.allowedWidgets ?? 0,
                     runtimeBlockedWidgets: status?.blockedWidgets || [],
                     runtimeWarnings: status?.warnings || [],
+                    runtimeErrorCount: status?.runtimeErrorCount ?? 0,
                 });
             }),
+            runtimeErrors: listRuntimeErrors(100),
         };
     }
 
@@ -389,6 +507,7 @@
     }
 
     const api = Object.freeze({
+        apiVersion: WIDGET_PLUGIN_API_VERSION,
         storageKey: STORAGE_KEY,
         policyStorageKey: POLICY_STORAGE_KEY,
         list,
@@ -399,6 +518,9 @@
         remove,
         setEnabled,
         exportManifest,
+        reportRuntimeError,
+        listRuntimeErrors,
+        clearRuntimeErrors,
         reload: _applyInstalledPlugins,
     });
 

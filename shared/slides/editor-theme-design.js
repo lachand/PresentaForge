@@ -15,8 +15,27 @@
 /* ── C1: Theme Mini Gallery ────────────────────────────── */
 
 let _themeHoverRestore = null;
+const _themeRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _themeCtx = () => {
+    if (_themeRuntime?.resolveContext) {
+        return _themeRuntime.resolveContext({
+            editor,
+            notify,
+            canvasEditor,
+        });
+    }
+    return { editor, notify, canvasEditor };
+};
+const _themeEditor = () => _themeCtx().editor;
+const _themeNotify = (message, type = '') => {
+    const fn = _themeCtx().notify;
+    if (typeof fn === 'function') fn(message, type);
+};
 
 function _applyThemeWithTokens(themeLike) {
+    const runtimeEditor = _themeEditor();
     if (!window.OEIDesignTokens?.mergeTheme) {
         SlidesThemes.apply(themeLike);
         return;
@@ -25,31 +44,35 @@ function _applyThemeWithTokens(themeLike) {
     const base = typeof themeLike === 'string'
         ? (all[themeLike] || SlidesThemes.BUILT_IN.dark)
         : (themeLike || SlidesThemes.BUILT_IN.dark);
-    const merged = window.OEIDesignTokens.mergeTheme(base, editor.data?.designTokens || {});
+    const merged = window.OEIDesignTokens.mergeTheme(base, runtimeEditor?.data?.designTokens || {});
     SlidesThemes.apply(merged);
 }
 
 function _themeFromEditorData() {
+    const runtimeEditor = _themeEditor();
+    if (!runtimeEditor?.data) return SlidesThemes.BUILT_IN.dark;
     const all = (typeof SlidesThemes.list === 'function') ? SlidesThemes.list() : SlidesThemes.BUILT_IN;
-    return typeof editor.data.theme === 'string'
-        ? (all[editor.data.theme] || SlidesThemes.BUILT_IN.dark)
-        : (editor.data.theme || SlidesThemes.BUILT_IN.dark);
+    return typeof runtimeEditor.data.theme === 'string'
+        ? (all[runtimeEditor.data.theme] || SlidesThemes.BUILT_IN.dark)
+        : (runtimeEditor.data.theme || SlidesThemes.BUILT_IN.dark);
 }
 
 function _resolvedThemeColors() {
+    const runtimeEditor = _themeEditor();
     const fallbackTheme = _themeFromEditorData();
     const resolved = window.OEIDesignTokens?.resolvePresentationTheme
-        ? window.OEIDesignTokens.resolvePresentationTheme(editor.data)
+        ? window.OEIDesignTokens.resolvePresentationTheme(runtimeEditor?.data)
         : fallbackTheme;
     return resolved?.colors || fallbackTheme?.colors || {};
 }
 
 function renderThemeMiniGallery() {
+    const runtimeEditor = _themeEditor();
     const container = document.getElementById('theme-mini-gallery');
-    if (!container || !editor.data) return;
+    if (!container || !runtimeEditor?.data) return;
     const themes = SlidesThemes.list();
     const quickIds = ['dark', 'light', 'academic', 'terminal', 'ocean', 'icom', 'lyon2'];
-    const current = typeof editor.data.theme === 'string' ? editor.data.theme : editor.data.theme?.id;
+    const current = typeof runtimeEditor.data.theme === 'string' ? runtimeEditor.data.theme : runtimeEditor.data.theme?.id;
     const currentColors = _resolvedThemeColors();
 
     container.innerHTML = quickIds.map(id => themes[id]).filter(Boolean).map(t => {
@@ -74,7 +97,11 @@ function renderThemeMiniGallery() {
     container.querySelectorAll('.theme-mini-swatch').forEach(swatch => {
         // G2: Preview on hover
         swatch.addEventListener('mouseenter', () => {
-            _themeHoverRestore = typeof editor.data.theme === 'string' ? editor.data.theme : JSON.parse(JSON.stringify(editor.data.theme));
+            const currentEditor = _themeEditor();
+            if (!currentEditor?.data) return;
+            _themeHoverRestore = typeof currentEditor.data.theme === 'string'
+                ? currentEditor.data.theme
+                : JSON.parse(JSON.stringify(currentEditor.data.theme));
             _applyThemeWithTokens(swatch.dataset.themeId);
             _thumbCssInjected = false;
         });
@@ -86,8 +113,10 @@ function renderThemeMiniGallery() {
             }
         });
         swatch.addEventListener('click', () => {
+            const currentEditor = _themeEditor();
+            if (!currentEditor) return;
             _themeHoverRestore = null;
-            editor.setTheme(swatch.dataset.themeId);
+            currentEditor.setTheme(swatch.dataset.themeId);
             buildThemeSelect();
             renderThemeMiniGallery();
             renderThemeColorGrid();
@@ -103,12 +132,13 @@ function renderThemeDuoQuick() {
 /* ── G3: Theme Color Grid ──────────────────────────────── */
 
 function renderThemeColorGrid() {
-    if (!editor.data) return;
+    const runtimeEditor = _themeEditor();
+    if (!runtimeEditor?.data) return;
     const container = document.getElementById('theme-color-grid');
     if (!container) return;
-    const themeData = typeof editor.data.theme === 'string'
-        ? (SlidesThemes.BUILT_IN[editor.data.theme] || SlidesThemes.BUILT_IN.dark)
-        : (editor.data.theme || SlidesThemes.BUILT_IN.dark);
+    const themeData = typeof runtimeEditor.data.theme === 'string'
+        ? (SlidesThemes.BUILT_IN[runtimeEditor.data.theme] || SlidesThemes.BUILT_IN.dark)
+        : (runtimeEditor.data.theme || SlidesThemes.BUILT_IN.dark);
     const c = themeData.colors || {};
     const keys = ['primary', 'accent', 'heading', 'text', 'slideBg', 'bg'];
     container.innerHTML = keys.map(k =>
@@ -116,11 +146,13 @@ function renderThemeColorGrid() {
     ).join('');
     container.querySelectorAll('.theme-color-chip').forEach(chip => {
         chip.addEventListener('click', () => {
+            const currentEditor = _themeEditor();
+            if (!currentEditor) return;
             const color = chip.dataset.color;
             // Apply as slide background
-            const slide = editor.currentSlide;
+            const slide = currentEditor.currentSlide;
             if (slide) {
-                editor.updateSlide(editor.selectedIndex, { bg: color });
+                currentEditor.updateSlide(currentEditor.selectedIndex, { bg: color });
                 const bgPick = document.getElementById('ribbon-bg-pick');
                 const bgText = document.getElementById('ribbon-bg-text');
                 if (bgPick) bgPick.value = colorToHex(color);
@@ -133,11 +165,12 @@ function renderThemeColorGrid() {
 /* ── C3: Quick Palette ─────────────────────────────────── */
 
 function renderQuickPalette() {
+    const runtimeEditor = _themeEditor();
     const container = document.getElementById('quick-palette');
-    if (!container || !editor.data) return;
-    const themeData = typeof editor.data.theme === 'string'
-        ? (SlidesThemes.BUILT_IN[editor.data.theme] || SlidesThemes.BUILT_IN.dark)
-        : (editor.data.theme || SlidesThemes.BUILT_IN.dark);
+    if (!container || !runtimeEditor?.data) return;
+    const themeData = typeof runtimeEditor.data.theme === 'string'
+        ? (SlidesThemes.BUILT_IN[runtimeEditor.data.theme] || SlidesThemes.BUILT_IN.dark)
+        : (runtimeEditor.data.theme || SlidesThemes.BUILT_IN.dark);
     const c = themeData.colors || {};
     const colors = [c.slideBg, c.primary, c.accent, c.heading, c.bg].filter(Boolean);
     container.innerHTML = colors.map(col =>
@@ -145,9 +178,10 @@ function renderQuickPalette() {
     ).join('');
     container.querySelectorAll('.quick-palette-dot').forEach(dot => {
         dot.addEventListener('click', () => {
-            const slide = editor.currentSlide;
+            const currentEditor = _themeEditor();
+            const slide = currentEditor?.currentSlide;
             if (slide) {
-                editor.updateSlide(editor.selectedIndex, { bg: dot.dataset.color });
+                currentEditor.updateSlide(currentEditor.selectedIndex, { bg: dot.dataset.color });
                 const bgPick = document.getElementById('ribbon-bg-pick');
                 const bgText = document.getElementById('ribbon-bg-text');
                 if (bgPick) bgPick.value = colorToHex(dot.dataset.color);
@@ -174,7 +208,9 @@ function renderLayoutGallery() {
     ).join('');
     container.querySelectorAll('.layout-thumb').forEach(thumb => {
         thumb.addEventListener('click', () => {
-            editor.addSlide(thumb.dataset.layout, editor.selectedIndex);
+            const runtimeEditor = _themeEditor();
+            if (!runtimeEditor) return;
+            runtimeEditor.addSlide(thumb.dataset.layout, runtimeEditor.selectedIndex);
         });
     });
 }
@@ -185,11 +221,13 @@ function initFontSelector() {
     const sel = document.getElementById('ribbon-font-heading');
     if (!sel) return;
     sel.addEventListener('change', () => {
+        const runtimeEditor = _themeEditor();
+        if (!runtimeEditor?.data) return;
         if (!sel.value) return;
         // Update the current theme's heading font
-        const themeData = typeof editor.data.theme === 'string'
-            ? { ...SlidesThemes.BUILT_IN[editor.data.theme] }
-            : { ...(editor.data.theme || SlidesThemes.BUILT_IN.dark) };
+        const themeData = typeof runtimeEditor.data.theme === 'string'
+            ? { ...SlidesThemes.BUILT_IN[runtimeEditor.data.theme] }
+            : { ...(runtimeEditor.data.theme || SlidesThemes.BUILT_IN.dark) };
         themeData.fonts = { ...themeData.fonts, heading: sel.value };
         themeData.id = themeData.id || 'custom';
         _applyThemeWithTokens(themeData);
@@ -204,12 +242,14 @@ const ASPECT_DIMS = { '16:9': [1280, 720], '4:3': [1024, 768], 'a4': [1123, 794]
 function initAspectRatio() {
     document.querySelectorAll('#aspect-select .aspect-btn').forEach(btn => {
         btn.addEventListener('click', () => {
+            const runtimeEditor = _themeEditor();
+            if (!runtimeEditor) return;
             document.querySelectorAll('#aspect-select .aspect-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const aspect = btn.dataset.aspect;
             const dims = ASPECT_DIMS[aspect] || [1280, 720];
             // Persist aspect ratio to data model
-            editor.setMetadata('aspect', aspect);
+            runtimeEditor.setMetadata('aspect', aspect);
             applyAspectDims(dims);
         });
     });
@@ -224,7 +264,8 @@ function applyAspectDims(dims) {
 }
 
 function restoreAspectRatio() {
-    const aspect = editor.data?.metadata?.aspect || '16:9';
+    const runtimeEditor = _themeEditor();
+    const aspect = runtimeEditor?.data?.metadata?.aspect || '16:9';
     const dims = ASPECT_DIMS[aspect] || [1280, 720];
     document.querySelectorAll('#aspect-select .aspect-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.aspect === aspect);
@@ -238,10 +279,12 @@ function initBodyFont() {
     const sel = document.getElementById('ribbon-font-body');
     if (!sel) return;
     sel.addEventListener('change', () => {
+        const runtimeEditor = _themeEditor();
+        if (!runtimeEditor?.data) return;
         if (!sel.value) return;
-        const themeData = typeof editor.data.theme === 'string'
-            ? { ...SlidesThemes.BUILT_IN[editor.data.theme] }
-            : { ...(editor.data.theme || SlidesThemes.BUILT_IN.dark) };
+        const themeData = typeof runtimeEditor.data.theme === 'string'
+            ? { ...SlidesThemes.BUILT_IN[runtimeEditor.data.theme] }
+            : { ...(runtimeEditor.data.theme || SlidesThemes.BUILT_IN.dark) };
         themeData.fonts = { ...themeData.fonts, body: sel.value };
         themeData.id = themeData.id || 'custom';
         _applyThemeWithTokens(themeData);
@@ -250,8 +293,9 @@ function initBodyFont() {
 }
 
 function _resolveTypographyForUi() {
-    const raw = (editor.data && typeof editor.data.typography === 'object' && editor.data.typography)
-        ? editor.data.typography
+    const runtimeEditor = _themeEditor();
+    const raw = (runtimeEditor?.data && typeof runtimeEditor.data.typography === 'object' && runtimeEditor.data.typography)
+        ? runtimeEditor.data.typography
         : {};
     const heading = Number(raw.heading);
     const text = Number(raw.text);
@@ -262,9 +306,10 @@ function _resolveTypographyForUi() {
 }
 
 function syncTypographyDefaultsControls() {
+    const runtimeEditor = _themeEditor();
     const headingInput = document.getElementById('ribbon-size-heading-global');
     const textInput = document.getElementById('ribbon-size-text-global');
-    if (!headingInput || !textInput || !editor.data) return;
+    if (!headingInput || !textInput || !runtimeEditor?.data) return;
     const typography = _resolveTypographyForUi();
     if (document.activeElement !== headingInput) headingInput.value = String(typography.heading);
     if (document.activeElement !== textInput) textInput.value = String(typography.text);
@@ -276,9 +321,11 @@ function initTypographyDefaultsControls() {
     if (!headingInput || !textInput) return;
     let timer = null;
     const scheduleCommit = () => {
+        const runtimeEditor = _themeEditor();
+        if (!runtimeEditor) return;
         clearTimeout(timer);
         timer = setTimeout(() => {
-            editor.setTypographyDefaults({
+            runtimeEditor.setTypographyDefaults({
                 heading: headingInput.value,
                 text: textInput.value,
             });
@@ -300,9 +347,11 @@ function openThemeManager() {
 }
 
 function renderThemeGrid() {
+    const runtimeEditor = _themeEditor();
+    if (!runtimeEditor?.data) return;
     const grid = document.getElementById('theme-grid');
     const themes = SlidesThemes.list();
-    const current = typeof editor.data.theme === 'string' ? editor.data.theme : editor.data.theme?.id;
+    const current = typeof runtimeEditor.data.theme === 'string' ? runtimeEditor.data.theme : runtimeEditor.data.theme?.id;
     const isBuiltIn = id => !!SlidesThemes.BUILT_IN[id];
 
     grid.innerHTML = Object.values(themes).map(t => {
@@ -313,17 +362,19 @@ function renderThemeGrid() {
             </div>
             <div class="theme-name">${t.name}</div>
             ${!isBuiltIn(t.id) ? `<div style="display:flex;gap:4px;justify-content:center;margin-top:4px">
-                <button class="tb-btn" style="padding:2px 6px;font-size:0.65rem" data-theme-edit="${t.id}">✏️</button>
-                <button class="tb-btn" style="padding:2px 6px;font-size:0.65rem" data-theme-export="${t.id}">↓</button>
-                <button class="tb-btn" style="padding:2px 6px;font-size:0.65rem;color:var(--danger)" data-theme-del="${t.id}">✕</button>
+                <button class="tb-btn ui-btn" style="padding:2px 6px;font-size:0.65rem" data-theme-edit="${t.id}">✏️</button>
+                <button class="tb-btn ui-btn" style="padding:2px 6px;font-size:0.65rem" data-theme-export="${t.id}">↓</button>
+                <button class="tb-btn ui-btn" style="padding:2px 6px;font-size:0.65rem;color:var(--danger)" data-theme-del="${t.id}">✕</button>
             </div>` : ''}
         </div>`;
     }).join('');
 
     grid.querySelectorAll('.theme-card').forEach(card => {
         card.addEventListener('click', e => {
+            const currentEditor = _themeEditor();
+            if (!currentEditor) return;
             if (e.target.closest('[data-theme-edit],[data-theme-export],[data-theme-del]')) return;
-            editor.setTheme(card.dataset.themeId);
+            currentEditor.setTheme(card.dataset.themeId);
             buildThemeSelect();
             renderThemeGrid();
             renderThemeMiniGallery();
@@ -377,8 +428,8 @@ function openThemeEditor(existingTheme) {
         <div class="field"><label>Corps</label><input type="text" id="font-body" value="${escAttr(theme.fonts.body || '')}"></div>
         <div class="field"><label>Code</label><input type="text" id="font-mono" value="${escAttr(theme.fonts.mono || '')}"></div>
         <div class="modal-actions">
-            <button class="tb-btn primary" id="save-theme-btn">Sauvegarder</button>
-            <button class="tb-btn" id="cancel-theme-btn">Annuler</button>
+            <button class="tb-btn ui-btn primary ui-btn--primary" id="save-theme-btn">Sauvegarder</button>
+            <button class="tb-btn ui-btn" id="cancel-theme-btn">Annuler</button>
         </div>`;
 
     colorFields.forEach(([key]) => {
@@ -389,13 +440,15 @@ function openThemeEditor(existingTheme) {
     });
 
     editorEl.querySelector('#save-theme-btn').addEventListener('click', () => {
+        const runtimeEditor = _themeEditor();
+        if (!runtimeEditor) return;
         theme.id = editorEl.querySelector('#theme-id').value.trim() || theme.id;
         theme.name = editorEl.querySelector('#theme-name').value.trim() || 'Thème';
         theme.fonts.heading = editorEl.querySelector('#font-heading').value;
         theme.fonts.body = editorEl.querySelector('#font-body').value;
         theme.fonts.mono = editorEl.querySelector('#font-mono').value;
         SlidesThemes.save(theme);
-        editor.setTheme(theme.id);
+        runtimeEditor.setTheme(theme.id);
         buildThemeSelect();
         renderThemeGrid();
         renderThemeMiniGallery();
@@ -403,7 +456,7 @@ function openThemeEditor(existingTheme) {
         renderThemeColorGrid();
         renderQuickPalette();
         editorEl.style.display = 'none';
-        notify('Thème sauvegardé : ' + theme.name, 'success');
+        _themeNotify('Thème sauvegardé : ' + theme.name, 'success');
     });
     editorEl.querySelector('#cancel-theme-btn').addEventListener('click', () => editorEl.style.display = 'none');
 }

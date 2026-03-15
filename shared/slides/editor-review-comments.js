@@ -171,9 +171,9 @@ function _reviewBuildItemHtml(comment) {
         </div>
         <div class="review-comment-text">${_reviewEsc(comment.text)}</div>
         <div class="review-comment-actions">
-            <button class="tb-btn review-comment-goto" data-action="goto">Aller</button>
-            <button class="tb-btn review-comment-toggle" data-action="toggle">${actionToggleLabel}</button>
-            <button class="tb-btn danger review-comment-delete" data-action="delete">Supprimer</button>
+            <button class="tb-btn ui-btn review-comment-goto" data-action="goto">Aller</button>
+            <button class="tb-btn ui-btn review-comment-toggle" data-action="toggle">${actionToggleLabel}</button>
+            <button class="tb-btn ui-btn danger ui-btn--danger review-comment-delete" data-action="delete">Supprimer</button>
         </div>
     </div>`;
 }
@@ -201,7 +201,7 @@ function openReviewCommentsModal() {
                     <textarea id="review-comment-text" rows="3" placeholder="Ajouter un commentaire de relecture (clarte, precision, coherence, etc.)"></textarea>
                     <div class="review-comment-create-actions">
                         <label class="review-check"><input type="checkbox" id="review-link-element"> Lier a l'element selectionne</label>
-                        <button class="tb-btn primary" id="review-comment-add">Ajouter</button>
+                        <button class="tb-btn ui-btn primary ui-btn--primary" id="review-comment-add">Ajouter</button>
                     </div>
                 </div>
                 <div class="review-comments-list" id="review-comments-list"></div>

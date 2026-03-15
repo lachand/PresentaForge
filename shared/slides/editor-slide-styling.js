@@ -118,8 +118,8 @@ function openBgImagePicker() {
             <label style="font-size:0.75rem;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="bg-img-overlay" ${slide.bgOverlay?'checked':''}> Overlay sombre</label>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
-            <button id="bg-img-apply" class="tb-btn" style="flex:1;justify-content:center;">Appliquer</button>
-            <button id="bg-img-clear" class="tb-btn" style="flex:1;justify-content:center;">Retirer</button>
+            <button id="bg-img-apply" class="tb-btn ui-btn" style="flex:1;justify-content:center;">Appliquer</button>
+            <button id="bg-img-clear" class="tb-btn ui-btn" style="flex:1;justify-content:center;">Retirer</button>
         </div>
     `;
     document.body.appendChild(pop);
@@ -177,8 +177,8 @@ function openGradientPicker() {
         </div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;" id="grad-presets"></div>
         <div style="display:flex;gap:6px;">
-            <button id="grad-apply" class="tb-btn" style="flex:1;justify-content:center;">Appliquer</button>
-            <button id="grad-clear" class="tb-btn" style="flex:1;justify-content:center;">Retirer</button>
+            <button id="grad-apply" class="tb-btn ui-btn" style="flex:1;justify-content:center;">Appliquer</button>
+            <button id="grad-clear" class="tb-btn ui-btn" style="flex:1;justify-content:center;">Retirer</button>
         </div>
     `;
     document.body.appendChild(pop);

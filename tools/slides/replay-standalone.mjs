@@ -2,6 +2,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { unwrapReplaySessionData } from '../../shared/slides/replay-contract.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -225,6 +226,7 @@ function normalizeSessionEvents(events, slideCount) {
 export function normalizeReplaySession({ slidesData, sessionData, defaultSlideMs = DEFAULT_SLIDE_MS }) {
     const slides = Array.isArray(slidesData?.slides) ? slidesData.slides : [];
     const slideCount = slides.length;
+    const rawSession = unwrapReplaySessionData(sessionData) || sessionData;
 
     if (slideCount === 0) {
         return {
@@ -236,20 +238,20 @@ export function normalizeReplaySession({ slidesData, sessionData, defaultSlideMs
         };
     }
 
-    if (sessionData && typeof sessionData === 'object' && Array.isArray(sessionData.events)) {
-        const events = normalizeSessionEvents(sessionData.events, slideCount);
+    if (rawSession && typeof rawSession === 'object' && Array.isArray(rawSession.events)) {
+        const events = normalizeSessionEvents(rawSession.events, slideCount);
         const maxEventMs = events.reduce((acc, entry) => Math.max(acc, entry.t), 0);
         const durationMs = Math.max(
             0,
-            parseNumeric(sessionData.durationMs) ?? 0,
+            parseNumeric(rawSession.durationMs) ?? 0,
             maxEventMs
         );
         return {
-            ...sessionData,
-            version: parseNumeric(sessionData.version) ?? 2,
+            ...rawSession,
+            version: parseNumeric(rawSession.version) ?? 2,
             durationMs,
             events,
-            captions: Array.isArray(sessionData.captions) ? sessionData.captions : [],
+            captions: Array.isArray(rawSession.captions) ? rawSession.captions : [],
             source: 'session',
         };
     }

@@ -432,6 +432,11 @@
             gap: 0.45rem;
         }
 
+        .pres-actions-single {
+            grid-template-columns: 1fr;
+            margin-top: 0.45rem;
+        }
+
         .card-btn {
             display: inline-flex;
             align-items: center;
@@ -550,7 +555,7 @@
             </a>
             <button class="theme-toggle" id="btn-toggle-theme" title="Basculer thème clair/sombre" aria-label="Basculer thème clair/sombre">
                 <svg id="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                <svg id="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+                <svg id="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
             </button>
         </div>
 
@@ -618,10 +623,13 @@
 </div>
 
 <script src="../shared/slides/storage.js?v=2"></script>
+<script src="../shared/slides/theme-runtime.js?v=1"></script>
 <script src="../shared/slides/background-utils.js?v=1"></script>
-<script src="../shared/slides/slides-core.js?v=15"></script>
+<script src="../shared/slides/slides-special-runtime.js?v=1"></script>
+<script src="../shared/slides/slides-core.js?v=28"></script>
 <script src="../shared/slides/editor-dialog.js"></script>
-<script src="../shared/slides/import-pipeline.js?v=1"></script>
+<script src="../shared/slides/import-pipeline-bundle.js?v=2"></script>
+<script src="../shared/slides/import-pipeline.js?v=5"></script>
 <script>
     const Storage = window.OEIStorage || null;
 
@@ -662,6 +670,15 @@
     const LOCAL_KEY = Storage?.KEYS?.SLIDE_LIBRARY || 'oei-slide-library';
     const WORKDOCS_KEY = Storage?.KEYS?.SLIDE_WORKDOCS || 'oei-slide-workdocs';
     const RECENT_KEY = Storage?.KEYS?.RECENT_PRESENTATIONS || 'oei-recent-presentations';
+    const IndexThemeController = window.OEIThemeRuntime?.createController
+        ? window.OEIThemeRuntime.createController({
+            scope: 'index',
+            defaultMode: 'dark',
+            target: 'data-theme',
+            rootElement: document.documentElement,
+            storageKey: EDITOR_THEME_KEY,
+        })
+        : null;
 
     const EXAMPLES = [
         { file: '../data/slides/exemple-git.json', title: 'GitHub Actions — Introduction', slides: 10, theme: 'dark', topic: 'CI/CD', icon: 'flow' },
@@ -688,16 +705,23 @@
     }
 
     function initTheme() {
-        const saved = storageGetRaw(EDITOR_THEME_KEY) || 'dark';
-        document.documentElement.setAttribute('data-theme', saved);
+        const saved = IndexThemeController
+            ? IndexThemeController.applyCurrent()
+            : (storageGetRaw(EDITOR_THEME_KEY) || 'dark');
+        if (!IndexThemeController) document.documentElement.setAttribute('data-theme', saved);
         updateThemeIcon(saved);
     }
 
     function toggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme') || 'dark';
-        const next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        storageSetRaw(EDITOR_THEME_KEY, next);
+        const next = IndexThemeController
+            ? IndexThemeController.toggleMode()
+            : (() => {
+                const current = document.documentElement.getAttribute('data-theme') || 'dark';
+                const resolved = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', resolved);
+                storageSetRaw(EDITOR_THEME_KEY, resolved);
+                return resolved;
+            })();
         updateThemeIcon(next);
     }
 
@@ -820,6 +844,8 @@
                     updatedAt,
                     lastAccessAt: _toTimestamp(r.lastAccessAt, 0),
                     slideCount: Number(r.slideCount) || 0,
+                    timelineCount: Number(r.timelineCount) || (Array.isArray(r.timeline) ? r.timeline.length : 0),
+                    lastTimelineAt: _toTimestamp(r.lastTimelineAt, 0),
                     tags: [...new Set(['workdoc', ...(Array.isArray(r.tags) ? r.tags : []), ...meta.tags])],
                     rawData,
                 };
@@ -1036,6 +1062,7 @@
                     <div class="pres-meta">
                         <span class="chip">${icon('count')} ${Number(deck.slideCount) || '?'} slides</span>
                         <span class="chip">${icon('clock')} ${deck.updatedAt ? new Date(deck.updatedAt).toLocaleDateString('fr-FR') : (deck.date || 'date inconnue')}</span>
+                        ${deck.timelineCount ? `<span class="chip">${icon('draft')} ${deck.timelineCount} snapshot${deck.timelineCount > 1 ? 's' : ''}</span>` : ''}
                     </div>
                     ${(deck.tags || []).length
                         ? `<div class="pres-meta">${deck.tags.slice(0, 2).map(tag => `<span class=\"chip\">${esc(tag)}</span>`).join('')}</div>`
@@ -1044,7 +1071,7 @@
                         <button type="button" class="card-btn primary" data-action="present-local" data-local-id="${escAttr(deck.source + ':' + deck.sourceIndex)}">${icon('play')} Présenter</button>
                         <button type="button" class="card-btn" data-action="edit-local" data-local-id="${escAttr(deck.source + ':' + deck.sourceIndex)}">${icon('edit')} Éditer</button>
                     </div>
-                    <div class="pres-actions" style="grid-template-columns: 1fr; margin-top: 0.45rem;">
+                    <div class="pres-actions pres-actions-single">
                         <button type="button" class="card-btn warn" data-action="remove-local" data-local-id="${escAttr(deck.source + ':' + deck.sourceIndex)}">${icon('trash')} Retirer de la liste</button>
                     </div>
                 </div>
@@ -1080,6 +1107,8 @@
                 }
                 location.href = 'editor.html';
             } catch (err) {
+                const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
+                if (err?.code === cancelCode) return;
                 await OEIDialog.alert('Erreur : ' + (err?.message || 'fichier invalide'));
             }
         };

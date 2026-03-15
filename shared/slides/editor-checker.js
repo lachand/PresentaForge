@@ -225,7 +225,7 @@ function renderA11yElementHints(el, panel) {
             ${sorted.map(issue => `<div class="checker-live-item checker-live-${_checkerEscAttr(issue.level)}">${_checkerEsc(issue.msg)}</div>`).join('')}
         </div>
         ${fixes.length ? `<div class="checker-live-actions">
-            ${fixes.map(issue => `<button class="tb-btn checker-live-fix" data-checker-fix="${_checkerEscAttr(issue.fix)}">
+            ${fixes.map(issue => `<button class="tb-btn ui-btn checker-live-fix" data-checker-fix="${_checkerEscAttr(issue.fix)}">
                 ${issue.fix === 'add-alt' ? 'Ajouter alt' : issue.fix === 'add-title' ? 'Ajouter titre' : issue.fix === 'bump-font-size' ? 'Passer à 16px' : 'Corriger contraste'}
             </button>`).join('')}
         </div>` : ''}
@@ -406,8 +406,8 @@ function showCheckerResults(findings) {
                 <span class="checker-stat-a11y">${stats.a11y} signaux A11y</span>
             </div>
             <div class="checker-mode-switch">
-                <button id="checker-mode-all" class="tb-btn checker-mode-btn">Tout</button>
-                <button id="checker-mode-a11y" class="tb-btn checker-mode-btn">A11y</button>
+                <button id="checker-mode-all" class="tb-btn ui-btn checker-mode-btn">Tout</button>
+                <button id="checker-mode-a11y" class="tb-btn ui-btn checker-mode-btn">A11y</button>
             </div>
         </div>
         <div data-checker-results class="checker-results"></div>

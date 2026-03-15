@@ -810,7 +810,7 @@
             <div class="join-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg></div>
             <h1>Rejoindre</h1>
             <p>Entrez votre prénom pour rejoindre la présentation en cours</p>
-            <input id="pseudo-input" class="join-input" type="text" placeholder="Votre prénom" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+            <input id="pseudo-input" class="join-input ui-input" type="text" placeholder="Votre prénom" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
             <button id="join-btn" class="join-btn ui-btn ui-btn--primary"><span>Rejoindre</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button>
             <div id="join-status" class="status-msg"></div>
         </div>
@@ -844,7 +844,7 @@
             </div>
             <div id="question-overlay">
                 <div id="question-overlay-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3v-7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z"/></svg>Poser une question anonyme</div>
-                <textarea id="question-text" maxlength="300" placeholder="Votre question…"></textarea>
+                <textarea id="question-text" class="ui-textarea" maxlength="300" placeholder="Votre question…"></textarea>
                 <div class="overlay-row">
                     <button id="question-send" class="join-btn ui-btn ui-btn--primary">Envoyer</button>
                     <button id="question-cancel" class="ui-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Annuler</button>
@@ -859,7 +859,7 @@
                 <div id="wc-prompt-text"></div>
                 <div id="wc-display"></div>
                 <div class="wordcloud-controls">
-                    <input id="wc-input" maxlength="40" placeholder="Votre mot…">
+                    <input id="wc-input" class="ui-input" maxlength="40" placeholder="Votre mot…">
                     <button id="wc-send" class="join-btn ui-btn ui-btn--primary">Envoyer</button>
                 </div>
                 <div id="wc-sent-msg"></div>
@@ -933,17 +933,11 @@
                 </button>
             </summary>
             <div class="notes-body">
-                <textarea id="notes-area" placeholder="Notez vos idées, définitions, questions…&#10;&#10;Astuce : vos notes sont sauvegardées automatiquement et resteront disponibles à votre prochain retour sur ce cours." spellcheck="true"></textarea>
+                <textarea id="notes-area" class="ui-textarea" placeholder="Notez vos idées, définitions, questions…&#10;&#10;Astuce : vos notes sont sauvegardées automatiquement et resteront disponibles à votre prochain retour sur ce cours." spellcheck="true"></textarea>
             </div>
         </details>
     </div>
 
-    <script src="../shared/components/base/WidgetRegistry.js"></script>
-    <script src="../shared/slides/storage.js?v=2"></script>
-    <script src="../shared/slides/realtime-contract.js?v=3"></script>
-    <script src="../shared/slides/network-session.js?v=2"></script>
-    <script src="../shared/slides/ui-icons.js?v=2"></script>
-    <script src="../vendor/peerjs/1.5.5/peerjs.min.js"></script>
-    <script src="student-main.js?v=2"></script>
+    <script type="module" src="student-bootstrap.js?v=1"></script>
 </body>
 </html>

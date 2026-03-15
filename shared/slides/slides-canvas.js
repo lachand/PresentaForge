@@ -16,6 +16,11 @@
  * Gère les éléments librement positionnables, le drag/resize et les guides d'alignement.
  */
 
+const CanvasHelpers = window.OEISlidesCanvasHelpers;
+if (!CanvasHelpers) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-helpers.js avant slides-canvas.js.');
+}
+
 class CanvasEditor {
 
     /* =========================================================
@@ -526,7 +531,7 @@ class CanvasEditor {
     padding: 0.65rem 0.6rem 0.65rem 0.85rem;
     color: #3d4451;
     font-size: var(--cel-code-gutter-size, 13px);
-    line-height: 1.6;
+    line-height: var(--cel-code-line-height, 1.58);
     user-select: none; text-align: right;
     font-family: var(--sl-font-mono, monospace);
     white-space: pre; border-right: 1px solid #21262d;
@@ -540,7 +545,7 @@ class CanvasEditor {
 .cel-code-scroll > pre code {
     font-family: var(--sl-font-mono, monospace);
     font-size: var(--cel-code-font-size, 13px);
-    line-height: 1.6;
+    line-height: var(--cel-code-line-height, 1.58);
     color: #e6edf3;
     background: transparent !important; white-space: pre; display: block; padding: 0 !important;
 }
@@ -682,6 +687,7 @@ class CanvasEditor {
     margin: 0;
     padding: 8px 10px;
     font-size: 0.72rem;
+    line-height: var(--ce-code-line-height, var(--cel-code-line-height, 1.58));
     font-family: var(--sl-font-mono, monospace);
     color: var(--sl-text, #e2e8f0);
     white-space: pre;
@@ -721,6 +727,7 @@ class CanvasEditor {
     border-radius: 7px;
     background: color-mix(in srgb, var(--sl-slide-bg, #1a1d27) 80%, #000);
     font-size: 0.66rem;
+    line-height: var(--ce-code-line-height, var(--cel-code-line-height, 1.58));
     font-family: var(--sl-font-mono, monospace);
     color: var(--sl-text, #e2e8f0);
     white-space: pre;
@@ -1344,18 +1351,19 @@ class CanvasEditor {
                 const base = SlidesShared.resolveElementFontSize('code', s, this.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
+                const codeLineHeight = SlidesShared.resolveCodeLineHeight(codeSize);
                 const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
                 const label = labelRaw;
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
                     <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</div>
-                    <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'cel')}</div>
+                    <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;--cel-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'cel')}</div>
                 </div>`;
             }
             case 'list': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('list', s, this.typography, 22);
-                const items = (el.data?.items || []).map(i => `<li>${escHtml(i)}</li>`).join('');
+                const items = (el.data?.items || []).map(i => `<li>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
                 return `<ul class="cel-list-content" style="font-size:${base}px;color:${s.color||'var(--sl-text)'};">${items}</ul>`;
             }
             case 'image': {
@@ -1447,6 +1455,7 @@ class CanvasEditor {
             case 'mistake-fix': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('mistake-fix', s, this.typography, 17);
+                const codeLineHeight = SlidesShared.resolveCodeLineHeight(Math.round(base * 0.78));
                 const title = String(el.data?.title || 'Erreur fréquente vs correction').trim() || 'Erreur fréquente vs correction';
                 const lang = String(el.data?.language || 'python').trim() || 'python';
                 const mistake = String(el.data?.mistake || '').trim();
@@ -1457,11 +1466,11 @@ class CanvasEditor {
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
                         <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-danger,#ef4444) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-danger,#ef4444) 9%,var(--sl-slide-bg,#1a1d27));">
                             <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-danger,#ef4444);text-transform:uppercase;letter-spacing:0.03em;">Erreur fréquente</div>
-                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${escHtml(lang)}">${escHtml(mistake)}</code></pre>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${escHtml(lang)}">${escHtml(mistake)}</code></pre>
                         </div>
                         <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
                             <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">Correction</div>
-                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${escHtml(lang)}">${escHtml(fix)}</code></pre>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${escHtml(lang)}">${escHtml(fix)}</code></pre>
                         </div>
                     </div>
                 </div>`;
@@ -1515,6 +1524,7 @@ class CanvasEditor {
             case 'code-example': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('code-example', s, this.typography, 16);
+                const codeLineHeight = SlidesShared.resolveCodeLineHeight(Math.round(base * 0.82));
                 const data = el.data || {};
                 const labelRaw = String(data.label ?? data.blockTitle ?? 'Exemple').trim() || 'Exemple';
                 const label = labelRaw;
@@ -1525,7 +1535,7 @@ class CanvasEditor {
                 return `<div class="cel-code-example-content" style="font-size:${base}px;background:${tone.strongBg};border-left-color:${tone.accent};border-color:${tone.border};--ce-accent:${tone.accent};">
                     <div class="cel-code-example-label" style="font-size:${Math.round(base * 1.02)}px;color:${tone.accent};">${escHtml(label)}</div>
                     <div class="cel-code-example-text" style="font-size:${Math.round(base * 0.92)}px;">${body}</div>
-                    <div class="cel-code-example-widget" style="--ce-code-font-size:${Math.round(base * 0.82)}px;--ce-code-gutter-size:${Math.round(base * 0.82)}px;--ce-code-lang-size:${Math.round(base * 0.64)}px;">${widgetHtml}</div>
+                    <div class="cel-code-example-widget" style="--ce-code-font-size:${Math.round(base * 0.82)}px;--ce-code-gutter-size:${Math.round(base * 0.82)}px;--ce-code-lang-size:${Math.round(base * 0.64)}px;--ce-code-line-height:${codeLineHeight};">${widgetHtml}</div>
                 </div>`;
             }
             case 'terminal-session': {
@@ -1533,12 +1543,13 @@ class CanvasEditor {
                 const base = SlidesShared.resolveElementFontSize('terminal-session', s, this.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
+                const codeLineHeight = SlidesShared.resolveCodeLineHeight(codeSize);
                 const labelRaw = String(el.data?.label ?? 'Session terminal').trim() || 'Session terminal';
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 const script = String(el.data?.script || '').replace(/\r\n/g, '\n');
                 return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
                     <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(labelRaw)}</div>
-                    <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;">${SlidesShared.codeTerminal(script, el.data?.language || 'bash', 'cel')}</div>
+                    <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;--cel-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(script, el.data?.language || 'bash', 'cel')}</div>
                 </div>`;
             }
             case 'quote': {
@@ -1564,7 +1575,7 @@ class CanvasEditor {
                 const cardTitle = el.data?.title
                     ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||tone.accent};border-bottom:1px solid ${tone.border};padding-bottom:0.5rem;margin-bottom:0.75rem;">${escHtml(el.data.title)}</div>`
                     : '';
-                const items = (el.data?.items || []).map(i => `<li>${escHtml(i)}</li>`).join('');
+                const items = (el.data?.items || []).map(i => `<li>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
                 return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:3px solid ${tone.accent};border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
                     ${cardTitle}
                     <ul style="margin:0;padding-left:1.4em;font-size:${base}px;color:${s.color||'var(--sl-text,#cbd5e1)'};">${items}</ul>
@@ -1578,7 +1589,7 @@ class CanvasEditor {
                 rows.forEach((row, ri) => {
                     html += '<tr>';
                     const tag = ri === 0 ? 'th' : 'td';
-                    (row || []).forEach(cell => { html += `<${tag}>${escHtml(cell)}</${tag}>`; });
+                    (row || []).forEach(cell => { html += `<${tag}>${SlidesShared.formatInlineRichText(cell)}</${tag}>`; });
                     html += '</tr>';
                 });
                 html += '</table></div>';
@@ -1648,6 +1659,7 @@ class CanvasEditor {
                 const base = SlidesShared.resolveElementFontSize('highlight', s, this.typography, 16);
                 const codeSize = Math.round(base * 0.82);
                 const langSize = Math.round(base * 0.64);
+                const codeLineHeight = SlidesShared.resolveCodeLineHeight(codeSize);
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
                 const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
@@ -1655,7 +1667,7 @@ class CanvasEditor {
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 const highlights = el.data?.highlights || [];
                 const lines = code.split('\n');
-                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal" style="--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
+                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal" style="--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;--cel-code-line-height:${codeLineHeight};"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
                 lines.forEach((line, i) => {
                     const ln = i + 1;
                     const cls = highlights.some(h => CanvasEditor._lineInRange(ln, h.lines)) ? ' cel-hl-line' : '';
@@ -1959,24 +1971,17 @@ class CanvasEditor {
     /* ── Highlight line range helper ──────────────────────── */
 
     static _lineInRange(lineNum, rangeStr) {
-        if (!rangeStr) return false;
-        return String(rangeStr).split(',').some(part => {
-            part = part.trim();
-            if (part.includes('-')) {
-                const [a, b] = part.split('-').map(Number);
-                return lineNum >= a && lineNum <= b;
-            }
-            return lineNum === Number(part);
-        });
+        return CanvasHelpers.lineInRange(lineNum, rangeStr);
     }
 
     /* ── SmartArt rendering ───────────────────────────────── */
 
     static _renderSmartArt(variant, items, color) {
-        const n = items.length || 1;
+        const safeItems = SlidesShared.normalizeSmartArtItems(items, []);
+        const n = safeItems.length || 1;
         switch (variant) {
             case 'process': {
-                const cols = items.map((item, i) => {
+                const cols = safeItems.map((item, i) => {
                     const arrow = i < n - 1 ? `<div class="cel-sa-arrow">→</div>` : '';
                     return `<div class="cel-sa-step" style="border-color:${color}"><span>${escHtml(item)}</span></div>${arrow}`;
                 }).join('');
@@ -1984,7 +1989,7 @@ class CanvasEditor {
             }
             case 'cycle': {
                 const anglePer = 360 / n;
-                const nodes = items.map((item, i) => {
+                const nodes = safeItems.map((item, i) => {
                     const angle = i * anglePer - 90;
                     const rad = angle * Math.PI / 180;
                     const x = 50 + 35 * Math.cos(rad);
@@ -1994,7 +1999,7 @@ class CanvasEditor {
                 return `<div class="cel-smartart cel-sa-cycle" style="--sa-color:${color}"><div class="cel-sa-cycle-ring" style="border-color:${color}"></div>${nodes}</div>`;
             }
             case 'pyramid': {
-                const rows = items.map((item, i) => {
+                const rows = safeItems.map((item, i) => {
                     const w = 30 + (70 * (i + 1) / n);
                     return `<div class="cel-sa-pyrow" style="width:${w}%;background:color-mix(in srgb,${color} ${20 + 60*(n-i)/n}%,var(--sl-slide-bg,#1a1d27));border:1px solid ${color};">${escHtml(item)}</div>`;
                 }).join('');
@@ -2002,18 +2007,18 @@ class CanvasEditor {
             }
             case 'matrix': {
                 const cols = Math.ceil(Math.sqrt(n));
-                const cells = items.map(item =>
+                const cells = safeItems.map(item =>
                     `<div class="cel-sa-cell" style="border-color:${color}">${escHtml(item)}</div>`
                 ).join('');
                 return `<div class="cel-smartart cel-sa-matrix" style="--sa-color:${color};--sa-cols:${cols}">${cells}</div>`;
             }
             default:
-                return `<div class="cel-smartart cel-sa-process" style="--sa-color:${color}">${items.map(i => `<div class="cel-sa-step" style="border-color:${color}"><span>${escHtml(i)}</span></div>`).join('')}</div>`;
+                return `<div class="cel-smartart cel-sa-process" style="--sa-color:${color}">${safeItems.map(i => `<div class="cel-sa-step" style="border-color:${color}"><span>${escHtml(i)}</span></div>`).join('')}</div>`;
         }
     }
 
     static _normalizeCodeExampleMode(mode) {
-        return ['terminal', 'live', 'stepper'].includes(mode) ? mode : 'terminal';
+        return CanvasHelpers.normalizeCodeExampleMode(mode);
     }
 
     static _renderCodeExampleWidget(data, mode, style = {}, baseFontSize = null) {
@@ -2024,17 +2029,19 @@ class CanvasEditor {
         const base = Number.isFinite(providedBase)
             ? Math.max(10, providedBase)
             : SlidesShared.resolveElementFontSize('code-example', style, null, 16);
-        const headSize = Math.round(base * 0.66);
-        const codeSize = Math.round(base * 0.82);
-        const stepTitleSize = Math.round(base * 0.74);
-        const stepDetailSize = Math.round(base * 0.69);
+        const metrics = CanvasHelpers.computeCodeMetrics(base, SlidesShared.resolveCodeLineHeight);
+        const headSize = metrics.headSize;
+        const codeSize = metrics.codeSize;
+        const codeLineHeight = metrics.codeLineHeight;
+        const stepTitleSize = metrics.stepTitleSize;
+        const stepDetailSize = metrics.stepDetailSize;
         if (resolvedMode === 'live') {
             return `<div class="cel-codeexample-live">
                 <div class="cel-codeexample-live-head" style="font-size:${headSize}px;">
                     <span class="cel-codeexample-live-lang">${escHtml(lang)}</span>
                     <span class="cel-codeexample-live-tag">Live</span>
                 </div>
-                <pre class="cel-codeexample-live-code" style="font-size:${codeSize}px;"><code class="language-${escHtml(lang)}">${escHtml(code)}</code></pre>
+                <pre class="cel-codeexample-live-code" style="font-size:${codeSize}px;line-height:${codeLineHeight};"><code class="language-${escHtml(lang)}">${escHtml(code)}</code></pre>
             </div>`;
         }
         if (resolvedMode === 'stepper') {
@@ -2048,7 +2055,7 @@ class CanvasEditor {
                 <div class="cel-codeexample-stepper-body">
                     <div class="cel-codeexample-stepper-title" style="font-size:${stepTitleSize}px;">${escHtml(first.title || 'Étape 1')}</div>
                     <div class="cel-codeexample-stepper-detail" style="font-size:${stepDetailSize}px;">${escHtml(first.detail || '')}</div>
-                    <pre class="cel-codeexample-stepper-code" style="font-size:${codeSize}px;"><code class="language-${escHtml(lang)}">${escHtml(first.code || '')}</code></pre>
+                    <pre class="cel-codeexample-stepper-code" style="font-size:${codeSize}px;line-height:${codeLineHeight};"><code class="language-${escHtml(lang)}">${escHtml(first.code || '')}</code></pre>
                 </div>
             </div>`;
         }

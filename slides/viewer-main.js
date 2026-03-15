@@ -6,11 +6,111 @@
         import { clearNode, el, appendAll } from './viewer/dom-utils.js';
         import { resolveRealtimeContract } from './viewer/runtime-contracts.js';
         import { createViewerAppState } from './viewer/app-state.js';
+        import { createTopicEventBus } from './viewer/event-bus.js';
         import { safePeerSend, broadcastPeers } from './viewer/room-transport.js';
         import { postSyncMessage } from './viewer/audience-sync.js';
         import { clampNumber } from './viewer/presenter-layout.js';
         import { applyStatusState } from './viewer/room-ui.js';
-        import { REMOTE_HASH_ITERATIONS, sha256Hex, derivePasswordHashHex } from './viewer/remote-auth.js';
+import {
+    buildRemoteRoomUrl,
+    buildStudentRoomUrl,
+    computeRoomNetworkDiagnostics,
+} from './viewer/room-links.js';
+import {
+    buildRoomSnapshot,
+} from './viewer/room-bridge-snapshot.js';
+import {
+    buildAudienceNudgePayload,
+    buildExitTicketEndPayload,
+    buildExitTicketSnapshot,
+    buildExitTicketStartPayload,
+    buildExitTicketUpdatePayload,
+    buildRankOrderEndPayload,
+    buildRankOrderSnapshot,
+    buildRankOrderStartPayload,
+    buildRankOrderUpdatePayload,
+    createExitTicketState,
+    createRankOrderState,
+} from './viewer/room-activity-workflow.js';
+import {
+    normalizeExitTicketAnswers as _normalizeExitTicketAnswers,
+    normalizeRankOrderSubmission as _normalizeRankOrderSubmission,
+} from './viewer/room-activity-model.js';
+import {
+    applyWordCloudWord,
+    buildPollEndPayload,
+    buildPollPromptDisplayText,
+    buildPollStartPayload,
+    buildWordCloudEndPayload,
+    buildWordCloudStartPayload,
+    buildWordCloudTopWords,
+    createPollState,
+    createWordCloudState,
+    normalizeWordCloudWord,
+} from './viewer/room-engagement-workflow.js';
+import {
+    computePollStats as _computePollStats,
+    normalizePollAnswer as _normalizePollAnswer,
+} from './viewer/room-poll-model.js';
+import {
+    computeRoomFeedbackStats,
+    computeRoomQuestionStats,
+    computeRoomTelemetryStats,
+            filterRoomQuestions,
+            formatRoomStudentTelemetryLabel,
+            getRoomFeedbackMeta,
+            isRoomStudentTelemetryFresh,
+            pruneRoomFeedbackState,
+        } from './viewer/room-insights.js';
+        import {
+            buildPresenterMiniViews,
+            renderPresenterContextDynamicHtml,
+            renderPresenterRoomMiniHtml,
+            renderPresenterRoomStatusBarHtml,
+        } from './viewer/room-panel-presenter.js';
+import {
+    archiveQuestion,
+    buildQuestionRowClass,
+    formatQuestionAgeLabel,
+    getQuestionEmptyLabel,
+    markAllQuestionsHidden,
+    toggleQuestionHidden,
+    toggleQuestionPinned,
+    toggleQuestionResolved,
+} from './viewer/room-panel-questions.js';
+import {
+    clearAllRaisedHands,
+    clearRaisedHandForPeer,
+} from './viewer/room-panel-hands.js';
+import {
+    formatWordCloudCountLabel,
+    renderFeedbackListHtml,
+    renderFeedbackSummaryHtml,
+    renderPollResultsHtml,
+    summarizeWordCloud,
+} from './viewer/room-panel-tools.js';
+import { updateRoomPanelRuntime } from './viewer/room-panel-runtime.js';
+import {
+    createRoomRemoteControl,
+    runRemotePresenterCommand,
+} from './viewer/room-remote-control.js';
+import { createRoomRelayRuntime } from './viewer/room-relay-runtime.js';
+import {
+    applyStudentFeedbackMessage,
+    applyStudentHandMessage,
+    applyStudentQuestionMessage,
+    applyStudentTelemetryMessage,
+    createStudentJoinRecord,
+    sendActiveRoomActivities,
+    syncPeerRuntimeState,
+} from './viewer/room-realtime-sync.js';
+import { createCommandBus } from './viewer/command-bus.js';
+import { REMOTE_HASH_ITERATIONS, sha256Hex, derivePasswordHashHex } from './viewer/remote-auth.js';
+import { createRoomPeerReconnectRuntime } from './viewer/room-peer-reconnect-runtime.js';
+import { buildReplayStandaloneHtml } from './viewer/replay-standalone-export.js';
+import {
+    normalizeReplaySessionExport,
+} from '../shared/slides/replay-contract.mjs';
 
         const params = new URLSearchParams(location.search);
         let file = params.get('file') || '../data/slides/exemple-git.json';
@@ -195,9 +295,6 @@
             ROOM_MSG.RANK_ORDER_SUBMIT,
             ROOM_MSG.SYNC_REQUEST,
         ]);
-        let _roomPeerReconnectTimer = null;
-        let _roomPeerReconnectAttempts = 0;
-
         // ── Nouvelles structures de données salle ──────────────
         const _roomHands = [];       // [{ peerId, pseudo }]
         const _roomQuestions = [];   // [{ qid, text, time }]
@@ -215,151 +312,13 @@
         let _activeExitTicket = null; // { ticketId, title, prompts, responses: Map(peerId -> { answers, pseudo, at }) }
         let _activeRankOrder = null; // { rankId, title, items, responses: Map(peerId -> { order, pseudo, at }) }
         let _wcBroadcastTimer = null;
-        const _roomBridgeSubs = {
-            poll: new Set(),
-            cloud: new Set(),
-            exitTicket: new Set(),
-            rankOrder: new Set(),
-            roulette: new Set(),
-            room: new Set(),
-        };
-        const _normalizePollType = value => {
-            const raw = toTrimmedString(value, 32).toLowerCase();
-            if (raw === 'scale5' || raw === 'thumbs' || raw === 'mcq-single' || raw === 'mcq-multi') return raw;
-            return 'thumbs';
-        };
-        const _defaultPollOptions = pollType => {
-            if (pollType === 'thumbs') return ['👍 Pour', '👎 Contre'];
-            if (pollType === 'scale5') return ['1', '2', '3', '4', '5'];
-            return ['Option A', 'Option B', 'Option C', 'Option D'];
-        };
-        const _sanitizePollOptions = (pollType, rawOptions) => {
-            if (pollType === 'scale5') return ['1', '2', '3', '4', '5'];
-            const source = Array.isArray(rawOptions) ? rawOptions : [];
-            const seen = new Set();
-            const cleaned = [];
-            source.forEach(opt => {
-                const label = toTrimmedString(opt, 80);
-                if (!label) return;
-                const key = label.toLowerCase();
-                if (seen.has(key)) return;
-                seen.add(key);
-                cleaned.push(label);
-            });
-            if (pollType === 'thumbs') return cleaned.length >= 2 ? cleaned.slice(0, 2) : ['👍 Pour', '👎 Contre'];
-            if (cleaned.length < 2) return _defaultPollOptions(pollType);
-            return cleaned.slice(0, 8);
-        };
-        const _pollValueDomain = poll => {
-            if (!poll) return [];
-            if (poll.type === 'thumbs') return [1, 0];
-            if (poll.type === 'scale5') return [1, 2, 3, 4, 5];
-            return (poll.options || []).map((_, idx) => idx);
-        };
-        const _computePollStats = poll => {
-            const values = _pollValueDomain(poll);
-            const counts = values.map(v => {
-                let count = 0;
-                poll.responses.forEach(answer => {
-                    if (poll.multi && Array.isArray(answer)) {
-                        if (answer.includes(v)) count += 1;
-                    } else if (!poll.multi && answer === v) {
-                        count += 1;
-                    }
-                });
-                return count;
-            });
-            const total = poll.responses.size;
-            const totalSelections = counts.reduce((sum, v) => sum + v, 0);
-            return { counts, total, totalSelections };
-        };
-        const _normalizePollAnswer = (poll, rawValue) => {
-            const domain = new Set(_pollValueDomain(poll));
-            if (!domain.size) return null;
-            if (poll.multi) {
-                const values = Array.isArray(rawValue) ? rawValue : [rawValue];
-                const normalized = [...new Set(values.map(v => Number(v)).filter(v => Number.isFinite(v) && domain.has(v)))];
-                return normalized.length ? normalized : null;
-            }
-            const value = Number(rawValue);
-            if (!Number.isFinite(value) || !domain.has(value)) return null;
-            return value;
-        };
-        const _sanitizeStringList = (raw, maxItems = 8, maxLen = 120, fallback = []) => {
-            const source = Array.isArray(raw) ? raw : [];
-            const cleaned = source
-                .map(item => toTrimmedString(item, maxLen))
-                .filter(Boolean)
-                .slice(0, maxItems);
-            if (cleaned.length) return cleaned;
-            const fb = Array.isArray(fallback) ? fallback : [];
-            return fb
-                .map(item => toTrimmedString(item, maxLen))
-                .filter(Boolean)
-                .slice(0, maxItems);
-        };
-        const _normalizeExitTicketAnswers = (ticket, rawAnswers) => {
-            if (!ticket || !Array.isArray(ticket.prompts) || !ticket.prompts.length) return null;
-            const source = Array.isArray(rawAnswers) ? rawAnswers : [];
-            const answers = ticket.prompts.map((_, idx) => toTrimmedString(source[idx], 280));
-            return answers.some(Boolean) ? answers : null;
-        };
-        const _normalizeRankOrderSubmission = (rank, rawOrder) => {
-            if (!rank || !Array.isArray(rank.items) || rank.items.length < 2) return null;
-            const total = rank.items.length;
-            const source = Array.isArray(rawOrder) ? rawOrder : [];
-            const seen = new Set();
-            const normalized = [];
-            source.forEach(value => {
-                const idx = toIntOrNull(value);
-                if (idx === null || idx < 0 || idx >= total) return;
-                if (seen.has(idx)) return;
-                seen.add(idx);
-                normalized.push(idx);
-            });
-            for (let i = 0; i < total; i += 1) {
-                if (!seen.has(i)) normalized.push(i);
-            }
-            if (normalized.length !== total) return null;
-            return normalized;
-        };
-        const _computeRankOrderAggregate = rank => {
-            const items = Array.isArray(rank?.items) ? rank.items : [];
-            if (!items.length) return [];
-            const totals = items.map((_, itemIndex) => ({
-                itemIndex,
-                label: String(items[itemIndex] || ''),
-                score: 0,
-                votes: 0,
-                posSum: 0,
-            }));
-            const maxScore = items.length;
-            rank.responses.forEach(entry => {
-                const order = Array.isArray(entry?.order) ? entry.order : [];
-                order.forEach((itemIndex, pos) => {
-                    const row = totals[itemIndex];
-                    if (!row) return;
-                    row.score += (maxScore - pos);
-                    row.votes += 1;
-                    row.posSum += (pos + 1);
-                });
-            });
-            return totals
-                .map(row => ({
-                    itemIndex: row.itemIndex,
-                    label: row.label,
-                    score: row.score,
-                    votes: row.votes,
-                    avgPos: row.votes ? (row.posSum / row.votes) : null,
-                }))
-                .sort((a, b) => {
-                    const ds = b.score - a.score;
-                    if (ds !== 0) return ds;
-                    const da = (a.avgPos ?? 999) - (b.avgPos ?? 999);
-                    if (da !== 0) return da;
-                    return a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' });
-                });
-        };
+        const _roomBridgeBus = createTopicEventBus(['poll', 'cloud', 'exitTicket', 'rankOrder', 'roulette', 'room']);
+        const _viewerCommandBus = createCommandBus({
+            maxTrace: 240,
+            onError: (name, error) => {
+                console.warn('[viewer:command]', name, error?.message || error);
+            },
+        });
         const _roomBridgeSnapshotPoll = () => {
             if (!_activePoll) return { active: false };
             const stats = _computePollStats(_activePoll);
@@ -377,9 +336,7 @@
         };
         const _roomBridgeSnapshotCloud = () => {
             if (!_activeWordCloud) return { active: false, words: [] };
-            const words = [..._activeWordCloud.words.entries()]
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 48);
+            const words = buildWordCloudTopWords(_activeWordCloud.words, 48);
             return {
                 active: true,
                 cloudId: _activeWordCloud.cloudId,
@@ -388,51 +345,20 @@
             };
         };
         const _roomBridgeSnapshotExitTicket = () => {
-            if (!_activeExitTicket) return { active: false, responses: [] };
-            const responses = [..._activeExitTicket.responses.values()]
-                .sort((a, b) => Number(b?.at || 0) - Number(a?.at || 0))
-                .map(entry => ({
-                    pseudo: toTrimmedString(entry?.pseudo, 40) || 'Anonyme',
-                    answers: Array.isArray(entry?.answers) ? entry.answers.map(v => toTrimmedString(v, 280)) : [],
-                    at: Number(entry?.at || 0),
-                }));
-            return {
-                active: true,
-                ticketId: _activeExitTicket.ticketId,
-                title: _activeExitTicket.title || 'Exit ticket',
-                prompts: Array.isArray(_activeExitTicket.prompts) ? _activeExitTicket.prompts.slice() : [],
-                responsesCount: _activeExitTicket.responses.size,
-                responses,
-            };
+            return buildExitTicketSnapshot(_activeExitTicket, { toTrimmedString });
         };
         const _roomBridgeSnapshotRankOrder = () => {
-            if (!_activeRankOrder) return { active: false, rows: [] };
-            return {
-                active: true,
-                rankId: _activeRankOrder.rankId,
-                title: _activeRankOrder.title || 'Classement',
-                items: Array.isArray(_activeRankOrder.items) ? _activeRankOrder.items.slice() : [],
-                responsesCount: _activeRankOrder.responses.size,
-                rows: _computeRankOrderAggregate(_activeRankOrder),
-            };
+            return buildRankOrderSnapshot(_activeRankOrder);
         };
         const _roomBridgeSnapshotRoom = () => {
-            const studentsEntries = Object.entries(_room.students || {});
-            const students = studentsEntries.map(([peerId, student]) => ({
-                peerId,
-                pseudo: String(student?.pseudo || peerId || 'Anonyme'),
-                score: toNumberOr(student?.score, 0),
-                quizCount: toNumberOr(student?.quizCount, 0),
-                quizCorrect: toNumberOr(student?.quizCorrect, 0),
-                handRaised: !!student?.handRaised,
-            }));
             const questions = roomQuestionStats();
             const feedback10m = roomFeedbackStats(10 * 60 * 1000);
             const pollSnap = _roomBridgeSnapshotPoll();
-            return {
-                active: !!_room.active,
-                transport: _room.active ? (_relayRoom.active ? 'p2p+relay' : 'p2p') : 'off',
-                studentsCount: students.length,
+            const telemetry = roomTelemetryStats();
+            return buildRoomSnapshot({
+                roomActive: !!_room.active,
+                relayActive: !!_relayRoom.active,
+                studentsByPeer: _room.students,
                 handsCount: _roomHands.length,
                 questionsOpen: questions.open,
                 questionsTotal: questions.total,
@@ -441,15 +367,13 @@
                 wordCloudActive: !!_activeWordCloud,
                 exitTicketActive: !!_activeExitTicket,
                 rankOrderActive: !!_activeRankOrder,
-                students,
-            };
+                telemetry,
+                toTrimmedString,
+                toNumberOr,
+            });
         };
         const _roomBridgeEmit = (kind, payload) => {
-            const listeners = _roomBridgeSubs[kind];
-            if (!listeners) return;
-            listeners.forEach(fn => {
-                try { fn(payload); } catch (_) {}
-            });
+            _roomBridgeBus.emit(kind, payload);
         };
         const REMOTE_PASSWORD_MIN_LEN = 8;
         const REMOTE_CHALLENGE_TTL_MS = 60 * 1000;
@@ -466,36 +390,10 @@
             switchTab: null,
         };
 
-        const _remoteControl = {
-            roomId: '',
-            enabled: false,
-            hash: '',
-            salt: '',
-            iterations: REMOTE_HASH_ITERATIONS,
-            sessions: new Map(), // token -> { peerId, expiresAt }
-            challenges: new Map(), // challengeId -> { peerId, clientNonce, serverNonce, expiresAt }
-            failures: new Map(), // peerId -> { count, lockedUntil }
-            statusText: '',
-            statusTone: '',
-        };
         const _roomUiStatus = {
             text: '',
             tone: '',
         };
-
-        const _toBase64Url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-        const _randToken = (size = 18) => {
-            const bytes = new Uint8Array(size);
-            crypto.getRandomValues(bytes);
-            return _toBase64Url(bytes);
-        };
-
-        function _remoteSetStatus(text, tone = '') {
-            _remoteControl.statusText = String(text || '');
-            _remoteControl.statusTone = tone || '';
-            const statusEl = document.getElementById('rm-remote-status');
-            applyStatusState(statusEl, 'rm-remote-status', _remoteControl.statusText, _remoteControl.statusTone);
-        }
 
         function _roomSetStatus(text, tone = '') {
             _roomUiStatus.text = String(text || '');
@@ -508,251 +406,61 @@
             }
         }
 
-        function _remoteBuildUrl(roomId) {
-            return location.origin + location.pathname.replace(/[^/]*$/, '') + 'remote.html?room=' + encodeURIComponent(roomId);
-        }
+        const _roomPeerReconnectRuntime = createRoomPeerReconnectRuntime({
+            room: _room,
+            reconnectDelayMs: _reconnectDelayMs,
+            roomSetStatus: _roomSetStatus,
+            setRoomIdInputsDisabled: active => {
+                const idInput = document.getElementById('rm-room-id-input');
+                const idRefresh = document.getElementById('rm-room-id-refresh');
+                if (idInput) idInput.disabled = !!active;
+                if (idRefresh) idRefresh.disabled = !!active;
+            },
+            runRoomPreviewUpdater: () => {
+                ViewerRuntime.runRoomPreviewUpdater();
+            },
+        });
 
-        function _remotePrune() {
-            const now = Date.now();
-            for (const [token, sess] of _remoteControl.sessions.entries()) {
-                if (!sess || sess.expiresAt <= now) _remoteControl.sessions.delete(token);
-            }
-            for (const [challengeId, challenge] of _remoteControl.challenges.entries()) {
-                if (!challenge || challenge.expiresAt <= now) _remoteControl.challenges.delete(challengeId);
-            }
-            for (const [peerId, fail] of _remoteControl.failures.entries()) {
-                if (!fail || (fail.lockedUntil && fail.lockedUntil <= now && !fail.count)) {
-                    _remoteControl.failures.delete(peerId);
-                }
-            }
-        }
-
-        function _remoteActiveSessionsCount() {
-            _remotePrune();
-            return _remoteControl.sessions.size;
-        }
-
-        function _remoteUpdateUI() {
-            _remotePrune();
-            const roomId = _remoteControl.roomId || toTrimmedString(document.getElementById('rm-room-id-input')?.value, 40);
-            const sessions = _remoteActiveSessionsCount();
-            const wrap = document.getElementById('rm-remote-link-wrap');
-            const urlEl = document.getElementById('rm-remote-url');
-            const qrEl = document.getElementById('rm-remote-qr');
-            const enableBtn = document.getElementById('rm-remote-enable');
-            const revokeBtn = document.getElementById('rm-remote-revoke');
-
-            if (enableBtn) enableBtn.disabled = !roomId;
-            if (revokeBtn) revokeBtn.disabled = !_remoteControl.enabled && sessions === 0;
-
-            if (_remoteControl.enabled && roomId) {
-                const remoteUrl = _remoteBuildUrl(roomId);
-                if (wrap) wrap.style.display = '';
-                if (urlEl) urlEl.textContent = remoteUrl;
-                if (qrEl) qrEl.innerHTML = `<img src="${_buildQrImageSrc(remoteUrl, 180)}" alt="QR contrôle mobile">`;
-                if (_room.active) {
-                    _remoteSetStatus(sessions > 0
-                        ? `Contrôle mobile actif (${sessions} session${sessions > 1 ? 's' : ''}).`
-                        : 'Contrôle mobile actif. En attente de connexion distante.', 'ok');
-                } else {
-                    _remoteSetStatus('Contrôle prêt. Ouvrez la salle pour accepter les connexions mobiles.', 'warn');
-                }
-            } else {
-                if (wrap) wrap.style.display = 'none';
-                if (!_remoteControl.statusText || _remoteControl.statusTone === 'ok') {
-                    _remoteSetStatus('Définissez un mot de passe puis activez le contrôle mobile.', '');
-                }
-            }
-        }
-
-        function _remoteLoadConfig(roomId) {
-            _remoteControl.roomId = roomId;
-            _remoteControl.sessions.clear();
-            _remoteControl.challenges.clear();
-            _remoteControl.failures.clear();
-            const saved = storageGetJSON(remoteControlConfigKey(roomId), null);
-            if (saved && typeof saved === 'object' && typeof saved.hash === 'string' && typeof saved.salt === 'string') {
-                _remoteControl.enabled = true;
-                _remoteControl.hash = saved.hash;
-                _remoteControl.salt = saved.salt;
-                _remoteControl.iterations = Math.max(10000, toIntOrNull(saved.iterations) || REMOTE_HASH_ITERATIONS);
-                _remoteSetStatus('Contrôle mobile restauré pour cette salle.', 'ok');
-            } else {
-                _remoteControl.enabled = false;
-                _remoteControl.hash = '';
-                _remoteControl.salt = '';
-                _remoteControl.iterations = REMOTE_HASH_ITERATIONS;
-                _remoteSetStatus('Définissez un mot de passe puis activez le contrôle mobile.', '');
-            }
-            _remoteUpdateUI();
-        }
-
-        function _remotePersistConfig() {
-            if (!_remoteControl.roomId) return;
-            const payload = {
-                hash: _remoteControl.hash,
-                salt: _remoteControl.salt,
-                iterations: _remoteControl.iterations,
-                updatedAt: Date.now(),
-            };
-            storageSetJSON(remoteControlConfigKey(_remoteControl.roomId), payload);
-        }
-
-        function _remoteClearConfig(roomId) {
-            if (!roomId) return;
-            storageRemove(remoteControlConfigKey(roomId));
-            storageRemove(REMOTE_CONTROL_CONFIG_KEY);
-        }
-
-        function _remoteDropPeer(peerId) {
-            if (!peerId) return;
-            for (const [token, sess] of _remoteControl.sessions.entries()) {
-                if (sess?.peerId === peerId) _remoteControl.sessions.delete(token);
-            }
-            for (const [challengeId, challenge] of _remoteControl.challenges.entries()) {
-                if (challenge?.peerId === peerId) _remoteControl.challenges.delete(challengeId);
-            }
-            _remoteControl.failures.delete(peerId);
-            _remoteUpdateUI();
-        }
-
-        function _remoteFail(peerId) {
-            const now = Date.now();
-            const rec = _remoteControl.failures.get(peerId) || { count: 0, lockedUntil: 0 };
-            rec.count = Math.max(0, rec.count || 0) + 1;
-            if (rec.count >= 3) {
-                rec.lockedUntil = now + REMOTE_LOCK_MS;
-                rec.count = 0;
-            }
-            _remoteControl.failures.set(peerId, rec);
-            return rec.lockedUntil > now ? rec.lockedUntil - now : 0;
-        }
-
-        function _remoteCheckLock(peerId) {
-            const rec = _remoteControl.failures.get(peerId);
-            const now = Date.now();
-            if (!rec || !rec.lockedUntil) return 0;
-            if (rec.lockedUntil <= now) {
-                _remoteControl.failures.delete(peerId);
-                return 0;
-            }
-            return rec.lockedUntil - now;
-        }
-
-        function _remoteSendAuthError(conn, reason, code = 'auth_error') {
-            safePeerSend(conn, { type: ROOM_MSG.REMOTE_AUTH_ERROR, code, reason: String(reason || 'Authentification refusée') });
-        }
-
-        function _remoteRevokeAll(reason = 'Contrôle mobile révoqué', keepSecret = false) {
-            const sessionPeers = new Set(Array.from(_remoteControl.sessions.values()).map(s => s.peerId).filter(Boolean));
-            _room.connections.forEach(c => {
-                if (!c?.open) return;
-                if (sessionPeers.has(c.peer)) {
-                    try { c.send({ type: ROOM_MSG.REMOTE_REVOKED, reason }); } catch (e) {}
-                }
-            });
-            _remoteControl.sessions.clear();
-            _remoteControl.challenges.clear();
-            _remoteControl.failures.clear();
-            if (!keepSecret) {
-                _remoteControl.enabled = false;
-                _remoteControl.hash = '';
-                _remoteControl.salt = '';
-                _remoteControl.iterations = REMOTE_HASH_ITERATIONS;
-                _remoteClearConfig(_remoteControl.roomId);
-                const pass = document.getElementById('rm-remote-password');
-                if (pass) pass.value = '';
-            }
-            _remoteSetStatus(reason, keepSecret ? 'warn' : 'error');
-            _remoteUpdateUI();
-        }
-
-        async function _remoteEnableFromPassword() {
-            const pass = toTrimmedString(document.getElementById('rm-remote-password')?.value || '', 128);
-            if (pass.length < REMOTE_PASSWORD_MIN_LEN) {
-                _remoteSetStatus(`Mot de passe trop court (${REMOTE_PASSWORD_MIN_LEN} caractères minimum).`, 'error');
-                return;
-            }
-            if (!_remoteControl.roomId) {
-                _remoteSetStatus('ID de salle invalide.', 'error');
-                return;
-            }
-            _remoteSetStatus('Activation du contrôle mobile…', 'warn');
-            const salt = _randToken(16);
-            const hash = await derivePasswordHashHex(pass, salt, REMOTE_HASH_ITERATIONS);
-            _remoteControl.enabled = true;
-            _remoteControl.hash = hash;
-            _remoteControl.salt = salt;
-            _remoteControl.iterations = REMOTE_HASH_ITERATIONS;
-            _remoteControl.sessions.clear();
-            _remoteControl.challenges.clear();
-            _remoteControl.failures.clear();
-            _remotePersistConfig();
-            const passEl = document.getElementById('rm-remote-password');
-            if (passEl) passEl.value = '';
-            _remoteUpdateUI();
-        }
-
-        function _remoteSessionValid(conn, token) {
-            if (!_remoteControl.enabled) return false;
-            if (!token) return false;
-            _remotePrune();
-            const sess = _remoteControl.sessions.get(String(token));
-            if (!sess || sess.peerId !== conn.peer) return false;
-            if (sess.expiresAt <= Date.now()) {
-                _remoteControl.sessions.delete(String(token));
-                return false;
-            }
-            sess.expiresAt = Date.now() + REMOTE_SESSION_TTL_MS;
-            _remoteControl.sessions.set(String(token), sess);
-            return true;
-        }
-
-        function _remoteAck(conn, rid, ok, reason = '') {
-            safePeerSend(conn, {
-                type: ROOM_MSG.REMOTE_COMMAND_ACK,
-                rid: toTrimmedString(rid, 80),
-                ok: !!ok,
-                reason: toTrimmedString(reason, 120),
-                at: Date.now(),
-            });
-        }
-
-        function _remoteRunCommand(command, payload) {
-            const cmd = toTrimmedString(command, 40).toLowerCase();
-            const deck = ViewerRuntime.revealDeck;
-            switch (cmd) {
-                case 'next':
-                    if (typeof PresenterControls.goNext === 'function') { PresenterControls.goNext(); return { ok: true }; }
-                    if (deck) { deck.next(); return { ok: true }; }
-                    return { ok: false, reason: 'Navigation indisponible' };
-                case 'prev':
-                    if (typeof PresenterControls.goPrev === 'function') { PresenterControls.goPrev(); return { ok: true }; }
-                    if (deck) { deck.prev(); return { ok: true }; }
-                    return { ok: false, reason: 'Navigation indisponible' };
-                case 'goto': {
-                    const idx = toIntOrNull(payload?.index);
-                    if (idx === null || idx < 0) return { ok: false, reason: 'Index invalide' };
-                    if (typeof PresenterControls.goTo === 'function') { PresenterControls.goTo(idx); return { ok: true }; }
-                    if (deck) { deck.slide(idx, 0, -1); return { ok: true }; }
-                    return { ok: false, reason: 'Navigation indisponible' };
-                }
-                case 'black':
-                    if (typeof PresenterControls.toggleBlack === 'function') { PresenterControls.toggleBlack(); return { ok: true }; }
-                    return { ok: false, reason: 'Écran noir indisponible' };
-                case 'timer-toggle':
-                    if (typeof PresenterControls.timerToggle === 'function') { PresenterControls.timerToggle(); return { ok: true }; }
-                    return { ok: false, reason: 'Minuteur indisponible' };
-                case 'timer-reset':
-                    if (typeof PresenterControls.timerReset === 'function') { PresenterControls.timerReset(); return { ok: true }; }
-                    return { ok: false, reason: 'Minuteur indisponible' };
-                case 'salle':
-                    if (typeof PresenterControls.switchTab === 'function') { PresenterControls.switchTab('salle'); return { ok: true }; }
-                    return { ok: false, reason: 'Vue salle indisponible' };
-                default:
-                    return { ok: false, reason: 'Commande inconnue' };
-            }
-        }
+        const _remoteControlApi = createRoomRemoteControl({
+            ROOM_MSG,
+            safePeerSend,
+            toTrimmedString,
+            toIntOrNull,
+            applyStatusState,
+            buildRemoteUrl: roomId => buildRemoteRoomUrl(location.href, roomId),
+            buildQrImageSrc: _buildQrImageSrc,
+            storageGetJSON,
+            storageSetJSON,
+            storageRemove,
+            remoteControlConfigKey,
+            legacyConfigKey: REMOTE_CONTROL_CONFIG_KEY,
+            derivePasswordHashHex,
+            sha256Hex,
+            hashIterations: REMOTE_HASH_ITERATIONS,
+            passwordMinLen: REMOTE_PASSWORD_MIN_LEN,
+            challengeTtlMs: REMOTE_CHALLENGE_TTL_MS,
+            sessionTtlMs: REMOTE_SESSION_TTL_MS,
+            lockMs: REMOTE_LOCK_MS,
+            getRoomConnections: () => _room.connections,
+            isRoomActive: () => !!_room.active,
+            runCommand: (command, payload) => runRemotePresenterCommand(command, payload, {
+                toTrimmedString,
+                toIntOrNull,
+                presenterControls: PresenterControls,
+                deck: ViewerRuntime.revealDeck,
+            }),
+        });
+        const _remoteControl = _remoteControlApi.state;
+        const _remoteSetStatus = _remoteControlApi.setStatus;
+        const _remoteSetRoomId = _remoteControlApi.setRoomId;
+        const _remoteBuildUrl = _remoteControlApi.buildUrl;
+        const _remoteUpdateUI = _remoteControlApi.updateUI;
+        const _remoteLoadConfig = _remoteControlApi.loadConfig;
+        const _remoteDropPeer = _remoteControlApi.dropPeer;
+        const _remoteActiveSessionsCount = _remoteControlApi.activeSessionsCount;
+        const _remoteRevokeAll = _remoteControlApi.revokeAll;
+        const _remoteEnableFromPassword = () => _remoteControlApi.enableFromPassword();
+        const _remoteHandleIncoming = (conn, msg) => _remoteControlApi.handleIncoming(conn, msg);
 
         function _roomEsc(s) {
             return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -849,164 +557,23 @@
             return !!_roomSeenByPeer.get(pid)?.has(key);
         }
 
-        function _relayWsOpen() {
-            return !!(_relayRoom.ws && _relayRoom.ws.readyState === WebSocket.OPEN);
-        }
-
-        function _relaySendRaw(payload) {
-            if (!_relayWsOpen()) return false;
-            try {
-                _relayRoom.ws.send(JSON.stringify(payload));
-                return true;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function _relaySendDirect(peerId, message) {
-            const target = toTrimmedString(peerId, 160);
-            if (!target || !message) return false;
-            return _relaySendRaw({
-                type: 'relay:direct',
-                roomId: _relayRoom.roomId,
-                token: RELAY_OPTIONS.token || '',
-                to: target,
-                message,
-                at: Date.now(),
-            });
-        }
-
-        function _relaySendBroadcast(message) {
-            if (!message) return false;
-            return _relaySendRaw({
-                type: 'relay:broadcast',
-                roomId: _relayRoom.roomId,
-                token: RELAY_OPTIONS.token || '',
-                message,
-                at: Date.now(),
-            });
-        }
-
-        function _relayConnectionFor(peerId) {
-            const pid = toTrimmedString(peerId, 160) || `relay-${Math.random().toString(36).slice(2, 8)}`;
-            const existing = _relayRoom.peers.get(pid);
-            if (existing) return existing;
-            const relayConn = {
-                peer: pid,
-                open: true,
-                __transport: 'relay',
-                send: payload => _relaySendDirect(pid, payload),
-            };
-            _relayRoom.peers.set(pid, relayConn);
-            return relayConn;
-        }
-
-        function _relayHandleIncoming(raw) {
-            if (!raw || typeof raw !== 'object') return;
-            const envelope = raw;
-            const msg = (envelope.message && typeof envelope.message === 'object')
-                ? envelope.message
-                : ((envelope.payload && typeof envelope.payload === 'object') ? envelope.payload : null);
-            if (!msg) return;
-            const from = toTrimmedString(
-                envelope.from || envelope.peerId || envelope.clientId || envelope.source,
-                160
-            ) || 'relay-anon';
-            const conn = _relayConnectionFor(from);
-            roomHandleIncoming(conn, msg);
-        }
-
-        function _relayClearReconnectTimer() {
-            if (_relayRoom.reconnectTimer) {
-                clearTimeout(_relayRoom.reconnectTimer);
-                _relayRoom.reconnectTimer = null;
-            }
-        }
-
-        function _relayScheduleReconnect(reason = '') {
-            if (!_room.active || !RELAY_OPTIONS.enabled || !RELAY_OPTIONS.wsUrl) return;
-            if (_relayRoom.reconnectTimer) return;
-            _relayRoom.reconnectAttempts += 1;
-            const delay = _reconnectDelayMs(_relayRoom.reconnectAttempts);
-            _roomSetStatus(`Relay déconnecté, reconnexion…${reason ? ` (${reason})` : ''}`, 'warn');
-            _relayRoom.reconnectTimer = setTimeout(() => {
-                _relayRoom.reconnectTimer = null;
-                _relayOpen(_relayRoom.roomId);
-            }, delay);
-        }
-
-        function _relayOpen(roomId) {
-            if (!RELAY_OPTIONS.enabled || !RELAY_OPTIONS.wsUrl || !roomId) return;
-            _relayClearReconnectTimer();
-            if (_relayRoom.ws) {
-                try { _relayRoom.ws.close(); } catch (e) {}
-                _relayRoom.ws = null;
-            }
-            _relayRoom.roomId = String(roomId);
-            try {
-                _relayRoom.ws = new WebSocket(RELAY_OPTIONS.wsUrl);
-            } catch (e) {
-                _relayScheduleReconnect('ws-init');
-                return;
-            }
-            _relayRoom.ws.addEventListener('open', () => {
-                _relayRoom.active = true;
-                _relayRoom.reconnectAttempts = 0;
-                _relaySendRaw({
-                    type: 'relay:join',
-                    role: 'presenter',
-                    roomId: _relayRoom.roomId,
-                    token: RELAY_OPTIONS.token || '',
-                    at: Date.now(),
-                });
-                _roomSetStatus('Salle active (P2P + relay).', 'ok');
-            });
-            _relayRoom.ws.addEventListener('message', ev => {
-                let parsed = null;
-                try { parsed = JSON.parse(String(ev.data || '')); } catch (e) { return; }
-                if (Array.isArray(parsed)) {
-                    parsed.forEach(_relayHandleIncoming);
-                    return;
-                }
-                if (parsed?.type === 'relay:error') {
-                    _roomSetStatus(`Relay: ${_roomEsc(parsed.reason || 'erreur')}`, 'warn');
-                    return;
-                }
-                _relayHandleIncoming(parsed);
-            });
-            _relayRoom.ws.addEventListener('close', () => {
-                _relayRoom.active = false;
-                _relayRoom.ws = null;
-                _relayRoom.peers.clear();
-                _relayScheduleReconnect('close');
-            });
-            _relayRoom.ws.addEventListener('error', () => {
-                _relayRoom.active = false;
-                _roomSetStatus('Relay en erreur (fallback indisponible).', 'warn');
-            });
-        }
-
-        function _relayClose() {
-            _relayClearReconnectTimer();
-            _relayRoom.reconnectAttempts = 0;
-            _relayRoom.active = false;
-            _relayRoom.roomId = '';
-            const relayPeers = new Set(_relayRoom.peers.keys());
-            relayPeers.forEach(pid => {
-                delete _room.students[pid];
-                _roomFeedback.lastByPeer.delete(pid);
-                _roomSeenByPeer.delete(pid);
-            });
-            for (let i = _roomHands.length - 1; i >= 0; i--) {
-                if (relayPeers.has(_roomHands[i].peerId)) _roomHands.splice(i, 1);
-            }
-            _relayRoom.peers.clear();
-            if (_relayRoom.ws) {
-                try { _relayRoom.ws.close(); } catch (e) {}
-                _relayRoom.ws = null;
-            }
-            roomUpdatePanel();
-        }
+        const _relayRuntime = createRoomRelayRuntime({
+            relayRoom: _relayRoom,
+            room: _room,
+            roomHands: _roomHands,
+            roomFeedback: _roomFeedback,
+            roomSeenByPeer: _roomSeenByPeer,
+            relayOptions: RELAY_OPTIONS,
+            toTrimmedString,
+            reconnectDelayMs: _reconnectDelayMs,
+            roomSetStatus: _roomSetStatus,
+            roomEsc: _roomEsc,
+            roomHandleIncoming: (conn, msg) => { roomHandleIncoming(conn, msg); },
+            roomUpdatePanel: () => { roomUpdatePanel(); },
+        });
+        const _relaySendBroadcast = msg => _relayRuntime.sendBroadcast(msg);
+        const _relayOpen = roomId => _relayRuntime.open(roomId);
+        const _relayClose = () => _relayRuntime.close();
 
         function roomBroadcast(msg) {
             broadcastPeers(_room.connections, msg);
@@ -1014,76 +581,36 @@
         }
 
         function roomQuestionStats() {
-            let open = 0;
-            let resolved = 0;
-            let pinned = 0;
-            _roomQuestions.forEach(q => {
-                if (q.read || q.hidden) return;
-                if (q.pinned) pinned++;
-                if (q.resolved) resolved++;
-                else open++;
-            });
-            return { open, resolved, pinned, total: open + resolved };
+            return computeRoomQuestionStats(_roomQuestions);
         }
 
-        function roomQuestionComparator(a, b) {
-            if (!!a.hidden !== !!b.hidden) return a.hidden ? 1 : -1;
-            if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-            if (!!a.resolved !== !!b.resolved) return a.resolved ? 1 : -1;
-            const av = Number(a.votes) || 0;
-            const bv = Number(b.votes) || 0;
-            if (av !== bv) return bv - av;
-            return (b.time || 0) - (a.time || 0);
+        function roomStudentTelemetryFresh(student, maxAgeMs = 45 * 1000) {
+            return isRoomStudentTelemetryFresh(student, { maxAgeMs });
+        }
+
+        function roomStudentTelemetryLabel(student) {
+            return formatRoomStudentTelemetryLabel(student, { trimFn: toTrimmedString });
+        }
+
+        function roomTelemetryStats(maxAgeMs = 45 * 1000) {
+            return computeRoomTelemetryStats(Object.values(_room.students || {}), { maxAgeMs });
         }
 
         function roomFilteredQuestions() {
-            const active = _roomQuestions.filter(q => !q.read);
-            switch (_roomQuestionFilter) {
-                case 'pinned':
-                    return active.filter(q => !q.hidden && !!q.pinned).sort(roomQuestionComparator);
-                case 'resolved':
-                    return active.filter(q => !q.hidden && !!q.resolved).sort(roomQuestionComparator);
-                case 'hidden':
-                    return active.filter(q => !!q.hidden).sort(roomQuestionComparator);
-                case 'all':
-                    return active.sort(roomQuestionComparator);
-                case 'open':
-                default:
-                    return active.filter(q => !q.hidden && !q.resolved).sort(roomQuestionComparator);
-            }
+            return filterRoomQuestions(_roomQuestions, _roomQuestionFilter);
         }
 
         function roomFeedbackMeta(kind) {
-            const map = {
-                fast: { iconKey: 'feedback_fast', label: 'Trop rapide' },
-                unclear: { iconKey: 'feedback_unclear', label: 'Pas clair' },
-                pause: { iconKey: 'feedback_pause', label: 'Besoin de pause' },
-                clear: { iconKey: 'feedback_clear', label: 'OK' },
-            };
-            return map[String(kind || '').toLowerCase()] || { iconKey: 'question', label: 'Feedback' };
+            return getRoomFeedbackMeta(kind);
         }
 
         function roomFeedbackPrune(maxAgeMs = 20 * 60 * 1000) {
-            const now = Date.now();
-            _roomFeedback.events = _roomFeedback.events.filter(evt => (now - evt.time) <= maxAgeMs);
-            for (const [peerId, ts] of _roomFeedback.lastByPeer.entries()) {
-                if ((now - ts) > maxAgeMs) _roomFeedback.lastByPeer.delete(peerId);
-            }
-            if (_roomFeedback.events.length > 240) _roomFeedback.events.length = 240;
+            pruneRoomFeedbackState(_roomFeedback, { maxAgeMs, maxEvents: 240 });
         }
 
         function roomFeedbackStats(windowMs = 10 * 60 * 1000) {
             roomFeedbackPrune();
-            const now = Date.now();
-            const counts = { fast: 0, unclear: 0, pause: 0, clear: 0, other: 0 };
-            _roomFeedback.events.forEach(evt => {
-                if ((now - evt.time) > windowMs) return;
-                const kind = String(evt.kind || '').toLowerCase();
-                if (Object.prototype.hasOwnProperty.call(counts, kind)) counts[kind]++;
-                else counts.other++;
-            });
-            const total = counts.fast + counts.unclear + counts.pause + counts.clear + counts.other;
-            return { counts, total };
+            return computeRoomFeedbackStats(_roomFeedback.events, { windowMs });
         }
 
         function roomAudienceQrUrl() {
@@ -1118,17 +645,14 @@
             const autoUrl = roomIdVal ? _buildStudentUrl(roomIdVal, 'auto') : '';
             const relayUrl = roomIdVal ? _buildStudentUrl(roomIdVal, 'relay') : '';
             const relayConfigured = !!(RELAY_OPTIONS.enabled && RELAY_OPTIONS.wsUrl);
-            const transportState = !_room.active ? 'Salle fermée' : (_relayRoom.active ? 'P2P + relay' : 'P2P');
-            const relayState = !relayConfigured
-                ? 'Relay non configuré'
-                : (_relayRoom.active ? 'Relay connecté' : (_room.active ? 'Relay en reconnexion' : 'Relay prêt'));
+            const diagnostics = computeRoomNetworkDiagnostics({
+                roomActive: _room.active,
+                relayActive: _relayRoom.active,
+                relayConfigured,
+            });
 
-            if (statusEl) statusEl.textContent = `${transportState} · ${relayState}`;
-            if (hintEl) {
-                hintEl.textContent = relayConfigured
-                    ? 'Si certains étudiants sont bloqués (ex: eduroam), partagez le lien "Forcer relay".'
-                    : 'Ajoutez relayWs pour offrir un fallback réseau en plus du P2P.';
-            }
+            if (statusEl) statusEl.textContent = diagnostics.statusText;
+            if (hintEl) hintEl.textContent = diagnostics.hintText;
             if (copyAutoBtn) {
                 copyAutoBtn.disabled = !autoUrl;
                 copyAutoBtn.innerHTML = `${iconOnly('copy')}<span>Copier lien auto</span>`;
@@ -1171,351 +695,62 @@
         }
 
         function roomUpdatePanel() {
-            const students = Object.values(_room.students);
-            const n = students.length;
-            const handsN = _roomHands.length;
-            const qStats = roomQuestionStats();
-            const questionsN = qStats.open;
-            const feedbackStats10m = roomFeedbackStats(10 * 60 * 1000);
-            const feedbackStats2m = roomFeedbackStats(2 * 60 * 1000);
-            const feedbackUrgentN = feedbackStats2m.counts.fast + feedbackStats2m.counts.unclear + feedbackStats2m.counts.pause;
-
-            // Mise à jour badges tabs
-            const setCnt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-            setCnt('rm-cnt-students', n);
-            setCnt('rm-cnt-hands', handsN);
-            setCnt('rm-cnt-questions', questionsN);
-
-            // Tabs visibles uniquement si salle active
-            const tabs = document.getElementById('rm-tabs');
-            if (tabs) tabs.style.display = _room.active ? '' : 'none';
-
-            // ── Onglet Étudiants ─────────────────────────────
-            const studentsEl = document.getElementById('sl-room-students');
-            if (studentsEl) {
-                clearNode(studentsEl);
-                if (n === 0) {
-                    studentsEl.appendChild(el('span', { className: 'rm-empty-text', text: 'En attente d\'étudiants…' }));
-                } else {
-                    const sorted = [...students].sort((a, b) => (b.score || 0) - (a.score || 0));
-                    const hasScores = sorted.some(s => s.score > 0);
-                    const medals = ['🥇','🥈','🥉'];
-                    const summary = el('div', { className: 'rm-students-summary' });
-                    const dot = el('span');
-                    dot.innerHTML = UI_ICONS.dot;
-                    summary.appendChild(dot);
-                    summary.appendChild(document.createTextNode(`${n} étudiant(s) connecté(s)`));
-
-                    const list = el('div', { className: 'rm-student-list' });
-                    sorted.forEach((s, i) => {
-                        const medal = medals[i] || `${i+1}.`;
-                        const row = el('div', { className: 'rm-student-row' });
-                        row.appendChild(el('span', { className: 'rm-student-rank', text: medal }));
-                        const name = el('span', { className: 'rm-student-name' });
-                        if (s.handRaised) {
-                            const hand = el('span', { className: 'rm-hand-mark' });
-                            hand.innerHTML = UI_ICONS.hand;
-                            name.appendChild(hand);
-                        }
-                        name.appendChild(document.createTextNode(String(s.pseudo || 'Anonyme')));
-                        row.appendChild(name);
-                        if (hasScores) row.appendChild(el('span', { className: 'rm-student-score', text: `${(s.score || 0).toLocaleString()} pts` }));
-                        list.appendChild(row);
-                    });
-                    appendAll(studentsEl, [summary, list]);
-                }
+            const panelState = updateRoomPanelRuntime({
+                _room,
+                _relayRoom,
+                _roomHands,
+                _roomQuestions,
+                _roomQuestionFilter,
+                _roomFeedback,
+                _activePoll,
+                _activeWordCloud,
+                _pvContextView,
+                ROOM_MSG,
+                UI_ICONS,
+                clearNode,
+                el,
+                appendAll,
+                clearRaisedHandForPeer,
+                toggleQuestionHidden,
+                archiveQuestion,
+                toggleQuestionPinned,
+                toggleQuestionResolved,
+                buildQuestionRowClass,
+                formatQuestionAgeLabel,
+                getQuestionEmptyLabel,
+                renderPollResultsHtml,
+                summarizeWordCloud,
+                formatWordCloudCountLabel,
+                roomFeedbackMeta,
+                renderFeedbackSummaryHtml,
+                renderFeedbackListHtml,
+                roomQuestionStats,
+                roomTelemetryStats,
+                roomFeedbackStats,
+                roomFilteredQuestions,
+                roomStudentTelemetryLabel,
+                _roomBridgeSnapshotPoll,
+                _roomBridgeSnapshotRoom,
+                _roomBridgeEmit,
+                _remoteActiveSessionsCount,
+                _remoteUpdateUI,
+                roomAudienceQrUrl,
+                roomUpdateQrButtonsUI,
+                roomUpdateNetworkDiagnostics,
+                buildPresenterMiniViews,
+                renderPresenterRoomStatusBarHtml,
+                renderPresenterRoomMiniHtml,
+                renderPresenterContextDynamicHtml,
+                iconOnly,
+                withIcon,
+                _roomEsc,
+                toTrimmedString,
+                switchRoomPresenterMode,
+                onRoomUpdatePanel: roomUpdatePanel,
+            });
+            if (panelState && typeof panelState._pvContextView === 'string') {
+                _pvContextView = panelState._pvContextView;
             }
-
-            // ── Onglet Mains ─────────────────────────────────
-            const handsList = document.getElementById('rm-hands-list');
-            const lowerAll = document.getElementById('rm-lower-all');
-            if (handsList) {
-                clearNode(handsList);
-                if (handsN === 0) {
-                    handsList.appendChild(el('span', { className: 'rm-empty-text', text: 'Aucune main levée.' }));
-                } else {
-                    _roomHands.forEach(h => {
-                        const row = el('div', { className: 'rm-hand-row' });
-                        const handIcon = el('span', { className: 'rm-hand-icon' });
-                        handIcon.innerHTML = UI_ICONS.hand;
-                        const name = el('span', { className: 'rm-student-name', text: String(h.pseudo || 'Anonyme') });
-                        const btn = el('button', { className: 'rm-lower-btn', text: 'Baisser' });
-                        btn.dataset.peer = h.peerId;
-                        appendAll(row, [handIcon, name, btn]);
-                        handsList.appendChild(row);
-                    });
-                    handsList.querySelectorAll('.rm-lower-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const peerId = btn.dataset.peer;
-                            const conn = _room.connections.find(c => c.peer === peerId && c.open);
-                            if (conn) { try { conn.send({ type: ROOM_MSG.HAND_LOWER }); } catch(e) {} }
-                            // Retirer de la liste locale
-                            const idx = _roomHands.findIndex(h => h.peerId === peerId);
-                            if (idx !== -1) _roomHands.splice(idx, 1);
-                            if (_room.students[peerId]) _room.students[peerId].handRaised = false;
-                            roomUpdatePanel();
-                        });
-                    });
-                }
-                if (lowerAll) lowerAll.style.display = handsN > 1 ? '' : 'none';
-            }
-
-            // ── Onglet Questions ──────────────────────────────
-            const questionsList = document.getElementById('rm-questions-list');
-            const questionFilterEl = /** @type {HTMLSelectElement|null} */ (document.getElementById('rm-question-filter'));
-            const questionMarkAllBtn = document.getElementById('rm-question-mark-all');
-            if (questionFilterEl) questionFilterEl.value = _roomQuestionFilter;
-            if (questionMarkAllBtn) questionMarkAllBtn.disabled = qStats.total === 0;
-            if (questionsList) {
-                const visible = roomFilteredQuestions();
-                clearNode(questionsList);
-                if (visible.length === 0) {
-                    const emptyByFilter = {
-                        open: 'Aucune question ouverte.',
-                        pinned: 'Aucune question épinglée.',
-                        resolved: 'Aucune question résolue.',
-                        hidden: 'Aucune question masquée.',
-                        all: 'Aucune question.',
-                    };
-                    questionsList.appendChild(el('span', { className: 'rm-empty-text', text: emptyByFilter[_roomQuestionFilter] || 'Aucune question.' }));
-                } else {
-                    visible.forEach(q => {
-                        const ago = Math.round((Date.now() - q.time) / 1000);
-                        const agoStr = ago < 60 ? `${ago}s` : `${Math.round(ago/60)}min`;
-                        const row = el('div', { className: `rm-question-row${q.pinned ? ' pinned' : ''}${q.resolved ? ' resolved' : ''}${q.hidden ? ' hidden' : ''}` });
-                        const head = el('div', { className: 'rm-question-head' });
-                        const text = el('div', { className: 'rm-question-text', text: String(q.text || '') });
-                        const dismissBtn = el('button', { className: 'rm-question-dismiss', text: q.hidden ? 'Restaurer' : 'Masquer' });
-                        head.appendChild(text);
-                        head.appendChild(dismissBtn);
-                        row.appendChild(head);
-                        const meta = el('div', { className: 'rm-question-meta' });
-                        meta.appendChild(el('span', { className: 'rm-question-time', text: agoStr }));
-                        meta.appendChild(el('span', { className: 'rm-question-pill', text: `${q.votes || 1} vote(s)` }));
-                        if (q.pinned) meta.appendChild(el('span', { className: 'rm-question-pill pinned', text: 'Épinglée' }));
-                        if (q.resolved) meta.appendChild(el('span', { className: 'rm-question-pill resolved', text: 'Résolue' }));
-                        if (q.hidden) meta.appendChild(el('span', { className: 'rm-question-pill hidden', text: 'Masquée' }));
-                        row.appendChild(meta);
-
-                        const actions = el('div', { className: 'rm-question-actions' });
-                        const hideBtn = el('button', { className: `rm-question-mini${q.hidden ? ' active' : ''}`, text: q.hidden ? 'Restaurer' : 'Masquer' });
-                        const pinBtn = el('button', { className: `rm-question-mini${q.pinned ? ' active' : ''}`, text: q.pinned ? 'Désépingler' : 'Épingler' });
-                        const resolveBtn = el('button', { className: `rm-question-mini${q.resolved ? ' active' : ''}`, text: q.resolved ? 'Rouvrir' : 'Résoudre' });
-                        const archiveBtn = el('button', { className: 'rm-question-mini', text: 'Archiver' });
-                        if (q.hidden) {
-                            pinBtn.disabled = true;
-                            resolveBtn.disabled = true;
-                        }
-                        appendAll(actions, [hideBtn, pinBtn, resolveBtn, archiveBtn]);
-                        row.appendChild(actions);
-
-                        dismissBtn.addEventListener('click', () => {
-                            q.hidden = !q.hidden;
-                            if (q.hidden) {
-                                q.pinned = false;
-                                q.resolved = false;
-                            }
-                            roomUpdatePanel();
-                        });
-                        hideBtn.addEventListener('click', () => {
-                            q.hidden = !q.hidden;
-                            if (q.hidden) {
-                                q.pinned = false;
-                                q.resolved = false;
-                            }
-                            roomUpdatePanel();
-                        });
-                        archiveBtn.addEventListener('click', () => {
-                            q.read = true;
-                            roomUpdatePanel();
-                        });
-                        pinBtn.addEventListener('click', () => {
-                            if (q.hidden) return;
-                            q.pinned = !q.pinned;
-                            roomUpdatePanel();
-                        });
-                        resolveBtn.addEventListener('click', () => {
-                            if (q.hidden) return;
-                            q.resolved = !q.resolved;
-                            if (q.resolved) q.pinned = false;
-                            roomUpdatePanel();
-                        });
-                        questionsList.appendChild(row);
-                    });
-                }
-            }
-
-            // ── Onglet Outils: résultats sondage en direct ────
-            if (_activePoll) {
-                const pollResults = document.getElementById('rm-poll-results');
-                if (pollResults) {
-                    const snap = _roomBridgeSnapshotPoll();
-                    const labels = Array.isArray(snap.options) && snap.options.length ? snap.options : ['A', 'B'];
-                    const counts = Array.isArray(snap.counts) ? snap.counts : labels.map(() => 0);
-                    const total = Number(snap.total || 0);
-                    const totalSelections = Number(snap.totalSelections || 0);
-                    const denom = snap.multi ? (totalSelections || 1) : (total || 1);
-                    const bars = labels.map((label, i) => {
-                        const cnt = counts[i] || 0;
-                        const pct = denom ? Math.round(cnt / denom * 100) : 0;
-                        return `<div class="rm-poll-bar-row">
-                            <span class="rm-poll-label">${_roomEsc(label)}</span>
-                            <div class="rm-poll-bar-wrap"><div class="rm-poll-bar-fill" style="width:${pct}%"></div></div>
-                            <span class="rm-poll-count">${cnt} (${pct}%)</span>
-                        </div>`;
-                    }).join('');
-                    const totalLabel = snap.multi
-                        ? `${total} répondant(s) · ${totalSelections} sélections`
-                        : `${total} réponse(s)`;
-                    pollResults.innerHTML = `<div class="rm-poll-total">${totalLabel}</div>${bars}`;
-                }
-            }
-
-            // ── Nuage: compteur ────────────────────────────────
-            if (_activeWordCloud) {
-                const countEl = document.getElementById('rm-cloud-count');
-                if (countEl) {
-                    const total = [..._activeWordCloud.words.values()].reduce((a, b) => a + b, 0);
-                    countEl.textContent = `${_activeWordCloud.words.size} mots distincts · ${total} soumissions`;
-                }
-            }
-
-            // ── Outils: feedback discret ───────────────────────
-            const feedbackSummary = document.getElementById('rm-feedback-summary');
-            if (feedbackSummary) {
-                const rows = [
-                    { kind: 'fast', count: feedbackStats10m.counts.fast },
-                    { kind: 'unclear', count: feedbackStats10m.counts.unclear },
-                    { kind: 'pause', count: feedbackStats10m.counts.pause },
-                    { kind: 'clear', count: feedbackStats10m.counts.clear },
-                ];
-                feedbackSummary.innerHTML = rows.map(({ kind, count }) => {
-                    const meta = roomFeedbackMeta(kind);
-                    return `<span class=\"rm-feedback-pill\">${iconOnly(meta.iconKey)}<span>${count}</span></span>`;
-                }).join('');
-            }
-            const feedbackList = document.getElementById('rm-feedback-list');
-            if (feedbackList) {
-                const recent = _roomFeedback.events.slice(0, 8);
-                if (!recent.length) {
-                    feedbackList.innerHTML = '<div class="rm-feedback-empty">Aucun feedback récent.</div>';
-                } else {
-                    feedbackList.innerHTML = recent.map(evt => {
-                        const meta = roomFeedbackMeta(evt.kind);
-                        const ago = Math.max(0, Math.round((Date.now() - evt.time) / 1000));
-                        const agoStr = ago < 60 ? `${ago}s` : `${Math.round(ago / 60)}min`;
-                        const txt = toTrimmedString(evt.text, 80);
-                        return `<div class=\"rm-feedback-row\"><span>${iconOnly(meta.iconKey)}</span><span>${_roomEsc(meta.label)}</span>${txt ? `<span>· ${_roomEsc(txt)}</span>` : ''}<span class=\"rm-feedback-time\">${agoStr}</span></div>`;
-                    }).join('');
-                }
-            }
-            const feedbackResetBtn = document.getElementById('rm-feedback-reset');
-            if (feedbackResetBtn) feedbackResetBtn.disabled = feedbackStats10m.total === 0;
-
-            // ── Bouton toolbar ────────────────────────────────
-            const btn = document.getElementById('btn-student-room');
-            if (btn) {
-                const handBadge = handsN > 0 ? `<span class="rm-toolbar-badge">${UI_ICONS.hand}<span>${handsN}</span></span>` : '';
-                const qBadge = questionsN > 0 ? `<span class="rm-toolbar-badge">${UI_ICONS.question}<span>${questionsN}</span></span>` : '';
-                btn.innerHTML = _room.active
-                    ? `${UI_ICONS.users}<span>${n}</span>${handBadge}${qBadge}`
-                    : withIcon('users', 'Salle');
-                btn.classList.toggle('active', _room.active);
-            }
-            roomUpdateQrButtonsUI();
-            roomUpdateNetworkDiagnostics();
-            const modeLabel = _room.active
-                ? (_relayRoom.active ? 'P2P + relay' : 'P2P')
-                : 'Salle fermée';
-            const remoteSessions = _remoteActiveSessionsCount();
-            const pvRoomStatusBar = document.getElementById('pv-room-status-bar');
-            if (pvRoomStatusBar) {
-                const urgentLabel = feedbackUrgentN > 0 ? `<span class="pv-room-status-pill warn">${iconOnly('feedback_unclear')}<span>${feedbackUrgentN} urgent</span></span>` : '';
-                const remoteLabel = remoteSessions > 0
-                    ? `<span class="pv-room-status-pill">${iconOnly('remote')}<span>${remoteSessions} mobile</span></span>`
-                    : '';
-                pvRoomStatusBar.innerHTML = `<span class="pv-room-status-pill ${_room.active ? 'ok' : ''}">${iconOnly(_room.active ? 'check' : 'stop')}<span>${_roomEsc(modeLabel)}</span></span>
-                    <span class="pv-room-status-pill">${iconOnly('users')}<span>${n}</span></span>
-                    <span class="pv-room-status-pill">${iconOnly('hand')}<span>${handsN}</span></span>
-                    <span class="pv-room-status-pill">${iconOnly('question')}<span>${questionsN}</span></span>
-                    ${urgentLabel}
-                    ${remoteLabel}`;
-            }
-            const pvRoomMini = document.getElementById('pv-room-mini');
-            if (pvRoomMini) {
-                const views = [
-                    { id: 'status', cls: _room.active ? 'ok' : '', icon: _room.active ? 'check' : 'stop', text: modeLabel },
-                    { id: 'users', cls: '', icon: 'users', text: String(n) },
-                    { id: 'hands', cls: '', icon: 'hand', text: String(handsN) },
-                    { id: 'questions', cls: '', icon: 'question', text: String(questionsN) },
-                ];
-                if (feedbackUrgentN > 0) views.push({ id: 'urgent', cls: 'warn', icon: 'feedback_unclear', text: `${feedbackUrgentN}` });
-                if (remoteSessions > 0) views.push({ id: 'remote', cls: '', icon: 'remote', text: String(remoteSessions) });
-                if (!views.some(v => v.id === _pvContextView)) _pvContextView = 'status';
-                pvRoomMini.innerHTML = views.map(v => (
-                    `<button type="button" class="pv-room-mini-pill ${v.cls} ${_pvContextView === v.id ? 'active' : ''}" data-pv-view="${v.id}">${iconOnly(v.icon)}<span>${_roomEsc(v.text)}</span></button>`
-                )).join('');
-                pvRoomMini.querySelectorAll('[data-pv-view]').forEach(btnEl => {
-                    btnEl.addEventListener('click', () => {
-                        const nextView = toTrimmedString(btnEl.getAttribute('data-pv-view'), 24);
-                        if (nextView && nextView !== _pvContextView) {
-                            _pvContextView = nextView;
-                            roomUpdatePanel();
-                        }
-                    });
-                });
-            }
-            const pvContextDynamic = document.getElementById('pv-context-dynamic');
-            if (pvContextDynamic) {
-                const roomId = toTrimmedString(document.getElementById('rm-room-id-input')?.value || '', 80) || '—';
-                const stableUrl = roomAudienceQrUrl();
-                const handsList = _roomHands.slice(0, 4).map(h => `<li>${_roomEsc(h.pseudo || h.peerId || 'Étudiant')}</li>`).join('');
-                const openQuestions = _roomQuestions
-                    .filter(q => !q.read && !q.hidden && !q.resolved)
-                    .slice(0, 3)
-                    .map(q => `<li>${_roomEsc(toTrimmedString(q.text, 120))}</li>`)
-                    .join('');
-                const studentsList = Object.values(_room.students).slice(0, 5).map(s => `<li>${_roomEsc(s.pseudo || 'Étudiant')}</li>`).join('');
-                if (_pvContextView === 'users') {
-                    pvContextDynamic.innerHTML = `<div class="pv-context-dynamic-row"><strong>Connectés: ${n}</strong><span class="pv-context-dynamic-meta">${modeLabel}</span></div>${studentsList ? `<ul class="pv-context-dynamic-list">${studentsList}</ul>` : '<div class="pv-context-dynamic-meta">Aucun étudiant connecté.</div>'}`;
-                } else if (_pvContextView === 'hands') {
-                    pvContextDynamic.innerHTML = `<div class="pv-context-dynamic-row"><strong>Mains levées: ${handsN}</strong><span class="pv-context-dynamic-meta">interventions</span></div>${handsList ? `<ul class="pv-context-dynamic-list">${handsList}</ul>` : '<div class="pv-context-dynamic-meta">Aucune main levée.</div>'}`;
-                } else if (_pvContextView === 'questions') {
-                    pvContextDynamic.innerHTML = `<div class="pv-context-dynamic-row"><strong>Questions ouvertes: ${questionsN}</strong><span class="pv-context-dynamic-meta">modération</span></div>${openQuestions ? `<ul class="pv-context-dynamic-list">${openQuestions}</ul>` : '<div class="pv-context-dynamic-meta">Aucune question ouverte.</div>'}`;
-                } else if (_pvContextView === 'urgent') {
-                    pvContextDynamic.innerHTML = `<div class="pv-context-dynamic-row"><strong>Alertes urgentes: ${feedbackUrgentN}</strong><span class="pv-context-dynamic-meta">2 dernières minutes</span></div><div class="pv-context-dynamic-meta">Feedback rapide/non clair/pause.</div>`;
-                } else if (_pvContextView === 'remote') {
-                    pvContextDynamic.innerHTML = `<div class="pv-context-dynamic-row"><strong>Mobiles actifs: ${remoteSessions}</strong><span class="pv-context-dynamic-meta">sessions contrôleur</span></div><div class="pv-context-dynamic-meta">Gestion complète dans Salle > Technique.</div>`;
-                } else {
-                    pvContextDynamic.innerHTML = `<div class="pv-context-dynamic-row"><strong>${_roomEsc(modeLabel)}</strong><span class="pv-context-dynamic-meta">ID: ${_roomEsc(roomId)}</span></div>
-                        <div class="pv-context-dynamic-row">
-                            <button class="pv-context-action-btn" id="pv-context-copy-stable" ${stableUrl ? '' : 'disabled'}>${iconOnly('copy')}<span>Copier lien stable</span></button>
-                            <button class="pv-context-action-btn" id="pv-context-open-technique">${iconOnly('settings')}<span>Salle technique</span></button>
-                        </div>`;
-                    document.getElementById('pv-context-copy-stable')?.addEventListener('click', () => {
-                        if (!stableUrl) return;
-                        navigator.clipboard.writeText(stableUrl).then(() => {
-                            const btnCopy = document.getElementById('pv-context-copy-stable');
-                            if (!btnCopy) return;
-                            btnCopy.innerHTML = `${iconOnly('check')}<span>Copié</span>`;
-                            setTimeout(() => {
-                                const freshBtn = document.getElementById('pv-context-copy-stable');
-                                if (freshBtn) freshBtn.innerHTML = `${iconOnly('copy')}<span>Copier lien stable</span>`;
-                            }, 1200);
-                        });
-                    });
-                    document.getElementById('pv-context-open-technique')?.addEventListener('click', () => {
-                        const roomModal = document.getElementById('sl-room-modal');
-                        if (!roomModal) return;
-                        switchRoomPresenterMode('technique', true);
-                        roomModal.classList.add('open');
-                        roomUpdatePanel();
-                    });
-                }
-            }
-
-            _roomBridgeEmit('room', _roomBridgeSnapshotRoom());
-            _remoteUpdateUI();
         }
 
         // Alias pour compatibilité (appelé dans roomClose)
@@ -1524,7 +759,7 @@
         // ── Word cloud render ──────────────────────────────────
         function roomRenderWordCloud() {
             if (!_activeWordCloud) return;
-            const sorted = [..._activeWordCloud.words.entries()].sort((a, b) => b[1] - a[1]).slice(0, 40);
+            const sorted = buildWordCloudTopWords(_activeWordCloud.words, 40);
             const max = sorted[0]?.[1] || 1;
             const colors = ['#818cf8', '#34d399', '#f472b6', '#fb923c', '#60a5fa'];
             const dispEl = document.getElementById('sl-wc-display-presenter');
@@ -1604,58 +839,33 @@
         function roomStartPoll(typeOrConfig = 'thumbs', prompt = '') {
             if (!_room.active) return false;
             if (_activePoll) return false;
-            const pollId = `poll-${Date.now()}`;
-            const rawConfig = (typeOrConfig && typeof typeOrConfig === 'object')
-                ? typeOrConfig
-                : { type: typeOrConfig, prompt };
-            const pollType = _normalizePollType(rawConfig.type);
-            const pollPrompt = toTrimmedString(rawConfig.prompt, 180);
-            const pollOptions = _sanitizePollOptions(pollType, rawConfig.options);
-            const isMulti = pollType === 'mcq-multi';
-            _activePoll = {
-                pollId,
-                type: pollType,
-                prompt: pollPrompt,
-                options: pollOptions,
-                multi: isMulti,
-                responses: new Map(),
-            };
+            const nextPoll = createPollState(typeOrConfig, prompt, { now: () => Date.now(), toTrimmedString });
+            _activePoll = nextPoll;
+            const startPayload = buildPollStartPayload(nextPoll);
             roomBroadcast({
                 type: ROOM_MSG.POLL_START,
-                pollId,
-                pollType,
-                prompt: pollPrompt,
-                options: pollOptions,
-                multi: isMulti,
+                ...startPayload,
             });
             _postPresenterSync({
                 type: SYNC_MSG.POLL_START,
-                pollId,
-                pollType,
-                prompt: pollPrompt,
-                options: pollOptions,
-                multi: isMulti,
+                ...startPayload,
             });
             const pd = document.getElementById('rm-poll-prompt-display');
-            if (pd) {
-                if (pollPrompt) pd.textContent = pollPrompt;
-                else if (pollType === 'thumbs') pd.textContent = '👍 Pour / 👎 Contre';
-                else if (pollType === 'scale5') pd.textContent = 'Évaluez de 1 à 5';
-                else pd.textContent = 'QCM live';
-            }
+            if (pd) pd.textContent = buildPollPromptDisplayText(nextPoll);
             const launch = document.getElementById('rm-poll-launch');
             const live = document.getElementById('rm-poll-live');
             if (launch) launch.style.display = 'none';
             if (live) live.style.display = '';
             _roomBridgeEmit('poll', _roomBridgeSnapshotPoll());
             roomUpdatePanel();
-            return pollId;
+            return nextPoll.pollId;
         }
 
         function roomEndPoll() {
             if (_activePoll) {
-                roomBroadcast({ type: ROOM_MSG.POLL_END, pollId: _activePoll.pollId });
-                _postPresenterSync({ type: SYNC_MSG.POLL_END, pollId: _activePoll.pollId });
+                const endPayload = buildPollEndPayload(_activePoll);
+                roomBroadcast({ type: ROOM_MSG.POLL_END, ...endPayload });
+                _postPresenterSync({ type: SYNC_MSG.POLL_END, ...endPayload });
             }
             _activePoll = null;
             const launch = document.getElementById('rm-poll-launch');
@@ -1669,12 +879,12 @@
         function roomStartWordCloud(prompt = '') {
             if (!_room.active) return false;
             if (_activeWordCloud) return false;
-            const cloudId = `cloud-${Date.now()}`;
-            const safePrompt = toTrimmedString(prompt, 120);
-            _activeWordCloud = { cloudId, prompt: safePrompt, words: new Map() };
-            roomBroadcast({ type: ROOM_MSG.WORDCLOUD_START, cloudId, prompt: safePrompt });
-            _postPresenterSync({ type: SYNC_MSG.WORDCLOUD_START, cloudId, prompt: safePrompt });
-            _postPresenterSync({ type: SYNC_MSG.WORDCLOUD_UPDATE, cloudId, prompt: safePrompt, words: [] });
+            const nextCloud = createWordCloudState(prompt, { now: () => Date.now(), toTrimmedString });
+            _activeWordCloud = nextCloud;
+            const startPayload = buildWordCloudStartPayload(nextCloud);
+            roomBroadcast({ type: ROOM_MSG.WORDCLOUD_START, ...startPayload });
+            _postPresenterSync({ type: SYNC_MSG.WORDCLOUD_START, ...startPayload });
+            _postPresenterSync({ type: SYNC_MSG.WORDCLOUD_UPDATE, ...startPayload, words: [] });
             const launch = document.getElementById('rm-cloud-launch');
             const live = document.getElementById('rm-cloud-live');
             if (launch) launch.style.display = 'none';
@@ -1683,7 +893,7 @@
             if (wcOverlay) {
                 wcOverlay.style.display = 'flex';
                 const pr = document.getElementById('sl-wc-prompt-presenter');
-                if (pr) pr.textContent = safePrompt;
+                if (pr) pr.textContent = nextCloud.prompt || '';
             }
             _roomBridgeEmit('cloud', _roomBridgeSnapshotCloud());
             roomUpdatePanel();
@@ -1692,8 +902,9 @@
 
         function roomEndWordCloud() {
             if (_activeWordCloud) {
-                roomBroadcast({ type: ROOM_MSG.WORDCLOUD_END, cloudId: _activeWordCloud.cloudId });
-                _postPresenterSync({ type: SYNC_MSG.WORDCLOUD_END, cloudId: _activeWordCloud.cloudId });
+                const endPayload = buildWordCloudEndPayload(_activeWordCloud);
+                roomBroadcast({ type: ROOM_MSG.WORDCLOUD_END, ...endPayload });
+                _postPresenterSync({ type: SYNC_MSG.WORDCLOUD_END, ...endPayload });
             }
             _activeWordCloud = null;
             if (_wcBroadcastTimer) { clearTimeout(_wcBroadcastTimer); _wcBroadcastTimer = null; }
@@ -1710,58 +921,43 @@
         function roomStartExitTicket(configOrTitle = '', prompts = []) {
             if (!_room.active) return false;
             if (_activeExitTicket) return false;
-            const rawConfig = (configOrTitle && typeof configOrTitle === 'object')
-                ? configOrTitle
-                : { title: configOrTitle, prompts };
-            const title = toTrimmedString(rawConfig.title, 100) || 'Exit ticket';
-            const promptList = _sanitizeStringList(
-                rawConfig.prompts,
-                4,
-                180,
-                ['Ce que je retiens', 'Ce qui reste flou', 'Question finale'],
-            );
-            if (!promptList.length) return false;
-            const ticketId = `exit-${Date.now()}`;
-            _activeExitTicket = {
-                ticketId,
-                title,
-                prompts: promptList,
-                responses: new Map(),
-            };
+            const nextTicket = createExitTicketState({
+                configOrTitle,
+                prompts,
+                now: () => Date.now(),
+                toTrimmedString,
+            });
+            if (!nextTicket) return false;
+            _activeExitTicket = nextTicket;
+            const startPayload = buildExitTicketStartPayload(nextTicket);
             roomBroadcast({
                 type: ROOM_MSG.EXIT_TICKET_START,
-                ticketId,
-                title,
-                prompts: promptList,
+                ...startPayload,
             });
             _postPresenterSync({
                 type: SYNC_MSG.EXIT_TICKET_START,
-                ticketId,
-                title,
-                prompts: promptList,
+                ...startPayload,
             });
+            const startSnapshot = _roomBridgeSnapshotExitTicket();
             _postPresenterSync({
                 type: SYNC_MSG.EXIT_TICKET_UPDATE,
-                ticketId,
-                title,
-                prompts: promptList,
-                responsesCount: 0,
-                responses: [],
+                ...buildExitTicketUpdatePayload(nextTicket, startSnapshot),
             });
-            _roomBridgeEmit('exitTicket', _roomBridgeSnapshotExitTicket());
+            _roomBridgeEmit('exitTicket', startSnapshot);
             roomUpdatePanel();
-            return ticketId;
+            return nextTicket.ticketId;
         }
 
         function roomEndExitTicket() {
             if (_activeExitTicket) {
+                const endPayload = buildExitTicketEndPayload(_activeExitTicket);
                 roomBroadcast({
                     type: ROOM_MSG.EXIT_TICKET_END,
-                    ticketId: _activeExitTicket.ticketId,
+                    ...endPayload,
                 });
                 _postPresenterSync({
                     type: SYNC_MSG.EXIT_TICKET_END,
-                    ticketId: _activeExitTicket.ticketId,
+                    ...endPayload,
                 });
             }
             _activeExitTicket = null;
@@ -1772,58 +968,43 @@
         function roomStartRankOrder(configOrTitle = '', items = []) {
             if (!_room.active) return false;
             if (_activeRankOrder) return false;
-            const rawConfig = (configOrTitle && typeof configOrTitle === 'object')
-                ? configOrTitle
-                : { title: configOrTitle, items };
-            const title = toTrimmedString(rawConfig.title, 100) || 'Classement collectif';
-            const itemList = _sanitizeStringList(
-                rawConfig.items,
-                8,
-                120,
-                ['Option A', 'Option B', 'Option C'],
-            );
-            if (itemList.length < 2) return false;
-            const rankId = `rank-${Date.now()}`;
-            _activeRankOrder = {
-                rankId,
-                title,
-                items: itemList,
-                responses: new Map(),
-            };
+            const nextRank = createRankOrderState({
+                configOrTitle,
+                items,
+                now: () => Date.now(),
+                toTrimmedString,
+            });
+            if (!nextRank) return false;
+            _activeRankOrder = nextRank;
+            const startPayload = buildRankOrderStartPayload(nextRank);
             roomBroadcast({
                 type: ROOM_MSG.RANK_ORDER_START,
-                rankId,
-                title,
-                items: itemList,
+                ...startPayload,
             });
             _postPresenterSync({
                 type: SYNC_MSG.RANK_ORDER_START,
-                rankId,
-                title,
-                items: itemList,
+                ...startPayload,
             });
+            const startSnapshot = _roomBridgeSnapshotRankOrder();
             _postPresenterSync({
                 type: SYNC_MSG.RANK_ORDER_UPDATE,
-                rankId,
-                title,
-                items: itemList,
-                rows: [],
-                responsesCount: 0,
+                ...buildRankOrderUpdatePayload(nextRank, startSnapshot),
             });
-            _roomBridgeEmit('rankOrder', _roomBridgeSnapshotRankOrder());
+            _roomBridgeEmit('rankOrder', startSnapshot);
             roomUpdatePanel();
-            return rankId;
+            return nextRank.rankId;
         }
 
         function roomEndRankOrder() {
             if (_activeRankOrder) {
+                const endPayload = buildRankOrderEndPayload(_activeRankOrder);
                 roomBroadcast({
                     type: ROOM_MSG.RANK_ORDER_END,
-                    rankId: _activeRankOrder.rankId,
+                    ...endPayload,
                 });
                 _postPresenterSync({
                     type: SYNC_MSG.RANK_ORDER_END,
-                    rankId: _activeRankOrder.rankId,
+                    ...endPayload,
                 });
             }
             _activeRankOrder = null;
@@ -1837,14 +1018,13 @@
                 if (feedback) feedback.textContent = 'Ouvrez la salle pour relancer l’audience.';
                 return false;
             }
+            const payload = buildAudienceNudgePayload(kind, text, { now: () => Date.now(), toTrimmedString });
             roomBroadcast({
                 type: ROOM_MSG.AUDIENCE_NUDGE,
-                kind: toTrimmedString(kind, 24),
-                text: toTrimmedString(text, 160),
-                at: Date.now(),
+                ...payload,
             });
             if (feedback) {
-                feedback.textContent = `Relance envoyée: ${text}`;
+                feedback.textContent = `Relance envoyée: ${payload.text || text}`;
                 setTimeout(() => {
                     if (feedback.textContent.startsWith('Relance envoyée')) feedback.textContent = '';
                 }, 1800);
@@ -1852,46 +1032,74 @@
             return true;
         }
 
+        const _registerRoomCommands = () => {
+            _viewerCommandBus.register('room.poll.start', payload => {
+                const typeOrConfig = payload && typeof payload === 'object' && payload.typeOrConfig != null
+                    ? payload.typeOrConfig
+                    : (payload?.type || 'thumbs');
+                const prompt = payload && typeof payload === 'object' && payload.prompt != null
+                    ? payload.prompt
+                    : '';
+                return roomStartPoll(typeOrConfig, prompt);
+            });
+            _viewerCommandBus.register('room.poll.end', () => roomEndPoll());
+            _viewerCommandBus.register('room.cloud.start', payload => roomStartWordCloud(payload?.prompt || ''));
+            _viewerCommandBus.register('room.cloud.end', () => roomEndWordCloud());
+            _viewerCommandBus.register('room.exit.start', payload => roomStartExitTicket(payload?.configOrTitle || '', payload?.prompts || []));
+            _viewerCommandBus.register('room.exit.end', () => roomEndExitTicket());
+            _viewerCommandBus.register('room.rank.start', payload => roomStartRankOrder(payload?.configOrTitle || '', payload?.items || []));
+            _viewerCommandBus.register('room.rank.end', () => roomEndRankOrder());
+            _viewerCommandBus.register('room.nudge.send', payload => roomSendAudienceNudge(payload?.kind || '', payload?.text || ''));
+        };
+        _registerRoomCommands();
+        window.OEIViewerCommandBus = _viewerCommandBus;
+
         function roomExposeBridge() {
             window.OEIRoomBridge = {
                 isActive: () => !!_room.active,
-                startPoll: (typeOrConfig, prompt) => roomStartPoll(typeOrConfig, prompt),
-                startMcqSingle: (question, options) => roomStartPoll({ type: 'mcq-single', prompt: question, options }),
-                startMcqMulti: (question, options) => roomStartPoll({ type: 'mcq-multi', prompt: question, options }),
-                endPoll: () => roomEndPoll(),
+                startPoll: (typeOrConfig, prompt) => _viewerCommandBus.dispatch('room.poll.start', { typeOrConfig, prompt }, 'room-bridge'),
+                startMcqSingle: (question, options) => _viewerCommandBus.dispatch('room.poll.start', {
+                    typeOrConfig: { type: 'mcq-single', prompt: question, options },
+                    prompt: '',
+                }, 'room-bridge'),
+                startMcqMulti: (question, options) => _viewerCommandBus.dispatch('room.poll.start', {
+                    typeOrConfig: { type: 'mcq-multi', prompt: question, options },
+                    prompt: '',
+                }, 'room-bridge'),
+                endPoll: () => _viewerCommandBus.dispatch('room.poll.end', null, 'room-bridge'),
                 getPollSnapshot: () => _roomBridgeSnapshotPoll(),
                 subscribePoll: fn => {
                     if (typeof fn !== 'function') return () => {};
-                    _roomBridgeSubs.poll.add(fn);
+                    const unsubscribe = _roomBridgeBus.subscribe('poll', fn);
                     try { fn(_roomBridgeSnapshotPoll()); } catch (_) {}
-                    return () => _roomBridgeSubs.poll.delete(fn);
+                    return unsubscribe;
                 },
-                startWordCloud: prompt => roomStartWordCloud(prompt),
-                endWordCloud: () => roomEndWordCloud(),
+                startWordCloud: prompt => _viewerCommandBus.dispatch('room.cloud.start', { prompt }, 'room-bridge'),
+                endWordCloud: () => _viewerCommandBus.dispatch('room.cloud.end', null, 'room-bridge'),
                 getWordCloudSnapshot: () => _roomBridgeSnapshotCloud(),
                 subscribeWordCloud: fn => {
                     if (typeof fn !== 'function') return () => {};
-                    _roomBridgeSubs.cloud.add(fn);
+                    const unsubscribe = _roomBridgeBus.subscribe('cloud', fn);
                     try { fn(_roomBridgeSnapshotCloud()); } catch (_) {}
-                    return () => _roomBridgeSubs.cloud.delete(fn);
+                    return unsubscribe;
                 },
-                startExitTicket: (configOrTitle, prompts) => roomStartExitTicket(configOrTitle, prompts),
-                endExitTicket: () => roomEndExitTicket(),
+                startExitTicket: (configOrTitle, prompts) => _viewerCommandBus.dispatch('room.exit.start', { configOrTitle, prompts }, 'room-bridge'),
+                endExitTicket: () => _viewerCommandBus.dispatch('room.exit.end', null, 'room-bridge'),
                 getExitTicketSnapshot: () => _roomBridgeSnapshotExitTicket(),
                 subscribeExitTicket: fn => {
                     if (typeof fn !== 'function') return () => {};
-                    _roomBridgeSubs.exitTicket.add(fn);
+                    const unsubscribe = _roomBridgeBus.subscribe('exitTicket', fn);
                     try { fn(_roomBridgeSnapshotExitTicket()); } catch (_) {}
-                    return () => _roomBridgeSubs.exitTicket.delete(fn);
+                    return unsubscribe;
                 },
-                startRankOrder: (configOrTitle, items) => roomStartRankOrder(configOrTitle, items),
-                endRankOrder: () => roomEndRankOrder(),
+                startRankOrder: (configOrTitle, items) => _viewerCommandBus.dispatch('room.rank.start', { configOrTitle, items }, 'room-bridge'),
+                endRankOrder: () => _viewerCommandBus.dispatch('room.rank.end', null, 'room-bridge'),
                 getRankOrderSnapshot: () => _roomBridgeSnapshotRankOrder(),
                 subscribeRankOrder: fn => {
                     if (typeof fn !== 'function') return () => {};
-                    _roomBridgeSubs.rankOrder.add(fn);
+                    const unsubscribe = _roomBridgeBus.subscribe('rankOrder', fn);
                     try { fn(_roomBridgeSnapshotRankOrder()); } catch (_) {}
-                    return () => _roomBridgeSubs.rankOrder.delete(fn);
+                    return unsubscribe;
                 },
                 pickRandomStudent: () => {
                     if (!_room.active) return null;
@@ -1905,15 +1113,14 @@
                 },
                 subscribeRoulette: fn => {
                     if (typeof fn !== 'function') return () => {};
-                    _roomBridgeSubs.roulette.add(fn);
-                    return () => _roomBridgeSubs.roulette.delete(fn);
+                    return _roomBridgeBus.subscribe('roulette', fn);
                 },
                 getRoomSnapshot: () => _roomBridgeSnapshotRoom(),
                 subscribeRoom: fn => {
                     if (typeof fn !== 'function') return () => {};
-                    _roomBridgeSubs.room.add(fn);
+                    const unsubscribe = _roomBridgeBus.subscribe('room', fn);
                     try { fn(_roomBridgeSnapshotRoom()); } catch (_) {}
-                    return () => _roomBridgeSubs.room.delete(fn);
+                    return unsubscribe;
                 },
             };
         }
@@ -1925,51 +1132,24 @@
         }
 
         function _buildStudentUrl(roomId, transportMode = 'auto') {
-            const base = location.origin + location.pathname.replace(/[^/]*$/, '') + 'student.html';
-            if (typeof NetworkSession.buildStudentUrl === 'function') {
-                return NetworkSession.buildStudentUrl(base, roomId, params, PEER_OPTIONS, RELAY_OPTIONS, {
-                    transportMode,
-                    audienceMode: AUDIENCE_POLICY.mode || 'display',
-                });
-            }
-            const url = new URL(base);
-            url.searchParams.set('room', String(roomId || '').trim());
-            if (transportMode === 'relay' || transportMode === 'p2p') {
-                url.searchParams.set('transport', transportMode);
-            }
-            url.searchParams.set('audienceMode', AUDIENCE_POLICY.mode || 'display');
-            return url.toString();
+            return buildStudentRoomUrl({
+                currentHref: location.href,
+                roomId,
+                transportMode,
+                audienceMode: AUDIENCE_POLICY.mode || 'display',
+                networkSession: NetworkSession,
+                params,
+                peerOptions: PEER_OPTIONS,
+                relayOptions: RELAY_OPTIONS,
+            });
         }
 
         function _roomClearPeerReconnectTimer() {
-            if (_roomPeerReconnectTimer) {
-                clearTimeout(_roomPeerReconnectTimer);
-                _roomPeerReconnectTimer = null;
-            }
+            _roomPeerReconnectRuntime.clear();
         }
 
         function _roomSchedulePeerReconnect(reason = '') {
-            if (!_room.peer || _room.peer.destroyed) return;
-            if (_roomPeerReconnectTimer) return;
-            _roomPeerReconnectAttempts += 1;
-            const delay = _reconnectDelayMs(_roomPeerReconnectAttempts);
-            _roomSetStatus(`Connexion salle instable, reconnexion…${reason ? ` (${reason})` : ''}`, 'warn');
-            _roomPeerReconnectTimer = setTimeout(() => {
-                _roomPeerReconnectTimer = null;
-                if (!_room.peer || _room.peer.destroyed) return;
-                try {
-                    _room.peer.reconnect();
-                } catch (e) {
-                    try { _room.peer.destroy(); } catch (err) {}
-                    _room.peer = null;
-                    _room.active = false;
-                    const idInput = document.getElementById('rm-room-id-input');
-                    const idRefresh = document.getElementById('rm-room-id-refresh');
-                    if (idInput) idInput.disabled = false;
-                    if (idRefresh) idRefresh.disabled = false;
-                    ViewerRuntime.runRoomPreviewUpdater();
-                }
-            }, delay);
+            _roomPeerReconnectRuntime.schedule(reason);
         }
 
         async function roomHandleIncoming(conn, rawMsg) {
@@ -1996,145 +1176,47 @@
             };
 
             switch (msgType) {
-                case ROOM_MSG.REMOTE_HELLO: {
-                    if (!_remoteControl.enabled) {
-                        _remoteSendAuthError(conn, 'Contrôle mobile désactivé.', 'remote_disabled');
-                        break;
-                    }
-                    if (!_room.active) {
-                        _remoteSendAuthError(conn, 'Salle fermée.', 'room_closed');
-                        break;
-                    }
-                    const lockMs = _remoteCheckLock(conn.peer);
-                    if (lockMs > 0) {
-                        _remoteSendAuthError(conn, `Trop de tentatives. Réessayez dans ${Math.ceil(lockMs / 1000)}s.`, 'cooldown');
-                        break;
-                    }
-                    const clientNonce = toTrimmedString(msg.clientNonce, 120);
-                    if (clientNonce.length < 12) {
-                        _remoteSendAuthError(conn, 'Challenge invalide.', 'bad_nonce');
-                        break;
-                    }
-                    const challengeId = _randToken(14);
-                    const serverNonce = _randToken(16);
-                    _remoteControl.challenges.set(challengeId, {
-                        peerId: conn.peer,
-                        clientNonce,
-                        serverNonce,
-                        expiresAt: Date.now() + REMOTE_CHALLENGE_TTL_MS,
-                    });
-                    try {
-                        conn.send({
-                            type: ROOM_MSG.REMOTE_AUTH_CHALLENGE,
-                            challengeId,
-                            serverNonce,
-                            salt: _remoteControl.salt,
-                            iterations: _remoteControl.iterations,
-                            ttlMs: REMOTE_CHALLENGE_TTL_MS,
-                        });
-                    } catch (e) {}
-                    _remoteSetStatus('Demande de contrôle mobile en cours d’authentification.', 'warn');
-                    break;
-                }
-                case ROOM_MSG.REMOTE_AUTH_PROOF: {
-                    if (!_remoteControl.enabled) {
-                        _remoteSendAuthError(conn, 'Contrôle mobile désactivé.', 'remote_disabled');
-                        break;
-                    }
-                    const challengeId = toTrimmedString(msg.challengeId, 120);
-                    const proof = toTrimmedString(msg.proof, 200);
-                    const clientNonce = toTrimmedString(msg.clientNonce, 120);
-                    const challenge = _remoteControl.challenges.get(challengeId);
-                    _remoteControl.challenges.delete(challengeId);
-                    if (!challenge || challenge.peerId !== conn.peer || challenge.expiresAt <= Date.now()) {
-                        _remoteSendAuthError(conn, 'Challenge expiré. Recommencez.', 'challenge_expired');
-                        break;
-                    }
-                    if (!proof || clientNonce !== challenge.clientNonce) {
-                        const waitMs = _remoteFail(conn.peer);
-                        if (waitMs > 0) {
-                            _remoteSendAuthError(conn, `Accès temporairement bloqué (${Math.ceil(waitMs / 1000)}s).`, 'cooldown');
-                        } else {
-                            _remoteSendAuthError(conn, 'Preuve invalide.', 'invalid_proof');
-                        }
-                        break;
-                    }
-                    const expected = await sha256Hex(`${challengeId}:${challenge.clientNonce}:${challenge.serverNonce}:${_remoteControl.hash}`);
-                    if (proof !== expected) {
-                        const waitMs = _remoteFail(conn.peer);
-                        if (waitMs > 0) {
-                            _remoteSendAuthError(conn, `Accès temporairement bloqué (${Math.ceil(waitMs / 1000)}s).`, 'cooldown');
-                        } else {
-                            _remoteSendAuthError(conn, 'Mot de passe incorrect.', 'invalid_password');
-                        }
-                        break;
-                    }
-                    _remoteControl.failures.delete(conn.peer);
-                    const token = _randToken(24);
-                    const expiresAt = Date.now() + REMOTE_SESSION_TTL_MS;
-                    _remoteControl.sessions.set(token, { peerId: conn.peer, expiresAt });
-                    try {
-                        conn.send({
-                            type: ROOM_MSG.REMOTE_AUTH_OK,
-                            token,
-                            expiresAt,
-                            ttlMs: REMOTE_SESSION_TTL_MS,
-                        });
-                    } catch (e) {}
-                    _remoteUpdateUI();
-                    break;
-                }
+                case ROOM_MSG.REMOTE_HELLO:
+                case ROOM_MSG.REMOTE_AUTH_PROOF:
                 case ROOM_MSG.REMOTE_COMMAND: {
-                    const token = toTrimmedString(msg.token, 160);
-                    if (!_remoteSessionValid(conn, token)) {
-                        _remoteAck(conn, msg.rid, false, 'Session expirée');
-                        _remoteSendAuthError(conn, 'Session expirée. Reconnectez-vous.', 'session_expired');
-                        break;
-                    }
-                    const outcome = _remoteRunCommand(msg.command, msg);
-                    _remoteAck(conn, msg.rid, outcome.ok, outcome.reason || '');
-                    _remoteUpdateUI();
+                    await _remoteHandleIncoming(conn, msg);
                     break;
                 }
                 case ROOM_MSG.STUDENT_JOIN: {
-                    const pseudo = toTrimmedString(msg.pseudo, 40) || 'Anonyme';
-                    _room.students[peerId] = { pseudo, score: 0, quizCount: 0, quizCorrect: 0, handRaised: false };
-                    conn.send({ type: ROOM_MSG.WELCOME, title: _presentationData?.metadata?.title || 'Présentation', peerId });
+                    _room.students[peerId] = createStudentJoinRecord({
+                        msg,
+                        peerId,
+                        transport: conn.__transport || 'p2p',
+                        roomCurrentSlideIndex: _roomCurrentSlideIndex,
+                        roomCurrentFragmentIndex: _roomCurrentFragmentIndex,
+                        toTrimmedString,
+                        now: () => Date.now(),
+                    });
+                    safePeerSend(conn, { type: ROOM_MSG.WELCOME, title: _presentationData?.metadata?.title || 'Présentation', peerId });
                     if (conn.__transport === 'relay') _roomSendInit(conn);
-                    if (_activePoll) {
-                        try {
-                            conn.send({
-                                type: ROOM_MSG.POLL_START,
-                                pollId: _activePoll.pollId,
-                                pollType: _activePoll.type,
-                                prompt: _activePoll.prompt,
-                                options: _activePoll.options,
-                                multi: !!_activePoll.multi,
-                            });
-                        } catch(e) {}
-                    }
-                    if (_activeWordCloud) { try { conn.send({ type: ROOM_MSG.WORDCLOUD_START, cloudId: _activeWordCloud.cloudId, prompt: _activeWordCloud.prompt }); } catch(e) {} }
-                    if (_activeExitTicket) {
-                        try {
-                            conn.send({
-                                type: ROOM_MSG.EXIT_TICKET_START,
-                                ticketId: _activeExitTicket.ticketId,
-                                title: _activeExitTicket.title || 'Exit ticket',
-                                prompts: Array.isArray(_activeExitTicket.prompts) ? _activeExitTicket.prompts.slice() : [],
-                            });
-                        } catch (e) {}
-                    }
-                    if (_activeRankOrder) {
-                        try {
-                            conn.send({
-                                type: ROOM_MSG.RANK_ORDER_START,
-                                rankId: _activeRankOrder.rankId,
-                                title: _activeRankOrder.title || 'Classement collectif',
-                                items: Array.isArray(_activeRankOrder.items) ? _activeRankOrder.items.slice() : [],
-                            });
-                        } catch (e) {}
-                    }
+                    sendActiveRoomActivities({
+                        conn,
+                        ROOM_MSG,
+                        activePoll: _activePoll,
+                        activeWordCloud: _activeWordCloud,
+                        activeExitTicket: _activeExitTicket,
+                        activeRankOrder: _activeRankOrder,
+                    });
                     roomUpdatePanel();
+                    break;
+                }
+                case ROOM_MSG.STUDENT_TELEMETRY: {
+                    const telemetryRes = applyStudentTelemetryMessage({
+                        msg,
+                        peerId,
+                        studentsByPeer: _room.students,
+                        roomHands: _roomHands,
+                        toTrimmedString,
+                        toNumberOr,
+                        now: () => Date.now(),
+                        transport: conn.__transport || 'p2p',
+                    });
+                    if (telemetryRes.shouldRefresh) roomUpdatePanel();
                     break;
                 }
                 case ROOM_MSG.QUIZ_ANSWER: {
@@ -2160,68 +1242,40 @@
                     break;
                 }
                 case ROOM_MSG.STUDENT_HAND: {
-                    if (_room.students[peerId]) {
-                        const raised = !!msg.raised;
-                        _room.students[peerId].handRaised = raised;
-                        if (raised) {
-                            if (!_roomHands.find(h => h.peerId === peerId))
-                                _roomHands.push({ peerId, pseudo: _room.students[peerId].pseudo });
-                        } else {
-                            const idx = _roomHands.findIndex(h => h.peerId === peerId);
-                            if (idx !== -1) _roomHands.splice(idx, 1);
-                        }
+                    if (applyStudentHandMessage({
+                        msg,
+                        peerId,
+                        studentsByPeer: _room.students,
+                        roomHands: _roomHands,
+                    })) {
                         roomUpdatePanel();
                     }
                     break;
                 }
                 case ROOM_MSG.STUDENT_QUESTION: {
-                    const text = toTrimmedString(msg.text, 300);
-                    if (!text) { ack(false, 'empty-question'); break; }
-                    const qid = toTrimmedString(msg.qid, 80) || `q-${Date.now()}`;
-                    const normalized = text.toLowerCase().replace(/\s+/g, ' ').trim();
-                    const existing = _roomQuestions.find(q => !q.read && String(q._norm || '') === normalized);
-                    if (existing) {
-                        existing.time = Date.now();
-                        existing.read = false;
-                        existing.hidden = false;
-                        if (existing.resolved) existing.resolved = false;
-                        if (!Array.isArray(existing.authors)) existing.authors = [];
-                        if (!existing.authors.includes(peerId)) {
-                            existing.authors.push(peerId);
-                            existing.votes = (existing.votes || 1) + 1;
-                        }
-                    } else {
-                        _roomQuestions.unshift({
-                            qid,
-                            text,
-                            time: Date.now(),
-                            read: false,
-                            hidden: false,
-                            resolved: false,
-                            pinned: false,
-                            votes: 1,
-                            authors: [peerId],
-                            _norm: normalized,
-                        });
-                    }
+                    const questionRes = applyStudentQuestionMessage({
+                        msg,
+                        peerId,
+                        roomQuestions: _roomQuestions,
+                        toTrimmedString,
+                        now: () => Date.now(),
+                    });
+                    if (!questionRes.ok) { ack(false, questionRes.reason || 'question-invalid'); break; }
                     roomUpdatePanel();
                     break;
                 }
                 case ROOM_MSG.STUDENT_FEEDBACK: {
-                    const kind = toTrimmedString(msg.kind, 24).toLowerCase();
-                    const allow = ['fast', 'unclear', 'pause', 'clear'];
-                    if (!allow.includes(kind)) { ack(false, 'feedback-invalid'); break; }
-                    const now = Date.now();
-                    const prev = Number(_roomFeedback.lastByPeer.get(peerId) || 0);
-                    if ((now - prev) < 5000) { ack(true, 'feedback-throttled'); break; }
-                    _roomFeedback.lastByPeer.set(peerId, now);
-                    _roomFeedback.events.unshift({
+                    const feedbackRes = applyStudentFeedbackMessage({
+                        msg,
                         peerId,
-                        pseudo: _room.students[peerId]?.pseudo || 'Anonyme',
-                        kind,
-                        text: toTrimmedString(msg.text, 120),
-                        time: now,
+                        roomFeedback: _roomFeedback,
+                        studentsByPeer: _room.students,
+                        toTrimmedString,
+                        now: () => Date.now(),
+                        minIntervalMs: 5000,
                     });
+                    if (!feedbackRes.ok) { ack(false, feedbackRes.reason || 'feedback-invalid'); break; }
+                    if (feedbackRes.throttled) { ack(true, 'feedback-throttled'); break; }
                     roomFeedbackPrune();
                     roomUpdatePanel();
                     break;
@@ -2250,13 +1304,9 @@
                 }
                 case ROOM_MSG.WORDCLOUD_WORD: {
                     if (_activeWordCloud && String(msg.cloudId || '') === String(_activeWordCloud.cloudId)) {
-                        const w = toTrimmedString(msg.word, 80)
-                            .toLowerCase()
-                            .replace(/[^\p{L}\p{N}\s\-_'’.,!?]/gu, '')
-                            .replace(/\s+/g, ' ')
-                            .trim();
+                        const w = normalizeWordCloudWord(msg.word, { toTrimmedString });
                         if (w) {
-                            _activeWordCloud.words.set(w, (_activeWordCloud.words.get(w) || 0) + 1);
+                            applyWordCloudWord(_activeWordCloud.words, w);
                             _roomBridgeEmit('cloud', _roomBridgeSnapshotCloud());
                             roomRenderWordCloud();
                         }
@@ -2276,11 +1326,7 @@
                         _roomBridgeEmit('exitTicket', snap);
                         _postPresenterSync({
                             type: SYNC_MSG.EXIT_TICKET_UPDATE,
-                            ticketId: _activeExitTicket.ticketId,
-                            title: _activeExitTicket.title || 'Exit ticket',
-                            prompts: Array.isArray(_activeExitTicket.prompts) ? _activeExitTicket.prompts.slice() : [],
-                            responsesCount: snap.responsesCount || 0,
-                            responses: (Array.isArray(snap.responses) ? snap.responses : []).slice(0, 24),
+                            ...buildExitTicketUpdatePayload(_activeExitTicket, snap),
                         });
                         roomUpdatePanel();
                     }
@@ -2299,71 +1345,27 @@
                         _roomBridgeEmit('rankOrder', snap);
                         _postPresenterSync({
                             type: SYNC_MSG.RANK_ORDER_UPDATE,
-                            rankId: _activeRankOrder.rankId,
-                            title: _activeRankOrder.title || 'Classement collectif',
-                            items: Array.isArray(_activeRankOrder.items) ? _activeRankOrder.items.slice() : [],
-                            responsesCount: snap.responsesCount || 0,
-                            rows: Array.isArray(snap.rows) ? snap.rows : [],
+                            ...buildRankOrderUpdatePayload(_activeRankOrder, snap),
                         });
                         roomUpdatePanel();
                     }
                     break;
                 }
                 case ROOM_MSG.SYNC_REQUEST: {
-                    if (!_roomSendInit(conn)) {
+                    if (!syncPeerRuntimeState({
+                        conn,
+                        ROOM_MSG,
+                        roomSendInit: _roomSendInit,
+                        roomCurrentSlideIndex: _roomCurrentSlideIndex,
+                        roomCurrentFragmentIndex: _roomCurrentFragmentIndex,
+                        activePoll: _activePoll,
+                        activeWordCloud: _activeWordCloud,
+                        activeExitTicket: _activeExitTicket,
+                        activeRankOrder: _activeRankOrder,
+                    })) {
                         ack(false, 'sync-unavailable');
                         break;
                     }
-                    if (_activePoll) {
-                        try {
-                            conn.send({
-                                type: ROOM_MSG.POLL_START,
-                                pollId: _activePoll.pollId,
-                                pollType: _activePoll.type,
-                                prompt: _activePoll.prompt || '',
-                                options: _activePoll.options,
-                                multi: !!_activePoll.multi,
-                            });
-                        } catch (e) {}
-                    }
-                    if (_activeWordCloud) {
-                        try {
-                            conn.send({
-                                type: ROOM_MSG.WORDCLOUD_START,
-                                cloudId: _activeWordCloud.cloudId,
-                                prompt: _activeWordCloud.prompt || '',
-                            });
-                        } catch (e) {}
-                    }
-                    if (_activeExitTicket) {
-                        try {
-                            conn.send({
-                                type: ROOM_MSG.EXIT_TICKET_START,
-                                ticketId: _activeExitTicket.ticketId,
-                                title: _activeExitTicket.title || 'Exit ticket',
-                                prompts: Array.isArray(_activeExitTicket.prompts) ? _activeExitTicket.prompts.slice() : [],
-                            });
-                        } catch (e) {}
-                    }
-                    if (_activeRankOrder) {
-                        try {
-                            conn.send({
-                                type: ROOM_MSG.RANK_ORDER_START,
-                                rankId: _activeRankOrder.rankId,
-                                title: _activeRankOrder.title || 'Classement collectif',
-                                items: Array.isArray(_activeRankOrder.items) ? _activeRankOrder.items.slice() : [],
-                            });
-                        } catch (e) {}
-                    }
-                    const curFrag = _roomCurrentFragmentIndex();
-                    try {
-                        conn.send({
-                            type: ROOM_MSG.SLIDE_CHANGE,
-                            index: _roomCurrentSlideIndex(),
-                            fragmentOrder: curFrag,
-                            fragmentIndex: curFrag,
-                        });
-                    } catch (e) {}
                     break;
                 }
                 default:
@@ -2412,7 +1414,7 @@
 
             _room.peer.on('open', id => {
                 _roomClearPeerReconnectTimer();
-                _roomPeerReconnectAttempts = 0;
+                _roomPeerReconnectRuntime.resetAttempts();
                 _room.active = true;
                 ViewerRuntime.studentRoom = _room;
                 ViewerRuntime.studentRoomBroadcast = roomBroadcast;
@@ -2488,7 +1490,7 @@
 
         function roomClose() {
             _roomClearPeerReconnectTimer();
-            _roomPeerReconnectAttempts = 0;
+            _roomPeerReconnectRuntime.resetAttempts();
             const wasActive = _room.active;
             if (_pvQrVisible) {
                 _pvQrVisible = false;
@@ -2566,8 +1568,7 @@
                 const id = rawId.replace(/[^a-zA-Z0-9\-_]/g, '-').replace(/-{2,}/g, '-').slice(0, 40);
                 const copyBtn = document.getElementById('sl-room-copy');
                 if (!id) {
-                    _remoteControl.roomId = '';
-                    _remoteUpdateUI();
+                    _remoteSetRoomId('');
                     if (copyBtn) {
                         copyBtn.disabled = true;
                         copyBtn.innerHTML = withIcon('copy', 'Copier le lien stable');
@@ -2578,8 +1579,7 @@
                 if (_remoteControl.roomId !== id) {
                     _remoteLoadConfig(id);
                 } else {
-                    _remoteControl.roomId = id;
-                    _remoteUpdateUI();
+                    _remoteSetRoomId(id);
                 }
                 const url = _buildStudentUrl(id);
                 if (copyBtn) {
@@ -2674,15 +1674,10 @@
             _roomQuestionFilter = ['open', 'pinned', 'resolved', 'hidden', 'all'].includes(next) ? next : 'open';
             roomUpdatePanel();
         });
-        document.getElementById('rm-question-mark-all')?.addEventListener('click', () => {
-            _roomQuestions.forEach(q => {
-                if (q.read) return;
-                q.hidden = true;
-                q.pinned = false;
-                q.resolved = false;
-            });
-            roomUpdatePanel();
-        });
+document.getElementById('rm-question-mark-all')?.addEventListener('click', () => {
+    markAllQuestionsHidden(_roomQuestions);
+    roomUpdatePanel();
+});
         document.getElementById('rm-feedback-reset')?.addEventListener('click', () => {
             _roomFeedback.events.length = 0;
             _roomFeedback.lastByPeer.clear();
@@ -2690,34 +1685,33 @@
         });
 
         // ── Baisser toutes les mains ─────────────────────────────
-        document.getElementById('rm-lower-all')?.addEventListener('click', () => {
-            _roomHands.forEach(h => {
-                const c = _room.connections.find(x => x.peer === h.peerId && x.open);
-                if (c) { try { c.send({ type: ROOM_MSG.HAND_LOWER }); } catch(e) {} }
-                if (_room.students[h.peerId]) _room.students[h.peerId].handRaised = false;
-            });
-            _roomHands.length = 0;
-            roomUpdatePanel();
-        });
+document.getElementById('rm-lower-all')?.addEventListener('click', () => {
+    _roomHands.forEach(h => {
+        const c = _room.connections.find(x => x.peer === h.peerId && x.open);
+        if (c) { try { c.send({ type: ROOM_MSG.HAND_LOWER }); } catch(e) {} }
+    });
+    clearAllRaisedHands(_roomHands, _room.students);
+    roomUpdatePanel();
+});
 
         // ── Sondage ──────────────────────────────────────────────
         document.getElementById('rm-poll-start')?.addEventListener('click', () => {
             const type = document.getElementById('rm-poll-type')?.value || 'thumbs';
             const prompt = document.getElementById('rm-poll-prompt')?.value.trim() || '';
-            if (!roomStartPoll(type, prompt)) {
+            if (!_viewerCommandBus.dispatch('room.poll.start', { typeOrConfig: type, prompt }, 'ui')) {
                 const feedback = document.getElementById('rm-nudge-feedback');
                 if (feedback) feedback.textContent = 'Ouvrez la salle pour lancer un sondage.';
             }
         });
 
         document.getElementById('rm-poll-end')?.addEventListener('click', () => {
-            roomEndPoll();
+            _viewerCommandBus.dispatch('room.poll.end', null, 'ui');
         });
 
         // ── Nuage de mots ────────────────────────────────────────
         document.getElementById('rm-cloud-start')?.addEventListener('click', () => {
             const prompt = document.getElementById('rm-cloud-prompt')?.value.trim() || '';
-            if (!roomStartWordCloud(prompt)) {
+            if (!_viewerCommandBus.dispatch('room.cloud.start', { prompt }, 'ui')) {
                 const feedback = document.getElementById('rm-nudge-feedback');
                 if (feedback) feedback.textContent = 'Ouvrez la salle pour lancer un nuage.';
             }
@@ -2729,7 +1723,7 @@
         });
 
         document.getElementById('rm-cloud-end')?.addEventListener('click', () => {
-            roomEndWordCloud();
+            _viewerCommandBus.dispatch('room.cloud.end', null, 'ui');
         });
 
         document.getElementById('sl-wc-close-presenter')?.addEventListener('click', () => {
@@ -2738,27 +1732,42 @@
         });
 
         document.getElementById('rm-nudge-question')?.addEventListener('click', () => {
-            roomSendAudienceNudge('question', 'Avez-vous une question a poser ?');
+            _viewerCommandBus.dispatch('room.nudge.send', {
+                kind: 'question',
+                text: 'Avez-vous une question a poser ?',
+            }, 'ui');
         });
         document.getElementById('rm-nudge-hand')?.addEventListener('click', () => {
-            roomSendAudienceNudge('hand', 'Levez la main si vous voulez revenir sur ce point.');
+            _viewerCommandBus.dispatch('room.nudge.send', {
+                kind: 'hand',
+                text: 'Levez la main si vous voulez revenir sur ce point.',
+            }, 'ui');
         });
         document.getElementById('rm-nudge-poll')?.addEventListener('click', () => {
             if (_activePoll) {
-                roomSendAudienceNudge('poll', 'Un sondage est en cours, pensez a voter.');
+                _viewerCommandBus.dispatch('room.nudge.send', {
+                    kind: 'poll',
+                    text: 'Un sondage est en cours, pensez a voter.',
+                }, 'ui');
                 return;
             }
-            if (!roomStartPoll('thumbs', 'Avez-vous compris ce point ?')) {
-                roomSendAudienceNudge('poll', 'Pensez a voter.');
+            if (!_viewerCommandBus.dispatch('room.poll.start', {
+                typeOrConfig: 'thumbs',
+                prompt: 'Avez-vous compris ce point ?',
+            }, 'ui')) {
+                _viewerCommandBus.dispatch('room.nudge.send', { kind: 'poll', text: 'Pensez a voter.' }, 'ui');
             }
         });
         document.getElementById('rm-nudge-cloud')?.addEventListener('click', () => {
             if (_activeWordCloud) {
-                roomSendAudienceNudge('cloud', 'Nuage de mots en cours, proposez un mot.');
+                _viewerCommandBus.dispatch('room.nudge.send', {
+                    kind: 'cloud',
+                    text: 'Nuage de mots en cours, proposez un mot.',
+                }, 'ui');
                 return;
             }
-            if (!roomStartWordCloud('Un mot pour resumer ce slide ?')) {
-                roomSendAudienceNudge('cloud', 'Proposez un mot.');
+            if (!_viewerCommandBus.dispatch('room.cloud.start', { prompt: 'Un mot pour resumer ce slide ?' }, 'ui')) {
+                _viewerCommandBus.dispatch('room.nudge.send', { kind: 'cloud', text: 'Proposez un mot.' }, 'ui');
             }
         });
 
@@ -2836,8 +1845,7 @@
             await deck.initialize();
 
             const mountVisible = () => {
-                SlidesRenderer.mountWidgets(root, deck);
-                SlidesRenderer.mountSpecialElements(root);
+                SlidesRenderer.mountRuntimeElements(root, deck);
             };
             mountVisible();
             deck.addEventListener('slidechanged', mountVisible);
@@ -2948,20 +1956,40 @@
             pv.classList.add('active');
 
             // Presenter view theme (default: light)
-            const pvSavedTheme = storageGetRaw(PRESENTER_THEME_KEY) || 'light';
             const syncViewerTheme = isLight => document.body.classList.toggle('viewer-light', !!isLight);
-            if (pvSavedTheme === 'light') pv.classList.add('light');
-            syncViewerTheme(pvSavedTheme === 'light');
+            const pvThemeController = window.OEIThemeRuntime?.createController
+                ? window.OEIThemeRuntime.createController({
+                    scope: 'presenter',
+                    defaultMode: 'light',
+                    apply(mode) {
+                        const isLight = mode === 'light';
+                        pv.classList.toggle('light', isLight);
+                        syncViewerTheme(isLight);
+                    },
+                })
+                : null;
+            const pvSavedTheme = pvThemeController
+                ? pvThemeController.applyCurrent()
+                : (storageGetRaw(PRESENTER_THEME_KEY) || 'light');
+            if (!pvThemeController) {
+                if (pvSavedTheme === 'light') pv.classList.add('light');
+                syncViewerTheme(pvSavedTheme === 'light');
+            }
             const pvThemeBtn = document.getElementById('pv-btn-theme');
             const PV_SVG_MOON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg> Thème`;
             const PV_SVG_SUN  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg> Thème`;
             if (pvThemeBtn) {
                 pvThemeBtn.innerHTML = pvSavedTheme === 'light' ? PV_SVG_MOON : PV_SVG_SUN;
                 pvThemeBtn.addEventListener('click', () => {
-                    const nowLight = pv.classList.toggle('light');
-                    storageSetRaw(PRESENTER_THEME_KEY, nowLight ? 'light' : 'dark');
-                    syncViewerTheme(nowLight);
-                    pvThemeBtn.innerHTML = nowLight ? PV_SVG_MOON : PV_SVG_SUN;
+                    const nextTheme = pvThemeController
+                        ? pvThemeController.toggleMode()
+                        : (() => {
+                            const nowLight = pv.classList.toggle('light');
+                            storageSetRaw(PRESENTER_THEME_KEY, nowLight ? 'light' : 'dark');
+                            syncViewerTheme(nowLight);
+                            return nowLight ? 'light' : 'dark';
+                        })();
+                    pvThemeBtn.innerHTML = nextTheme === 'light' ? PV_SVG_MOON : PV_SVG_SUN;
                 });
             }
 
@@ -3085,6 +2113,11 @@
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
+            const _pvFormatInline = value => {
+                const formatter = window.SlidesShared?.formatInlineRichText;
+                if (typeof formatter === 'function') return formatter(value ?? '');
+                return _pvEsc(value).replace(/\r?\n/g, '<br>');
+            };
             const _pvClock = ms => {
                 const total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
                 const min = String(Math.floor(total / 60)).padStart(2, '0');
@@ -3704,9 +2737,16 @@
                     _sessionRec.lastSession.audioBitsPerSecond = Number(_sessionRec.audioBitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
                     _sessionRec.lastSession.audioCodec = _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType);
                 }
+                const sessionExport = normalizeReplaySessionExport(_sessionRec.lastSession, {
+                    title,
+                    slideCount: slides.length,
+                    hasAudio: !!_sessionRec.audioBlob,
+                    audioMimeType: _sessionRec.audioMimeType || 'audio/webm',
+                    audioCodec: _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType),
+                });
                 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
                 const base = `${_safeFilePart(title)}-${stamp}`;
-                const jsonBlob = new Blob([JSON.stringify(_sessionRec.lastSession, null, 2)], { type: 'application/json' });
+                const jsonBlob = new Blob([JSON.stringify(sessionExport, null, 2)], { type: 'application/json' });
                 _downloadBlob(jsonBlob, `${base}.json`);
                 if (_sessionRec.audioBlob) {
                     const ext = _audioExtFromMime(_sessionRec.audioMimeType);
@@ -3715,417 +2755,16 @@
             };
 
             const _buildReplayStandaloneHtml = ({ session, audioDataUrl = '' }) => {
-                const replayOpts = {
-                    showSlideNumber: false,
-                    footerText: null,
-                    totalSlides: slides.length,
-                    chapterNumbers: SlidesRenderer._buildChapterNumbers(slides, data.autoNumberChapters),
-                    typography: SlidesShared.resolveTypographyDefaults(data.typography),
-                };
-                const payload = {
+                return buildReplayStandaloneHtml({
                     title,
-                    generatedAt: new Date().toISOString(),
-                    dimensions: { width: 1280, height: 720 },
-                    slidesHtml: slides.map((slide, i) => SlidesRenderer.renderSlide(slide, i, replayOpts)),
-                    themeCss: document.getElementById('sl-theme-css')?.textContent || '',
+                    slides,
+                    data,
                     session,
-                    audioDataUrl: audioDataUrl || '',
-                };
-                const payloadJson = JSON.stringify(payload).replace(/</g, '\\u003c');
-                return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${_pvEsc(title)} — Replay</title>
-    <style>
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:#0b1120;color:#e2e8f0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-body{min-height:100vh;display:flex;flex-direction:column}
-.rp-app{width:min(1400px,100%);margin:0 auto;padding:16px 16px 18px;display:flex;flex-direction:column;gap:12px}
-.rp-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.rp-title{font-size:1rem;font-weight:700;line-height:1.2}
-.rp-meta{font-size:.76rem;color:#94a3b8}
-.rp-stage-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#020617;border:1px solid rgba(148,163,184,.35);border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(2,6,23,.45)}
-.rp-reveal{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:top left}
-.rp-reveal .slides{position:relative;width:100%;height:100%}
-.rp-reveal .slides > section{position:absolute;inset:0}
-.rp-black{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .16s}
-.rp-black.active{opacity:1}
-.rp-controls{display:grid;grid-template-columns:auto auto auto 1fr auto auto;gap:8px;align-items:center}
-.rp-btn,.rp-select{height:34px;border-radius:8px;border:1px solid rgba(148,163,184,.4);background:#0f172a;color:#e2e8f0;padding:0 10px;font-size:.78rem;cursor:pointer}
-.rp-btn:hover,.rp-select:hover{background:#111c34}
-.rp-btn svg{width:14px;height:14px;vertical-align:-2px}
-.rp-btn.rp-play{min-width:98px}
-.rp-time{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:.74rem;color:#cbd5e1;min-width:124px;text-align:right}
-.rp-timeline{width:100%;height:34px;accent-color:#38bdf8}
-.rp-slide-count{font-size:.75rem;color:#94a3b8;text-align:right}
-.rp-audio-note{font-size:.72rem;color:#94a3b8}
-.fragment{opacity:0;visibility:hidden;transition:opacity .2s ease, transform .2s ease}
-.fragment.visible{opacity:1;visibility:inherit}
-@media (max-width:960px){
-    .rp-app{padding:12px}
-    .rp-controls{grid-template-columns:auto auto auto 1fr;grid-template-areas:"prev play next time" "timeline timeline timeline timeline" "speed restart count count"}
-    #rp-prev{grid-area:prev}
-    #rp-play{grid-area:play}
-    #rp-next{grid-area:next}
-    #rp-time{grid-area:time;text-align:right}
-    #rp-timeline{grid-area:timeline}
-    #rp-speed{grid-area:speed}
-    #rp-restart{grid-area:restart}
-    #rp-slide-count{grid-area:count}
-}
-    </style>
-    <style id="rp-theme"></style>
-</head>
-<body>
-    <div class="rp-app">
-        <div class="rp-head">
-            <div>
-                <div class="rp-title">${_pvEsc(title)} — Replay</div>
-                <div class="rp-meta" id="rp-meta"></div>
-            </div>
-            <div class="rp-audio-note" id="rp-audio-note"></div>
-        </div>
-        <div class="rp-stage-wrap" id="rp-stage-wrap">
-            <div class="reveal rp-reveal" id="rp-reveal">
-                <div class="slides" id="rp-slide-root"></div>
-            </div>
-            <div class="rp-black" id="rp-black"></div>
-        </div>
-        <div class="rp-controls">
-            <button class="rp-btn" id="rp-prev" type="button" title="Slide précédente">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <button class="rp-btn rp-play" id="rp-play" type="button" title="Lecture / pause">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="7 5 19 12 7 19 7 5"/></svg>
-                Lecture
-            </button>
-            <button class="rp-btn" id="rp-next" type="button" title="Slide suivante">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-            <input class="rp-timeline" id="rp-timeline" type="range" min="0" max="1000" step="10" value="0">
-            <div class="rp-time" id="rp-time">00:00 / 00:00</div>
-            <select class="rp-select" id="rp-speed" title="Vitesse de lecture">
-                <option value="0.75">0.75x</option>
-                <option value="1" selected>1x</option>
-                <option value="1.25">1.25x</option>
-                <option value="1.5">1.5x</option>
-                <option value="2">2x</option>
-            </select>
-            <button class="rp-btn" id="rp-restart" type="button" title="Revenir au début">Début</button>
-            <div class="rp-slide-count" id="rp-slide-count"></div>
-        </div>
-    </div>
-    <audio id="rp-audio" preload="auto" style="display:none"></audio>
-    <script id="rp-data" type="application/json">${payloadJson}</script>
-    <script>
-(function() {
-    var payload;
-    try {
-        payload = JSON.parse((document.getElementById('rp-data') || {}).textContent || '{}');
-    } catch (_) {
-        payload = {};
-    }
-    var slides = Array.isArray(payload.slidesHtml) ? payload.slidesHtml : [];
-    var session = payload.session && typeof payload.session === 'object' ? payload.session : {};
-    var events = Array.isArray(session.events) ? session.events.slice() : [];
-    events.sort(function(a, b) { return (Number(a && a.t || 0) - Number(b && b.t || 0)); });
-    var totalSlides = slides.length;
-    var durationMs = Math.max(0, Number(session.durationMs || 0));
-    var audioUrl = String(payload.audioDataUrl || '');
-    var themeCss = String(payload.themeCss || '');
-
-    var stageWrap = document.getElementById('rp-stage-wrap');
-    var reveal = document.getElementById('rp-reveal');
-    var slideRoot = document.getElementById('rp-slide-root');
-    var blackEl = document.getElementById('rp-black');
-    var playBtn = document.getElementById('rp-play');
-    var prevBtn = document.getElementById('rp-prev');
-    var nextBtn = document.getElementById('rp-next');
-    var restartBtn = document.getElementById('rp-restart');
-    var speedEl = document.getElementById('rp-speed');
-    var timeline = document.getElementById('rp-timeline');
-    var timeEl = document.getElementById('rp-time');
-    var countEl = document.getElementById('rp-slide-count');
-    var metaEl = document.getElementById('rp-meta');
-    var audioNoteEl = document.getElementById('rp-audio-note');
-    var audioEl = document.getElementById('rp-audio');
-    var themeEl = document.getElementById('rp-theme');
-
-    themeEl.textContent = themeCss;
-    metaEl.textContent = totalSlides + ' slides · durée ' + fmtClock(durationMs);
-
-    if (audioUrl) {
-        audioEl.src = audioUrl;
-        audioNoteEl.textContent = 'Audio synchronisé intégré';
-    } else {
-        audioEl.removeAttribute('src');
-        audioNoteEl.textContent = 'Aucun audio (replay visuel uniquement)';
-    }
-
-    timeline.max = String(Math.max(0, durationMs));
-    timeline.step = '10';
-    timeline.value = '0';
-
-    var playbackRate = 1;
-    var playheadMs = 0;
-    var playing = false;
-    var rafId = 0;
-    var wallStartMs = 0;
-    var lastRenderedSlide = -1;
-    var manualSlideIndex = null;
-
-    var slideAnchors = [];
-    for (var i = 0; i < events.length; i++) {
-        var ev = events[i];
-        var tp = String(ev && ev.type || '');
-        var p = ev && ev.payload && typeof ev.payload === 'object' ? ev.payload : {};
-        if (tp === 'record:start' || tp === 'goTo') {
-            var idx = toSlideIndex(p.index, totalSlides);
-            if (idx !== null) slideAnchors.push({ t: Math.max(0, Number(ev.t || 0)), index: idx });
-        }
-    }
-    if (!slideAnchors.length && totalSlides > 0) slideAnchors.push({ t: 0, index: 0 });
-
-    function fmtClock(ms) {
-        var total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
-        var min = String(Math.floor(total / 60)).padStart(2, '0');
-        var sec = String(total % 60).padStart(2, '0');
-        return min + ':' + sec;
-    }
-    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-    function toInt(v) {
-        var n = Number(v);
-        return Number.isFinite(n) ? Math.trunc(n) : null;
-    }
-    function toSlideIndex(v, total) {
-        var n = toInt(v);
-        if (n === null) return null;
-        if (n < 0 || n >= total) return null;
-        return n;
-    }
-    function getFragments(container) {
-        if (!container) return [];
-        return Array.from(container.querySelectorAll('.fragment')).sort(function(a, b) {
-            var ia = a.dataset.fragmentIndex != null ? parseInt(a.dataset.fragmentIndex, 10) : Number.POSITIVE_INFINITY;
-            var ib = b.dataset.fragmentIndex != null ? parseInt(b.dataset.fragmentIndex, 10) : Number.POSITIVE_INFINITY;
-            if (ia !== ib) return ia - ib;
-            return 0;
-        });
-    }
-    function computeStateAt(ms) {
-        var state = { index: 0, fragmentIndex: -1, black: false };
-        for (var i = 0; i < events.length; i++) {
-            var entry = events[i];
-            var t = Math.max(0, Number(entry && entry.t || 0));
-            if (t > ms) break;
-            var type = String(entry && entry.type || '');
-            var payload = entry && entry.payload && typeof entry.payload === 'object' ? entry.payload : {};
-            if (type === 'record:start') {
-                var rIdx = toSlideIndex(payload.index, totalSlides);
-                if (rIdx !== null) state.index = rIdx;
-                var rFrag = toInt(payload.fragmentIndex);
-                state.fragmentIndex = rFrag !== null ? rFrag : -1;
-                state.black = false;
-                continue;
-            }
-            if (type === 'goTo') {
-                var nextIdx = toSlideIndex(payload.index, totalSlides);
-                if (nextIdx !== null) {
-                    state.index = nextIdx;
-                    state.fragmentIndex = -1;
-                    state.black = false;
-                }
-                continue;
-            }
-            if (type === 'fragment') {
-                var slideIdx = toSlideIndex(payload.slideIndex, totalSlides);
-                if (slideIdx !== null && slideIdx !== state.index) continue;
-                var frag = toInt(payload.fragmentIndex);
-                if (frag === null) continue;
-                if (payload.hidden) state.fragmentIndex = Math.min(state.fragmentIndex, frag - 1);
-                else state.fragmentIndex = Math.max(state.fragmentIndex, frag);
-                continue;
-            }
-            if (type === 'black') {
-                state.black = !!payload.on;
-            }
-        }
-        state.index = clamp(state.index, 0, Math.max(0, totalSlides - 1));
-        return state;
-    }
-    function renderState(state) {
-        if (!state || !totalSlides) return;
-        if (state.index !== lastRenderedSlide) {
-            slideRoot.innerHTML = slides[state.index] || '';
-            var section = slideRoot.querySelector('section');
-            if (section) {
-                var notes = section.querySelector('aside.notes');
-                if (notes) notes.remove();
-            }
-            lastRenderedSlide = state.index;
-        }
-        var frags = getFragments(slideRoot);
-        for (var i = 0; i < frags.length; i++) {
-            frags[i].classList.toggle('visible', i <= state.fragmentIndex);
-        }
-        blackEl.classList.toggle('active', !!state.black);
-        countEl.textContent = 'Slide ' + (state.index + 1) + ' / ' + totalSlides;
-        prevBtn.disabled = state.index <= 0;
-        nextBtn.disabled = state.index >= (totalSlides - 1);
-    }
-    function updateTimeUi() {
-        var ms = Math.max(0, Math.round(playheadMs));
-        timeline.value = String(ms);
-        timeEl.textContent = fmtClock(ms) + ' / ' + fmtClock(durationMs);
-    }
-    function syncAudio(force) {
-        if (!audioUrl) return;
-        var target = Math.max(0, playheadMs / 1000);
-        try {
-            if (force || Math.abs((audioEl.currentTime || 0) - target) > 0.2) audioEl.currentTime = target;
-            audioEl.playbackRate = playbackRate;
-            if (playing && audioEl.paused) audioEl.play().catch(function() {});
-            if (!playing && !audioEl.paused) audioEl.pause();
-        } catch (_) {}
-    }
-    function seek(ms, forceAudio) {
-        playheadMs = clamp(Number(ms || 0), 0, durationMs);
-        if (manualSlideIndex != null) manualSlideIndex = null;
-        renderState(computeStateAt(playheadMs));
-        updateTimeUi();
-        syncAudio(!!forceAudio);
-        if (playing) {
-            wallStartMs = performance.now() - (playheadMs / Math.max(0.1, playbackRate));
-        }
-    }
-    function stopLoop() {
-        if (rafId) cancelAnimationFrame(rafId);
-        rafId = 0;
-    }
-    function tick() {
-        if (!playing) return;
-        playheadMs = clamp((performance.now() - wallStartMs) * playbackRate, 0, durationMs);
-        renderState(computeStateAt(playheadMs));
-        updateTimeUi();
-        syncAudio(false);
-        if (playheadMs >= durationMs) {
-            setPlaying(false);
-            return;
-        }
-        rafId = requestAnimationFrame(tick);
-    }
-    function setPlayBtnLabel(isPlaying) {
-        if (isPlaying) {
-            playBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="7" y="6" width="3.5" height="12" rx="1"/><rect x="13.5" y="6" width="3.5" height="12" rx="1"/></svg>Pause';
-            return;
-        }
-        playBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="7 5 19 12 7 19 7 5"/></svg>Lecture';
-    }
-    function findNearestAnchorForSlide(targetIndex) {
-        var best = null;
-        var bestDist = Number.POSITIVE_INFINITY;
-        for (var i = 0; i < slideAnchors.length; i++) {
-            var a = slideAnchors[i];
-            if (a.index !== targetIndex) continue;
-            var d = Math.abs(a.t - playheadMs);
-            if (d < bestDist) {
-                bestDist = d;
-                best = a.t;
-            }
-        }
-        return best;
-    }
-    function setPlaying(next) {
-        if (!!next === playing) return;
-        playing = !!next;
-        setPlayBtnLabel(playing);
-        if (!playing) {
-            stopLoop();
-            syncAudio(false);
-            return;
-        }
-        if (manualSlideIndex != null) {
-            var anchor = findNearestAnchorForSlide(manualSlideIndex);
-            manualSlideIndex = null;
-            if (anchor != null) seek(anchor, true);
-        }
-        if (playheadMs >= durationMs) seek(0, true);
-        wallStartMs = performance.now() - (playheadMs / Math.max(0.1, playbackRate));
-        syncAudio(true);
-        tick();
-    }
-    function jumpSlide(delta) {
-        var baseState = manualSlideIndex != null
-            ? { index: manualSlideIndex, fragmentIndex: -1, black: false }
-            : computeStateAt(playheadMs);
-        var target = clamp(baseState.index + delta, 0, Math.max(0, totalSlides - 1));
-        if (target === baseState.index) return;
-        setPlaying(false);
-        var anchor = findNearestAnchorForSlide(target);
-        if (anchor != null) {
-            seek(anchor, true);
-            return;
-        }
-        manualSlideIndex = target;
-        renderState({ index: target, fragmentIndex: -1, black: false });
-    }
-    function scaleStage() {
-        var w = stageWrap.clientWidth || 1;
-        var h = stageWrap.clientHeight || 1;
-        var sx = w / 1280;
-        var sy = h / 720;
-        var scale = Math.min(sx, sy);
-        reveal.style.transform = 'scale(' + scale + ')';
-    }
-
-    playBtn.addEventListener('click', function() { setPlaying(!playing); });
-    prevBtn.addEventListener('click', function() { jumpSlide(-1); });
-    nextBtn.addEventListener('click', function() { jumpSlide(1); });
-    restartBtn.addEventListener('click', function() {
-        setPlaying(false);
-        seek(0, true);
-    });
-    speedEl.addEventListener('change', function() {
-        var v = Number(speedEl.value);
-        playbackRate = Number.isFinite(v) ? clamp(v, 0.5, 2) : 1;
-        if (playing) wallStartMs = performance.now() - (playheadMs / Math.max(0.1, playbackRate));
-        syncAudio(true);
-    });
-    timeline.addEventListener('input', function() {
-        seek(Number(timeline.value || 0), true);
-    });
-    window.addEventListener('resize', scaleStage);
-    document.addEventListener('keydown', function(ev) {
-        if (ev.key === ' ' || ev.key === 'k' || ev.key === 'K') {
-            ev.preventDefault();
-            setPlaying(!playing);
-        } else if (ev.key === 'ArrowLeft') {
-            ev.preventDefault();
-            jumpSlide(-1);
-        } else if (ev.key === 'ArrowRight') {
-            ev.preventDefault();
-            jumpSlide(1);
-        } else if (ev.key === 'Home') {
-            ev.preventDefault();
-            setPlaying(false);
-            seek(0, true);
-        }
-    });
-
-    setPlayBtnLabel(false);
-    scaleStage();
-    if (durationMs > 0) {
-        seek(0, true);
-    } else if (totalSlides > 0) {
-        renderState({ index: 0, fragmentIndex: -1, black: false });
-        updateTimeUi();
-    }
-})();
-    </script>
-</body>
-</html>`;
+                    audioDataUrl,
+                    themeCss: document.getElementById('sl-theme-css')?.textContent || '',
+                    slidesRenderer: SlidesRenderer,
+                    slidesShared: SlidesShared,
+                });
             };
 
             const _exportReplayStandalone = async () => {
@@ -4344,7 +2983,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
                 // Notes
                 const notesEl = document.getElementById('pv-notes');
                 const manualNotesHtml = slide.notes
-                    ? `<div class="pv-notes-prewrap">${slide.notes}</div>`
+                    ? `<div class="pv-notes-prewrap">${_pvFormatInline(slide.notes)}</div>`
                     : '<div class="pv-notes-empty">Pas de notes pour ce slide</div>';
                 const autoLines = Array.isArray(_sessionRec.autoNotesBySlide[String(currentIndex)])
                     ? _sessionRec.autoNotesBySlide[String(currentIndex)]
@@ -4367,11 +3006,8 @@ body{min-height:100vh;display:flex;flex-direction:column}
                 currentFrame.style.opacity = blackScreen ? '0' : '1';
 
                 // Mount special elements (LaTeX, Mermaid, Timer, Quiz) in presenter frames
-                SlidesRenderer.mountSpecialElements(currentInner);
-                SlidesRenderer.mountSpecialElements(nextInner);
-                // Mount interactive widgets
-                SlidesRenderer.mountWidgets(currentInner);
-                SlidesRenderer.mountWidgets(nextInner);
+                SlidesRenderer.mountRuntimeElements(currentInner);
+                SlidesRenderer.mountRuntimeElements(nextInner);
                 // Apply fragment visibility state (currentFragmentIndex)
                 _getFragments(currentInner).forEach((f, i) => f.classList.toggle('visible', i <= currentFragmentIndex));
                 ViewerRuntime.presenterCurrentFragment = currentFragmentIndex;

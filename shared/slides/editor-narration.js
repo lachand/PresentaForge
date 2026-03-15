@@ -14,6 +14,7 @@
 
 const Storage = window.OEIStorage || null;
 const NARRATION_SETTINGS_KEY = Storage?.KEYS?.SLIDE_NARRATION_SETTINGS || 'oei-slide-narration-settings';
+const MEDIA_PIPELINE_SETTINGS_KEY = Storage?.KEYS?.MEDIA_PIPELINE_SETTINGS || 'oei-media-pipeline-settings';
 const NARRATION_DEFAULTS = Object.freeze({
     profile: 'balanced',
     bitrateKbps: 64,
@@ -63,11 +64,38 @@ function _writeStorageJSON(key, value) {
     } catch (_) {}
 }
 
+function _loadMediaPipelineSettings() {
+    const raw = _readStorageJSON(MEDIA_PIPELINE_SETTINGS_KEY, null) || {};
+    return (raw && typeof raw === 'object') ? raw : {};
+}
+
+function _saveMediaPipelinePatch(patch = {}) {
+    const current = _loadMediaPipelineSettings();
+    const next = { ...current, ...(patch || {}) };
+    _writeStorageJSON(MEDIA_PIPELINE_SETTINGS_KEY, next);
+}
+
 function _loadNarrationSettings() {
     const raw = _readStorageJSON(NARRATION_SETTINGS_KEY, null) || {};
-    const profile = String(raw.profile || NARRATION_DEFAULTS.profile);
+    const media = _loadMediaPipelineSettings();
+    const mediaProfile = String(media.profile || '');
+    const fallbackProfile = Object.prototype.hasOwnProperty.call(NARRATION_PROFILES, mediaProfile)
+        ? mediaProfile
+        : NARRATION_DEFAULTS.profile;
+    const profile = String(raw.profile || fallbackProfile);
     const fromProfile = NARRATION_PROFILES[profile] || NARRATION_DEFAULTS.bitrateKbps;
-    const bitrateKbps = Math.max(16, Math.min(256, Math.round(Number(raw.bitrateKbps) || fromProfile)));
+    const mediaBitrate = Number(media.narrationBitrateKbps);
+    const bitrateKbps = Math.max(
+        16,
+        Math.min(
+            256,
+            Math.round(
+                Number(raw.bitrateKbps)
+                || (Number.isFinite(mediaBitrate) ? mediaBitrate : 0)
+                || fromProfile
+            )
+        )
+    );
     return {
         profile: Object.prototype.hasOwnProperty.call(NARRATION_PROFILES, profile) ? profile : NARRATION_DEFAULTS.profile,
         bitrateKbps,
@@ -76,6 +104,15 @@ function _loadNarrationSettings() {
 
 function _saveNarrationSettings() {
     _writeStorageJSON(NARRATION_SETTINGS_KEY, _narrationSettings);
+    const mediaProfile = _narrationSettings.profile === 'studio'
+        ? 'high'
+        : (Object.prototype.hasOwnProperty.call(NARRATION_PROFILES, _narrationSettings.profile)
+            ? _narrationSettings.profile
+            : 'balanced');
+    _saveMediaPipelinePatch({
+        profile: mediaProfile,
+        narrationBitrateKbps: Number(_narrationSettings.bitrateKbps) || NARRATION_DEFAULTS.bitrateKbps,
+    });
 }
 
 function _pickNarrationMimeType() {
@@ -166,16 +203,16 @@ function initNarration() {
             <span class="narration-timer" id="narration-timer">00:00</span>
         </div>
         <div class="narration-buttons">
-            <button class="tb-btn narration-btn" id="btn-narration-record" title="Enregistrer la narration pour ce slide">
+            <button class="tb-btn ui-btn narration-btn" id="btn-narration-record" title="Enregistrer la narration pour ce slide">
                 <span class="narration-rec-dot"></span> Enregistrer
             </button>
-            <button class="tb-btn narration-btn" id="btn-narration-stop" title="Arrêter l'enregistrement" style="display:none">
+            <button class="tb-btn ui-btn narration-btn" id="btn-narration-stop" title="Arrêter l'enregistrement" style="display:none">
                 ⏹ Arrêter
             </button>
-            <button class="tb-btn narration-btn" id="btn-narration-play" title="Écouter la narration" style="display:none">
+            <button class="tb-btn ui-btn narration-btn" id="btn-narration-play" title="Écouter la narration" style="display:none">
                 ▶ Écouter
             </button>
-            <button class="tb-btn narration-btn" id="btn-narration-delete" title="Supprimer la narration" style="display:none">
+            <button class="tb-btn ui-btn narration-btn" id="btn-narration-delete" title="Supprimer la narration" style="display:none">
                 🗑
             </button>
         </div>

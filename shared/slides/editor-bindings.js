@@ -13,57 +13,86 @@
 /* editor-bindings.js — Toolbar, ribbon, and keyboard bindings */
 
 let _slideClipboard = [];
+const _bindingsRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _bindingsCtx = () => {
+    if (_bindingsRuntime?.resolveContext) {
+        return _bindingsRuntime.resolveContext({
+            editor,
+            notify,
+            esc,
+            canvasEditor,
+        });
+    }
+    return {
+        editor,
+        notify,
+        esc,
+        canvasEditor,
+    };
+};
+const _bindingsEditor = () => _bindingsCtx().editor;
+const _bindingsCanvasEditor = () => _bindingsCtx().canvasEditor || null;
+const _bindingsNotify = (message, type = '') => {
+    const fn = _bindingsCtx().notify;
+    if (typeof fn === 'function') fn(message, type);
+};
 
 function _selectedSlideIndicesForOps() {
-    if (typeof editor?.getSelectedSlideIndices === 'function') {
-        const indices = editor.getSelectedSlideIndices();
+    const activeEditor = _bindingsEditor();
+    if (typeof activeEditor?.getSelectedSlideIndices === 'function') {
+        const indices = activeEditor.getSelectedSlideIndices();
         if (indices.length) return indices;
     }
-    return [editor.selectedIndex];
+    return [activeEditor?.selectedIndex ?? 0];
 }
 
 function _copySelectedSlidesToClipboard() {
-    if (!editor?.data?.slides?.length) return false;
+    const activeEditor = _bindingsEditor();
+    if (!activeEditor?.data?.slides?.length) return false;
     const indices = _selectedSlideIndicesForOps();
-    const slides = editor.data.slides;
+    const slides = activeEditor.data.slides;
     _slideClipboard = indices
         .map((idx) => slides[idx])
         .filter(Boolean)
         .map((slide) => JSON.parse(JSON.stringify(slide)));
     if (!_slideClipboard.length) return false;
-    notify(_slideClipboard.length > 1 ? `${_slideClipboard.length} slides copiés` : 'Slide copié', 'success');
+    _bindingsNotify(_slideClipboard.length > 1 ? `${_slideClipboard.length} slides copiés` : 'Slide copié', 'success');
     return true;
 }
 
 function _pasteSlidesFromClipboard() {
+    const activeEditor = _bindingsEditor();
     if (!Array.isArray(_slideClipboard) || !_slideClipboard.length) return false;
     const selected = _selectedSlideIndicesForOps();
-    const after = selected.length ? Math.max(...selected) : editor.selectedIndex;
-    if (typeof editor.insertSlides === 'function') {
-        editor.insertSlides(_slideClipboard, after);
+    const after = selected.length ? Math.max(...selected) : activeEditor?.selectedIndex ?? 0;
+    if (typeof activeEditor?.insertSlides === 'function') {
+        activeEditor.insertSlides(_slideClipboard, after);
     } else {
         const clones = _slideClipboard.map((slide) => JSON.parse(JSON.stringify(slide)));
-        const at = Math.max(0, Math.min(editor.data.slides.length, (after || 0) + 1));
-        editor.data.slides.splice(at, 0, ...clones);
-        editor.selectedIndex = at + clones.length - 1;
-        editor._push();
-        editor.onUpdate('slides');
+        const at = Math.max(0, Math.min(activeEditor.data.slides.length, (after || 0) + 1));
+        activeEditor.data.slides.splice(at, 0, ...clones);
+        activeEditor.selectedIndex = at + clones.length - 1;
+        activeEditor._push();
+        activeEditor.onUpdate('slides');
     }
-    notify(_slideClipboard.length > 1 ? `${_slideClipboard.length} slides collés` : 'Slide collé', 'success');
+    _bindingsNotify(_slideClipboard.length > 1 ? `${_slideClipboard.length} slides collés` : 'Slide collé', 'success');
     return true;
 }
 
 function _moveSelectedSlidesBy(delta) {
+    const activeEditor = _bindingsEditor();
     const selected = _selectedSlideIndicesForOps();
-    if (!selected.length || !editor?.data?.slides?.length) return false;
+    if (!selected.length || !activeEditor?.data?.slides?.length) return false;
     const sorted = [...selected].sort((a, b) => a - b);
     if (delta < 0 && sorted[0] <= 0) return false;
-    if (delta > 0 && sorted[sorted.length - 1] >= editor.data.slides.length - 1) return false;
+    if (delta > 0 && sorted[sorted.length - 1] >= activeEditor.data.slides.length - 1) return false;
     const targetIndex = delta < 0 ? sorted[0] - 1 : sorted[sorted.length - 1] + 2;
-    if (typeof editor.moveSlides === 'function') {
-        editor.moveSlides(sorted, targetIndex);
+    if (typeof activeEditor.moveSlides === 'function') {
+        activeEditor.moveSlides(sorted, targetIndex);
     } else if (sorted.length === 1) {
-        editor.moveSlide(sorted[0], sorted[0] + (delta < 0 ? -1 : 1));
+        activeEditor.moveSlide(sorted[0], sorted[0] + (delta < 0 ? -1 : 1));
     } else {
         return false;
     }
@@ -123,7 +152,7 @@ function _ensureMetadataModal() {
                     </div>
                     <div class="field">
                         <label for="meta-aspect-input">Format</label>
-                        <select id="meta-aspect-input" class="ribbon-select"></select>
+                        <select id="meta-aspect-input" class="ribbon-select ui-select"></select>
                     </div>
                     <div class="field">
                         <label for="meta-created-input">Date de création</label>
@@ -140,8 +169,8 @@ function _ensureMetadataModal() {
                 </div>
                 <p class="metadata-hint">Ces métadonnées sont conservées dans le JSON et utilisées à l’export.</p>
                 <div class="modal-actions ui-modal-actions">
-                    <button class="tb-btn" id="metadata-modal-cancel">Annuler</button>
-                    <button class="tb-btn primary" id="metadata-modal-save">Enregistrer</button>
+                    <button class="tb-btn ui-btn" id="metadata-modal-cancel">Annuler</button>
+                    <button class="tb-btn ui-btn primary ui-btn--primary" id="metadata-modal-save">Enregistrer</button>
                 </div>
             </div>
         `;
@@ -158,8 +187,9 @@ function _setMetadataModalOpen(modal, isOpen) {
 }
 
 function _populateMetadataModal(modal) {
-    if (!modal || !editor.data) return;
-    const meta = editor.data.metadata || {};
+    const activeEditor = _bindingsEditor();
+    if (!modal || !activeEditor?.data) return;
+    const meta = activeEditor.data.metadata || {};
     const aspectSel = modal.querySelector('#meta-aspect-input');
     if (aspectSel && !aspectSel.options.length) {
         const dimsMap = (typeof ASPECT_DIMS === 'object' && ASPECT_DIMS) ? ASPECT_DIMS : { '16:9': [1280, 720], '4:3': [1024, 768], a4: [1123, 794] };
@@ -182,15 +212,16 @@ function _populateMetadataModal(modal) {
 }
 
 function _saveMetadataFromModal(modal) {
-    if (!modal || !editor.data) return false;
+    const activeEditor = _bindingsEditor();
+    if (!modal || !activeEditor?.data) return false;
     const titleInput = modal.querySelector('#meta-title-input');
     const title = String(titleInput?.value || '').trim();
     if (!title) {
-        notify('Le titre est requis', 'error');
+        _bindingsNotify('Le titre est requis', 'error');
         titleInput?.focus();
         return false;
     }
-    const prevMeta = editor.data.metadata || {};
+    const prevMeta = activeEditor.data.metadata || {};
     const nextMeta = {
         ...prevMeta,
         title,
@@ -208,14 +239,15 @@ function _saveMetadataFromModal(modal) {
     const aspectValue = String(modal.querySelector('#meta-aspect-input')?.value || '').trim();
     nextMeta.aspect = _META_ASPECT_OPTIONS.includes(aspectValue) ? aspectValue : (prevMeta.aspect || '16:9');
 
-    editor.data.metadata = nextMeta;
-    editor._push();
-    editor.onUpdate('meta');
+    activeEditor.data.metadata = nextMeta;
+    activeEditor._push();
+    activeEditor.onUpdate('meta');
     return true;
 }
 
 function openMetadataModal() {
-    if (!editor.data) return;
+    const activeEditor = _bindingsEditor();
+    if (!activeEditor?.data) return;
     const modal = _ensureMetadataModal();
     _populateMetadataModal(modal);
 
@@ -229,7 +261,7 @@ function openMetadataModal() {
         modal.querySelector('#metadata-modal-save')?.addEventListener('click', () => {
             if (_saveMetadataFromModal(modal)) {
                 _setMetadataModalOpen(modal, false);
-                notify('Métadonnées mises à jour', 'success');
+                _bindingsNotify('Métadonnées mises à jour', 'success');
             }
         });
         document.addEventListener('keydown', e => {
@@ -241,27 +273,35 @@ function openMetadataModal() {
 }
 
 function bindToolbar() {
-    document.getElementById('btn-undo').addEventListener('click', () => editor.undo());
-    document.getElementById('btn-redo').addEventListener('click', () => editor.redo());
+    const activeEditor = _bindingsEditor();
+    const getCanvasEditor = () => _bindingsCtx().canvasEditor || null;
+    if (!activeEditor) return;
+    document.getElementById('btn-undo').addEventListener('click', () => activeEditor.undo());
+    document.getElementById('btn-redo').addEventListener('click', () => activeEditor.redo());
 
     // Ribbon insertion tab: canvas element buttons
     document.querySelectorAll('#ribbon-insertion .el-type-btn[data-el]').forEach(btn => {
-        btn.addEventListener('click', () => { if (canvasEditor) canvasEditor.add(btn.dataset.el); });
+        btn.addEventListener('click', () => {
+            const runtimeCanvas = getCanvasEditor();
+            if (runtimeCanvas) runtimeCanvas.add(btn.dataset.el);
+        });
     });
     // Connector button: toggle connector creation mode
     document.getElementById('btn-add-connector').addEventListener('click', () => {
-        if (!canvasEditor) return;
-        canvasEditor.toggleConnectorMode();
-        document.getElementById('btn-add-connector').classList.toggle('active', canvasEditor._connectorMode);
+        const runtimeCanvas = getCanvasEditor();
+        if (!runtimeCanvas) return;
+        runtimeCanvas.toggleConnectorMode();
+        document.getElementById('btn-add-connector').classList.toggle('active', runtimeCanvas._connectorMode);
     });
     document.getElementById('btn-del-element').addEventListener('click', () => {
-        if (canvasEditor && canvasEditor.selectedId) canvasEditor.remove(canvasEditor.selectedId);
+        const runtimeCanvas = getCanvasEditor();
+        if (runtimeCanvas && runtimeCanvas.selectedId) runtimeCanvas.remove(runtimeCanvas.selectedId);
     });
     document.getElementById('btn-convert-canvas').addEventListener('click', convertTemplateToCanvas);
 
     document.getElementById('pres-title').addEventListener('click', () => {
-        const title = prompt('Nom de la présentation :', editor.data.metadata.title);
-        if (title !== null) editor.setMetadata('title', title);
+        const title = prompt('Nom de la présentation :', activeEditor.data.metadata.title);
+        if (title !== null) activeEditor.setMetadata('title', title);
     });
 
     document.getElementById('btn-import').addEventListener('click', () => {
@@ -281,7 +321,9 @@ function bindToolbar() {
 
     // Export buttons (in ribbon Affichage tab)
     document.getElementById('btn-export-json').addEventListener('click', () => {
-        editor.exportJson(); notify('JSON téléchargé', 'success'); saveToRecent();
+        activeEditor.exportJson();
+        _bindingsNotify('JSON téléchargé', 'success');
+        saveToRecent();
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
     const _runExportWithMediaOptimization = async (fn, reason) => {
@@ -338,8 +380,8 @@ function bindToolbar() {
     document.getElementById('theme-modal-close').addEventListener('click', () => document.getElementById('theme-modal').style.display = 'none');
     document.getElementById('btn-import-theme').addEventListener('click', () => {
         SlidesThemes.importTheme()
-            .then(t => { SlidesThemes.save(t); renderThemeGrid(); notify('Thème importé : ' + t.name, 'success'); })
-            .catch(e => notify('Erreur : ' + e.message, 'error'));
+            .then(t => { SlidesThemes.save(t); renderThemeGrid(); _bindingsNotify('Thème importé : ' + t.name, 'success'); })
+            .catch(e => _bindingsNotify('Erreur : ' + e.message, 'error'));
     });
     document.getElementById('btn-new-theme').addEventListener('click', () => openThemeEditor(null));
 
@@ -363,6 +405,10 @@ function bindToolbar() {
 /* ── Ribbon bindings ───────────────────────────────────── */
 
 function bindRibbon() {
+    const getEditor = () => _bindingsEditor();
+    const getCanvasEditor = () => _bindingsCanvasEditor();
+    if (!getEditor()) return;
+
     // Tab switching
     document.querySelectorAll('.ribbon-tab').forEach(tab => {
         tab.addEventListener('click', () => switchRibbonTab(tab.dataset.ribbon));
@@ -371,14 +417,18 @@ function bindRibbon() {
     // Accueil tab: slide management
     document.getElementById('btn-add-slide').addEventListener('click', openSlideTypeChooser);
     document.getElementById('btn-dup-slide').addEventListener('click', () => {
+        const runtimeEditor = getEditor();
+        if (!runtimeEditor) return;
         const selected = _selectedSlideIndicesForOps();
-        if (selected.length > 1 && typeof editor.duplicateSlides === 'function') {
-            editor.duplicateSlides(selected);
+        if (selected.length > 1 && typeof runtimeEditor.duplicateSlides === 'function') {
+            runtimeEditor.duplicateSlides(selected);
             return;
         }
-        editor.duplicateSlide(editor.selectedIndex);
+        runtimeEditor.duplicateSlide(runtimeEditor.selectedIndex);
     });
     document.getElementById('btn-del-slide').addEventListener('click', async () => {
+        const runtimeEditor = getEditor();
+        if (!runtimeEditor) return;
         const selected = _selectedSlideIndicesForOps();
         const ok = await OEIDialog.confirm(
             selected.length > 1
@@ -387,11 +437,11 @@ function bindRibbon() {
             { danger: true },
         );
         if (!ok) return;
-        if (selected.length > 1 && typeof editor.removeSlides === 'function') {
-            editor.removeSlides(selected);
+        if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') {
+            runtimeEditor.removeSlides(selected);
             return;
         }
-        editor.removeSlide(editor.selectedIndex);
+        runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
     });
 
     // A5: Slide move up/down
@@ -415,7 +465,8 @@ function bindRibbon() {
 
     // Fit to content
     document.getElementById('btn-fit-content')?.addEventListener('click', () => {
-        if (canvasEditor?.selectedId) canvasEditor.fitToContent();
+        const runtimeCanvas = getCanvasEditor();
+        if (runtimeCanvas?.selectedId) runtimeCanvas.fitToContent();
     });
 
     // A7/A8: Select all / Group / Ungroup
@@ -430,11 +481,15 @@ function bindRibbon() {
     const bgPick = document.getElementById('ribbon-bg-pick');
     const bgText = document.getElementById('ribbon-bg-text');
     if (bgPick) bgPick.addEventListener('input', () => {
+        const runtimeEditor = getEditor();
+        if (!runtimeEditor) return;
         if (bgText) bgText.value = bgPick.value;
-        editor.updateSlide(editor.selectedIndex, { bg: bgPick.value });
+        runtimeEditor.updateSlide(runtimeEditor.selectedIndex, { bg: bgPick.value });
     });
     if (bgText) bgText.addEventListener('input', () => {
-        editor.updateSlide(editor.selectedIndex, { bg: bgText.value || '' });
+        const runtimeEditor = getEditor();
+        if (!runtimeEditor) return;
+        runtimeEditor.updateSlide(runtimeEditor.selectedIndex, { bg: bgText.value || '' });
     });
 
     // C5: BG Image
@@ -450,19 +505,23 @@ function bindRibbon() {
     ['heading', 'text', 'primary'].forEach(key => {
         const pick = document.getElementById('override-' + key);
         if (pick) pick.addEventListener('input', () => {
-            const slide = editor.currentSlide;
+            const runtimeEditor = getEditor();
+            const slide = runtimeEditor?.currentSlide;
             if (!slide) return;
             slide.themeOverride = slide.themeOverride || {};
             slide.themeOverride[key] = pick.value;
-            editor._pushDebounced(); editor.onUpdate('slide-update');
+            runtimeEditor._pushDebounced();
+            runtimeEditor.onUpdate('slide-update');
         });
     });
     document.getElementById('btn-clear-override')?.addEventListener('click', () => {
-        const slide = editor.currentSlide;
+        const runtimeEditor = getEditor();
+        const slide = runtimeEditor?.currentSlide;
         if (!slide) return;
         delete slide.themeOverride;
-        editor._push(); editor.onUpdate('slide-update');
-        notify('Surcharges de thème supprimées', 'info');
+        runtimeEditor._push();
+        runtimeEditor.onUpdate('slide-update');
+        _bindingsNotify('Surcharges de thème supprimées', 'info');
     });
 
     // Affichage tab: grid + outline + checker
@@ -538,8 +597,9 @@ function bindRibbon() {
 
     // Grid toggle
     document.getElementById('btn-toggle-grid')?.addEventListener('click', () => {
-        if (!canvasEditor) return;
-        const on = canvasEditor.toggleGrid();
+        const runtimeCanvas = getCanvasEditor();
+        if (!runtimeCanvas) return;
+        const on = runtimeCanvas.toggleGrid();
         document.getElementById('btn-toggle-grid').classList.toggle('active', on);
     });
 
@@ -547,6 +607,7 @@ function bindRibbon() {
 }
 
 function initInsertionGroupFilter() {
+    const getCanvasEditor = () => _bindingsCanvasEditor();
     const host = document.querySelector('#ribbon-insert-elements .ribbon-group-content');
     if (!host || host.querySelector('.insert-categories-toolbar')) return;
 
@@ -648,16 +709,17 @@ function initInsertionGroupFilter() {
 
         const key = `ins-${idx++}`;
         actionByKey.set(key, () => {
+            const runtimeCanvas = getCanvasEditor();
             if (elType) {
-                if (canvasEditor) canvasEditor.add(elType);
+                if (runtimeCanvas) runtimeCanvas.add(elType);
                 return;
             }
             if (sourceId === 'btn-shape-gallery') {
-                if (canvasEditor) canvasEditor.add('shape');
+                if (runtimeCanvas) runtimeCanvas.add('shape');
                 return;
             }
             if (sourceId === 'btn-insert-table') {
-                if (canvasEditor) canvasEditor.add('table');
+                if (runtimeCanvas) runtimeCanvas.add('table');
                 return;
             }
             if (sourceId === 'btn-insert-video') {
@@ -669,9 +731,9 @@ function initInsertionGroupFilter() {
                 return;
             }
             if (sourceId === 'btn-add-connector') {
-                if (!canvasEditor) return;
-                canvasEditor.toggleConnectorMode();
-                document.getElementById('btn-add-connector')?.classList.toggle('active', canvasEditor._connectorMode);
+                if (!runtimeCanvas) return;
+                runtimeCanvas.toggleConnectorMode();
+                document.getElementById('btn-add-connector')?.classList.toggle('active', runtimeCanvas._connectorMode);
                 return;
             }
             btn.click();
@@ -777,19 +839,25 @@ function initInsertionGroupFilter() {
 }
 
 function updateToolbarState() {
-    document.getElementById('btn-undo').disabled = !editor.canUndo;
-    document.getElementById('btn-redo').disabled = !editor.canRedo;
+    const activeEditor = _bindingsEditor();
+    document.getElementById('btn-undo').disabled = !activeEditor?.canUndo;
+    document.getElementById('btn-redo').disabled = !activeEditor?.canRedo;
 }
 
 function bindKeyboard() {
+    const getEditor = () => _bindingsEditor();
+    const getCanvasEditor = () => _bindingsCanvasEditor();
     document.addEventListener('keydown', e => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
         if (e.target.isContentEditable) return;
+        const runtimeEditor = getEditor();
+        if (!runtimeEditor) return;
+        const runtimeCanvas = getCanvasEditor();
         const inSlideList = !!(window.isSlideListInteractionContext && window.isSlideListInteractionContext());
         if (e.ctrlKey || e.metaKey) {
-            if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); editor.undo(); }
-            if (e.key === 'z' && e.shiftKey) { e.preventDefault(); editor.redo(); }
-            if (e.key === 'y') { e.preventDefault(); editor.redo(); }
+            if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); runtimeEditor.undo(); }
+            if (e.key === 'z' && e.shiftKey) { e.preventDefault(); runtimeEditor.redo(); }
+            if (e.key === 'y') { e.preventDefault(); runtimeEditor.redo(); }
             if (e.key === 's') { e.preventDefault(); saveToFile(); }
             if (e.key === 'k') { e.preventDefault(); openCommandPalette(); }
             if (e.key === 'f') { e.preventDefault(); openSearchDialog(); }
@@ -812,17 +880,17 @@ function bindKeyboard() {
         if (e.key === 'F5') { e.preventDefault(); launchPresentation(e.shiftKey ? 'presenter' : undefined); }
         // Arrow keys: nudge selected canvas elements, or navigate/reorder slides
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            if (canvasEditor && canvasEditor.selectedIds.size > 0) {
+            if (runtimeCanvas && runtimeCanvas.selectedIds.size > 0) {
                 e.preventDefault();
                 const step = e.shiftKey ? 10 : 1;
                 const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
                 const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
-                canvasEditor.nudge(dx, dy);
+                runtimeCanvas.nudge(dx, dy);
             } else {
-                if (e.key === 'ArrowUp')   { e.preventDefault(); if (!_moveSelectedSlidesBy(-1)) editor.moveSlide(editor.selectedIndex, editor.selectedIndex - 1); }
-                if (e.key === 'ArrowDown') { e.preventDefault(); if (!_moveSelectedSlidesBy(1)) editor.moveSlide(editor.selectedIndex, editor.selectedIndex + 1); }
-                if (e.key === 'ArrowLeft' && editor.selectedIndex > 0) { e.preventDefault(); editor.selectSlide(editor.selectedIndex - 1); }
-                if (e.key === 'ArrowRight' && editor.selectedIndex < editor.data.slides.length - 1) { e.preventDefault(); editor.selectSlide(editor.selectedIndex + 1); }
+                if (e.key === 'ArrowUp')   { e.preventDefault(); if (!_moveSelectedSlidesBy(-1)) runtimeEditor.moveSlide(runtimeEditor.selectedIndex, runtimeEditor.selectedIndex - 1); }
+                if (e.key === 'ArrowDown') { e.preventDefault(); if (!_moveSelectedSlidesBy(1)) runtimeEditor.moveSlide(runtimeEditor.selectedIndex, runtimeEditor.selectedIndex + 1); }
+                if (e.key === 'ArrowLeft' && runtimeEditor.selectedIndex > 0) { e.preventDefault(); runtimeEditor.selectSlide(runtimeEditor.selectedIndex - 1); }
+                if (e.key === 'ArrowRight' && runtimeEditor.selectedIndex < runtimeEditor.data.slides.length - 1) { e.preventDefault(); runtimeEditor.selectSlide(runtimeEditor.selectedIndex + 1); }
             }
         }
         if (e.key === 'Delete' && e.shiftKey) {
@@ -834,13 +902,13 @@ function bindKeyboard() {
                 { danger: true },
             ).then(ok => {
                 if (!ok) return;
-                if (selected.length > 1 && typeof editor.removeSlides === 'function') editor.removeSlides(selected);
-                else editor.removeSlide(editor.selectedIndex);
+                if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
+                else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
             });
         }
-        if (e.key === 'Delete' && !e.shiftKey && canvasEditor?.selectedIds?.size > 0) canvasEditor.removeSelected();
-        if (e.key === 'Delete' && !e.shiftKey && canvasEditor?._selectedConnectorId) canvasEditor.removeSelected();
-        if (e.key === 'Delete' && !e.shiftKey && inSlideList && !(canvasEditor?.selectedIds?.size > 0) && !canvasEditor?._selectedConnectorId) {
+        if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?.selectedIds?.size > 0) runtimeCanvas.removeSelected();
+        if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?._selectedConnectorId) runtimeCanvas.removeSelected();
+        if (e.key === 'Delete' && !e.shiftKey && inSlideList && !(runtimeCanvas?.selectedIds?.size > 0) && !runtimeCanvas?._selectedConnectorId) {
             const selected = _selectedSlideIndicesForOps();
             OEIDialog.confirm(
                 selected.length > 1
@@ -849,8 +917,8 @@ function bindKeyboard() {
                 { danger: true },
             ).then(ok => {
                 if (!ok) return;
-                if (selected.length > 1 && typeof editor.removeSlides === 'function') editor.removeSlides(selected);
-                else editor.removeSlide(editor.selectedIndex);
+                if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
+                else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
             });
         }
         if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
@@ -859,8 +927,8 @@ function bindKeyboard() {
         }
         if (e.key === 'Escape') {
             // Exit connector mode if active
-            if (canvasEditor?._connectorMode) {
-                canvasEditor.exitConnectorMode();
+            if (runtimeCanvas?._connectorMode) {
+                runtimeCanvas.exitConnectorMode();
                 document.getElementById('btn-add-connector')?.classList.remove('active');
             }
             // Exit pipette mode

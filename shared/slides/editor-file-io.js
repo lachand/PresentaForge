@@ -11,6 +11,25 @@
  * // <script src="../shared/slides/editor-file-io.js"></script>
  */
 /* editor-file-io.js — File drag-and-drop, recent files, breadcrumb */
+const _fileIoRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _fileIoCtx = () => {
+    if (_fileIoRuntime?.resolveContext) {
+        return _fileIoRuntime.resolveContext({
+            editor,
+            notify,
+            esc,
+            canvasEditor,
+        });
+    }
+    return {
+        editor,
+        notify,
+        esc,
+        canvasEditor,
+    };
+};
 
 function initFileDrop() {
     const wrap = document.getElementById('preview-wrap');
@@ -42,8 +61,9 @@ function initFileDrop() {
                 // Add as image element to current canvas slide
                 const reader = new FileReader();
                 reader.onload = async () => {
-                    const slide = editor.currentSlide;
-                    if (slide?.type === 'canvas' && canvasEditor) {
+                    const ctx = _fileIoCtx();
+                    const slide = ctx.editor?.currentSlide;
+                    if (slide?.type === 'canvas' && ctx.canvasEditor) {
                         let src = String(reader.result || '');
                         if (typeof window.optimizeDataImageUrl === 'function' && src.startsWith('data:image/')) {
                             try {
@@ -51,37 +71,54 @@ function initFileDrop() {
                                 if (optimized?.changed && optimized.dataUrl) src = optimized.dataUrl;
                             } catch (_) {}
                         }
-                        const el = canvasEditor.add('image');
-                        canvasEditor.updateData(el.id, { data: { src, alt: file.name } });
-                        notify('Image ajoutée', 'success');
+                        const el = ctx.canvasEditor.add('image');
+                        ctx.canvasEditor.updateData(el.id, { data: { src, alt: file.name } });
+                        if (typeof ctx.notify === 'function') ctx.notify('Image ajoutée', 'success');
                     } else {
-                        notify('Convertissez en canvas pour ajouter des images', 'warning');
+                        if (typeof ctx.notify === 'function') ctx.notify('Convertissez en canvas pour ajouter des images', 'warning');
                     }
                 };
                 reader.readAsDataURL(file);
             } else if (file.name.endsWith('.json')) {
                 const reader = new FileReader();
                 reader.onload = async () => {
+                    const ctx = _fileIoCtx();
                     try {
                         const rawText = String(reader.result || '');
                         if (window.OEIImportPipeline?.importFromText) {
-                            const result = await window.OEIImportPipeline.importFromText(rawText);
+                            if (typeof ctx.notify === 'function') {
+                                ctx.notify('Import: exécution des passes IA (plan → illustrations → base64 → validation)…', 'info');
+                            }
+                            const result = await window.OEIImportPipeline.importFromText(rawText, {
+                                pipelineSettings: typeof window.getAIImportPipelineSettings === 'function'
+                                    ? window.getAIImportPipelineSettings()
+                                    : null,
+                            });
                             const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name });
                             if (!ok) return;
-                            editor.load(result.data);
-                            notify(
-                                result.report?.fixes?.length
-                                    ? `Présentation chargée (${result.report.fixes.length} correction(s))`
-                                    : 'Présentation chargée',
-                                result.report?.fixes?.length ? 'warning' : 'success'
-                            );
+                            ctx.editor?.load(result.data);
+                            if (typeof ctx.notify === 'function') {
+                                ctx.notify(
+                                    result.report?.fixes?.length
+                                        ? `Présentation chargée (${result.report.fixes.length} correction(s))`
+                                        : 'Présentation chargée',
+                                    result.report?.fixes?.length ? 'warning' : 'success'
+                                );
+                            }
                             return;
                         }
                         const data = JSON.parse(_repairJsonText(rawText));
                         if (!Array.isArray(data?.slides)) throw new Error('Format JSON invalide');
-                        editor.load(data);
-                        notify('Présentation chargée', 'success');
-                    } catch(e) { notify('Erreur JSON: ' + e.message, 'error'); }
+                        ctx.editor?.load(data);
+                        if (typeof ctx.notify === 'function') ctx.notify('Présentation chargée', 'success');
+                    } catch(e) {
+                        const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
+                        if (e?.code === cancelCode) {
+                            if (typeof ctx.notify === 'function') ctx.notify('Import annulé', 'info');
+                        } else {
+                            if (typeof ctx.notify === 'function') ctx.notify('Erreur JSON: ' + e.message, 'error');
+                        }
+                    }
                 };
                 reader.readAsText(file);
             }
@@ -102,13 +139,14 @@ const _writeRecent = recents => {
 };
 
 function saveToRecent() {
-    if (!editor.data?.metadata?.title) return;
+    const ctx = _fileIoCtx();
+    if (!ctx.editor?.data?.metadata?.title) return;
     const recents = _readRecent();
     const entry = {
-        title: editor.data.metadata.title,
+        title: ctx.editor.data.metadata.title,
         date: new Date().toLocaleDateString('fr-FR'),
-        slideCount: editor.data.slides.length,
-        data: JSON.stringify(editor.data),
+        slideCount: ctx.editor.data.slides.length,
+        data: JSON.stringify(ctx.editor.data),
     };
     // Remove duplicates by title
     const filtered = recents.filter(r => r.title !== entry.title);
@@ -117,6 +155,8 @@ function saveToRecent() {
 }
 
 function renderRecentFiles() {
+    const ctx = _fileIoCtx();
+    const escapeValue = typeof ctx.esc === 'function' ? ctx.esc : (value => String(value ?? ''));
     const container = document.getElementById('recent-files-list');
     if (!container) return;
     const recents = _readRecent();
@@ -127,7 +167,7 @@ function renderRecentFiles() {
     container.innerHTML = recents.map((r, i) =>
         `<div class="recent-item" data-recent-idx="${i}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span class="recent-title">${esc(r.title)}</span>
+            <span class="recent-title">${escapeValue(r.title)}</span>
             <span class="recent-date">${r.slideCount || '?'} slides · ${r.date}</span>
         </div>`
     ).join('');
@@ -137,9 +177,11 @@ function renderRecentFiles() {
             const r = recents[idx];
             if (r?.data) {
                 try {
-                    editor.load(JSON.parse(r.data));
-                    notify('Chargé : ' + r.title, 'success');
-                } catch (e) { notify('Erreur de chargement', 'error'); }
+                    ctx.editor?.load(JSON.parse(r.data));
+                    if (typeof ctx.notify === 'function') ctx.notify('Chargé : ' + r.title, 'success');
+                } catch (e) {
+                    if (typeof ctx.notify === 'function') ctx.notify('Erreur de chargement', 'error');
+                }
             }
             document.getElementById('split-open-menu').classList.add('hidden');
         });

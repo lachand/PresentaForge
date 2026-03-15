@@ -14,11 +14,32 @@
 /* editor-preview.js — Slide list, drag-and-drop, canvas editor mount, preview rendering, popovers, template conversion */
 
 let _canvasLoadedIndex = -1;
+const _previewRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _previewCtx = () => {
+    if (_previewRuntime?.resolveContext) {
+        return _previewRuntime.resolveContext({
+            editor,
+            notify,
+            canvasEditor,
+        });
+    }
+    return { editor, notify, canvasEditor };
+};
+const _previewNotify = (message, type = '') => {
+    const fn = _previewCtx().notify;
+    if (typeof fn === 'function') fn(message, type);
+};
+const _setPreviewCanvasEditor = value => {
+    if (_previewRuntime?.setCanvasEditor) _previewRuntime.setCanvasEditor(value || null);
+};
 
 function _slideRenderOpts() {
-    if (!editor.data) return {};
+    const activeEditor = _previewCtx().editor;
+    if (!activeEditor?.data) return {};
     if (typeof SlidesShared?.buildRenderOptions === 'function') {
-        return SlidesShared.buildRenderOptions(editor.data);
+        return SlidesShared.buildRenderOptions(activeEditor.data);
     }
     return {};
 }
@@ -32,14 +53,16 @@ function isSlideListInteractionContext() {
 window.isSlideListInteractionContext = isSlideListInteractionContext;
 
 function renderSlideList() {
+    const activeEditor = _previewCtx().editor;
     const container = document.getElementById('slides-items');
-    const slides = editor.data.slides;
+    if (!container || !activeEditor?.data?.slides) return;
+    const slides = activeEditor.data.slides;
     const typeMap = Object.fromEntries(SlidesEditor.SLIDE_TYPES.map(t => [t.id, t]));
     const opts = _slideRenderOpts();
     const selectedSet = new Set(
-        (typeof editor.getSelectedSlideIndices === 'function')
-            ? editor.getSelectedSlideIndices()
-            : [editor.selectedIndex],
+        (typeof activeEditor.getSelectedSlideIndices === 'function')
+            ? activeEditor.getSelectedSlideIndices()
+            : [activeEditor.selectedIndex],
     );
     container.tabIndex = 0;
     container.setAttribute('aria-label', 'Liste des slides');
@@ -48,7 +71,7 @@ function renderSlideList() {
     container.innerHTML = slides.map((slide, i) => {
         const meta = typeMap[slide.type] || { icon: '⬜', label: slide.type };
         const title = slide.title || slide.quote || slide.term || `Slide ${i + 1}`;
-        const active = i === editor.selectedIndex ? ' active' : '';
+        const active = i === activeEditor.selectedIndex ? ' active' : '';
         const selected = selectedSet.has(i) ? ' selected' : '';
         const notesDot = slide.notes ? '<span class="sl-thumb-notes-dot" title="Contient des notes"></span>' : '';
         const thumbHtml = SlidesRenderer.renderSlide(slide, i, opts);
@@ -76,12 +99,12 @@ function renderSlideList() {
             if (e.target.closest('.sl-thumb-title-input')) return;
             const idx = +el.dataset.idx;
             container.focus({ preventScroll: true });
-            if (e.shiftKey && typeof editor.extendSlideSelection === 'function') {
-                editor.extendSlideSelection(idx);
-            } else if ((e.ctrlKey || e.metaKey) && typeof editor.toggleSlideSelection === 'function') {
-                editor.toggleSlideSelection(idx);
+            if (e.shiftKey && typeof activeEditor.extendSlideSelection === 'function') {
+                activeEditor.extendSlideSelection(idx);
+            } else if ((e.ctrlKey || e.metaKey) && typeof activeEditor.toggleSlideSelection === 'function') {
+                activeEditor.toggleSlideSelection(idx);
             } else {
-                editor.selectSlide(idx);
+                activeEditor.selectSlide(idx);
             }
             renderSlideList();
             renderPreview();
@@ -95,7 +118,7 @@ function renderSlideList() {
             titleSpan.addEventListener('dblclick', e => {
                 e.stopPropagation();
                 const idx = +el.dataset.idx;
-                const slide = editor.data.slides[idx];
+                const slide = activeEditor.data.slides[idx];
                 if (!slide) return;
                 const input = document.createElement('input');
                 input.type = 'text';
@@ -108,7 +131,7 @@ function renderSlideList() {
                 const commit = () => {
                     const val = input.value.trim();
                     slide.title = val || undefined;
-                    editor._push();
+                    activeEditor._push();
                 };
                 input.addEventListener('blur', commit);
                 input.addEventListener('keydown', ev => {
@@ -122,14 +145,14 @@ function renderSlideList() {
         btn.addEventListener('click', async e => {
             e.stopPropagation();
             const i = +btn.closest('[data-idx]').dataset.idx;
-            const selected = (typeof editor.getSelectedSlideIndices === 'function')
-                ? editor.getSelectedSlideIndices()
-                : [editor.selectedIndex];
+            const selected = (typeof activeEditor.getSelectedSlideIndices === 'function')
+                ? activeEditor.getSelectedSlideIndices()
+                : [activeEditor.selectedIndex];
             const target = (selected.includes(i) && selected.length > 1) ? selected : [i];
             switch(btn.dataset.action) {
                 case 'dup':
-                    if (target.length > 1 && typeof editor.duplicateSlides === 'function') editor.duplicateSlides(target);
-                    else editor.duplicateSlide(i);
+                    if (target.length > 1 && typeof activeEditor.duplicateSlides === 'function') activeEditor.duplicateSlides(target);
+                    else activeEditor.duplicateSlide(i);
                     break;
                 case 'del':
                     if (await OEIDialog.confirm(
@@ -138,27 +161,29 @@ function renderSlideList() {
                             : 'Supprimer ce slide ?',
                         { danger: true },
                     )) {
-                        if (target.length > 1 && typeof editor.removeSlides === 'function') editor.removeSlides(target);
-                        else editor.removeSlide(i);
+                        if (target.length > 1 && typeof activeEditor.removeSlides === 'function') activeEditor.removeSlides(target);
+                        else activeEditor.removeSlide(i);
                     }
                     break;
             }
         });
     });
-    setupDragAndDrop(container);
+    setupDragAndDrop(container, activeEditor);
     const active = container.querySelector('.sl-thumb-wrap.active');
     if (active) active.scrollIntoView({ block: 'nearest' });
 }
 
-function setupDragAndDrop(container) {
+function setupDragAndDrop(container, activeEditor) {
+    const runtimeEditor = activeEditor || _previewCtx().editor;
+    if (!container || !runtimeEditor?.data?.slides) return;
     let dragIdx = null;
     let movingIndices = [];
     container.querySelectorAll('.sl-thumb-wrap').forEach(el => {
         el.addEventListener('dragstart', e => {
             dragIdx = +el.dataset.idx;
-            const selected = (typeof editor.getSelectedSlideIndices === 'function')
-                ? editor.getSelectedSlideIndices()
-                : [editor.selectedIndex];
+            const selected = (typeof runtimeEditor.getSelectedSlideIndices === 'function')
+                ? runtimeEditor.getSelectedSlideIndices()
+                : [runtimeEditor.selectedIndex];
             movingIndices = (selected.includes(dragIdx) && selected.length > 1) ? selected : [dragIdx];
             movingIndices.forEach((idx) => {
                 const node = container.querySelector(`.sl-thumb-wrap[data-idx="${idx}"]`);
@@ -193,13 +218,13 @@ function setupDragAndDrop(container) {
             const rect = el.getBoundingClientRect();
             const isTop = e.clientY < rect.top + rect.height / 2;
             const insertIndex = isTop ? overIdx : (overIdx + 1);
-            if (typeof editor.moveSlides === 'function') editor.moveSlides(movingIndices, insertIndex);
+            if (typeof runtimeEditor.moveSlides === 'function') runtimeEditor.moveSlides(movingIndices, insertIndex);
             else {
                 let to = isTop
                     ? (dragIdx < overIdx ? overIdx - 1 : overIdx)
                     : (dragIdx < overIdx ? overIdx : overIdx + 1);
-                to = Math.max(0, Math.min(editor.data.slides.length - 1, to));
-                if (to !== dragIdx) editor.moveSlide(dragIdx, to);
+                to = Math.max(0, Math.min(runtimeEditor.data.slides.length - 1, to));
+                if (to !== dragIdx) runtimeEditor.moveSlide(dragIdx, to);
             }
         });
     });
@@ -208,13 +233,16 @@ function setupDragAndDrop(container) {
 /* ── Preview ───────────────────────────────────────────── */
 
 function mountCanvasEditor(slide) {
+    const ctx = _previewCtx();
+    const activeEditor = ctx.editor;
+    if (!activeEditor?.data) return;
     const frame = document.getElementById('preview-frame');
-    const currentIndex = editor.selectedIndex;
+    const currentIndex = activeEditor.selectedIndex;
     const themeData = window.OEIDesignTokens?.resolvePresentationTheme
-        ? window.OEIDesignTokens.resolvePresentationTheme(editor.data)
-        : (typeof editor.data.theme === 'string'
-            ? (SlidesThemes.BUILT_IN[editor.data.theme] || SlidesThemes.BUILT_IN.dark)
-            : editor.data.theme);
+        ? window.OEIDesignTokens.resolvePresentationTheme(activeEditor.data)
+        : (typeof activeEditor.data.theme === 'string'
+            ? (SlidesThemes.BUILT_IN[activeEditor.data.theme] || SlidesThemes.BUILT_IN.dark)
+            : activeEditor.data.theme);
     const bg = slide.bg || themeData?.colors?.slideBg || '#1a1d27';
     frame.style.background = bg;
     frame.style.backgroundImage = '';
@@ -239,11 +267,16 @@ function mountCanvasEditor(slide) {
     if (!canvasEditor) {
         frame.innerHTML = '';
         canvasEditor = new CanvasEditor(frame, {
-            scale: previewScale,
+            scale: Number.isFinite(Number(ctx.previewScale)) ? Number(ctx.previewScale) : previewScale,
             scriptBasePath: '../shared/components/',
-            onChange: (data) => editor.updateSlide(editor.selectedIndex, { elements: data.elements, connectors: data.connectors }),
+            onChange: data => {
+                const runtimeEditor = _previewCtx().editor;
+                if (!runtimeEditor) return;
+                runtimeEditor.updateSlide(runtimeEditor.selectedIndex, { elements: data.elements, connectors: data.connectors });
+            },
             onSelect: (element) => { updateFormatTab(); updatePropsPanel(); },
         });
+        _setPreviewCanvasEditor(canvasEditor);
         canvasEditor.onDblClick = (el, e) => openCanvasPopover(el, e);
         canvasEditor.onPositionChange = () => { updateFormatTab(); updatePropsPanel(); };
         canvasEditor.onContextMenu = (id, e) => openContextMenu(id, e);
@@ -265,21 +298,22 @@ function mountCanvasEditor(slide) {
             slide.bg,
             slide.connectors || [],
             currentIndex,
-            SlidesShared.resolveTypographyDefaults(editor.data?.typography),
+            SlidesShared.resolveTypographyDefaults(activeEditor.data?.typography),
         );
         // Build caption registry from all slides for cross-references
-        canvasEditor.setCaptionRegistry(SlidesShared.buildCaptionRegistry(editor.data?.slides || []));
+        canvasEditor.setCaptionRegistry(SlidesShared.buildCaptionRegistry(activeEditor.data?.slides || []));
         _canvasLoadedIndex = currentIndex;
     } else {
-        canvasEditor.setTypography(SlidesShared.resolveTypographyDefaults(editor.data?.typography));
+        canvasEditor.setTypography(SlidesShared.resolveTypographyDefaults(activeEditor.data?.typography));
     }
-    canvasEditor.setScale(previewScale);
+    canvasEditor.setScale(Number.isFinite(Number(ctx.previewScale)) ? Number(ctx.previewScale) : previewScale);
 }
 
 function unmountCanvasEditor() {
     if (canvasEditor) {
         canvasEditor.destroy();
         canvasEditor = null;
+        _setPreviewCanvasEditor(null);
         _canvasLoadedIndex = -1;
     }
     const frame = document.getElementById('preview-frame');
@@ -288,9 +322,11 @@ function unmountCanvasEditor() {
 }
 
 function renderPreview() {
-    const slide = editor.currentSlide;
+    const activeEditor = _previewCtx().editor;
+    if (!activeEditor) return;
+    const slide = activeEditor.currentSlide;
     const frame = document.getElementById('preview-frame');
-    const total = editor.data?.slides.length || 0;
+    const total = activeEditor.data?.slides.length || 0;
     if (!slide) { unmountCanvasEditor(); return; }
     // preview-label removed
     const notesArea = document.getElementById('notes-textarea');
@@ -299,15 +335,15 @@ function renderPreview() {
         mountCanvasEditor(slide);
     } else {
         unmountCanvasEditor();
-        frame.innerHTML = SlidesRenderer.renderSlide(slide, editor.selectedIndex, _slideRenderOpts());
-        SlidesRenderer.mountWidgets(frame);
+        frame.innerHTML = SlidesRenderer.renderSlide(slide, activeEditor.selectedIndex, _slideRenderOpts());
+        SlidesRenderer.mountRuntimeElements(frame, null, { includeSpecial: false, includeWidgets: true });
         if (window.hljs) {
             frame.querySelectorAll('code[class*=language-]').forEach(block => {
                 try { hljs.highlightElement(block); } catch(e) {}
             });
         }
         // Double-click on template slide → open content popover
-        frame.ondblclick = (e) => openTemplatePopover(editor.currentSlide, e);
+        frame.ondblclick = e => openTemplatePopover(activeEditor.currentSlide, e);
 
         // Show convert-to-canvas hint
         const hint = document.createElement('div');
@@ -370,7 +406,8 @@ function openCanvasPopover(element, event) {
 }
 
 function openTemplatePopover(slide, refEvent) {
-    if (!slide || slide.type === 'canvas') return;
+    const activeEditor = _previewCtx().editor;
+    if (!slide || slide.type === 'canvas' || !activeEditor) return;
     const popover = document.getElementById('content-popover');
     const typeMeta = SlidesEditor.SLIDE_TYPES.find(t => t.id === slide.type) || { icon: '⬜', label: slide.type };
     const fields = SlidesEditor.fieldsFor(slide.type);
@@ -450,7 +487,7 @@ function openTemplatePopover(slide, refEvent) {
                 e.target.value = slide.type;
                 return;
             }
-            editor.replaceSlide(editor.selectedIndex, SlidesEditor.DEFAULT_SLIDE(newType));
+            activeEditor.replaceSlide(activeEditor.selectedIndex, SlidesEditor.DEFAULT_SLIDE(newType));
             closeContentPopover();
         }
     });
@@ -462,7 +499,7 @@ function openTemplatePopover(slide, refEvent) {
         input.addEventListener(ev, () => {
             const patch = {};
             SlidesEditor.setDeep(patch, key, input.value);
-            editor.updateSlide(editor.selectedIndex, patch);
+            activeEditor.updateSlide(activeEditor.selectedIndex, patch);
         });
     });
 
@@ -494,20 +531,24 @@ function openTemplatePopover(slide, refEvent) {
         const key = itemsEl.dataset.itemsField;
         const getItems = () => Array.from(itemsEl.querySelectorAll('[data-item-idx]')).map(i => i.value);
         itemsEl.querySelectorAll('[data-item-idx]').forEach(input => {
-            input.addEventListener('input', () => { const patch = {}; SlidesEditor.setDeep(patch, key, getItems()); editor.updateSlide(editor.selectedIndex, patch); });
+            input.addEventListener('input', () => {
+                const patch = {};
+                SlidesEditor.setDeep(patch, key, getItems());
+                activeEditor.updateSlide(activeEditor.selectedIndex, patch);
+            });
         });
         itemsEl.querySelectorAll('[data-del-item]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = +btn.dataset.delItem;
                 const items = getItems(); items.splice(idx, 1);
                 const patch = {}; SlidesEditor.setDeep(patch, key, items);
-                editor.updateSlide(editor.selectedIndex, patch);
+                activeEditor.updateSlide(activeEditor.selectedIndex, patch);
             });
         });
         itemsEl.querySelector('[data-add-items]')?.addEventListener('click', () => {
             const items = getItems(); items.push('');
             const patch = {}; SlidesEditor.setDeep(patch, key, items);
-            editor.updateSlide(editor.selectedIndex, patch);
+            activeEditor.updateSlide(activeEditor.selectedIndex, patch);
         });
     });
 
@@ -525,17 +566,21 @@ document.addEventListener('mousedown', e => {
 /* ── Bind background color picker ──────────────────────── */
 
 function bindBgPicker(container) {
+    const activeEditor = _previewCtx().editor;
+    if (!activeEditor) return;
     const bgPick = container.querySelector('#field-bg-pick');
     const bgText = container.querySelector('[data-field="bg"]');
     if (!bgPick || !bgText) return;
-    bgPick.addEventListener('input', () => { bgText.value = bgPick.value; editor.updateSlide(editor.selectedIndex, { bg: bgPick.value }); });
-    bgText.addEventListener('input', () => { if (!bgText.value.trim()) editor.updateSlide(editor.selectedIndex, { bg: '' }); });
+    bgPick.addEventListener('input', () => { bgText.value = bgPick.value; activeEditor.updateSlide(activeEditor.selectedIndex, { bg: bgPick.value }); });
+    bgText.addEventListener('input', () => { if (!bgText.value.trim()) activeEditor.updateSlide(activeEditor.selectedIndex, { bg: '' }); });
 }
 
 /* ── Convert template → canvas ─────────────────────────── */
 
 async function convertTemplateToCanvas() {
-    const slide = editor.currentSlide;
+    const activeEditor = _previewCtx().editor;
+    if (!activeEditor) return;
+    const slide = activeEditor.currentSlide;
     if (!slide || slide.type === 'canvas') return;
     if (!await OEIDialog.confirm('Convertir ce slide en canvas ?\nLe contenu actuel sera transformé en éléments positionnables. Cette action est annulable via Ctrl+Z.')) return;
     const CW = 1280, CH = 720;
@@ -572,8 +617,8 @@ async function convertTemplateToCanvas() {
         case 'chapter': {
             let titleY = 250;
             // Use auto-number if available, falling back to manual number
-            const chapterNumbers = editor.data?.autoNumberChapters ? SlidesRenderer._buildChapterNumbers(editor.data.slides, true) : null;
-            const chapterNum = chapterNumbers?.get(editor.selectedIndex) || slide.number;
+            const chapterNumbers = activeEditor.data?.autoNumberChapters ? SlidesRenderer._buildChapterNumbers(activeEditor.data.slides, true) : null;
+            const chapterNum = chapterNumbers?.get(activeEditor.selectedIndex) || slide.number;
             if (chapterNum) {
                 add({ type: 'heading', x: 48, y: 110, w: CW - 96, h: 148, data: { text: String(chapterNum) },
                     style: { fontSize: 96, fontWeight: 900, color: 'var(--sl-primary)', textAlign: 'center', fontFamily: 'var(--sl-font-heading)', opacity: 0.25 }, z: 1 });
@@ -679,15 +724,16 @@ async function convertTemplateToCanvas() {
 
     if (slide.notes) newSlide.notes = slide.notes;
     if (slide.bg)    newSlide.bg    = slide.bg;
-    editor.replaceSlide(editor.selectedIndex, newSlide);
-    notify('Slide converti en canvas', 'success');
+    activeEditor.replaceSlide(activeEditor.selectedIndex, newSlide);
+    _previewNotify('Slide converti en canvas', 'success');
 }
 
 /* ── Connector popover (new element-bound connectors) ──── */
 
 function openConnectorPopover(conn, event) {
     const popover = document.getElementById('content-popover');
-    if (!popover || !canvasEditor) return;
+    const runtimeCanvasEditor = _previewCtx().canvasEditor || canvasEditor;
+    if (!popover || !runtimeCanvasEditor) return;
     closeContentPopover();
     popover.classList.add('visible');
 
@@ -723,14 +769,14 @@ function openConnectorPopover(conn, event) {
     document.getElementById('popover-close-btn').addEventListener('click', closeContentPopover);
 
     const id = conn.id;
-    popover.querySelector('#cp-lineType')?.addEventListener('change', e => canvasEditor.updateConnector(id, { lineType: e.target.value }));
-    popover.querySelector('#cp-arrowStart')?.addEventListener('change', e => canvasEditor.updateConnector(id, { arrowStart: e.target.checked }));
-    popover.querySelector('#cp-arrowEnd')?.addEventListener('change', e => canvasEditor.updateConnector(id, { arrowEnd: e.target.checked }));
-    popover.querySelector('#cp-srcAnchor')?.addEventListener('change', e => canvasEditor.updateConnector(id, { sourceAnchor: e.target.value }));
-    popover.querySelector('#cp-tgtAnchor')?.addEventListener('change', e => canvasEditor.updateConnector(id, { targetAnchor: e.target.value }));
-    popover.querySelector('#cp-strokeWidth')?.addEventListener('input', e => canvasEditor.updateConnector(id, { style: { strokeWidth: +e.target.value } }));
-    popover.querySelector('#cp-stroke')?.addEventListener('input', e => canvasEditor.updateConnector(id, { style: { stroke: e.target.value } }));
-    popover.querySelector('#cp-label')?.addEventListener('input', e => canvasEditor.updateConnector(id, { label: e.target.value }));
+    popover.querySelector('#cp-lineType')?.addEventListener('change', e => runtimeCanvasEditor.updateConnector(id, { lineType: e.target.value }));
+    popover.querySelector('#cp-arrowStart')?.addEventListener('change', e => runtimeCanvasEditor.updateConnector(id, { arrowStart: e.target.checked }));
+    popover.querySelector('#cp-arrowEnd')?.addEventListener('change', e => runtimeCanvasEditor.updateConnector(id, { arrowEnd: e.target.checked }));
+    popover.querySelector('#cp-srcAnchor')?.addEventListener('change', e => runtimeCanvasEditor.updateConnector(id, { sourceAnchor: e.target.value }));
+    popover.querySelector('#cp-tgtAnchor')?.addEventListener('change', e => runtimeCanvasEditor.updateConnector(id, { targetAnchor: e.target.value }));
+    popover.querySelector('#cp-strokeWidth')?.addEventListener('input', e => runtimeCanvasEditor.updateConnector(id, { style: { strokeWidth: +e.target.value } }));
+    popover.querySelector('#cp-stroke')?.addEventListener('input', e => runtimeCanvasEditor.updateConnector(id, { style: { stroke: e.target.value } }));
+    popover.querySelector('#cp-label')?.addEventListener('input', e => runtimeCanvasEditor.updateConnector(id, { label: e.target.value }));
 
     setTimeout(() => popover.querySelector('#cp-label')?.focus(), 50);
 }

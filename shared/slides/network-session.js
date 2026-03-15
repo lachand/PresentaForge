@@ -141,8 +141,8 @@
         const safeAttempt = Math.max(0, toSafeInt(attempt) || 0);
         if (safeAttempt >= Math.max(1, toSafeInt(fallbackAttempt) || 5)) return true;
         const safeReason = toSafeString(reason, 120).toLowerCase();
+        if (safeReason.includes('peer-unavailable')) return true;
         const hardSignals = [
-            'peer-unavailable',
             'signalisation-timeout',
             'signalisation perdue',
             'timeout',

@@ -63,7 +63,11 @@ async function openFromFile() {
         try {
             await editor.importJson();
             notify('Présentation chargée', 'success');
-        } catch (e) { notify('Erreur : ' + e.message, 'error'); }
+        } catch (e) {
+            const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
+            if (e?.code === cancelCode) return;
+            notify('Erreur : ' + e.message, 'error');
+        }
         return;
     }
     try {
@@ -75,7 +79,11 @@ async function openFromFile() {
         let data = null;
         let report = null;
         if (window.OEIImportPipeline?.importFromText) {
-            const result = await window.OEIImportPipeline.importFromText(text);
+            const result = await window.OEIImportPipeline.importFromText(text, {
+                pipelineSettings: typeof window.getAIImportPipelineSettings === 'function'
+                    ? window.getAIImportPipelineSettings()
+                    : null,
+            });
             const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: handle.name || file.name || 'Fichier JSON' });
             if (!ok) return;
             data = result.data;
@@ -96,6 +104,11 @@ async function openFromFile() {
         saveRevision('open');
     } catch (err) {
         if (err.name === 'AbortError') return;
+        const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
+        if (err?.code === cancelCode) {
+            notify('Import annulé', 'info');
+            return;
+        }
         notify('Erreur : ' + err.message, 'error');
     }
 }
@@ -449,7 +462,7 @@ async function openRevisionHistory() {
                             </div>
                             <div class="revision-actions">
                                 <div class="revision-meta">${r.slideCount} slides · ${esc(r.title)}</div>
-                                <button class="tb-btn revision-restore">Restaurer</button>
+                                <button class="tb-btn ui-btn revision-restore">Restaurer</button>
                             </div>
                         </div>`;
                     }).join('')

@@ -24,6 +24,25 @@ const SHAPES = [
 ];
 const FOOTER_TEMPLATE_DEFAULT = '{{title}} · {{author}} · {{year}}';
 let _footerConfigModalBound = false;
+const _insertRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _insertCtx = () => {
+    if (_insertRuntime?.resolveContext) {
+        return _insertRuntime.resolveContext({
+            editor,
+            notify,
+            canvasEditor,
+        });
+    }
+    return { editor, notify, canvasEditor };
+};
+const _insertEditor = () => _insertCtx().editor;
+const _insertCanvas = () => _insertCtx().canvasEditor || null;
+const _insertNotify = (message, type = '') => {
+    const fn = _insertCtx().notify;
+    if (typeof fn === 'function') fn(message, type);
+};
 
 function renderShapePicker() {
     const picker = document.getElementById('shape-picker');
@@ -33,16 +52,18 @@ function renderShapePicker() {
     ).join('');
     picker.querySelectorAll('.shape-pick-item').forEach(el => {
         el.addEventListener('click', () => {
-            if (!canvasEditor) return;
+            const runtimeCanvas = _insertCanvas();
+            const runtimeEditor = _insertEditor();
+            if (!runtimeCanvas || !runtimeEditor) return;
             const shape = el.dataset.shape;
-            canvasEditor.add('shape');
+            runtimeCanvas.add('shape');
             // Update newly added shape's data
-            const slide = editor.currentSlide;
+            const slide = runtimeEditor.currentSlide;
             if (slide?.elements?.length) {
                 const last = slide.elements[slide.elements.length - 1];
                 last.data = { ...last.data, shapeType: shape };
                 last.style = { ...last.style, fill: '#818cf8' };
-                editor._push();
+                runtimeEditor._push();
             }
             picker.classList.add('hidden');
         });
@@ -84,7 +105,8 @@ function initTableGridPicker() {
 }
 
 function insertTable(rows, cols) {
-    if (!canvasEditor) return;
+    const runtimeCanvas = _insertCanvas();
+    if (!runtimeCanvas) return;
     const tableRows = [];
     for (let r = 0; r < rows; r++) {
         const row = [];
@@ -93,9 +115,9 @@ function insertTable(rows, cols) {
         }
         tableRows.push(row);
     }
-    const el = canvasEditor.add('table');
+    const el = runtimeCanvas.add('table');
     if (!el) return;
-    canvasEditor.updateData(el.id, {
+    runtimeCanvas.updateData(el.id, {
         w: Math.max(400, cols * 150),
         h: Math.max(180, rows * 44 + 10),
         data: { rows: tableRows }
@@ -132,7 +154,8 @@ function openVideoDialog() {
 }
 
 function insertVideoElement(url) {
-    if (!canvasEditor) return;
+    const runtimeCanvas = _insertCanvas();
+    if (!runtimeCanvas) return;
     let embedUrl = url;
     // YouTube
     const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
@@ -141,18 +164,20 @@ function insertVideoElement(url) {
     const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
     if (vimeoMatch) embedUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}`;
 
-    const el = canvasEditor.add('video');
+    const el = runtimeCanvas.add('video');
     if (el) {
-        canvasEditor.updateData(el.id, { data: { src: url, embedUrl } });
+        runtimeCanvas.updateData(el.id, { data: { src: url, embedUrl } });
     }
 }
 
 /* ── B6: Callout ───────────────────────────────────────── */
 
 function insertCallout() {
-    if (!canvasEditor) return;
-    canvasEditor.add('callout-box');
-    const slide = editor.currentSlide;
+    const runtimeCanvas = _insertCanvas();
+    const runtimeEditor = _insertEditor();
+    if (!runtimeCanvas || !runtimeEditor) return;
+    runtimeCanvas.add('callout-box');
+    const slide = runtimeEditor.currentSlide;
     if (slide?.elements?.length) {
         const last = slide.elements[slide.elements.length - 1];
         last.data = {
@@ -161,18 +186,20 @@ function insertCallout() {
             text: 'Texte du callout…',
             tone: 'warning',
         };
-        editor._push();
+        runtimeEditor._push();
     }
 }
 
 /* ── B7: SmartArt ──────────────────────────────────────── */
 
 function insertSmartArt() {
-    if (!canvasEditor) return;
+    const runtimeCanvas = _insertCanvas();
+    const runtimeEditor = _insertEditor();
+    if (!runtimeCanvas || !runtimeEditor) return;
     // Insert 3 connected shapes
     const colors = ['#818cf8', '#34d399', '#f97316'];
     const labels = ['Étape 1', 'Étape 2', 'Étape 3'];
-    const slide = editor.currentSlide;
+    const slide = runtimeEditor.currentSlide;
     if (!slide || slide.type !== 'canvas') return;
     slide.elements = slide.elements || [];
     for (let i = 0; i < 3; i++) {
@@ -183,46 +210,50 @@ function insertSmartArt() {
             style: { fill: colors[i], color: '#ffffff', fontSize: 22, fontWeight: 600, textAlign: 'center' }
         });
     }
-    editor._push();
+    runtimeEditor._push();
 }
 
 /* ── B8: Terminal ──────────────────────────────────────── */
 
 function insertTerminal() {
-    if (!canvasEditor) return;
-    canvasEditor.add('terminal-session');
-    const slide = editor.currentSlide;
+    const runtimeCanvas = _insertCanvas();
+    const runtimeEditor = _insertEditor();
+    if (!runtimeCanvas || !runtimeEditor) return;
+    runtimeCanvas.add('terminal-session');
+    const slide = runtimeEditor.currentSlide;
     if (slide?.elements?.length) {
         const last = slide.elements[slide.elements.length - 1];
         last.data = { ...last.data, label: 'Session terminal', script: '$ echo "Hello World"\nHello World\n$ _', language: 'bash', tone: 'info' };
         last.w = 620; last.h = 280;
-        editor._push();
+        runtimeEditor._push();
     }
 }
 
 /* ── B9-B10: Slide number & Footer ─────────────────────── */
 
 function insertSlideNumber() {
-    if (!editor.data) return;
-    editor.data.showSlideNumber = !editor.data.showSlideNumber;
-    if (editor.data.showSlideNumber) {
-        notify('N° de slide activés', 'success');
+    const runtimeEditor = _insertEditor();
+    if (!runtimeEditor?.data) return;
+    runtimeEditor.data.showSlideNumber = !runtimeEditor.data.showSlideNumber;
+    if (runtimeEditor.data.showSlideNumber) {
+        _insertNotify('N° de slide activés', 'success');
     } else {
-        notify('N° de slide désactivés', 'info');
+        _insertNotify('N° de slide désactivés', 'info');
     }
-    editor._push();
+    runtimeEditor._push();
     renderSlideList(); renderPreview();
 }
 
 function toggleAutoNumberChapters() {
-    if (!editor.data) return;
-    editor.data.autoNumberChapters = !editor.data.autoNumberChapters;
-    if (editor.data.autoNumberChapters) {
-        notify('Numérotation auto des chapitres activée (01, 02…)', 'success');
+    const runtimeEditor = _insertEditor();
+    if (!runtimeEditor?.data) return;
+    runtimeEditor.data.autoNumberChapters = !runtimeEditor.data.autoNumberChapters;
+    if (runtimeEditor.data.autoNumberChapters) {
+        _insertNotify('Numérotation auto des chapitres activée (01, 02…)', 'success');
     } else {
-        notify('Numérotation auto des chapitres désactivée', 'info');
+        _insertNotify('Numérotation auto des chapitres désactivée', 'info');
     }
-    editor._push();
+    runtimeEditor._push();
     renderSlideList(); renderPreview();
 }
 
@@ -323,9 +354,9 @@ function _ensureFooterConfigModal() {
                     <div class="footer-preview-box" id="footer-preview-box"></div>
                 </div>
                 <div class="modal-actions ui-modal-actions">
-                    <button class="tb-btn" id="footer-config-disable">Désactiver</button>
-                    <button class="tb-btn" id="footer-config-cancel">Annuler</button>
-                    <button class="tb-btn primary" id="footer-config-save">Appliquer</button>
+                    <button class="tb-btn ui-btn" id="footer-config-disable">Désactiver</button>
+                    <button class="tb-btn ui-btn" id="footer-config-cancel">Annuler</button>
+                    <button class="tb-btn ui-btn primary ui-btn--primary" id="footer-config-save">Appliquer</button>
                 </div>
             </div>
         `;
@@ -405,28 +436,30 @@ function _updateFooterConfigPreview(modal, data) {
 }
 
 function _saveFooterConfigFromModal(modal, { forceDisable = false } = {}) {
-    if (!editor.data) return;
+    const runtimeEditor = _insertEditor();
+    if (!runtimeEditor?.data) return;
     const cfg = _readFooterConfigFromModal(modal);
     const finalCfg = {
         ...cfg,
         enabled: forceDisable ? false : cfg.enabled,
         template: cfg.template || FOOTER_TEMPLATE_DEFAULT,
     };
-    editor.data.footerConfig = finalCfg;
-    editor.data.footerText = finalCfg.enabled ? finalCfg.template : null;
-    editor._push();
+    runtimeEditor.data.footerConfig = finalCfg;
+    runtimeEditor.data.footerText = finalCfg.enabled ? finalCfg.template : null;
+    runtimeEditor._push();
     renderSlideList();
     renderPreview();
-    if (finalCfg.enabled) notify('Pied de page mis à jour', 'success');
-    else notify('Pied de page désactivé', 'info');
+    if (finalCfg.enabled) _insertNotify('Pied de page mis à jour', 'success');
+    else _insertNotify('Pied de page désactivé', 'info');
 }
 
 function insertFooter() {
-    if (!editor.data) return;
+    const runtimeEditor = _insertEditor();
+    if (!runtimeEditor?.data) return;
     const modal = _ensureFooterConfigModal();
-    const cfg = _normalizeFooterConfigFromData(editor.data);
-    _writeFooterConfigToModal(modal, cfg, editor.data);
-    _updateFooterConfigPreview(modal, editor.data);
+    const cfg = _normalizeFooterConfigFromData(runtimeEditor.data);
+    _writeFooterConfigToModal(modal, cfg, runtimeEditor.data);
+    _updateFooterConfigPreview(modal, runtimeEditor.data);
 
     if (!_footerConfigModalBound) {
         _footerConfigModalBound = true;
@@ -444,7 +477,7 @@ function insertFooter() {
             _setFooterModalOpen(modal, false);
         });
         ['#footer-enabled', '#footer-template-input', '#footer-title-input', '#footer-author-input', '#footer-year-input', '#footer-date-input', '#footer-line1-input']
-            .forEach(sel => modal.querySelector(sel)?.addEventListener('input', () => _updateFooterConfigPreview(modal, editor.data)));
+            .forEach(sel => modal.querySelector(sel)?.addEventListener('input', () => _updateFooterConfigPreview(modal, _insertEditor()?.data)));
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape' && modal.classList.contains('is-open')) _setFooterModalOpen(modal, false);
         });

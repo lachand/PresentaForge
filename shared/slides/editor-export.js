@@ -13,21 +13,109 @@
 /* editor-export.js — PNG, PDF, and HTML export with presenter mode; launchPresentation */
 const _exportStorage = window.OEIStorage || null;
 const _presentDataKey = _exportStorage?.KEYS?.PRESENT_DATA || 'oei-slide-present-data';
+const _mediaPipelineSettingsKey = _exportStorage?.KEYS?.MEDIA_PIPELINE_SETTINGS || 'oei-media-pipeline-settings';
 const _setStoredJson = (key, value) => {
     if (_exportStorage?.setJSON) return _exportStorage.setJSON(key, value);
     try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
 };
 
+const _readStoredJson = (key, fallback = null) => {
+    if (!key) return fallback;
+    if (_exportStorage?.getJSON) return _exportStorage.getJSON(key, fallback);
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+    } catch (_) {
+        return fallback;
+    }
+};
+
+const _MEDIA_PIPELINE_PROFILE_PRESETS = Object.freeze({
+    compact: Object.freeze({ maxBytes: 160000, maxDimension: 1366, maxPixels: 1400000, quality: 0.76, minGainBytes: 6000 }),
+    balanced: Object.freeze({ maxBytes: 280000, maxDimension: 1920, maxPixels: 2400000, quality: 0.84, minGainBytes: 12000 }),
+    high: Object.freeze({ maxBytes: 420000, maxDimension: 2560, maxPixels: 3600000, quality: 0.9, minGainBytes: 18000 }),
+});
+const _MEDIA_PIPELINE_DEFAULTS = Object.freeze({
+    profile: 'balanced',
+    tryWebpForPng: false,
+    narrationBitrateKbps: 64,
+    ..._MEDIA_PIPELINE_PROFILE_PRESETS.balanced,
+});
+
+let _mediaPipelineSettingsCache = null;
+
+function _sanitizeMediaPipelineSettings(raw = {}) {
+    const input = (raw && typeof raw === 'object') ? raw : {};
+    const profile = Object.prototype.hasOwnProperty.call(_MEDIA_PIPELINE_PROFILE_PRESETS, input.profile)
+        ? input.profile
+        : _MEDIA_PIPELINE_DEFAULTS.profile;
+    const preset = _MEDIA_PIPELINE_PROFILE_PRESETS[profile] || _MEDIA_PIPELINE_PROFILE_PRESETS.balanced;
+    const toInt = (value, fallback, min, max) => {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return fallback;
+        return Math.max(min, Math.min(max, Math.round(n)));
+    };
+    const toFloat = (value, fallback, min, max) => {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return fallback;
+        return Math.max(min, Math.min(max, n));
+    };
+    return {
+        profile,
+        maxBytes: toInt(input.maxBytes, preset.maxBytes, 32000, 4_000_000),
+        maxDimension: toInt(input.maxDimension, preset.maxDimension, 320, 8192),
+        maxPixels: toInt(input.maxPixels, preset.maxPixels, 120000, 16_000_000),
+        quality: toFloat(input.quality, preset.quality, 0.55, 0.98),
+        minGainBytes: toInt(input.minGainBytes, preset.minGainBytes, 1024, 400000),
+        tryWebpForPng: input.tryWebpForPng === true,
+        narrationBitrateKbps: toInt(input.narrationBitrateKbps, _MEDIA_PIPELINE_DEFAULTS.narrationBitrateKbps, 16, 256),
+    };
+}
+
+function getMediaPipelineSettings() {
+    if (_mediaPipelineSettingsCache) return { ..._mediaPipelineSettingsCache };
+    const raw = _readStoredJson(_mediaPipelineSettingsKey, _MEDIA_PIPELINE_DEFAULTS);
+    _mediaPipelineSettingsCache = _sanitizeMediaPipelineSettings(raw);
+    return { ..._mediaPipelineSettingsCache };
+}
+
+function setMediaPipelineSettings(patch = {}) {
+    const current = getMediaPipelineSettings();
+    const next = _sanitizeMediaPipelineSettings({ ...current, ...(patch || {}) });
+    _mediaPipelineSettingsCache = next;
+    _setStoredJson(_mediaPipelineSettingsKey, next);
+    return { ...next };
+}
+
+window.getMediaPipelineSettings = getMediaPipelineSettings;
+window.setMediaPipelineSettings = setMediaPipelineSettings;
+
+const _importExportAssets = window.OEIImportExportAssets || null;
+
 function _isDataImageUrl(value) {
+    if (_importExportAssets?.isDataImageUrl) return _importExportAssets.isDataImageUrl(value);
     return typeof value === 'string' && value.startsWith('data:image/');
 }
 
 function _estimateDataUrlBytes(dataUrl) {
+    if (_importExportAssets?.estimateDataUrlBytes) return _importExportAssets.estimateDataUrlBytes(dataUrl);
     if (!_isDataImageUrl(dataUrl)) return 0;
     const comma = dataUrl.indexOf(',');
     if (comma === -1) return 0;
     const payload = dataUrl.slice(comma + 1);
     return Math.max(0, Math.floor((payload.length * 3) / 4));
+}
+
+function _summarizeAssetUrls(urls = []) {
+    if (_importExportAssets?.summarizeAssetUrls) return _importExportAssets.summarizeAssetUrls(urls);
+    const list = Array.isArray(urls) ? urls : [];
+    return {
+        total: list.length,
+        dataUri: list.filter(url => /^data:/i.test(url)).length,
+        web: list.filter(url => /^https?:\/\//i.test(url)).length,
+        local: list.filter(url => !/^https?:\/\//i.test(url) && !/^data:/i.test(url)).length,
+    };
 }
 
 function _computeMediaSignature(slides) {
@@ -182,6 +270,7 @@ async function optimizePresentationMedia(options = {}) {
         editor.data.metadata.mediaOptimization = {
             lastRun: new Date().toISOString(),
             reason: String(options.reason || 'manual'),
+            profile: String(options.profile || getMediaPipelineSettings().profile || 'balanced'),
             optimizedAssets: stats.optimized,
             scannedAssets: stats.scanned,
             bytesSaved,
@@ -211,11 +300,19 @@ async function optimizeMediaForExport(options = {}) {
     if (meta.autoOptimizeMedia === false && !options.force) {
         return { changed: false, skipped: true, reason: 'disabled' };
     }
+    const pipeline = getMediaPipelineSettings();
     const signature = _computeMediaSignature(editor.data.slides);
     if (!options.force && signature && meta._mediaOptimizeSig === signature) {
         return { changed: false, skipped: true, reason: 'up-to-date' };
     }
     return optimizePresentationMedia({
+        maxBytes: pipeline.maxBytes,
+        maxDimension: pipeline.maxDimension,
+        maxPixels: pipeline.maxPixels,
+        quality: pipeline.quality,
+        minGainBytes: pipeline.minGainBytes,
+        tryWebpForPng: pipeline.tryWebpForPng,
+        profile: pipeline.profile,
         ...options,
         silent: options.silent !== false,
         reason: options.reason || 'export',
@@ -396,13 +493,20 @@ function _injectStaticFallbacks(container) {
     const reg = (typeof CanvasEditor !== 'undefined' && CanvasEditor.WIDGET_REGISTRY) || window.OEI_WIDGET_REGISTRY || {};
     container.querySelectorAll('.sl-sim-container[data-widget]:not([data-mounted])').forEach(slot => {
         const wid = slot.dataset.widget;
+        let cfg = {};
+        try { cfg = JSON.parse(slot.dataset.config || '{}'); } catch (_) {}
+        if (SlidesRenderer && typeof SlidesRenderer.renderWidgetStaticFallback === 'function') {
+            slot.innerHTML = SlidesRenderer.renderWidgetStaticFallback(wid, cfg, reg);
+            return;
+        }
         const entry = reg[wid];
         if (entry && typeof entry.staticFallback === 'function') {
-            const cfg = JSON.parse(slot.dataset.config || '{}');
-            slot.innerHTML = entry.staticFallback(cfg);
-        } else {
-            slot.innerHTML = `<div class="sl-widget-static"><div class="sl-widget-static-icon">⚙️</div><div class="sl-widget-static-name">${wid || 'Widget'}</div><div class="sl-widget-static-desc">Simulation interactive — disponible en présentation</div></div>`;
+            try {
+                slot.innerHTML = entry.staticFallback(cfg);
+                return;
+            } catch (_) {}
         }
+        slot.innerHTML = `<div class="sl-widget-static"><div class="sl-widget-static-icon">⚙️</div><div class="sl-widget-static-name">${wid || 'Widget'}</div><div class="sl-widget-static-desc">Simulation interactive — disponible en présentation</div></div>`;
     });
 }
 
@@ -559,6 +663,11 @@ ${printScript}
 function printSpeakerNotes() {
     const data = editor.data;
     if (!data) return;
+    const formatInlineRichText = (value) => {
+        const formatter = window.SlidesShared?.formatInlineRichText;
+        if (typeof formatter === 'function') return formatter(value ?? '');
+        return esc(value).replace(/\r?\n/g, '<br>');
+    };
 
     const slides = data.slides;
     const titleEsc = esc(data.metadata?.title || 'Présentation');
@@ -607,7 +716,7 @@ ${slidesWithNotes.map(s => `
         <div class="slide-title">${esc(s.title)}</div>
     </div>
     ${s.notes
-        ? `<div class="slide-notes">${esc(s.notes)}</div>`
+        ? `<div class="slide-notes">${formatInlineRichText(s.notes)}</div>`
         : '<div class="no-notes">Pas de notes</div>'
     }
 </div>`).join('\n')}
@@ -968,6 +1077,17 @@ function pvTimerReset() {
     clearInterval(pvTimerInt); pvTimerRun = false; pvTimerSec = 0;
     pvTimerEl.textContent = pvTimerFmt(0); pvTimerEl.classList.remove('running');
 }
+function pvFormatInline(value) {
+    if (window.SlidesShared && typeof window.SlidesShared.formatInlineRichText === 'function') {
+        return window.SlidesShared.formatInlineRichText(value || '');
+    }
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/\r?\n/g, '<br>');
+}
 
 function pvRenderSlide(sectionEl, container, frame) {
     if (!sectionEl) { container.innerHTML = '<div class="pv-next-empty">—</div>'; container.style.transform = ''; return; }
@@ -1005,7 +1125,7 @@ function pvRender() {
     const sd = _slidesData[pvIndex];
     const notesEl = document.getElementById('pv-notes');
     notesEl.innerHTML = sd && sd.notes
-        ? '<div style="white-space:pre-wrap">'+sd.notes+'</div>'
+        ? '<div style="white-space:pre-wrap">'+pvFormatInline(sd.notes)+'</div>'
         : '<div class="pv-notes-empty">Pas de notes pour ce slide</div>';
 
     document.getElementById('pv-counter').textContent = 'Slide '+(pvIndex+1)+' / '+sections.length;
@@ -1243,56 +1363,64 @@ async function _fetchOfflineResources() {
     return results;
 }
 
-async function exportHTMLOffline() {
-    notify('Export offline en cours (téléchargement des ressources)…', 'warning');
+function _slugifyPresentationName(title, fallback = 'presentation') {
+    return String(title || fallback)
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        || fallback;
+}
 
+function _downloadBlob(blob, fileName) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+async function _fetchGoogleFontsCssForOffline() {
     try {
-        const resources = await _fetchOfflineResources();
+        const fontResp = await fetch('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+        if (fontResp.ok) return await fontResp.text();
+    } catch (_) {}
+    return '';
+}
 
-        // Also fetch Google Fonts CSS (limited: Inter + Fira Code)
-        let fontCSS = '';
-        try {
-            const fontResp = await fetch('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
-            if (fontResp.ok) fontCSS = await fontResp.text();
-        } catch { /* non-critical */ }
+async function _buildOfflineExportDocument(data) {
+    if (!data) throw new Error('Aucune présentation à exporter');
+    const resources = await _fetchOfflineResources();
+    const fontCSS = await _fetchGoogleFontsCssForOffline();
 
-        // Build the same HTML as exportHTML but with inlined resources
-        const data = editor.data;
-        if (!data) return;
+    const themeData = _resolveExportTheme(data);
+    const _stripRootBody = css => css.replace(/:root\s*\{[^}]*\}/g, '').replace(/body\s*\{[^}]*\}/g, '');
+    const rawCSS = SlidesThemes.generateCSS(themeData);
+    const themeCSS = _stripRootBody(rawCSS);
+    const thumbCSS = _stripRootBody(SlidesThemes.generateThumbnailCSS(themeData));
+    const pvScopedCSS = _stripRootBody(rawCSS.replace(/\.reveal/g, '.pv-current-frame')) + '\n' + _stripRootBody(rawCSS.replace(/\.reveal/g, '.pv-next-frame'));
 
-        const themeData = _resolveExportTheme(data);
-        const _stripRootBody = css => css.replace(/:root\s*\{[^}]*\}/g, '').replace(/body\s*\{[^}]*\}/g, '');
-        const rawCSS = SlidesThemes.generateCSS(themeData);
-        const themeCSS = _stripRootBody(rawCSS);
-        const thumbCSS = _stripRootBody(SlidesThemes.generateThumbnailCSS(themeData));
-        const pvScopedCSS = _stripRootBody(rawCSS.replace(/\.reveal/g, '.pv-current-frame')) + '\n' + _stripRootBody(rawCSS.replace(/\.reveal/g, '.pv-next-frame'));
+    const visibleSlides = data.slides.filter(s => !s.hidden);
+    const htmlOpts = {
+        showSlideNumber: data.showSlideNumber || false,
+        footerText: data.footerText || null,
+        footerConfig: (data && typeof data.footerConfig === 'object' && data.footerConfig) ? data.footerConfig : null,
+        metadata: data.metadata || {},
+        totalSlides: visibleSlides.length,
+        chapterNumbers: SlidesRenderer._buildChapterNumbers(visibleSlides, data.autoNumberChapters),
+        typography: SlidesShared.resolveTypographyDefaults(data.typography),
+    };
+    const slidesHTML = visibleSlides.map((slide, i) =>
+        SlidesRenderer.renderSlide(slide, i, htmlOpts)
+    ).join('\n');
 
-        const visibleSlides = data.slides.filter(s => !s.hidden);
-        const htmlOpts = {
-            showSlideNumber: data.showSlideNumber || false,
-            footerText: data.footerText || null,
-            footerConfig: (data && typeof data.footerConfig === 'object' && data.footerConfig) ? data.footerConfig : null,
-            metadata: data.metadata || {},
-            totalSlides: visibleSlides.length,
-            chapterNumbers: SlidesRenderer._buildChapterNumbers(visibleSlides, data.autoNumberChapters),
-            typography: SlidesShared.resolveTypographyDefaults(data.typography),
-        };
-        const slidesHTML = visibleSlides.map((slide, i) =>
-            SlidesRenderer.renderSlide(slide, i, htmlOpts)
-        ).join('\n');
+    const dims = ASPECT_DIMS[data?.metadata?.aspect || '16:9'] || [1280, 720];
+    const titleEsc = esc(data.metadata?.title || 'Présentation');
+    const presenterSlidesData = JSON.stringify(visibleSlides.map(s => ({
+        notes: s.notes || '', bg: s.bg || ''
+    })));
+    const inlineCSS = resources.css.join('\n') + '\n' + fontCSS;
 
-        const dims = ASPECT_DIMS[editor.data?.metadata?.aspect || '16:9'] || [1280, 720];
-        const titleEsc = esc(data.metadata?.title || 'Présentation');
-
-        const presenterSlidesData = JSON.stringify(visibleSlides.map(s => ({
-            notes: s.notes || '', bg: s.bg || ''
-        })));
-
-        // Inline CSS (instead of link tags)
-        const inlineCSS = resources.css.join('\n') + '\n' + fontCSS;
-
-        // Build the offline HTML
-        const html = `<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${titleEsc}</title>
 <style>
@@ -1309,19 +1437,15 @@ ${pvScopedCSS}
 <div class="reveal" id="reveal-root"><div class="slides" id="slides-root">${slidesHTML}</div></div>
 
 <script>
-// Embedded slide metadata
 var _pvSlidesData = ${presenterSlidesData};
 <\/script>
 <script>
-/* ── Reveal.js (inlined for offline use) ── */
 ${resources.js[0]}
 <\/script>
 <script>
-/* ── Highlight plugin (inlined for offline use) ── */
 ${resources.js[1]}
 <\/script>
 <script>
-// Initialize Reveal.js (UMD mode)
 var deck = new Reveal(document.getElementById('reveal-root'), {
     hash: true,
     plugins: [RevealHighlight],
@@ -1332,17 +1456,27 @@ var deck = new Reveal(document.getElementById('reveal-root'), {
 deck.initialize();
 <\/script>
 <script>
-${mountSpecialCall}
+${_MOUNT_SPECIAL_SCRIPT}
 <\/script>
 </body></html>`;
 
-        const blob = new Blob([html], { type: 'text/html' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        const name = (data.metadata?.title || 'presentation').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        a.download = `${name}-offline.html`;
-        a.click();
-        URL.revokeObjectURL(a.href);
+    const fileBase = _slugifyPresentationName(data.metadata?.title || 'presentation');
+    return {
+        html,
+        fileBase,
+        fileName: `${fileBase}-offline.html`,
+    };
+}
+
+async function exportHTMLOffline() {
+    notify('Export offline en cours (téléchargement des ressources)…', 'warning');
+
+    try {
+        const data = editor.data;
+        if (!data) return;
+        const offlineDoc = await _buildOfflineExportDocument(data);
+        const blob = new Blob([offlineDoc.html], { type: 'text/html' });
+        _downloadBlob(blob, offlineDoc.fileName);
         notify('HTML offline exporté (Reveal.js intégré)', 'success');
     } catch (err) {
         console.error('Offline export error:', err);
@@ -2389,7 +2523,7 @@ function _buildStudentExportDocument(data) {
         const slideHtml = SlidesRenderer.renderSlide(slide, i, htmlOpts);
         const title = slide.title || `Slide ${num}`;
         const titleClean = title.replace(/<[^>]*>/g, '').slice(0, 60);
-        const notes = slide.notes ? `<div class="stu-notes"><strong>📝 Notes :</strong><div class="stu-notes-body">${slide.notes.replace(/\n/g, '<br>')}</div></div>` : '';
+        const notes = slide.notes ? `<div class="stu-notes"><strong>📝 Notes :</strong><div class="stu-notes-body">${SlidesShared.formatInlineRichText(slide.notes)}</div></div>` : '';
 
         slideCards += `<div class="stu-card" id="slide-${num}">
             <div class="stu-card-header"><span class="stu-num">${num}</span> ${esc(titleClean)}</div>
@@ -2499,6 +2633,9 @@ document.querySelectorAll('.stu-card').forEach(card => observer.observe(card));
 }
 
 function _collectCoursePackAssets(data) {
+    if (_importExportAssets?.collectPresentationAssetUrls) {
+        return _importExportAssets.collectPresentationAssetUrls(data);
+    }
     const urls = new Set();
     const slides = Array.isArray(data?.slides) ? data.slides : [];
     slides.forEach(slide => {
@@ -2573,36 +2710,43 @@ async function exportCoursePack() {
         const jsonPayload = JSON.stringify(data, null, 2);
         const notesMd = _buildCoursePackNotesMarkdown(data);
         const assets = _collectCoursePackAssets(data);
+        const assetsSummary = _summarizeAssetUrls(assets);
+        let offlineHtml = '';
+        try {
+            const offlineDoc = await _buildOfflineExportDocument(data);
+            offlineHtml = offlineDoc.html;
+        } catch (offlineErr) {
+            console.warn('Course pack: offline HTML skipped', offlineErr);
+        }
+        const files = [
+            'manifest.json',
+            'presentation.json',
+            'student_mode.html',
+            'notes.md',
+            'assets-report.json',
+            'README.md',
+            'session-report-template.md',
+        ];
+        if (offlineHtml) files.splice(3, 0, 'presentation_offline.html');
+
         const manifest = {
             format: 'oei-course-pack-v1',
             generatedAt: new Date().toISOString(),
             title: data.metadata?.title || 'Présentation',
             aspect: data.metadata?.aspect || '16:9',
             slidesVisible: built.visibleSlides.length,
-            assets: {
-                total: assets.length,
-                dataUri: assets.filter(url => /^data:/i.test(url)).length,
-                web: assets.filter(url => /^https?:\/\//i.test(url)).length,
-                local: assets.filter(url => !/^https?:\/\//i.test(url) && !/^data:/i.test(url)).length,
-            },
-            files: [
-                'manifest.json',
-                'presentation.json',
-                'student_mode.html',
-                'notes.md',
-                'assets-report.json',
-                'README.md',
-                'session-report-template.md',
-            ],
+            assets: assetsSummary,
+            files,
         };
 
         const zip = new window.JSZip();
         zip.file('manifest.json', JSON.stringify(manifest, null, 2));
         zip.file('presentation.json', jsonPayload);
         zip.file('student_mode.html', built.html);
+        if (offlineHtml) zip.file('presentation_offline.html', offlineHtml);
         zip.file('notes.md', notesMd);
         zip.file('assets-report.json', JSON.stringify({ assets }, null, 2));
-        zip.file('README.md', `# Pack cours\n\nCe pack contient:\n- la présentation source JSON\n- une version HTML étudiant\n- des notes consolidées\n- un inventaire des assets\n\n## Replay\nLe replay temporel est exporté depuis le mode présentateur.\n`);
+        zip.file('README.md', `# Pack cours\n\nCe pack contient:\n- la présentation source JSON\n- une version HTML étudiant${offlineHtml ? '\n- une version HTML offline (Reveal + plugins intégrés)' : ''}\n- des notes consolidées\n- un inventaire des assets\n\n## Replay\nLe replay temporel est exporté depuis le mode présentateur.\n`);
         zip.file('session-report-template.md', `# Rapport de session\n\n- Date:\n- Salle:\n- Nombre d'étudiants:\n- Interactions clés:\n- Ajustements pour la prochaine séance:\n`);
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });

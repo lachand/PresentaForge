@@ -14,56 +14,79 @@
 
 let _clipboard = null;
 let _clipboardStyle = null;
+const _clipboardRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _clipboardCtx = () => {
+    if (_clipboardRuntime?.resolveContext) {
+        return _clipboardRuntime.resolveContext({
+            editor,
+            notify,
+            canvasEditor,
+        });
+    }
+    return { editor, notify, canvasEditor };
+};
+const _clipboardEditor = () => _clipboardCtx().editor;
+const _clipboardCanvas = () => _clipboardCtx().canvasEditor || null;
+const _clipboardNotify = (message, type = '') => {
+    const fn = _clipboardCtx().notify;
+    if (typeof fn === 'function') fn(message, type);
+};
 
 function clipboardCut() {
-    if (!canvasEditor) return;
-    const selected = canvasEditor.getSelectedElements();
+    const runtimeCanvas = _clipboardCanvas();
+    if (!runtimeCanvas) return;
+    const selected = runtimeCanvas.getSelectedElements();
     if (!selected.length) return;
     _clipboard = JSON.parse(JSON.stringify(selected));
-    selected.forEach(e => canvasEditor.remove(e.id));
-    notify('Coupé', 'success');
+    selected.forEach(e => runtimeCanvas.remove(e.id));
+    _clipboardNotify('Coupé', 'success');
 }
 function clipboardCopy() {
-    if (!canvasEditor) return;
-    const selected = canvasEditor.getSelectedElements();
+    const runtimeCanvas = _clipboardCanvas();
+    if (!runtimeCanvas) return;
+    const selected = runtimeCanvas.getSelectedElements();
     if (!selected.length) return;
     _clipboard = JSON.parse(JSON.stringify(selected));
-    notify(selected.length > 1 ? `${selected.length} éléments copiés` : 'Copié', 'success');
+    _clipboardNotify(selected.length > 1 ? `${selected.length} éléments copiés` : 'Copié', 'success');
 }
 function clipboardPaste() {
-    if (!_clipboard || !canvasEditor) return;
+    const runtimeCanvas = _clipboardCanvas();
+    if (!_clipboard || !runtimeCanvas) return;
     const items = Array.isArray(_clipboard) ? _clipboard : [_clipboard];
-    const maxZ = canvasEditor.elements.reduce((max, e) => Math.max(max, e.z || 0), 0);
+    const maxZ = runtimeCanvas.elements.reduce((max, e) => Math.max(max, e.z || 0), 0);
     const newIds = [];
     items.forEach((item, i) => {
         const el = JSON.parse(JSON.stringify(item));
         el.id = 'el_' + Math.random().toString(36).slice(2, 9);
         el.x += 20; el.y += 20;
         el.z = maxZ + 1 + i;
-        canvasEditor.elements.push(el);
-        canvasEditor._addElementDOM(el);
+        runtimeCanvas.elements.push(el);
+        runtimeCanvas._addElementDOM(el);
         newIds.push(el.id);
     });
     // Select all pasted elements
-    canvasEditor.selectedIds.clear();
-    newIds.forEach(id => canvasEditor.selectedIds.add(id));
-    canvasEditor.selectedId = newIds[newIds.length - 1];
-    canvasEditor._updateSelectionVisuals();
-    canvasEditor.onSelect(canvasEditor.elements.find(e => e.id === canvasEditor.selectedId) || null);
-    canvasEditor.onChange(canvasEditor.serialize());
-    notify(newIds.length > 1 ? `${newIds.length} éléments collés` : 'Collé', 'success');
+    runtimeCanvas.selectedIds.clear();
+    newIds.forEach(id => runtimeCanvas.selectedIds.add(id));
+    runtimeCanvas.selectedId = newIds[newIds.length - 1];
+    runtimeCanvas._updateSelectionVisuals();
+    runtimeCanvas.onSelect(runtimeCanvas.elements.find(e => e.id === runtimeCanvas.selectedId) || null);
+    runtimeCanvas.onChange(runtimeCanvas.serialize());
+    _clipboardNotify(newIds.length > 1 ? `${newIds.length} éléments collés` : 'Collé', 'success');
 }
 function clipboardPasteFormat() {
-    if (!_clipboardStyle || !canvasEditor?.getSelected()) return;
-    const s = canvasEditor.getSelected();
-    canvasEditor.updateData(s.id, { style: { ..._clipboardStyle } });
-    notify('Format appliqué', 'success');
+    const runtimeCanvas = _clipboardCanvas();
+    if (!_clipboardStyle || !runtimeCanvas?.getSelected()) return;
+    const s = runtimeCanvas.getSelected();
+    runtimeCanvas.updateData(s.id, { style: { ..._clipboardStyle } });
+    _clipboardNotify('Format appliqué', 'success');
 }
 function copyFormat() {
-    const s = canvasEditor?.getSelected();
+    const s = _clipboardCanvas()?.getSelected();
     if (!s) return;
     _clipboardStyle = { ...(s.style || {}) };
-    notify('Format copié', 'success');
+    _clipboardNotify('Format copié', 'success');
 }
 
 /* ── Style Pipette Mode ────────────────────────────────── */
@@ -71,7 +94,7 @@ let _pipetteMode = false;
 let _pipetteSource = null;
 
 function togglePipetteMode() {
-    if (!canvasEditor) { notify('Pas de canvas actif', 'error'); return; }
+    if (!_clipboardCanvas()) { _clipboardNotify('Pas de canvas actif', 'error'); return; }
     _pipetteMode = !_pipetteMode;
     _pipetteSource = null;
     const btn = document.getElementById('btn-pipette');
@@ -79,7 +102,7 @@ function togglePipetteMode() {
     if (_pipetteMode) {
         btn?.classList.add('active');
         frame?.classList.add('pipette-mode');
-        notify('🎨 Pipette : cliquez sur un élément source', 'warning');
+        _clipboardNotify('🎨 Pipette : cliquez sur un élément source', 'warning');
     } else {
         btn?.classList.remove('active');
         frame?.classList.remove('pipette-mode');
@@ -87,18 +110,19 @@ function togglePipetteMode() {
 }
 
 function handlePipetteClick(elementId) {
-    if (!_pipetteMode || !canvasEditor) return false;
-    const el = canvasEditor.elements.find(e => e.id === elementId);
+    const runtimeCanvas = _clipboardCanvas();
+    if (!_pipetteMode || !runtimeCanvas) return false;
+    const el = runtimeCanvas.elements.find(e => e.id === elementId);
     if (!el) return false;
     if (!_pipetteSource) {
         // Step 1: pick source style
         _pipetteSource = { ...(el.style || {}) };
-        notify('🎨 Style capturé — cliquez sur la cible', 'success');
+        _clipboardNotify('🎨 Style capturé — cliquez sur la cible', 'success');
         return true;
     } else {
         // Step 2: apply to target
-        canvasEditor.updateData(el.id, { style: { ..._pipetteSource } });
-        notify('🎨 Style appliqué !', 'success');
+        runtimeCanvas.updateData(el.id, { style: { ..._pipetteSource } });
+        _clipboardNotify('🎨 Style appliqué !', 'success');
         // Stay in pipette mode to allow multiple pastes (shift behavior)
         // Exit on next toggle or Escape
         _pipetteSource = null;
@@ -112,12 +136,14 @@ function handlePipetteClick(elementId) {
 /* ── Copy to another slide ─────────────────────────────── */
 
 function openCopyToSlideDialog() {
-    if (!canvasEditor || !editor.data) return;
-    const selected = canvasEditor.getSelectedElements();
-    if (!selected.length) { notify('Sélectionnez d\'abord un élément', 'info'); return; }
+    const runtimeCanvas = _clipboardCanvas();
+    const runtimeEditor = _clipboardEditor();
+    if (!runtimeCanvas || !runtimeEditor?.data) return;
+    const selected = runtimeCanvas.getSelectedElements();
+    if (!selected.length) { _clipboardNotify('Sélectionnez d\'abord un élément', 'info'); return; }
 
-    const slides = editor.data.slides;
-    const currentIdx = editor.selectedIndex;
+    const slides = runtimeEditor.data.slides;
+    const currentIdx = runtimeEditor.selectedIndex;
 
     // Build list of canvas slides (excluding current)
     const canvasSlides = slides
@@ -125,7 +151,7 @@ function openCopyToSlideDialog() {
         .filter(s => s.slide.type === 'canvas' && s.index !== currentIdx);
 
     if (!canvasSlides.length) {
-        notify('Aucun autre slide canvas disponible', 'info');
+        _clipboardNotify('Aucun autre slide canvas disponible', 'info');
         return;
     }
 
@@ -161,9 +187,9 @@ function openCopyToSlideDialog() {
             });
             if (!slides[index].elements) slides[index].elements = [];
             slides[index].elements.push(...cloned);
-            editor._push();
+            runtimeEditor._push();
             overlay.remove();
-            notify(`${cloned.length} élément(s) copié(s) vers le slide ${index + 1}`, 'success');
+            _clipboardNotify(`${cloned.length} élément(s) copié(s) vers le slide ${index + 1}`, 'success');
         });
         list.appendChild(btn);
     });

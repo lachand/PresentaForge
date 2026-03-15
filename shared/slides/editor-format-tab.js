@@ -12,12 +12,33 @@
  */
 /* editor-format-tab.js — Format tab update, binding, and enhanced formatting controls */
 
+const _formatRuntime = window.OEIEditorRuntimeState?.create
+    ? window.OEIEditorRuntimeState.create(window)
+    : null;
+const _formatCtx = () => {
+    if (_formatRuntime?.resolveContext) {
+        return _formatRuntime.resolveContext({
+            editor,
+            notify,
+            canvasEditor,
+        });
+    }
+    return { editor, notify, canvasEditor };
+};
+const _formatEditor = () => _formatCtx().editor;
+const _formatCanvas = () => _formatCtx().canvasEditor || null;
+const _formatNotify = (message, type = '') => {
+    const fn = _formatCtx().notify;
+    if (typeof fn === 'function') fn(message, type);
+};
+
 function _fmtDefaultFontSizeForType(type, explicitSize) {
+    const runtimeEditor = _formatEditor();
     const style = Number.isFinite(Number(explicitSize)) ? { fontSize: Number(explicitSize) } : {};
     return SlidesShared.resolveElementFontSize(
         type,
         style,
-        SlidesShared.resolveTypographyDefaults(editor?.data?.typography),
+        SlidesShared.resolveTypographyDefaults(runtimeEditor?.data?.typography),
         22,
     );
 }
@@ -47,11 +68,13 @@ function _fmtSetGroupsVisible(groupIds, visible) {
 }
 
 function updateFormatTab() {
+    const runtimeEditor = _formatEditor();
+    const runtimeCanvas = _formatCanvas();
     const tabEl = document.getElementById('tab-format');
-    const hasSlide = !!editor.currentSlide;
-    const isCanvas = editor.currentSlide?.type === 'canvas';
-    const hasSelection = isCanvas && canvasEditor?.selectedId;
-    const hasConnector = isCanvas && canvasEditor?._selectedConnectorId;
+    const hasSlide = !!runtimeEditor?.currentSlide;
+    const isCanvas = runtimeEditor?.currentSlide?.type === 'canvas';
+    const hasSelection = isCanvas && runtimeCanvas?.selectedId;
+    const hasConnector = isCanvas && runtimeCanvas?._selectedConnectorId;
     const allContextGroups = [
         'fmt-size-group',
         'fmt-appearance-group',
@@ -121,7 +144,7 @@ function updateFormatTab() {
         if (tabEl && !tabEl.classList.contains('active')) {
             tabEl.click();
         }
-        const el = canvasEditor.getSelected();
+        const el = runtimeCanvas?.getSelected();
         if (el) {
             const s = el.style || {};
             const fmtX = document.getElementById('fmt-x');
@@ -150,44 +173,51 @@ function bindFormatTab() {
     const bindFmt = (id, fn) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => {
-            const selected = canvasEditor?.getSelected();
-            if (selected) fn(selected, el);
+            const runtimeCanvas = _formatCanvas();
+            const selected = runtimeCanvas?.getSelected();
+            if (selected) fn(runtimeCanvas, selected, el);
         });
     };
-    bindFmt('fmt-x', (s, el) => canvasEditor.updateData(s.id, { x: +el.value }));
-    bindFmt('fmt-y', (s, el) => canvasEditor.updateData(s.id, { y: +el.value }));
-    bindFmt('fmt-w', (s, el) => canvasEditor.updateData(s.id, { w: +el.value }));
-    bindFmt('fmt-h', (s, el) => canvasEditor.updateData(s.id, { h: +el.value }));
-    bindFmt('fmt-color', (s, el) => canvasEditor.updateData(s.id, { style: { color: el.value, fill: el.value } }));
-    bindFmt('fmt-font-size', (s, el) => canvasEditor.updateData(s.id, { style: { fontSize: +el.value } }));
+    bindFmt('fmt-x', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { x: +el.value }));
+    bindFmt('fmt-y', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { y: +el.value }));
+    bindFmt('fmt-w', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { w: +el.value }));
+    bindFmt('fmt-h', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { h: +el.value }));
+    bindFmt('fmt-color', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { style: { color: el.value, fill: el.value } }));
+    bindFmt('fmt-font-size', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { style: { fontSize: +el.value } }));
 
     document.getElementById('fmt-font-weight')?.addEventListener('change', function() {
-        const s = canvasEditor?.getSelected();
-        if (s) canvasEditor.updateData(s.id, { style: { fontWeight: +this.value } });
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
+        if (s) runtimeCanvas.updateData(s.id, { style: { fontWeight: +this.value } });
     });
 
     ['left', 'center', 'right'].forEach(align => {
         document.getElementById('fmt-align-' + align)?.addEventListener('click', () => {
-            const s = canvasEditor?.getSelected();
-            if (s) canvasEditor.updateData(s.id, { style: { textAlign: align } });
+            const runtimeCanvas = _formatCanvas();
+            const s = runtimeCanvas?.getSelected();
+            if (s) runtimeCanvas.updateData(s.id, { style: { textAlign: align } });
         });
     });
 
     document.getElementById('fmt-z-up')?.addEventListener('click', () => {
-        const s = canvasEditor?.getSelected();
-        if (s) { s.z = (s.z || 1) + 1; canvasEditor.updateData(s.id, {}); }
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
+        if (s) { s.z = (s.z || 1) + 1; runtimeCanvas.updateData(s.id, {}); }
     });
     document.getElementById('fmt-z-down')?.addEventListener('click', () => {
-        const s = canvasEditor?.getSelected();
-        if (s) { s.z = Math.max(1, (s.z || 1) - 1); canvasEditor.updateData(s.id, {}); }
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
+        if (s) { s.z = Math.max(1, (s.z || 1) - 1); runtimeCanvas.updateData(s.id, {}); }
     });
     document.getElementById('fmt-delete')?.addEventListener('click', () => {
-        if (canvasEditor?.selectedId) canvasEditor.remove(canvasEditor.selectedId);
+        const runtimeCanvas = _formatCanvas();
+        if (runtimeCanvas?.selectedId) runtimeCanvas.remove(runtimeCanvas.selectedId);
     });
 }
 
 function updateFormatTabEnhanced() {
-    const el = canvasEditor?.getSelected();
+    const runtimeCanvas = _formatCanvas();
+    const el = runtimeCanvas?.getSelected();
     if (!el) return;
     const s = el.style || {};
 
@@ -256,7 +286,7 @@ function updateFormatTabEnhanced() {
 
     // Show align/distribute when multi-selected
     const alignGroup = document.getElementById('fmt-align-group');
-    const multiSelected = canvasEditor && canvasEditor.selectedIds.size >= 2;
+    const multiSelected = runtimeCanvas && runtimeCanvas.selectedIds.size >= 2;
     if (alignGroup) alignGroup.style.display = multiSelected ? '' : 'none';
 
     // Group/Ungroup buttons visibility
@@ -334,87 +364,93 @@ function bindFormatTabEnhanced() {
     const bindFmt = (id, fn) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => {
-            const selected = canvasEditor?.getSelected();
-            if (selected) fn(selected, el);
+            const runtimeCanvas = _formatCanvas();
+            const selected = runtimeCanvas?.getSelected();
+            if (selected) fn(runtimeCanvas, selected, el);
         });
     };
 
     // Rotation
-    bindFmt('fmt-rotation', (s, el) => {
-        canvasEditor.updateData(s.id, { style: { rotate: +el.value } });
+    bindFmt('fmt-rotation', (runtimeCanvas, s, el) => {
+        runtimeCanvas.updateData(s.id, { style: { rotate: +el.value } });
         const label = document.getElementById('fmt-rotation-label');
         if (label) label.textContent = el.value + '°';
     });
 
     // Opacity
-    bindFmt('fmt-opacity', (s, el) => {
-        canvasEditor.updateData(s.id, { style: { opacity: +el.value / 100 } });
+    bindFmt('fmt-opacity', (runtimeCanvas, s, el) => {
+        runtimeCanvas.updateData(s.id, { style: { opacity: +el.value / 100 } });
         const label = document.getElementById('fmt-opacity-label');
         if (label) label.textContent = el.value + '%';
     });
 
     // Border
-    bindFmt('fmt-border-color', (s, el) => canvasEditor.updateData(s.id, { style: { borderColor: el.value } }));
-    bindFmt('fmt-border-width', (s, el) => {
-        canvasEditor.updateData(s.id, { style: { borderWidth: el.value + 'px', borderStyle: +el.value > 0 ? 'solid' : 'none' } });
+    bindFmt('fmt-border-color', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { style: { borderColor: el.value } }));
+    bindFmt('fmt-border-width', (runtimeCanvas, s, el) => {
+        runtimeCanvas.updateData(s.id, { style: { borderWidth: el.value + 'px', borderStyle: +el.value > 0 ? 'solid' : 'none' } });
         const label = document.getElementById('fmt-border-width-label');
         if (label) label.textContent = el.value + 'px';
     });
-    bindFmt('fmt-border-radius', (s, el) => {
-        canvasEditor.updateData(s.id, { style: { borderRadius: el.value + 'px' } });
+    bindFmt('fmt-border-radius', (runtimeCanvas, s, el) => {
+        runtimeCanvas.updateData(s.id, { style: { borderRadius: el.value + 'px' } });
         const label = document.getElementById('fmt-border-radius-label');
         if (label) label.textContent = el.value + 'px';
     });
 
     // Shadow toggle
     document.getElementById('fmt-shadow')?.addEventListener('click', () => {
-        const s = canvasEditor?.getSelected();
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
         if (!s) return;
         const hasShadow = s.style?.boxShadow && s.style.boxShadow !== 'none';
-        canvasEditor.updateData(s.id, { style: { boxShadow: hasShadow ? 'none' : '0 8px 32px rgba(0,0,0,0.4)' } });
+        runtimeCanvas.updateData(s.id, { style: { boxShadow: hasShadow ? 'none' : '0 8px 32px rgba(0,0,0,0.4)' } });
     });
 
     // Lock toggle
     document.getElementById('fmt-lock')?.addEventListener('click', () => {
-        const s = canvasEditor?.getSelected();
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
         if (!s) return;
         s.locked = !s.locked;
-        canvasEditor.updateData(s.id, {});
+        runtimeCanvas.updateData(s.id, {});
         const btn = document.getElementById('fmt-lock');
         if (btn) btn.classList.toggle('active', s.locked);
-        notify(s.locked ? 'Verrouillé' : 'Déverrouillé', 'success');
+        _formatNotify(s.locked ? 'Verrouillé' : 'Déverrouillé', 'success');
     });
 
     // Duplicate
     document.getElementById('fmt-duplicate')?.addEventListener('click', () => {
-        const s = canvasEditor?.getSelected();
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
         if (!s) return;
         const copy = JSON.parse(JSON.stringify(s));
         copy.id = 'el_' + Math.random().toString(36).slice(2, 9);
         copy.x += 20; copy.y += 20;
-        copy.z = canvasEditor.elements.reduce((max, e) => Math.max(max, e.z || 0), 0) + 1;
-        canvasEditor.elements.push(copy);
-        canvasEditor._addElementDOM(copy);
-        canvasEditor.select(copy.id);
-        canvasEditor.onChange(canvasEditor.serialize());
+        copy.z = runtimeCanvas.elements.reduce((max, e) => Math.max(max, e.z || 0), 0) + 1;
+        runtimeCanvas.elements.push(copy);
+        runtimeCanvas._addElementDOM(copy);
+        runtimeCanvas.select(copy.id);
+        runtimeCanvas.onChange(runtimeCanvas.serialize());
     });
 
     // Delete
     document.getElementById('fmt-delete')?.addEventListener('click', () => {
-        canvasEditor?.removeSelected();
+        _formatCanvas()?.removeSelected();
     });
 
     // Group / Ungroup
     document.getElementById('fmt-group')?.addEventListener('click', () => {
-        if (canvasEditor?.groupSelected()) {
-            notify('Éléments groupés', 'success');
+        const runtimeCanvas = _formatCanvas();
+        if (runtimeCanvas?.groupSelected()) {
+            _formatNotify('Éléments groupés', 'success');
             updateFormatTab();
             updatePropsPanel();
         }
     });
     document.getElementById('fmt-ungroup')?.addEventListener('click', () => {
-        if (canvasEditor?.ungroupSelected()) {
-            notify('Éléments dégroupés', 'info');
+        const runtimeCanvas = _formatCanvas();
+        if (runtimeCanvas?.ungroupSelected()) {
+            _formatNotify('Éléments dégroupés', 'info');
             updateFormatTab();
             updatePropsPanel();
         }
@@ -422,21 +458,22 @@ function bindFormatTabEnhanced() {
 
     // Font family
     document.getElementById('fmt-font-family')?.addEventListener('change', function() {
-        const s = canvasEditor?.getSelected();
-        if (s) canvasEditor.updateData(s.id, { style: { fontFamily: this.value || undefined } });
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
+        if (s) runtimeCanvas.updateData(s.id, { style: { fontFamily: this.value || undefined } });
     });
 
     // Line height
-    bindFmt('fmt-line-height', (s, el) => {
+    bindFmt('fmt-line-height', (runtimeCanvas, s, el) => {
         const val = +el.value / 10;
-        canvasEditor.updateData(s.id, { style: { lineHeight: val } });
+        runtimeCanvas.updateData(s.id, { style: { lineHeight: val } });
         const label = document.getElementById('fmt-line-height-label');
         if (label) label.textContent = val.toFixed(1);
     });
 
     // Letter spacing
-    bindFmt('fmt-letter-spacing', (s, el) => {
-        canvasEditor.updateData(s.id, { style: { letterSpacing: el.value + 'px' } });
+    bindFmt('fmt-letter-spacing', (runtimeCanvas, s, el) => {
+        runtimeCanvas.updateData(s.id, { style: { letterSpacing: el.value + 'px' } });
         const label = document.getElementById('fmt-letter-spacing-label');
         if (label) label.textContent = el.value;
     });
@@ -444,60 +481,65 @@ function bindFormatTabEnhanced() {
     // Image fit
     document.querySelectorAll('#fmt-image-group .fit-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            const s = canvasEditor?.getSelected();
+            const runtimeCanvas = _formatCanvas();
+            const s = runtimeCanvas?.getSelected();
             if (!s) return;
             document.querySelectorAll('#fmt-image-group .fit-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            canvasEditor.updateData(s.id, { style: { objectFit: btn.dataset.fit } });
+            runtimeCanvas.updateData(s.id, { style: { objectFit: btn.dataset.fit } });
         });
     });
 
     // Image filters
     document.querySelectorAll('#fmt-image-group .filter-chip').forEach(chip => {
         chip.addEventListener('click', () => {
-            const s = canvasEditor?.getSelected();
+            const runtimeCanvas = _formatCanvas();
+            const s = runtimeCanvas?.getSelected();
             if (!s) return;
             document.querySelectorAll('#fmt-image-group .filter-chip').forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
-            canvasEditor.updateData(s.id, { style: { filter: chip.dataset.filter } });
+            runtimeCanvas.updateData(s.id, { style: { filter: chip.dataset.filter } });
         });
     });
 
     // Shape fill
-    bindFmt('fmt-fill-color', (s, el) => canvasEditor.updateData(s.id, { style: { fill: el.value } }));
+    bindFmt('fmt-fill-color', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { style: { fill: el.value } }));
 
     // Code theme
     document.getElementById('fmt-code-theme')?.addEventListener('change', function() {
-        const s = canvasEditor?.getSelected();
-        if (s) canvasEditor.updateData(s.id, { data: { codeTheme: this.value } });
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
+        if (s) runtimeCanvas.updateData(s.id, { data: { codeTheme: this.value } });
     });
 
     // Animation type
     document.getElementById('fmt-anim-type')?.addEventListener('change', function() {
-        const s = canvasEditor?.getSelected();
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
         if (!s) return;
         const val = this.value;
         if (val === 'none') {
-            canvasEditor.updateData(s.id, { animation: null });
+            runtimeCanvas.updateData(s.id, { animation: null });
         } else {
             const orderInp = document.getElementById('fmt-anim-order');
             const order = orderInp?.value !== '' ? +orderInp.value : undefined;
-            canvasEditor.updateData(s.id, { animation: { type: val, order } });
+            runtimeCanvas.updateData(s.id, { animation: { type: val, order } });
         }
     });
 
     // Animation order
-    bindFmt('fmt-anim-order', (s, el) => {
+    bindFmt('fmt-anim-order', (runtimeCanvas, s, el) => {
         const typeInp = document.getElementById('fmt-anim-type');
         const aType = typeInp?.value || 'fade-in';
         if (aType === 'none') return;
-        canvasEditor.updateData(s.id, { animation: { type: aType, order: el.value !== '' ? +el.value : undefined } });
+        runtimeCanvas.updateData(s.id, { animation: { type: aType, order: el.value !== '' ? +el.value : undefined } });
     });
 
     // Progressive list/card items (optional point-by-point reveal)
     document.getElementById('fmt-list-fragments')?.addEventListener('change', function() {
-        const s = canvasEditor?.getSelected();
+        const runtimeCanvas = _formatCanvas();
+        const s = runtimeCanvas?.getSelected();
         if (!s || (s.type !== 'list' && s.type !== 'card')) return;
-        canvasEditor.updateData(s.id, { data: { revealItems: !!this.checked } });
+        runtimeCanvas.updateData(s.id, { data: { revealItems: !!this.checked } });
     });
 }

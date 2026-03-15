@@ -130,6 +130,9 @@ class SlidesEditor {
     static STORAGE_KEY = window.OEIStorage?.KEYS?.SLIDE_DRAFT || 'oei-slide-draft';
     static WORKDOCS_KEY = window.OEIStorage?.KEYS?.SLIDE_WORKDOCS || 'oei-slide-workdocs';
     static MAX_WORKDOCS = 10;
+    static WORKDOC_TIMELINE_LIMIT = 40;
+    static WORKDOC_TIMELINE_MIN_INTERVAL_MS = 20_000;
+    static CURRENT_SCHEMA_VERSION = 2;
 
     static SLIDE_TYPES = [
         { id: 'canvas',     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h3v3H8zM14 8h3v2h-3M7 15h5v2H7"/></svg>',  label: 'Canvas libre' },
@@ -177,6 +180,7 @@ class SlidesEditor {
 
     static DEFAULT_PRESENTATION() {
         return {
+            schemaVersion: SlidesEditor.CURRENT_SCHEMA_VERSION,
             metadata: {
                 title: 'Nouvelle présentation',
                 author: '',
@@ -184,6 +188,10 @@ class SlidesEditor {
                 modified: new Date().toISOString().slice(0, 10),
             },
             theme: 'dark',
+            showSlideNumber: false,
+            footerText: null,
+            autoNumberChapters: false,
+            reviewComments: [],
             typography: {
                 heading: 52,
                 text: 22,
@@ -211,6 +219,7 @@ class SlidesEditor {
 
     new() {
         this.data = SlidesEditor.DEFAULT_PRESENTATION();
+        this._ensurePresentationDefaults();
         this._ensureTypographyDefaults();
         this.selectedIndex = 0;
         this.selectedSlides = new Set([0]);
@@ -222,7 +231,16 @@ class SlidesEditor {
     }
 
     load(data) {
-        this.data = JSON.parse(JSON.stringify(data)); // deep clone
+        let incoming = data;
+        if (window.OEIImportPipeline?.normalizeData) {
+            try {
+                incoming = window.OEIImportPipeline.normalizeData(data).data;
+            } catch (_) {
+                incoming = data;
+            }
+        }
+        this.data = JSON.parse(JSON.stringify(incoming)); // deep clone
+        this._ensurePresentationDefaults();
         this._ensureTypographyDefaults();
         this._normalizeLegacyCanvasFontSizes();
         this.selectedIndex = 0;
@@ -277,6 +295,19 @@ class SlidesEditor {
             heading: Number.isFinite(heading) ? Math.max(12, Math.min(160, Math.round(heading))) : 52,
             text: Number.isFinite(text) ? Math.max(10, Math.min(120, Math.round(text))) : 22,
         };
+    }
+
+    _ensurePresentationDefaults() {
+        if (!this.data || typeof this.data !== 'object') return;
+        if (!this.data.metadata || typeof this.data.metadata !== 'object') this.data.metadata = {};
+        const schema = Number(this.data.schemaVersion);
+        this.data.schemaVersion = Number.isFinite(schema)
+            ? Math.max(0, Math.trunc(schema))
+            : SlidesEditor.CURRENT_SCHEMA_VERSION;
+        if (typeof this.data.showSlideNumber !== 'boolean') this.data.showSlideNumber = false;
+        if (!Object.prototype.hasOwnProperty.call(this.data, 'footerText')) this.data.footerText = null;
+        if (typeof this.data.autoNumberChapters !== 'boolean') this.data.autoNumberChapters = false;
+        if (!Array.isArray(this.data.reviewComments)) this.data.reviewComments = [];
     }
 
     _normalizeLegacyCanvasFontSizes() {
@@ -649,16 +680,47 @@ class SlidesEditor {
         return `${slug}-${slideCount}`;
     }
 
+    _computeWorkdocHash(payload) {
+        const raw = String(payload || '');
+        let hash = 0;
+        for (let i = 0; i < raw.length; i++) {
+            hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
+        }
+        return Math.abs(hash).toString(36);
+    }
+
     _updateWorkdocsIndex() {
         try {
             const payload = JSON.parse(JSON.stringify(this.data || {}));
             const now = Date.now();
             const id = this._computeWorkdocId(payload);
+            const payloadText = JSON.stringify(payload);
+            const payloadHash = this._computeWorkdocHash(payloadText);
             const raw = window.OEIStorage?.getRaw
                 ? window.OEIStorage.getRaw(SlidesEditor.WORKDOCS_KEY)
                 : localStorage.getItem(SlidesEditor.WORKDOCS_KEY);
             const list = raw ? JSON.parse(raw) : [];
             const safeList = Array.isArray(list) ? list : [];
+            const previous = safeList.find(item => item && item.id === id) || null;
+            const prevTimeline = Array.isArray(previous?.timeline)
+                ? previous.timeline
+                    .filter(item => item && typeof item === 'object')
+                    .map(item => ({
+                        ts: Number(item.ts) || 0,
+                        hash: String(item.hash || ''),
+                        title: String(item.title || ''),
+                        slideCount: Number(item.slideCount) || 0,
+                    }))
+                    .filter(item => item.ts > 0)
+                : [];
+            const newest = prevTimeline[0] || null;
+            const shouldAddSnapshot = !newest
+                || newest.hash !== payloadHash
+                || (now - Number(newest.ts || 0)) >= SlidesEditor.WORKDOC_TIMELINE_MIN_INTERVAL_MS;
+            const timeline = (shouldAddSnapshot
+                ? [{ ts: now, hash: payloadHash, title: String(payload?.metadata?.title || ''), slideCount: Array.isArray(payload?.slides) ? payload.slides.length : 0 }, ...prevTimeline]
+                : prevTimeline)
+                .slice(0, SlidesEditor.WORKDOC_TIMELINE_LIMIT);
             const entry = {
                 id,
                 title: String(payload?.metadata?.title || 'Présentation sans titre'),
@@ -667,7 +729,11 @@ class SlidesEditor {
                 theme: (typeof payload?.theme === 'string' ? payload.theme : 'custom'),
                 level: String(payload?.metadata?.level || '').trim(),
                 institution: String(payload?.metadata?.institution || '').trim(),
-                data: JSON.stringify(payload),
+                timeline,
+                timelineCount: timeline.length,
+                lastTimelineAt: timeline[0]?.ts || now,
+                lastDataHash: payloadHash,
+                data: payloadText,
             };
             const merged = [entry, ...safeList.filter(item => item && item.id !== id)]
                 .slice(0, SlidesEditor.MAX_WORKDOCS);
@@ -718,6 +784,9 @@ class SlidesEditor {
 
     exportJson() {
         const data = JSON.parse(JSON.stringify(this.data));
+        data.schemaVersion = Number.isFinite(Number(data.schemaVersion))
+            ? Math.max(0, Math.trunc(Number(data.schemaVersion)))
+            : SlidesEditor.CURRENT_SCHEMA_VERSION;
         data.metadata.modified = new Date().toISOString().slice(0, 10);
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
@@ -738,9 +807,17 @@ class SlidesEditor {
                     if (!file) throw new Error('Aucun fichier sélectionné');
                     const text = await file.text();
                     if (window.OEIImportPipeline?.importFromText) {
-                        const result = await window.OEIImportPipeline.importFromText(text);
+                        const result = await window.OEIImportPipeline.importFromText(text, {
+                            pipelineSettings: typeof window.getAIImportPipelineSettings === 'function'
+                                ? window.getAIImportPipelineSettings()
+                                : null,
+                        });
                         const confirmed = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name });
-                        if (!confirmed) throw new Error('Import annulé');
+                        if (!confirmed) {
+                            const err = new Error('Import annulé');
+                            err.code = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
+                            throw err;
+                        }
                         this.load(result.data);
                         resolve(result.data);
                         return;

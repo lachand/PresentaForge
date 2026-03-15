@@ -1,5 +1,22 @@
     // ── Theme (outside IIFE so it runs immediately) ───
     (function() {
+        const controller = window.OEIThemeRuntime?.createController
+            ? window.OEIThemeRuntime.createController({
+                scope: 'student',
+                defaultMode: 'light',
+                target: 'body-dark',
+                bodyElement: document.body,
+                darkClass: 'dark',
+            })
+            : null;
+        if (controller) {
+            controller.applyCurrent();
+            window.OEIStudentThemeToggle = function toggleStudentTheme() {
+                return controller.toggleMode();
+            };
+            return;
+        }
+
         const Storage = window.OEIStorage || null;
         const STUDENT_THEME_KEY = Storage?.KEYS?.STUDENT_THEME || 'oei-student-theme';
         const readTheme = () => {
@@ -76,6 +93,13 @@
 
         const params = new URLSearchParams(location.search);
         const roomId = params.get('room');
+        const StudentRuntime = window.OEIStudentRuntimeState?.create
+            ? window.OEIStudentRuntimeState.create(window)
+            : null;
+        const StudentRuntimeBridge = window.OEIStudentRuntimeBridge?.create
+            ? window.OEIStudentRuntimeBridge.create({ runtime: StudentRuntime })
+            : null;
+        const StudentTransportUIFactory = window.OEIStudentTransportUI?.create || null;
 
         if (!roomId) {
             setJoinStatus('Aucune salle spécifiée. Scannez le QR code depuis la présentation.', 'error');
@@ -135,12 +159,15 @@
         });
         let _connectionState = CONNECTION_STATE.IDLE;
         let _connectionStateSince = Date.now();
+        let _studentTransportUI = null;
         let _connectionWatchdogTimer = null;
         let _forceReconnectCooldownUntil = 0;
         let _resyncMonitorTimer = null;
         let _resyncPending = false;
         let _resyncRetryCount = 0;
         let _resyncLastReason = '';
+        let _telemetryTimer = null;
+        let _lastTelemetryAt = 0;
         const MAX_RESYNC_RETRY = 3;
         const RESYNC_TIMEOUT_MS = 9000;
         const RELIABLE_QUEUE_PREFIX = `oei-v1-student-reliable-${toSafeString(roomId, 80)}-`;
@@ -196,6 +223,46 @@
         let quizData = null;
         let quizStartTime = 0;
         let quizTimerInterval = null;
+        const _syncStudentRuntime = patch => {
+            if (!patch || typeof patch !== 'object') return;
+            if (StudentRuntimeBridge?.sync) {
+                StudentRuntimeBridge.sync(patch);
+                return;
+            }
+            if (!StudentRuntime?.assign) return;
+            StudentRuntime.assign(patch);
+        };
+        const _syncTransportMode = () => {
+            if (StudentRuntimeBridge?.setTransportMode) {
+                StudentRuntimeBridge.setTransportMode(transportMode);
+                return;
+            }
+            _syncStudentRuntime({ transportMode });
+        };
+        if (typeof StudentTransportUIFactory === 'function') {
+            _studentTransportUI = StudentTransportUIFactory({
+                bridge: StudentRuntimeBridge,
+                syncRuntime: _syncStudentRuntime,
+                getTransportMode: () => transportMode,
+                connectionStates: CONNECTION_STATE,
+                initialState: _connectionState,
+            });
+            if (_studentTransportUI?.getState) _connectionState = _studentTransportUI.getState();
+            if (_studentTransportUI?.getStateSince) _connectionStateSince = _studentTransportUI.getStateSince();
+        }
+        _syncStudentRuntime({
+            roomId,
+            pseudo,
+            transportMode,
+            connectionState: _connectionState,
+            connected: false,
+            currentIndex,
+            currentFragmentOrder,
+            presenterIndex: _presenterIndex,
+            followPresenter: _followPresenter,
+            quizActive,
+            quizAnswered,
+        });
 
         // Per-slide notes state
         const NOTES_KEY = buildNotesKey(roomId);
@@ -518,6 +585,7 @@
             _revisionEnabled = !!enabled;
             if (_revisionEnabled) {
                 _followPresenter = false;
+                _syncStudentRuntime({ followPresenter: false });
                 _bookmarksOnly = false;
                 document.getElementById('nav-follow')?.classList.remove('active');
                 const ordered = revisionOrderedDeck();
@@ -682,6 +750,10 @@
         function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
         function setJoinStatus(msg, type) {
+            if (_studentTransportUI?.setJoinStatus) {
+                _studentTransportUI.setJoinStatus(msg, type);
+                return;
+            }
             const el = document.getElementById('join-status');
             if (el) { el.textContent = msg; el.className = 'status-msg ' + (type||''); }
         }
@@ -698,6 +770,10 @@
         }
 
         function setConnectionDetail(text, tone = '') {
+            if (_studentTransportUI?.setConnectionDetail) {
+                _studentTransportUI.setConnectionDetail(text, tone);
+                return;
+            }
             const state = document.getElementById('conn-state');
             if (!state) return;
             state.textContent = String(text || '');
@@ -715,9 +791,25 @@
         }
 
         function _setConnectionState(nextState, detail = '', tone = '') {
+            if (_studentTransportUI?.setConnectionState) {
+                _studentTransportUI.setConnectionState(nextState, { detail, tone });
+                if (_studentTransportUI?.getState) _connectionState = _studentTransportUI.getState();
+                if (_studentTransportUI?.getStateSince) _connectionStateSince = _studentTransportUI.getStateSince();
+                return;
+            }
             const normalized = Object.values(CONNECTION_STATE).includes(nextState) ? nextState : CONNECTION_STATE.IDLE;
             _connectionState = normalized;
             _connectionStateSince = Date.now();
+            if (StudentRuntimeBridge?.setConnectionState) {
+                StudentRuntimeBridge.setConnectionState(normalized, normalized === CONNECTION_STATE.CONNECTED);
+                _syncTransportMode();
+            } else {
+                _syncStudentRuntime({
+                    connectionState: normalized,
+                    transportMode,
+                    connected: normalized === CONNECTION_STATE.CONNECTED,
+                });
+            }
 
             const badge = document.getElementById('conn-badge');
             if (badge) {
@@ -882,8 +974,22 @@
         }
 
         function setConnected(connected) {
-            _setConnectionState(connected ? CONNECTION_STATE.CONNECTED : CONNECTION_STATE.RETRYING);
-            if (!connected) _clearResyncMonitor();
+            if (_studentTransportUI?.setConnected) {
+                _studentTransportUI.setConnected(!!connected);
+                if (_studentTransportUI?.getState) _connectionState = _studentTransportUI.getState();
+                if (_studentTransportUI?.getStateSince) _connectionStateSince = _studentTransportUI.getStateSince();
+            } else {
+                _setConnectionState(connected ? CONNECTION_STATE.CONNECTED : CONNECTION_STATE.RETRYING);
+                if (StudentRuntimeBridge?.setConnected) StudentRuntimeBridge.setConnected(!!connected);
+                else _syncStudentRuntime({ connected: !!connected });
+            }
+            if (connected) {
+                _startTelemetryLoop();
+                sendStudentTelemetry('connected', true);
+            } else {
+                _stopTelemetryLoop();
+                _clearResyncMonitor();
+            }
         }
 
         function _clearResyncMonitor() {
@@ -982,6 +1088,47 @@
             return rid;
         }
 
+        function _buildTelemetryPayload(reason = 'heartbeat', ts = Date.now()) {
+            return {
+                type: ROOM_MSG.STUDENT_TELEMETRY,
+                pseudo,
+                state: _connectionState,
+                transport: transportMode,
+                reason: toSafeString(reason, 40) || 'heartbeat',
+                ts: Math.max(0, Math.trunc(ts)),
+                slideIndex: Math.max(0, Math.trunc(Number(currentIndex) || 0)),
+                fragmentOrder: Math.trunc(Number(currentFragmentOrder) || -1),
+                followPresenter: !!_followPresenter,
+                handRaised: !!_handRaised,
+                queueDepth: Math.max(0, pendingAcks.size),
+            };
+        }
+
+        function sendStudentTelemetry(reason = 'heartbeat', force = false) {
+            if (!pseudo || !transportCanSend()) return false;
+            const now = Date.now();
+            const elapsed = now - _lastTelemetryAt;
+            const minDelay = reason === 'heartbeat' ? 12_000 : 2_500;
+            if (!force && elapsed < minDelay) return false;
+            _lastTelemetryAt = now;
+            return transportSend(_buildTelemetryPayload(reason, now));
+        }
+
+        function _startTelemetryLoop() {
+            if (_telemetryTimer) return;
+            _telemetryTimer = setInterval(() => {
+                if (document.hidden) return;
+                sendStudentTelemetry('heartbeat');
+            }, 15_000);
+        }
+
+        function _stopTelemetryLoop() {
+            if (_telemetryTimer) {
+                clearInterval(_telemetryTimer);
+                _telemetryTimer = null;
+            }
+        }
+
         function showAudienceNudge(kind, text) {
             const toast = document.getElementById('nudge-toast');
             if (!toast) return;
@@ -1072,6 +1219,7 @@
                 setConnectionDetail(`Navigation limitée à la slide ${allowedMax + 1} (présentateur)`, 'warn');
             }
             currentIndex = target;
+            _syncStudentRuntime({ currentIndex: target });
             const inner = document.getElementById('slide-inner');
             const counter = document.getElementById('slide-counter');
             if (!inner) return;
@@ -1103,6 +1251,7 @@
             }
             updateRevisionControls();
             updateCheckpointStatus();
+            sendStudentTelemetry('slide');
         }
 
         function applyFragmentProgress(step) {
@@ -1111,11 +1260,13 @@
             const frags = Array.from(inner.querySelectorAll('.fragment'));
             const max = Number.isFinite(Number(step)) ? Math.trunc(Number(step)) : -1;
             currentFragmentOrder = max;
+            _syncStudentRuntime({ currentFragmentOrder: max });
             frags.forEach((frag, i) => {
                 const visible = i <= max;
                 frag.classList.toggle('visible', visible);
                 frag.classList.toggle('current-fragment', i === max && max >= 0);
             });
+            sendStudentTelemetry('fragment');
         }
 
         // ── Widget mount (OEI interactive widgets) ────────
@@ -1257,6 +1408,7 @@
             if (quizActive) return;
             quizActive = true;
             quizAnswered = false;
+            _syncStudentRuntime({ quizActive: true, quizAnswered: false });
             quizSelectedAnswer = null;
             quizData = data;
             quizStartTime = Date.now();
@@ -1317,6 +1469,7 @@
         function selectAnswer(index, optEl, optsDiv, data, remaining) {
             if (quizAnswered) return;
             quizAnswered = true;
+            _syncStudentRuntime({ quizAnswered: true });
             quizSelectedAnswer = index;
             clearInterval(quizTimerInterval);
 
@@ -1339,6 +1492,7 @@
 
         function timeoutQuiz(optsDiv) {
             quizAnswered = false;
+            _syncStudentRuntime({ quizAnswered: false });
             if (optsDiv) optsDiv.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
             const resultDiv = document.getElementById('qt-result');
             if (resultDiv) resultDiv.innerHTML = '<div class="quiz-result-banner timeout">⏰ Temps écoulé</div>';
@@ -1386,6 +1540,7 @@
             setTimeout(() => {
                 overlay.classList.remove('active');
                 quizActive = false;
+                _syncStudentRuntime({ quizActive: false });
                 quizData = null;
             }, 3500);
         }
@@ -1441,7 +1596,10 @@
                 try { relaySocket.close(); } catch (e) {}
                 relaySocket = null;
             }
-            if (resetTransport && transportMode === 'relay') transportMode = 'p2p';
+            if (resetTransport && transportMode === 'relay') {
+                transportMode = 'p2p';
+                _syncTransportMode();
+            }
         }
 
         function relaySendEnvelope(type, message, extra = {}) {
@@ -1475,6 +1633,7 @@
             peer = null;
             closeRelaySocket(false);
             transportMode = 'relay';
+            _syncTransportMode();
             _setConnectionState(CONNECTION_STATE.CONNECTING, 'Relay · connexion…', 'warn');
             setReconnectMessage(reason || 'fallback relay');
             try {
@@ -1569,6 +1728,7 @@
                 clearReconnectTimer();
                 closeRelaySocket(false);
                 transportMode = 'p2p';
+                _syncTransportMode();
                 _buildConnPending = false;
                 reconnectAttempts = 0;
                 _lastConnectError = '';
@@ -1659,6 +1819,7 @@
 
         function connectToPeer() {
             transportMode = 'p2p';
+            _syncTransportMode();
             closeRelaySocket(false);
             if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
             clearConnOpenTimer();
@@ -1709,6 +1870,7 @@
             if (conn && conn.open) {
                 _flushReliableQueue('resume-visible');
                 requestResync('resume');
+                sendStudentTelemetry('resume-visible', true);
                 return;
             }
             reconnectAttempts = 0;
@@ -1724,6 +1886,7 @@
             if (conn && conn.open) {
                 _flushReliableQueue('online');
                 requestResync('online');
+                sendStudentTelemetry('online', true);
                 return;
             }
             reconnectAttempts = 0;
@@ -1774,6 +1937,7 @@
                     // Show current slide
                     const initIndex = typeof msg.currentIndex === 'number' ? msg.currentIndex : 0;
                     _presenterIndex = initIndex;
+                    _syncStudentRuntime({ presenterIndex: initIndex });
                     if (_revisionEnabled) {
                         const deck = revisionOrderedDeck();
                         const start = deck.includes(initIndex) ? initIndex : (deck[0] ?? initIndex);
@@ -1790,11 +1954,13 @@
                 case ROOM_MSG.SLIDE_CHANGE:
                     if (typeof msg.index === 'number') {
                         _presenterIndex = msg.index;
+                        _syncStudentRuntime({ presenterIndex: msg.index });
                         // Dismiss active quiz when slide changes
                         if (quizActive) {
                             clearInterval(quizTimerInterval);
                             document.getElementById('quiz-overlay').classList.remove('active');
                             quizActive = false;
+                            _syncStudentRuntime({ quizActive: false });
                         }
                         if (currentIndex > maxPresenterAllowedIndex()) {
                             showSlide(_presenterIndex);
@@ -1855,6 +2021,7 @@
                 case ROOM_MSG.HAND_LOWER:
                     _handRaised = false;
                     document.getElementById('hand-btn').classList.remove('raised');
+                    sendStudentTelemetry('hand-lower', true);
                     break;
 
                 case ROOM_MSG.AUDIENCE_NUDGE:
@@ -1967,6 +2134,7 @@
         // ── Nav bar ────────────────────────────────────────
         document.getElementById('nav-prev').addEventListener('click', () => {
             _followPresenter = false;
+            _syncStudentRuntime({ followPresenter: false });
             document.getElementById('nav-follow').classList.remove('active');
             showByModeStep(-1);
         });
@@ -1976,6 +2144,7 @@
                 return;
             }
             _followPresenter = false;
+            _syncStudentRuntime({ followPresenter: false });
             document.getElementById('nav-follow').classList.remove('active');
             showByModeStep(1);
         });
@@ -1996,6 +2165,7 @@
                 if (_bookmarks.size === 0) return;
                 _bookmarksOnly = true;
                 _followPresenter = false;
+                _syncStudentRuntime({ followPresenter: false });
                 document.getElementById('nav-follow').classList.remove('active');
                 if (!_bookmarks.has(String(currentIndex))) {
                     const list = bookmarksSorted();
@@ -2036,6 +2206,7 @@
         document.getElementById('nav-resync').addEventListener('click', () => requestResync('manual'));
         document.getElementById('nav-follow').addEventListener('click', () => {
             _followPresenter = !_followPresenter;
+            _syncStudentRuntime({ followPresenter: _followPresenter });
             if (_followPresenter && _bookmarksOnly) _bookmarksOnly = false;
             if (_followPresenter && _revisionEnabled) _revisionEnabled = false;
             document.getElementById('nav-follow').classList.toggle('active', _followPresenter);
@@ -2043,6 +2214,7 @@
             updateBookmarkControls();
             updateRevisionControls();
             updateCheckpointStatus();
+            sendStudentTelemetry('follow-toggle', true);
         });
 
         // ── Hand raise ─────────────────────────────────────
@@ -2050,6 +2222,7 @@
             _handRaised = !_handRaised;
             document.getElementById('hand-btn').classList.toggle('raised', _handRaised);
             sendReliable({ type: ROOM_MSG.STUDENT_HAND, raised: _handRaised }, { maxRetries: 3, retryDelay: 1400 });
+            sendStudentTelemetry('hand-toggle', true);
         });
 
         // ── Question overlay ───────────────────────────────
@@ -2317,6 +2490,8 @@
         document.getElementById('join-btn').addEventListener('click', () => {
             const input = document.getElementById('pseudo-input');
             pseudo = input.value.trim();
+            if (StudentRuntimeBridge?.setPseudo) StudentRuntimeBridge.setPseudo(pseudo);
+            else _syncStudentRuntime({ pseudo });
             if (!pseudo) { input.focus(); setJoinStatus('Entrez votre prénom', 'error'); return; }
 
             _setReliableQueueScope(pseudo);
@@ -2340,6 +2515,7 @@
             const forceRelay = requestedTransport === 'relay';
             if (forceRelay && RELAY_OPTIONS.enabled && RELAY_OPTIONS.wsUrl) {
                 transportMode = 'relay';
+                _syncTransportMode();
                 connectViaRelay('transport=relay');
                 return;
             }

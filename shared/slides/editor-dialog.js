@@ -27,6 +27,7 @@ const OEIDialog = (() => {
 .oed-overlay {
     position: fixed; inset: 0; z-index: 99999;
     display: flex; align-items: center; justify-content: center;
+    padding: 16px;
     background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
     animation: oedFadeIn .12s ease;
 }
@@ -36,7 +37,9 @@ const OEIDialog = (() => {
     color: var(--text, #1d1d1f);
     border: 1px solid var(--border, #e0e0e5);
     border-radius: 12px; padding: 24px;
-    width: min(420px, 95vw);
+    width: min(900px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    display: flex; flex-direction: column;
     box-shadow: 0 24px 80px rgba(0,0,0,.25);
     animation: oedSlideUp .15s ease;
 }
@@ -55,10 +58,14 @@ const OEIDialog = (() => {
 .oed-body {
     font-size: .88rem; line-height: 1.6;
     color: var(--text, #374151); white-space: pre-wrap;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    max-height: min(64vh, calc(100vh - 220px));
 }
 [data-theme="dark"] .oed-body { color: var(--text, #cbd5e1); }
 .oed-actions {
     display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
+    flex-wrap: wrap;
 }
 .oed-btn {
     height: 32px; padding: 0 16px; border-radius: 6px;
@@ -72,11 +79,23 @@ const OEIDialog = (() => {
     background: var(--card, #222635); color: var(--text, #cbd5e1);
     border-color: var(--border, #2d3347);
 }
-.oed-btn.primary {
+.oed-btn.primary,
+.oed-btn.ui-btn--primary {
     background: var(--primary, #6366f1); border-color: var(--primary, #6366f1); color: #fff;
 }
-.oed-btn.danger {
+.oed-btn.danger,
+.oed-btn.ui-btn--danger {
     background: var(--danger, #ef4444); border-color: var(--danger, #ef4444); color: #fff;
+}
+@media (max-width: 720px) {
+    .oed-box {
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+        padding: 16px;
+    }
+    .oed-body {
+        max-height: min(70vh, calc(100vh - 180px));
+    }
 }
 `;
         document.head.appendChild(s);
@@ -95,7 +114,7 @@ const OEIDialog = (() => {
                     <div class="oed-body">${body}</div>
                     <div class="oed-actions">
                         ${buttons.map((b, i) =>
-                            `<button class="oed-btn ${b.cls || ''}" data-idx="${i}">${b.label}</button>`
+                            `<button class="oed-btn ui-btn ${b.uiCls || ''} ${b.cls || ''}" data-idx="${i}">${b.label}</button>`
                         ).join('')}
                     </div>
                 </div>
@@ -140,7 +159,7 @@ const OEIDialog = (() => {
             return _show({
                 title,
                 body: message,
-                buttons: [{ label: 'OK', value: undefined, cls: 'primary', default: true }],
+                buttons: [{ label: 'OK', value: undefined, cls: 'primary', uiCls: 'ui-btn--primary', default: true }],
                 focusLast: true,
             });
         },
@@ -161,7 +180,13 @@ const OEIDialog = (() => {
                 body: message,
                 buttons: [
                     { label: cancelLabel,  value: false, cancel: true  },
-                    { label: confirmLabel, value: true,  default: true, cls: danger ? 'danger' : 'primary' },
+                    {
+                        label: confirmLabel,
+                        value: true,
+                        default: true,
+                        cls: danger ? 'danger' : 'primary',
+                        uiCls: danger ? 'ui-btn--danger' : 'ui-btn--primary',
+                    },
                 ],
                 focusLast: true,
             });
