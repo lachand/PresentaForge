@@ -107,6 +107,7 @@ import {
 import { createCommandBus } from './viewer/command-bus.js';
 import { REMOTE_HASH_ITERATIONS, sha256Hex, derivePasswordHashHex } from './viewer/remote-auth.js';
 import { createRoomPeerReconnectRuntime } from './viewer/room-peer-reconnect-runtime.js';
+import { createRoomPeerLifecycleRuntime } from './viewer/room-peer-lifecycle-runtime.js';
 import { buildReplayStandaloneHtml } from './viewer/replay-standalone-export.js';
 import {
     normalizeReplaySessionExport,
@@ -406,16 +407,18 @@ import {
             }
         }
 
+        const _setRoomIdInputsDisabled = active => {
+            const idInput = document.getElementById('rm-room-id-input');
+            const idRefresh = document.getElementById('rm-room-id-refresh');
+            if (idInput) idInput.disabled = !!active;
+            if (idRefresh) idRefresh.disabled = !!active;
+        };
+
         const _roomPeerReconnectRuntime = createRoomPeerReconnectRuntime({
             room: _room,
             reconnectDelayMs: _reconnectDelayMs,
             roomSetStatus: _roomSetStatus,
-            setRoomIdInputsDisabled: active => {
-                const idInput = document.getElementById('rm-room-id-input');
-                const idRefresh = document.getElementById('rm-room-id-refresh');
-                if (idInput) idInput.disabled = !!active;
-                if (idRefresh) idRefresh.disabled = !!active;
-            },
+            setRoomIdInputsDisabled: _setRoomIdInputsDisabled,
             runRoomPreviewUpdater: () => {
                 ViewerRuntime.runRoomPreviewUpdater();
             },
@@ -574,6 +577,40 @@ import {
         const _relaySendBroadcast = msg => _relayRuntime.sendBroadcast(msg);
         const _relayOpen = roomId => _relayRuntime.open(roomId);
         const _relayClose = () => _relayRuntime.close();
+        const _roomPeerLifecycleRuntime = createRoomPeerLifecycleRuntime({
+            room: _room,
+            relayRoom: _relayRoom,
+            roomHands: _roomHands,
+            roomFeedback: _roomFeedback,
+            roomSeenByPeer: _roomSeenByPeer,
+            peerReconnectRuntime: _roomPeerReconnectRuntime,
+            roomSetStatus: _roomSetStatus,
+            roomEsc: _roomEsc,
+            withIcon,
+            buildStudentUrl: _buildStudentUrl,
+            generateRoomId: _generateRoomId,
+            remoteLoadConfig: _remoteLoadConfig,
+            remoteDropPeer: _remoteDropPeer,
+            relayOpen: _relayOpen,
+            relayClose: _relayClose,
+            roomSendInit: _roomSendInit,
+            roomHandleIncoming: (conn, msg) => { roomHandleIncoming(conn, msg); },
+            roomUpdatePanel: () => { roomUpdatePanel(); },
+            roomUpdateStudents: () => { roomUpdateStudents(); },
+            runRoomPreviewUpdater: () => { ViewerRuntime.runRoomPreviewUpdater(); },
+            roomBroadcast: msg => { roomBroadcast(msg); },
+            setRoomIdInputsDisabled: _setRoomIdInputsDisabled,
+            storageSetRaw,
+            lastRoomIdKey: LAST_ROOM_ID_KEY,
+            viewerRuntime: ViewerRuntime,
+            relayOptions: RELAY_OPTIONS,
+            peerOptions: PEER_OPTIONS,
+            switchRoomPresenterMode,
+            isPresenterMode,
+            documentRef: document,
+            navigatorRef: navigator,
+            windowRef: window,
+        });
 
         function roomBroadcast(msg) {
             broadcastPeers(_room.connections, msg);
@@ -1145,11 +1182,11 @@ import {
         }
 
         function _roomClearPeerReconnectTimer() {
-            _roomPeerReconnectRuntime.clear();
+            _roomPeerLifecycleRuntime.clearPeerReconnectTimer();
         }
 
         function _roomSchedulePeerReconnect(reason = '') {
-            _roomPeerReconnectRuntime.schedule(reason);
+            _roomPeerLifecycleRuntime.schedulePeerReconnect(reason);
         }
 
         async function roomHandleIncoming(conn, rawMsg) {
@@ -1377,132 +1414,22 @@ import {
         }
 
         async function roomOpenPeer() {
-            if (_room.active) return;
-
-            if (!window.Peer) {
-                await new Promise((res, rej) => {
-                    if (ViewerRuntime.isPeerScriptLoaded()) {
-                        const wait = () => window.Peer ? res() : setTimeout(wait, 100);
-                        wait(); return;
-                    }
-                    ViewerRuntime.markPeerScriptLoaded();
-                    const s = document.createElement('script');
-                    s.src = '../vendor/peerjs/1.5.5/peerjs.min.js';
-                    s.onload = res; s.onerror = rej;
-                    document.head.appendChild(s);
-                });
-            }
-
-            // Read and sanitize the room ID
-            const rawId = document.getElementById('rm-room-id-input')?.value.trim() || '';
-            const roomId = rawId.replace(/[^a-zA-Z0-9\-_]/g, '-').replace(/-{2,}/g, '-').slice(0, 40) || _generateRoomId();
-            if (document.getElementById('rm-room-id-input')) document.getElementById('rm-room-id-input').value = roomId;
-            storageSetRaw(LAST_ROOM_ID_KEY, roomId);
-            _remoteLoadConfig(roomId);
-            // Lock the ID input while the room is open
-            if (document.getElementById('rm-room-id-input')) document.getElementById('rm-room-id-input').disabled = true;
-            if (document.getElementById('rm-room-id-refresh')) document.getElementById('rm-room-id-refresh').disabled = true;
-
-            const copyBtn = document.getElementById('sl-room-copy');
-            if (copyBtn) {
-                copyBtn.disabled = true;
-                copyBtn.innerHTML = withIcon('refresh', 'Connexion…');
-            }
-            _roomSetStatus('Connexion P2P…', 'warn');
-
-            _room.peer = new Peer(roomId, PEER_OPTIONS);
-
-            _room.peer.on('open', id => {
-                _roomClearPeerReconnectTimer();
-                _roomPeerReconnectRuntime.resetAttempts();
-                _room.active = true;
-                ViewerRuntime.studentRoom = _room;
-                ViewerRuntime.studentRoomBroadcast = roomBroadcast;
-
-                const studentUrl = _buildStudentUrl(id);
-                _room.studentUrl = studentUrl;
-
-                const copyBtn = document.getElementById('sl-room-copy');
-                if (copyBtn) {
-                    copyBtn.disabled = false;
-                    copyBtn.innerHTML = withIcon('copy', 'Copier le lien stable');
-                    copyBtn.onclick = () => {
-                        navigator.clipboard.writeText(studentUrl).then(() => {
-                            copyBtn.innerHTML = withIcon('check', 'Copié !');
-                            setTimeout(() => { copyBtn.innerHTML = withIcon('copy', 'Copier le lien stable'); }, 2000);
-                        });
-                    };
-                }
-                if (RELAY_OPTIONS.enabled && RELAY_OPTIONS.wsUrl) _relayOpen(id);
-                _roomSetStatus(_relayRoom.active ? 'Salle active (P2P + relay).' : 'Salle active.', 'ok');
-                roomUpdateStudents();
-                if (isPresenterMode) switchRoomPresenterMode('technique', true);
-            });
-
-            _room.peer.on('disconnected', () => {
-                _roomSchedulePeerReconnect('signalisation');
-            });
-
-            _room.peer.on('connection', conn => {
-                conn.on('open', () => {
-                    _room.connections.push(conn);
-                    _roomSendInit(conn);
-                });
-
-                conn.on('data', rawMsg => { roomHandleIncoming(conn, rawMsg); });
-
-                const removeConn = () => {
-                    _room.connections = _room.connections.filter(c => c !== conn);
-                    // Retirer des mains levées si besoin
-                    const hi = _roomHands.findIndex(h => h.peerId === conn.peer);
-                    if (hi !== -1) _roomHands.splice(hi, 1);
-                    _roomFeedback.lastByPeer.delete(conn.peer);
-                    _roomSeenByPeer.delete(conn.peer);
-                    _remoteDropPeer(conn.peer);
-                    delete _room.students[conn.peer];
-                    roomUpdatePanel();
-                };
-                conn.on('close', removeConn);
-                conn.on('error', removeConn);
-            });
-
-            _room.peer.on('error', e => {
-                const idInput = document.getElementById('rm-room-id-input');
-                const idRefresh = document.getElementById('rm-room-id-refresh');
-                if (e.type === 'unavailable-id') {
-                    if (idInput) idInput.disabled = false;
-                    if (idRefresh) idRefresh.disabled = false;
-                    _room.active = false;
-                    _roomSetStatus('ID de salle déjà utilisé.', 'error');
-                    ViewerRuntime.runRoomPreviewUpdater();
-                } else if (['network', 'server-error', 'socket-error', 'socket-closed', 'disconnected'].includes(e.type)) {
-                    _roomSchedulePeerReconnect(e.type);
-                } else {
-                    if (idInput) idInput.disabled = false;
-                    if (idRefresh) idRefresh.disabled = false;
-                    _room.active = false;
-                    _roomSetStatus(`Erreur salle: ${_roomEsc(e.message || String(e))}`, 'error');
-                    ViewerRuntime.runRoomPreviewUpdater();
-                    roomUpdatePanel();
-                }
-            });
+            await _roomPeerLifecycleRuntime.openPeer();
         }
 
         function roomClose() {
-            _roomClearPeerReconnectTimer();
-            _roomPeerReconnectRuntime.resetAttempts();
             const wasActive = _room.active;
             if (_pvQrVisible) {
                 _pvQrVisible = false;
                 _postPresenterSync({ type: SYNC_MSG.ROOM_QR, show: false, url: '' });
             }
-            _room.active = false;
-            _relayClose();
+            _roomPeerLifecycleRuntime.closeTransport({
+                setStatus: false,
+                updatePanel: false,
+                switchPresenterMode: false,
+                runPreviewUpdater: false,
+            });
             if (wasActive) _remoteRevokeAll('Salle fermée : sessions mobiles révoquées.', true);
-            if (_room.peer) { try { _room.peer.destroy(); } catch(e) {} _room.peer = null; }
-            _room.connections = [];
-            _room.students = {};
-            _roomSeenByPeer.clear();
             ViewerRuntime.clearRoomRuntime();
             // Nettoyer les nouvelles structures
             _roomHands.length = 0;
@@ -1523,11 +1450,6 @@ import {
             _roomBridgeEmit('cloud', _roomBridgeSnapshotCloud());
             _roomBridgeEmit('exitTicket', _roomBridgeSnapshotExitTicket());
             _roomBridgeEmit('rankOrder', _roomBridgeSnapshotRankOrder());
-            // Déverrouiller l'input ID
-            const idInput = document.getElementById('rm-room-id-input');
-            const idRefresh = document.getElementById('rm-room-id-refresh');
-            if (idInput) idInput.disabled = false;
-            if (idRefresh) idRefresh.disabled = false;
 
             // Restaurer le lien stable de copie dès que _room.active est false
             ViewerRuntime.runRoomPreviewUpdater();

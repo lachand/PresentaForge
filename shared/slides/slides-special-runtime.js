@@ -504,17 +504,20 @@
                 return { counts, total };
             };
             const publishQuizState = (extraState = {}) => {
-                emitAudienceElementState(el, 'quiz-live', Object.assign({
+                const mergedState = Object.assign({
                     active: !!quizActive,
+                    ended: false,
                     question: questionText,
                     options: optLabels.slice(),
-                    correctAnswer,
+                    correctAnswer: null,
                     duration,
                     remaining: Math.max(0, Number(remaining) || 0),
                     counts: computeCounts().counts,
                     totalResponses: computeCounts().total,
                     statusText: String(statusEl?.textContent || ''),
-                }, (extraState && typeof extraState === 'object') ? extraState : {}));
+                }, (extraState && typeof extraState === 'object') ? extraState : {});
+                if (mergedState.ended === true) mergedState.correctAnswer = correctAnswer;
+                emitAudienceElementState(el, 'quiz-live', mergedState);
             };
 
             if (isAudienceReadOnly) {
@@ -534,7 +537,10 @@
                     const total = Math.max(0, Number(sync.totalResponses) || counts.reduce((a, b) => a + b, 0));
                     const currentRemaining = Math.max(0, Number(sync.remaining) || 0);
                     const active = sync.active === true;
-                    const resolvedCorrect = Number.isFinite(Number(sync.correctAnswer)) ? Number(sync.correctAnswer) : correctAnswer;
+                    const revealCorrect = sync.ended === true;
+                    const resolvedCorrect = revealCorrect && Number.isFinite(Number(sync.correctAnswer))
+                        ? Number(sync.correctAnswer)
+                        : null;
                     if (timerEl) timerEl.textContent = `${currentRemaining}s`;
                     if (statusEl) {
                         statusEl.textContent = toTrimmed(String(sync.statusText || ''), 220)
@@ -549,7 +555,7 @@
                     html += `<div style="display:flex;flex-direction:column;gap:6px;">`;
                     counts.forEach((count, i) => {
                         const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                        const isCorrect = i === resolvedCorrect;
+                        const isCorrect = revealCorrect && i === resolvedCorrect;
                         const barColor = isCorrect ? '#34d399' : 'var(--sl-primary,#818cf8)';
                         html += `<div style="display:flex;align-items:center;gap:8px;">
                             <span style="min-width:24px;font-weight:700;font-size:0.85rem;color:${isCorrect ? '#34d399' : 'var(--sl-text,#cbd5e1)'};">${String.fromCharCode(65 + i)}</span>
@@ -566,14 +572,14 @@
                 return;
             }
 
-            const updateResults = () => {
+            const updateResults = ({ ended = false } = {}) => {
                 const { counts, total } = computeCounts();
                 const maxCount = Math.max(1, ...counts);
                 let html = `<div style="font-size:0.75rem;color:var(--sl-muted);margin-bottom:8px;">${total} réponse${total > 1 ? 's' : ''}</div>`;
                 html += `<div style="display:flex;flex-direction:column;gap:6px;">`;
                 counts.forEach((c, i) => {
                     const pct = total > 0 ? Math.round(c / total * 100) : 0;
-                    const isCorrect = i === correctAnswer;
+                    const isCorrect = ended === true && i === correctAnswer;
                     const barColor = isCorrect ? '#34d399' : 'var(--sl-primary,#818cf8)';
                     html += `<div style="display:flex;align-items:center;gap:8px;">
                         <span style="min-width:24px;font-weight:700;font-size:0.85rem;color:${isCorrect ? '#34d399' : 'var(--sl-text,#cbd5e1)'};">${String.fromCharCode(65 + i)}</span>
@@ -585,7 +591,7 @@
                 });
                 html += `</div>`;
                 resultsEl.innerHTML = html;
-                publishQuizState();
+                publishQuizState({ ended: ended === true });
             };
 
             const startQuiz = async () => {
@@ -604,7 +610,7 @@
                         responses[peerId] = value;
                         window._lastQuizResponses = responses;
                         window._lastQuizOptions = optLabels;
-                        updateResults();
+                        updateResults({ ended: false });
                         const nStudents = Object.keys(window._studentRoom.students).length;
                         statusEl.textContent = `${Object.keys(responses).length}/${nStudents} réponse(s) — ${remaining}s restantes`;
                         publishQuizState();
@@ -619,7 +625,7 @@
                     });
 
                     resultsEl.style.display = '';
-                    updateResults();
+                    updateResults({ ended: false });
                     remaining = duration;
                     timerEl.textContent = remaining + 's';
                     statusEl.textContent = `0 réponse(s) — ${remaining}s restantes`;
@@ -693,7 +699,7 @@
                     conn.on('data', (data) => {
                         if (data && data.type === 'answer' && quizActive) {
                             responses[conn.peer] = data.value;
-                            updateResults();
+                            updateResults({ ended: false });
                             statusEl.textContent = `${Object.keys(responses).length} réponse(s) — ${remaining}s restantes`;
                             publishQuizState();
                         }
@@ -705,7 +711,7 @@
 
                 // Show results area
                 resultsEl.style.display = '';
-                updateResults();
+                updateResults({ ended: false });
 
                 // Start timer
                 remaining = duration;
@@ -766,7 +772,7 @@
                     statusEl.textContent = 'Cliquez sur « Lancer » pour démarrer le quiz';
                     publishQuizState({ active: false, ended: false, counts: [], totalResponses: 0 });
                 };
-                updateResults();
+                updateResults({ ended: true });
                 // Close peer after a delay
                 setTimeout(() => { if (peer && !quizActive) { peer.destroy(); peer = null; } }, 5000);
             };
