@@ -9,7 +9,7 @@
         import { createTopicEventBus } from './viewer/event-bus.js';
         import { safePeerSend, broadcastPeers } from './viewer/room-transport.js';
         import { postSyncMessage } from './viewer/audience-sync.js';
-        import { clampNumber } from './viewer/presenter-layout.js';
+        import { initNormalModeToolbar } from './viewer/normal-mode-toolbar.js';
         import { applyStatusState } from './viewer/room-ui.js';
 import {
     buildRemoteRoomUrl,
@@ -91,6 +91,16 @@ import {
 } from './viewer/room-panel-tools.js';
 import { updateRoomPanelRuntime } from './viewer/room-panel-runtime.js';
 import {
+    createRoomPanelController,
+} from './viewer/room-panel-controller.js';
+import { bindRoomPanelActions } from './viewer/room-panel-bindings.js';
+import {
+    bindPresenterRoomPanelControls,
+    bindPresenterToolbarButtons,
+} from './viewer/presenter-toolbar-controls.js';
+import { bindPresenterKeyboardShortcuts } from './viewer/presenter-keyboard-controls.js';
+import { initPresenterLayoutControls } from './viewer/presenter-layout-controls.js';
+import {
     createRoomRemoteControl,
     runRemotePresenterCommand,
 } from './viewer/room-remote-control.js';
@@ -108,6 +118,7 @@ import { createCommandBus } from './viewer/command-bus.js';
 import { REMOTE_HASH_ITERATIONS, sha256Hex, derivePasswordHashHex } from './viewer/remote-auth.js';
 import { createRoomPeerReconnectRuntime } from './viewer/room-peer-reconnect-runtime.js';
 import { createRoomPeerLifecycleRuntime } from './viewer/room-peer-lifecycle-runtime.js';
+import { createSessionRecordingRuntime } from './viewer/session-recording-runtime.js';
 import { buildReplayStandaloneHtml } from './viewer/replay-standalone-export.js';
 import {
     normalizeReplaySessionExport,
@@ -260,7 +271,63 @@ import {
 
         /* ── Whiteboard (drawing overlay) ─────────────────── */
         let _whiteboard = null;
+        let _whiteboardLastSync = null;
+        let _whiteboardRecordFrames = false;
+        let _recordWhiteboardFrame = () => {};
         const wbToggle = () => { _whiteboard?.toggle(); };
+        const _cloneWhiteboardCommands = commands => {
+            if (!Array.isArray(commands)) return [];
+            return commands
+                .filter(entry => entry && typeof entry === 'object')
+                .map(entry => ({ ...entry }))
+                .slice(0, 8000);
+        };
+        const _normalizeWhiteboardSyncPayload = payload => {
+            if (!payload || typeof payload !== 'object') return null;
+            const active = !!payload.active;
+            const slideIndex = toIntOrNull(payload.slideIndex);
+            const canvasWidth = toIntOrNull(payload.canvasWidth);
+            const canvasHeight = toIntOrNull(payload.canvasHeight);
+            return {
+                active,
+                slideIndex: slideIndex === null ? 0 : Math.max(0, slideIndex),
+                updatedAt: Math.max(0, toNumberOr(payload.updatedAt, Date.now())),
+                canvasWidth: canvasWidth === null ? 1280 : Math.max(1, canvasWidth),
+                canvasHeight: canvasHeight === null ? 720 : Math.max(1, canvasHeight),
+                commands: _cloneWhiteboardCommands(payload.commands),
+            };
+        };
+        const _captureWhiteboardSyncState = () => {
+            const direct = _whiteboard?.getSyncState?.();
+            const normalized = _normalizeWhiteboardSyncPayload(direct);
+            if (normalized) _whiteboardLastSync = normalized;
+            return normalized || _whiteboardLastSync;
+        };
+        const _broadcastWhiteboardSync = payload => {
+            const normalized = _normalizeWhiteboardSyncPayload(payload);
+            if (!normalized) return;
+            _whiteboardLastSync = normalized;
+            if (_room.active && ROOM_MSG.WHITEBOARD_SYNC) {
+                roomBroadcast({
+                    type: ROOM_MSG.WHITEBOARD_SYNC,
+                    ...normalized,
+                });
+            }
+        };
+        const _recordWhiteboardSnapshot = frame => {
+            if (!frame || typeof frame !== 'object') return;
+            const payload = {
+                active: !!frame.active,
+                slideIndex: Math.max(0, toNumberOr(frame.slideIndex, 0)),
+                updatedAt: Math.max(0, toNumberOr(frame.updatedAt, Date.now())),
+                canvasWidth: Math.max(1, toNumberOr(frame.canvasWidth, 1280)),
+                canvasHeight: Math.max(1, toNumberOr(frame.canvasHeight, 720)),
+                commandCount: Math.max(0, toNumberOr(frame.commandCount, 0)),
+                imageDataUrl: String(frame.imageDataUrl || ''),
+                reason: toTrimmedString(frame.reason, 40),
+            };
+            _recordWhiteboardFrame(payload);
+        };
 
         /* ── Student Room (WebRTC P2P) ─────────────────────── */
         let _presentationData = null;
@@ -305,7 +372,6 @@ import {
             lastByPeer: new Map(),
         };
         let _roomPresenterMode = 'live';
-        const ROOM_PRESENTER_MODES = ['live', 'interactions', 'technique'];
         let _pvQrVisible = false;
         let _pvContextView = 'status';
         let _activePoll = null;      // { pollId, type, prompt, options, multi, responses: Map }
@@ -500,6 +566,7 @@ import {
                 currentFragmentOrder: _roomCurrentFragmentIndex(),
                 themeCSS: document.getElementById('sl-theme-css')?.textContent || '',
                 slidesHtml: slides.map((slide, i) => SlidesRenderer.renderSlide(slide, i, opts)),
+                whiteboard: _captureWhiteboardSyncState(),
             };
         }
 
@@ -1238,6 +1305,7 @@ import {
                         activeWordCloud: _activeWordCloud,
                         activeExitTicket: _activeExitTicket,
                         activeRankOrder: _activeRankOrder,
+                        whiteboardState: () => _captureWhiteboardSyncState(),
                     });
                     roomUpdatePanel();
                     break;
@@ -1399,6 +1467,7 @@ import {
                         activeWordCloud: _activeWordCloud,
                         activeExitTicket: _activeExitTicket,
                         activeRankOrder: _activeRankOrder,
+                        whiteboardState: () => _captureWhiteboardSyncState(),
                     })) {
                         ack(false, 'sync-unavailable');
                         break;
@@ -1479,257 +1548,67 @@ import {
             el.addEventListener('animationend', () => el.remove());
         }
 
-        // ── Init room ID input ───────────────────────────────────
-        (function() {
-            const input = document.getElementById('rm-room-id-input');
-            const refresh = document.getElementById('rm-room-id-refresh');
-
-            function updateRoomPreview() {
-                if (_room.active) return;
-                const rawId = (input?.value || '').trim();
-                const id = rawId.replace(/[^a-zA-Z0-9\-_]/g, '-').replace(/-{2,}/g, '-').slice(0, 40);
-                const copyBtn = document.getElementById('sl-room-copy');
-                if (!id) {
-                    _remoteSetRoomId('');
-                    if (copyBtn) {
-                        copyBtn.disabled = true;
-                        copyBtn.innerHTML = withIcon('copy', 'Copier le lien stable');
-                        copyBtn.onclick = null;
-                    }
-                    return;
-                }
-                if (_remoteControl.roomId !== id) {
-                    _remoteLoadConfig(id);
-                } else {
-                    _remoteSetRoomId(id);
-                }
-                const url = _buildStudentUrl(id);
-                if (copyBtn) {
-                    copyBtn.disabled = false;
-                    copyBtn.innerHTML = withIcon('copy', 'Copier le lien stable');
-                    copyBtn.onclick = () => navigator.clipboard.writeText(url).then(() => {
-                        copyBtn.innerHTML = withIcon('check', 'Copié !');
-                        setTimeout(() => { copyBtn.innerHTML = withIcon('copy', 'Copier le lien stable'); }, 2000);
-                    });
-                }
-            }
-            // Expose pour être appelé après ouverture de salle
-            ViewerRuntime.setRoomPreviewUpdater(updateRoomPreview);
-
-            if (input) {
-                const saved = storageGetRaw(LAST_ROOM_ID_KEY);
-                input.value = saved || _generateRoomId();
-                input.addEventListener('input', () => {
-                    // Sanitize on the fly: strip invalid chars
-                    const pos = input.selectionStart;
-                    const clean = input.value.replace(/[^a-zA-Z0-9\-_]/g, '-');
-                    if (clean !== input.value) { input.value = clean; input.setSelectionRange(pos, pos); }
-                    updateRoomPreview();
-                });
-                updateRoomPreview();
-            }
-            if (refresh) {
-                refresh.addEventListener('click', () => {
-                    if (input && !input.disabled) { input.value = _generateRoomId(); updateRoomPreview(); }
-                });
-            }
-        })();
+        const _roomPanelController = createRoomPanelController({
+            toTrimmedString,
+            withIcon,
+            onRenderDashboard: () => { roomRenderDashboard(); },
+        });
+        _roomPanelController.initRoomIdPreviewInput({
+            isRoomActive: () => _room.active,
+            getRemoteRoomId: () => _remoteControl.roomId,
+            loadRemoteConfig: _remoteLoadConfig,
+            setRemoteRoomId: _remoteSetRoomId,
+            buildStudentUrl: _buildStudentUrl,
+            setRoomPreviewUpdater: fn => ViewerRuntime.setRoomPreviewUpdater(fn),
+            storageGetRaw,
+            lastRoomIdKey: LAST_ROOM_ID_KEY,
+            generateRoomId: _generateRoomId,
+            writeClipboard: text => navigator.clipboard.writeText(text),
+        });
         roomExposeBridge();
 
         // Modal bindings
-        document.getElementById('btn-student-room')?.addEventListener('click', () => document.getElementById('sl-room-modal').classList.toggle('open'));
-        document.getElementById('sl-room-close-modal')?.addEventListener('click', () => document.getElementById('sl-room-modal').classList.remove('open'));
-        document.getElementById('sl-room-modal')?.addEventListener('click', e => {
-            if (e.target === document.getElementById('sl-room-modal')) document.getElementById('sl-room-modal').classList.remove('open');
-        });
+        _roomPanelController.bindModalControls();
 
         function switchRoomPresenterMode(mode, forceSwitch = false) {
-            const safeMode = ROOM_PRESENTER_MODES.includes(mode) ? mode : 'live';
-            _roomPresenterMode = safeMode;
-
-            const roomPanel = document.getElementById('sl-room-panel');
-            if (!roomPanel) return;
-
-            roomPanel.classList.remove('rm-mode-live', 'rm-mode-interactions', 'rm-mode-technique');
-            roomPanel.classList.add(`rm-mode-${safeMode}`);
-
-            document.querySelectorAll('#pv-room-mode-tabs .pv-room-mode-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.mode === safeMode);
-            });
-
-            const allowedTabs = safeMode === 'live'
-                ? ['students', 'hands', 'questions']
-                : (safeMode === 'interactions' ? ['dashboard', 'tools'] : ['tools']);
-            const defaultTab = safeMode === 'live' ? 'questions' : (safeMode === 'interactions' ? 'dashboard' : 'tools');
-
-            let activeTab = '';
-            document.querySelectorAll('#rm-tabs .rm-tab').forEach(btn => {
-                const tab = toTrimmedString(btn.dataset.tab, 24);
-                const visible = allowedTabs.includes(tab);
-                btn.style.display = visible ? '' : 'none';
-                if (btn.classList.contains('active') && visible) activeTab = tab;
-            });
-
-            if (forceSwitch || !activeTab) switchRoomTab(defaultTab);
-            if (safeMode === 'technique') switchRoomTab('tools');
+            _roomPresenterMode = _roomPanelController.switchPresenterMode(mode, forceSwitch);
         }
 
         // ── Tabs ────────────────────────────────────────────────
         function switchRoomTab(tab) {
-            const safeTab = ['students', 'hands', 'questions', 'dashboard', 'tools'].includes(tab) ? tab : 'students';
-            document.querySelectorAll('.rm-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === safeTab));
-            ['students', 'hands', 'questions', 'dashboard', 'tools'].forEach(t => {
-                const p = document.getElementById(`rm-panel-${t}`);
-                if (p) p.style.display = t === safeTab ? '' : 'none';
-            });
-            if (safeTab === 'dashboard') roomRenderDashboard();
+            _roomPanelController.switchTab(tab);
         }
 
-        document.querySelectorAll('.rm-tab').forEach(btn => {
-            btn.addEventListener('click', () => {
-                switchRoomTab(toTrimmedString(btn.dataset.tab, 24));
-            });
-        });
+        _roomPanelController.bindPresenterTabClicks();
 
-        document.getElementById('rm-question-filter')?.addEventListener('change', e => {
-            const next = toTrimmedString(/** @type {HTMLSelectElement} */ (e.target).value, 20);
-            _roomQuestionFilter = ['open', 'pinned', 'resolved', 'hidden', 'all'].includes(next) ? next : 'open';
+        _roomPanelController.bindQuestionFilter(next => {
+            _roomQuestionFilter = next;
             roomUpdatePanel();
         });
-document.getElementById('rm-question-mark-all')?.addEventListener('click', () => {
-    markAllQuestionsHidden(_roomQuestions);
-    roomUpdatePanel();
-});
-        document.getElementById('rm-feedback-reset')?.addEventListener('click', () => {
-            _roomFeedback.events.length = 0;
-            _roomFeedback.lastByPeer.clear();
-            roomUpdatePanel();
-        });
-
-        // ── Baisser toutes les mains ─────────────────────────────
-document.getElementById('rm-lower-all')?.addEventListener('click', () => {
-    _roomHands.forEach(h => {
-        const c = _room.connections.find(x => x.peer === h.peerId && x.open);
-        if (c) { try { c.send({ type: ROOM_MSG.HAND_LOWER }); } catch(e) {} }
-    });
-    clearAllRaisedHands(_roomHands, _room.students);
-    roomUpdatePanel();
-});
-
-        // ── Sondage ──────────────────────────────────────────────
-        document.getElementById('rm-poll-start')?.addEventListener('click', () => {
-            const type = document.getElementById('rm-poll-type')?.value || 'thumbs';
-            const prompt = document.getElementById('rm-poll-prompt')?.value.trim() || '';
-            if (!_viewerCommandBus.dispatch('room.poll.start', { typeOrConfig: type, prompt }, 'ui')) {
-                const feedback = document.getElementById('rm-nudge-feedback');
-                if (feedback) feedback.textContent = 'Ouvrez la salle pour lancer un sondage.';
-            }
-        });
-
-        document.getElementById('rm-poll-end')?.addEventListener('click', () => {
-            _viewerCommandBus.dispatch('room.poll.end', null, 'ui');
-        });
-
-        // ── Nuage de mots ────────────────────────────────────────
-        document.getElementById('rm-cloud-start')?.addEventListener('click', () => {
-            const prompt = document.getElementById('rm-cloud-prompt')?.value.trim() || '';
-            if (!_viewerCommandBus.dispatch('room.cloud.start', { prompt }, 'ui')) {
-                const feedback = document.getElementById('rm-nudge-feedback');
-                if (feedback) feedback.textContent = 'Ouvrez la salle pour lancer un nuage.';
-            }
-        });
-
-        document.getElementById('rm-cloud-show')?.addEventListener('click', () => {
-            const wcOverlay = document.getElementById('sl-wordcloud-presenter');
-            if (wcOverlay) wcOverlay.style.display = 'flex';
-        });
-
-        document.getElementById('rm-cloud-end')?.addEventListener('click', () => {
-            _viewerCommandBus.dispatch('room.cloud.end', null, 'ui');
-        });
-
-        document.getElementById('sl-wc-close-presenter')?.addEventListener('click', () => {
-            const wcOverlay = document.getElementById('sl-wordcloud-presenter');
-            if (wcOverlay) wcOverlay.style.display = 'none';
-        });
-
-        document.getElementById('rm-nudge-question')?.addEventListener('click', () => {
-            _viewerCommandBus.dispatch('room.nudge.send', {
-                kind: 'question',
-                text: 'Avez-vous une question a poser ?',
-            }, 'ui');
-        });
-        document.getElementById('rm-nudge-hand')?.addEventListener('click', () => {
-            _viewerCommandBus.dispatch('room.nudge.send', {
-                kind: 'hand',
-                text: 'Levez la main si vous voulez revenir sur ce point.',
-            }, 'ui');
-        });
-        document.getElementById('rm-nudge-poll')?.addEventListener('click', () => {
-            if (_activePoll) {
-                _viewerCommandBus.dispatch('room.nudge.send', {
-                    kind: 'poll',
-                    text: 'Un sondage est en cours, pensez a voter.',
-                }, 'ui');
-                return;
-            }
-            if (!_viewerCommandBus.dispatch('room.poll.start', {
-                typeOrConfig: 'thumbs',
-                prompt: 'Avez-vous compris ce point ?',
-            }, 'ui')) {
-                _viewerCommandBus.dispatch('room.nudge.send', { kind: 'poll', text: 'Pensez a voter.' }, 'ui');
-            }
-        });
-        document.getElementById('rm-nudge-cloud')?.addEventListener('click', () => {
-            if (_activeWordCloud) {
-                _viewerCommandBus.dispatch('room.nudge.send', {
-                    kind: 'cloud',
-                    text: 'Nuage de mots en cours, proposez un mot.',
-                }, 'ui');
-                return;
-            }
-            if (!_viewerCommandBus.dispatch('room.cloud.start', { prompt: 'Un mot pour resumer ce slide ?' }, 'ui')) {
-                _viewerCommandBus.dispatch('room.nudge.send', { kind: 'cloud', text: 'Proposez un mot.' }, 'ui');
-            }
-        });
-
-        // ── Diagnostic réseau ─────────────────────────────────────
-        document.getElementById('rm-network-retry-relay')?.addEventListener('click', () => {
-            const roomId = toTrimmedString(_room.peer?.id || _relayRoom.roomId || document.getElementById('rm-room-id-input')?.value, 80);
-            if (!_room.active || !roomId) return;
-            if (!(RELAY_OPTIONS.enabled && RELAY_OPTIONS.wsUrl)) return;
-            _relayOpen(roomId);
-            _roomSetStatus('Reconnexion relay forcée…', 'warn');
-            roomUpdatePanel();
-        });
-
-        // ── Contrôle mobile ────────────────────────────────────────
-        document.getElementById('rm-remote-enable')?.addEventListener('click', async () => {
-            if (!_remoteControl.roomId) {
-                _remoteSetStatus('Définissez un ID de salle valide.', 'error');
-                return;
-            }
-            await _remoteEnableFromPassword();
-        });
-        document.getElementById('rm-remote-revoke')?.addEventListener('click', () => {
-            _remoteRevokeAll('Contrôle mobile révoqué.');
-        });
-        document.getElementById('rm-remote-copy')?.addEventListener('click', () => {
-            if (!_remoteControl.roomId || !_remoteControl.enabled) return;
-            const url = _remoteBuildUrl(_remoteControl.roomId);
-            navigator.clipboard.writeText(url).then(() => {
-                const btn = document.getElementById('rm-remote-copy');
-                if (btn) {
-                    btn.innerHTML = withIcon('check', 'Lien copié');
-                    setTimeout(() => { btn.innerHTML = withIcon('copy', 'Copier le lien de contrôle'); }, 1600);
-                }
-            });
-        });
-        document.getElementById('rm-remote-password')?.addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('rm-remote-enable')?.click();
-            }
+        bindRoomPanelActions({
+            roomQuestions: _roomQuestions,
+            markAllQuestionsHidden,
+            roomFeedback: _roomFeedback,
+            onRoomUpdatePanel: roomUpdatePanel,
+            roomHands: _roomHands,
+            room: _room,
+            roomMsg: ROOM_MSG,
+            clearAllRaisedHands,
+            viewerCommandBus: _viewerCommandBus,
+            getActivePoll: () => _activePoll,
+            getActiveWordCloud: () => _activeWordCloud,
+            relayOptions: RELAY_OPTIONS,
+            relayRoom: _relayRoom,
+            relayOpen: _relayOpen,
+            roomSetStatus: _roomSetStatus,
+            toTrimmedString,
+            remoteControl: _remoteControl,
+            remoteSetStatus: _remoteSetStatus,
+            remoteEnableFromPassword: _remoteEnableFromPassword,
+            remoteRevokeAll: _remoteRevokeAll,
+            remoteBuildUrl: _remoteBuildUrl,
+            withIcon,
+            writeClipboard: text => navigator.clipboard.writeText(text),
         });
 
         /* ── Reveal.js mode (normal presentation) ─────────── */
@@ -1775,6 +1654,19 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
             _presentationData = data;
             const presentationId = buildPresentationStorageId(data);
             const whiteboardStorageKey = presenterAnnotationsKey(presentationId);
+            const revealDrawRect = () => {
+                const currentSlide = deck.getCurrentSlide?.();
+                if (currentSlide && typeof currentSlide.getBoundingClientRect === 'function') {
+                    const rect = currentSlide.getBoundingClientRect();
+                    if (rect && rect.width > 8 && rect.height > 8) return rect;
+                }
+                const revealRoot = document.getElementById('reveal-root') || document.querySelector('.reveal');
+                if (revealRoot && typeof revealRoot.getBoundingClientRect === 'function') {
+                    const rect = revealRoot.getBoundingClientRect();
+                    if (rect && rect.width > 8 && rect.height > 8) return rect;
+                }
+                return null;
+            };
 
             // Whiteboard: init & hook slide changes
             if (!_whiteboard) {
@@ -1786,8 +1678,13 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
                     storageKey: whiteboardStorageKey,
                     storageGetJSON,
                     storageSetJSON,
+                    getDrawRect: revealDrawRect,
+                    onSyncState: state => { _broadcastWhiteboardSync(state); },
+                    shouldRecordFrame: () => _whiteboardRecordFrames,
+                    onRecordFrame: frame => { _recordWhiteboardSnapshot(frame); },
                 });
                 _whiteboard.init();
+                _captureWhiteboardSyncState();
             }
             const resolveFragmentOrder = fragmentEl => {
                 if (!fragmentEl) return null;
@@ -1964,8 +1861,6 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
             let currentIndex = 0;
             let currentFragmentIndex = -1; // -1 = aucun fragment visible
             let blackScreen = false;
-            let _pvSceneId = 'balanced';
-            let _pvCustomScene = null;
             let audienceLockActive = false;
             let audienceLockIndex = 0;
             let exerciseModeActive = false;
@@ -2046,689 +1941,68 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
                 const sec = String(total % 60).padStart(2, '0');
                 return `${min}:${sec}`;
             };
-            const _safeFilePart = value => String(value || 'session')
-                .toLowerCase()
-                .replace(/[^a-z0-9\-_.]+/g, '-')
-                .replace(/-{2,}/g, '-')
-                .replace(/^-+|-+$/g, '')
-                .slice(0, 80) || 'session';
-            const _recordAudioKbps = (() => {
-                const fromQuery = Number(params.get('recAudioKbps'));
-                const fallback = 48;
-                const value = Number.isFinite(fromQuery) ? fromQuery : fallback;
-                return Math.max(16, Math.min(160, Math.trunc(value)));
-            })();
-            const _recordAudioTargetBps = _recordAudioKbps * 1000;
-            const _recordingMimeCandidates = [
-                'audio/webm;codecs=opus',
-                'audio/ogg;codecs=opus',
-                'audio/webm',
-                'audio/ogg',
-                'audio/mp4',
-                'audio/mpeg',
-            ];
-            const _recordingAudioConstraints = {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                channelCount: { ideal: 1 },
-                sampleRate: { ideal: 48000 },
-            };
-            const _audioExtFromMime = mime => {
-                const safe = String(mime || '').toLowerCase();
-                if (safe.includes('ogg')) return 'ogg';
-                if (safe.includes('mpeg')) return 'mp3';
-                if (safe.includes('mp4')) return 'm4a';
-                if (safe.includes('wav')) return 'wav';
-                return 'webm';
-            };
-            const _audioCodecLabelFromMime = mime => {
-                const safe = String(mime || '').toLowerCase();
-                if (safe.includes('opus')) return 'Opus';
-                if (safe.includes('ogg')) return 'Ogg';
-                if (safe.includes('mpeg')) return 'MP3';
-                if (safe.includes('mp4')) return 'AAC/MP4';
-                if (safe.includes('wav')) return 'WAV';
-                return 'WebM';
-            };
-            const _audioBitrateLabel = bitsPerSecond => {
-                const bps = Number(bitsPerSecond);
-                if (!Number.isFinite(bps) || bps <= 0) return '';
-                return `${Math.round(bps / 1000)} kbps`;
-            };
-            const _createCompressedRecorder = stream => {
-                const supports = type => {
-                    try {
-                        if (typeof MediaRecorder?.isTypeSupported !== 'function') return true;
-                        return MediaRecorder.isTypeSupported(type);
-                    } catch (_) {
-                        return false;
-                    }
-                };
-                const selectedMime = _recordingMimeCandidates.find(type => supports(type)) || '';
-                const bitrateCandidates = Array.from(new Set([
-                    _recordAudioTargetBps,
-                    64000,
-                    48000,
-                    32000,
-                ].map(v => Math.trunc(Number(v) || 0)).filter(v => v > 0)));
-                const optionsToTry = [];
-                for (const bps of bitrateCandidates) {
-                    if (selectedMime) {
-                        optionsToTry.push({ mimeType: selectedMime, audioBitsPerSecond: bps, bitsPerSecond: bps });
-                    } else {
-                        optionsToTry.push({ audioBitsPerSecond: bps, bitsPerSecond: bps });
-                    }
-                }
-                if (selectedMime) optionsToTry.push({ mimeType: selectedMime });
-                optionsToTry.push({});
-
-                let lastError = null;
-                for (const opts of optionsToTry) {
-                    try {
-                        const recorder = new MediaRecorder(stream, opts);
-                        const effectiveMime = recorder.mimeType || selectedMime || 'audio/webm';
-                        const effectiveBps = Number(
-                            recorder.audioBitsPerSecond
-                            || opts.audioBitsPerSecond
-                            || opts.bitsPerSecond
-                            || 0
-                        ) || 0;
-                        return { recorder, mimeType: effectiveMime, bitsPerSecond: effectiveBps };
-                    } catch (err) {
-                        lastError = err;
-                    }
-                }
-                throw (lastError || new Error('MediaRecorder indisponible'));
-            };
-            const _downloadBlob = (blob, filename) => {
-                if (!blob) return;
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                setTimeout(() => {
-                    try { link.remove(); } catch (_) {}
-                }, 200);
-                setTimeout(() => URL.revokeObjectURL(url), 4000);
-            };
-            const _prepareSaveTarget = async (suggestedName, mimeType = '', ext = '') => {
-                if (typeof window.showSaveFilePicker !== 'function') return { kind: 'download' };
-                try {
-                    const typeEntry = (mimeType && ext)
-                        ? [{ description: 'Export', accept: { [mimeType]: [ext] } }]
-                        : [];
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName,
-                        types: typeEntry,
-                        excludeAcceptAllOption: false,
-                    });
-                    return handle ? { kind: 'handle', handle } : { kind: 'download' };
-                } catch (err) {
-                    if (err?.name === 'AbortError') return { kind: 'cancel' };
-                    return { kind: 'download' };
-                }
-            };
-            const _saveBlob = async (target, blob, filename) => {
-                if (!blob) return false;
-                if (target?.kind === 'cancel') return false;
-                if (target?.kind === 'handle' && target.handle?.createWritable) {
-                    const writable = await target.handle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                    return true;
-                }
-                _downloadBlob(blob, filename);
-                return true;
-            };
-            const _blobToDataUrl = blob => new Promise(resolve => {
-                if (!blob) {
-                    resolve('');
-                    return;
-                }
-                try {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-                    reader.onerror = () => resolve('');
-                    reader.readAsDataURL(blob);
-                } catch (_) {
-                    resolve('');
-                }
+            const _sessionRecordingRuntime = createSessionRecordingRuntime({
+                queryParams: params,
+                title,
+                sourceFile: file || '__draft__',
+                slides,
+                data,
+                normalizeReplaySessionExport,
+                buildReplayStandaloneHtmlFn: buildReplayStandaloneHtml,
+                slidesRenderer: SlidesRenderer,
+                slidesShared: SlidesShared,
+                getThemeCss: () => document.getElementById('sl-theme-css')?.textContent || '',
+                getCurrentIndex: () => currentIndex,
+                getCurrentFragmentIndex: () => currentFragmentIndex,
+                getBlackScreen: () => !!blackScreen,
+                setCurrentFragmentIndex: value => {
+                    currentFragmentIndex = Number.isFinite(Number(value)) ? Math.max(-1, Math.trunc(Number(value))) : -1;
+                    ViewerRuntime.presenterCurrentFragment = currentFragmentIndex;
+                },
+                setBlackScreen: on => {
+                    blackScreen = !!on;
+                    const frame = document.getElementById('pv-current-frame');
+                    if (frame) frame.style.opacity = blackScreen ? '0' : '1';
+                },
+                goTo: index => { goTo(index); },
+                getCurrentInnerContainer: () => document.getElementById('pv-current-inner'),
+                getFragments: container => _getFragments(container),
+                renderCurrentSlide: () => renderCurrentSlide(),
+                escapeHtml: _pvEsc,
+                formatClock: _pvClock,
+                documentRef: document,
+                windowRef: window,
+                navigatorRef: navigator,
             });
-
-            const _sessionRec = {
-                active: false,
-                paused: false,
-                replaying: false,
-                startAt: 0,
-                stopAt: 0,
-                pausedAccumMs: 0,
-                pauseStartedAt: 0,
-                events: [],
-                captions: [],
-                autoNotesBySlide: {},
-                mediaStream: null,
-                mediaRecorder: null,
-                audioChunks: [],
-                audioBlob: null,
-                audioMimeType: 'audio/webm',
-                audioTargetBitsPerSecond: _recordAudioTargetBps,
-                audioBitsPerSecond: 0,
-                audioCodecLabel: '',
-                speechRecognition: null,
-                speechEnabled: false,
-                replayTimers: [],
-                replayAudio: null,
-                lastSession: null,
-                labelTimer: null,
-                exportBusy: false,
-                exportMessage: '',
-            };
-            const _recStatusEl = () => document.getElementById('pv-rec-status');
-            const _recLiveEl = () => document.getElementById('pv-rec-live');
-            const _recButtonEl = () => document.getElementById('pv-btn-rec');
-            const _recPauseButtonEl = () => document.getElementById('pv-btn-rec-pause');
-            const _replayButtonEl = () => document.getElementById('pv-btn-replay');
-            const _exportButtonEl = () => document.getElementById('pv-btn-export-session');
-            const _exportReplayButtonEl = () => document.getElementById('pv-btn-export-replay');
-            const _setExportMessage = (message = '') => {
-                _sessionRec.exportMessage = String(message || '');
-                _updateRecordingUi();
-            };
-
-            const _recordElapsedMs = (now = Date.now()) => {
-                if (!_sessionRec.startAt) return 0;
-                const safeNow = Number.isFinite(Number(now)) ? Number(now) : Date.now();
-                const activePauseMs = _sessionRec.paused && _sessionRec.pauseStartedAt
-                    ? Math.max(0, safeNow - _sessionRec.pauseStartedAt)
-                    : 0;
-                return Math.max(0, safeNow - _sessionRec.startAt - (_sessionRec.pausedAccumMs || 0) - activePauseMs);
-            };
-
-            const _recordEvent = (type, payload = {}) => {
-                if (!_sessionRec.active) return;
-                if (_sessionRec.paused) return;
-                _sessionRec.events.push({
-                    type: String(type || '').slice(0, 48),
-                    t: _recordElapsedMs(Date.now()),
-                    payload: (payload && typeof payload === 'object') ? payload : {},
-                });
-            };
-
-            const _setLiveCaption = (text = '', ts = 0) => {
-                const el = _recLiveEl();
-                if (!el) return;
-                const safeText = String(text || '').trim();
-                if (!safeText) {
-                    el.classList.remove('active');
-                    el.textContent = '';
-                    return;
-                }
-                el.classList.add('active');
-                el.innerHTML = `<strong>[${_pvEsc(_pvClock(ts))}]</strong> ${_pvEsc(safeText)}`;
-            };
-
-            const _updateRecordingUi = () => {
-                const status = _recStatusEl();
-                const recBtn = _recButtonEl();
-                const pauseBtn = _recPauseButtonEl();
-                const replayBtn = _replayButtonEl();
-                const exportBtn = _exportButtonEl();
-                const exportReplayBtn = _exportReplayButtonEl();
-                if (recBtn) {
-                    recBtn.classList.toggle('rec-active', _sessionRec.active);
-                    recBtn.innerHTML = _sessionRec.active
-                        ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>Stop`
-                        : `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>Enregistrer`;
-                }
-                if (pauseBtn) {
-                    pauseBtn.disabled = !_sessionRec.active || _sessionRec.exportBusy;
-                    pauseBtn.classList.toggle('active', _sessionRec.paused);
-                    pauseBtn.classList.toggle('rec-paused', _sessionRec.paused);
-                    pauseBtn.innerHTML = _sessionRec.paused
-                        ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="7 5 19 12 7 19 7 5"/></svg>Reprendre`
-                        : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>Pause`;
-                }
-                if (replayBtn) {
-                    replayBtn.classList.toggle('active', _sessionRec.replaying);
-                    replayBtn.disabled = !_sessionRec.lastSession;
-                    replayBtn.innerHTML = _sessionRec.replaying
-                        ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>Stop replay`
-                        : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="7 5 19 12 7 19 7 5"/></svg>Replay`;
-                }
-                if (exportBtn) exportBtn.disabled = !_sessionRec.lastSession || _sessionRec.exportBusy;
-                if (exportReplayBtn) exportReplayBtn.disabled = !_sessionRec.lastSession || _sessionRec.exportBusy;
-                if (recBtn) recBtn.disabled = _sessionRec.exportBusy;
-                if (replayBtn) replayBtn.disabled = _sessionRec.exportBusy || !_sessionRec.lastSession;
-
-                if (!status) return;
-                status.classList.remove('recording', 'replay');
-                if (_sessionRec.exportBusy) {
-                    status.textContent = _sessionRec.exportMessage || 'Export en cours…';
-                    return;
-                }
-                if (_sessionRec.exportMessage) {
-                    status.textContent = _sessionRec.exportMessage;
-                    return;
-                }
-                if (_sessionRec.active) {
-                    const elapsed = _recordElapsedMs(Date.now());
-                    const parts = [];
-                    parts.push(_sessionRec.paused
-                        ? `Enregistrement en pause · ${_pvClock(elapsed)}`
-                        : `Enregistrement en cours · ${_pvClock(elapsed)}`);
-                    const codecLabel = _sessionRec.audioCodecLabel || 'audio auto';
-                    const bitrateLabel = _audioBitrateLabel(_sessionRec.audioBitsPerSecond || _sessionRec.audioTargetBitsPerSecond);
-                    parts.push(bitrateLabel ? `Codec: ${codecLabel} (${bitrateLabel})` : `Codec: ${codecLabel}`);
-                    parts.push(_sessionRec.speechEnabled ? 'Sous-titres auto: actif' : 'Sous-titres auto: indisponible');
-                    status.textContent = parts.join(' · ');
-                    status.classList.add('recording');
-                    if (_sessionRec.labelTimer) clearTimeout(_sessionRec.labelTimer);
-                    _sessionRec.labelTimer = setTimeout(_updateRecordingUi, 1000);
-                    return;
-                }
-                if (_sessionRec.replaying) {
-                    status.textContent = 'Replay en cours';
-                    status.classList.add('replay');
-                    return;
-                }
-                if (_sessionRec.lastSession) {
-                    const codec = String(_sessionRec.lastSession.audioCodec || _audioCodecLabelFromMime(_sessionRec.lastSession.audioMimeType || ''));
-                    const bitrate = _audioBitrateLabel(_sessionRec.lastSession.audioBitsPerSecond || 0);
-                    const audioInfo = _sessionRec.lastSession.hasAudio
-                        ? (bitrate ? `${codec} ${bitrate}` : codec || 'audio')
-                        : 'sans audio';
-                    status.textContent = `Dernière session: ${_pvClock(_sessionRec.lastSession.durationMs || 0)} · ${(_sessionRec.lastSession.events || []).length} événements · ${(_sessionRec.lastSession.captions || []).length} sous-titres · ${audioInfo}`;
-                    return;
-                }
-                status.textContent = '';
-            };
-
-            const _appendAutoNote = (slideIdx, line) => {
-                if (!Number.isFinite(Number(slideIdx)) || slideIdx < 0) return;
-                const key = String(slideIdx);
-                if (!_sessionRec.autoNotesBySlide[key]) _sessionRec.autoNotesBySlide[key] = [];
-                _sessionRec.autoNotesBySlide[key].push(String(line || '').slice(0, 420));
-                if (_sessionRec.autoNotesBySlide[key].length > 180) {
-                    _sessionRec.autoNotesBySlide[key] = _sessionRec.autoNotesBySlide[key].slice(-180);
-                }
-            };
-
-            const _onSpeechResult = event => {
-                if (!_sessionRec.active) return;
-                if (_sessionRec.paused) return;
-                if (!event?.results) return;
-                for (let i = event.resultIndex || 0; i < event.results.length; i++) {
-                    const result = event.results[i];
-                    if (!result?.isFinal) continue;
-                    const transcript = String(result[0]?.transcript || '').trim();
-                    if (!transcript) continue;
-                    const ts = Date.now() - _sessionRec.startAt;
-                    const cap = { t: ts, text: transcript, slideIndex: currentIndex };
-                    _sessionRec.captions.push(cap);
-                    _appendAutoNote(currentIndex, `[${_pvClock(ts)}] ${transcript}`);
-                    _setLiveCaption(transcript, ts);
-                    _recordEvent('caption', { text: transcript, slideIndex: currentIndex });
-                    if (currentIndex >= 0) renderCurrentSlide();
-                }
-            };
-
-            const _startSpeechRecognition = () => {
-                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!SR) {
-                    _sessionRec.speechEnabled = false;
-                    return;
-                }
-                try {
-                    const rec = new SR();
-                    rec.lang = 'fr-FR';
-                    rec.continuous = true;
-                    rec.interimResults = false;
-                    rec.maxAlternatives = 1;
-                    rec.onresult = _onSpeechResult;
-                    rec.onerror = () => { _sessionRec.speechEnabled = false; _updateRecordingUi(); };
-                    rec.onend = () => {
-                        if (_sessionRec.active) {
-                            try { rec.start(); } catch (_) {}
-                        }
-                    };
-                    rec.start();
-                    _sessionRec.speechRecognition = rec;
-                    _sessionRec.speechEnabled = true;
-                } catch (_) {
-                    _sessionRec.speechEnabled = false;
-                }
-            };
-
-            const _stopSpeechRecognition = () => {
-                const rec = _sessionRec.speechRecognition;
-                _sessionRec.speechRecognition = null;
-                _sessionRec.speechEnabled = false;
-                if (!rec) return;
-                try { rec.onend = null; } catch (_) {}
-                try { rec.onresult = null; } catch (_) {}
-                try { rec.stop(); } catch (_) {}
-            };
-
+            const _sessionRec = _sessionRecordingRuntime.state;
+            const _setExportMessage = (message = '') => _sessionRecordingRuntime.setExportMessage(message);
+            const _recordEvent = (type, payload = {}) => _sessionRecordingRuntime.recordEvent(type, payload);
+            const _setLiveCaption = (text = '', ts = 0) => _sessionRecordingRuntime.setLiveCaption(text, ts);
+            const _updateRecordingUi = () => _sessionRecordingRuntime.updateUi();
             const _pauseSessionRecording = () => {
-                if (!_sessionRec.active || _sessionRec.paused) return;
-                _recordEvent('record:pause', { index: currentIndex, fragmentIndex: currentFragmentIndex });
-                _sessionRec.paused = true;
-                _sessionRec.pauseStartedAt = Date.now();
-                _stopSpeechRecognition();
-                if (_sessionRec.mediaRecorder && _sessionRec.mediaRecorder.state === 'recording') {
-                    if (typeof _sessionRec.mediaRecorder.pause === 'function') {
-                        try { _sessionRec.mediaRecorder.pause(); } catch (_) {}
-                    }
-                }
-                _setLiveCaption('');
-                _updateRecordingUi();
+                _sessionRecordingRuntime.pauseSessionRecording();
+                _whiteboardRecordFrames = false;
             };
-
             const _resumeSessionRecording = (silent = false) => {
-                if (!_sessionRec.active || !_sessionRec.paused) return;
-                const now = Date.now();
-                if (_sessionRec.pauseStartedAt) {
-                    _sessionRec.pausedAccumMs += Math.max(0, now - _sessionRec.pauseStartedAt);
-                }
-                _sessionRec.paused = false;
-                _sessionRec.pauseStartedAt = 0;
-                if (_sessionRec.mediaRecorder && _sessionRec.mediaRecorder.state === 'paused') {
-                    if (typeof _sessionRec.mediaRecorder.resume === 'function') {
-                        try { _sessionRec.mediaRecorder.resume(); } catch (_) {}
-                    }
-                }
-                if (!silent) _startSpeechRecognition();
-                if (!silent) {
-                    _recordEvent('record:resume', { index: currentIndex, fragmentIndex: currentFragmentIndex });
-                    _recordEvent('goTo', { index: currentIndex });
-                    if (currentFragmentIndex >= 0) {
-                        _recordEvent('fragment', { slideIndex: currentIndex, fragmentIndex: currentFragmentIndex, hidden: false });
-                    }
-                    _recordEvent('black', { on: !!blackScreen });
-                }
-                _updateRecordingUi();
+                _sessionRecordingRuntime.resumeSessionRecording(silent);
+                _whiteboardRecordFrames = !!_sessionRec.active && !_sessionRec.paused;
             };
-
-            const _stopReplay = () => {
-                _sessionRec.replayTimers.forEach(timer => clearTimeout(timer));
-                _sessionRec.replayTimers = [];
-                if (_sessionRec.replayAudio) {
-                    const replaySrc = _sessionRec.replayAudio.src || '';
-                    try { _sessionRec.replayAudio.pause(); } catch (_) {}
-                    if (replaySrc.startsWith('blob:')) {
-                        try { URL.revokeObjectURL(replaySrc); } catch (_) {}
-                    }
-                    _sessionRec.replayAudio = null;
-                }
-                _sessionRec.replaying = false;
-                _updateRecordingUi();
-            };
-
-            const _buildSessionSnapshot = () => {
-                const startedAt = _sessionRec.startAt || Date.now();
-                const endedAt = _sessionRec.stopAt || Date.now();
-                const effectiveDurationMs = _recordElapsedMs(endedAt);
-                return {
-                    version: 2,
-                    createdAt: new Date(startedAt).toISOString(),
-                    endedAt: new Date(endedAt).toISOString(),
-                    durationMs: Math.max(0, effectiveDurationMs),
-                    wallDurationMs: Math.max(0, endedAt - startedAt),
-                    pausedMs: Math.max(0, (endedAt - startedAt) - effectiveDurationMs),
-                    presentation: {
-                        title,
-                        source: file || '__draft__',
-                        slideCount: slides.length,
-                    },
-                    events: _sessionRec.events.slice(),
-                    captions: _sessionRec.captions.slice(),
-                    autoNotesBySlide: JSON.parse(JSON.stringify(_sessionRec.autoNotesBySlide || {})),
-                    hasAudio: !!_sessionRec.audioBlob,
-                    audioMimeType: _sessionRec.audioMimeType || 'audio/webm',
-                    audioBitsPerSecond: Number(_sessionRec.audioBitsPerSecond || _sessionRec.audioTargetBitsPerSecond || 0) || 0,
-                    audioCodec: _sessionRec.audioCodecLabel || '',
-                };
-            };
-
+            const _stopReplay = () => _sessionRecordingRuntime.stopReplay();
+            _recordWhiteboardFrame = payload => { _recordEvent('whiteboard:frame', payload); };
             const _startSessionRecording = async () => {
-                if (_sessionRec.active) return;
-                _stopReplay();
-                _sessionRec.exportMessage = '';
-                _setLiveCaption('');
-                _sessionRec.active = true;
-                _sessionRec.paused = false;
-                _sessionRec.startAt = Date.now();
-                _sessionRec.stopAt = 0;
-                _sessionRec.pausedAccumMs = 0;
-                _sessionRec.pauseStartedAt = 0;
-                _sessionRec.events = [];
-                _sessionRec.captions = [];
-                _sessionRec.autoNotesBySlide = {};
-                _sessionRec.audioChunks = [];
-                _sessionRec.audioBlob = null;
-                _sessionRec.audioBitsPerSecond = 0;
-                _sessionRec.audioCodecLabel = '';
-                _sessionRec.lastSession = null;
-                _recordEvent('record:start', { index: currentIndex, fragmentIndex: currentFragmentIndex });
-                _updateRecordingUi();
-
-                if (navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== 'undefined') {
-                    try {
-                        _sessionRec.mediaStream = await navigator.mediaDevices.getUserMedia({
-                            audio: _recordingAudioConstraints,
-                        });
-                        const recorderSetup = _createCompressedRecorder(_sessionRec.mediaStream);
-                        _sessionRec.mediaRecorder = recorderSetup.recorder;
-                        _sessionRec.audioMimeType = recorderSetup.mimeType || 'audio/webm';
-                        _sessionRec.audioBitsPerSecond = Number(recorderSetup.bitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
-                        _sessionRec.audioCodecLabel = _audioCodecLabelFromMime(_sessionRec.audioMimeType);
-                        _sessionRec.mediaRecorder.ondataavailable = ev => {
-                            if (ev.data && ev.data.size > 0) _sessionRec.audioChunks.push(ev.data);
-                        };
-                        _sessionRec.mediaRecorder.onstop = () => {
-                            if (_sessionRec.audioChunks.length) {
-                                _sessionRec.audioBlob = new Blob(_sessionRec.audioChunks, {
-                                    type: _sessionRec.audioMimeType || 'audio/webm',
-                                });
-                            }
-                            if (_sessionRec.lastSession) {
-                                _sessionRec.lastSession.hasAudio = !!_sessionRec.audioBlob;
-                                _sessionRec.lastSession.audioMimeType = _sessionRec.audioMimeType || 'audio/webm';
-                                _sessionRec.lastSession.audioBitsPerSecond = Number(_sessionRec.audioBitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
-                                _sessionRec.lastSession.audioCodec = _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType);
-                            }
-                            _updateRecordingUi();
-                        };
-                        _sessionRec.mediaRecorder.start(1000);
-                    } catch (err) {
-                        console.warn('Session recording audio setup fallback:', err?.message || err);
-                        _sessionRec.mediaStream = null;
-                        _sessionRec.mediaRecorder = null;
-                        _sessionRec.audioMimeType = 'audio/webm';
-                        _sessionRec.audioBitsPerSecond = 0;
-                        _sessionRec.audioCodecLabel = '';
-                    }
-                }
-                _startSpeechRecognition();
-                _updateRecordingUi();
+                await _sessionRecordingRuntime.startSessionRecording();
+                _whiteboardRecordFrames = !!_sessionRec.active && !_sessionRec.paused;
+                const wbState = _whiteboard?.getSyncState?.();
+                const hasCanvasState = !!(wbState && (wbState.active || (Array.isArray(wbState.commands) && wbState.commands.length > 0)));
+                if (hasCanvasState) _whiteboard?.captureFrame?.('record-start');
             };
-
             const _stopSessionRecording = () => {
-                if (!_sessionRec.active) return;
-                if (_sessionRec.paused) _resumeSessionRecording(true);
-                _recordEvent('record:stop', { index: currentIndex, fragmentIndex: currentFragmentIndex });
-                _sessionRec.active = false;
-                _sessionRec.paused = false;
-                _sessionRec.exportMessage = '';
-                _sessionRec.stopAt = Date.now();
-                if (_sessionRec.labelTimer) {
-                    clearTimeout(_sessionRec.labelTimer);
-                    _sessionRec.labelTimer = null;
-                }
-                _stopSpeechRecognition();
-                if (_sessionRec.mediaRecorder && _sessionRec.mediaRecorder.state !== 'inactive') {
-                    try { _sessionRec.mediaRecorder.stop(); } catch (_) {}
-                }
-                _sessionRec.mediaRecorder = null;
-                if (_sessionRec.mediaStream) {
-                    try { _sessionRec.mediaStream.getTracks().forEach(track => track.stop()); } catch (_) {}
-                    _sessionRec.mediaStream = null;
-                }
-                _sessionRec.lastSession = _buildSessionSnapshot();
-                _setLiveCaption('');
-                _updateRecordingUi();
-                renderCurrentSlide();
+                _whiteboardRecordFrames = false;
+                _sessionRecordingRuntime.stopSessionRecording();
             };
-
-            const _applyReplayEvent = entry => {
-                if (!entry || typeof entry !== 'object') return;
-                const type = String(entry.type || '');
-                const payload = (entry.payload && typeof entry.payload === 'object') ? entry.payload : {};
-                if (type === 'goTo' && Number.isFinite(Number(payload.index))) {
-                    goTo(Math.trunc(Number(payload.index)));
-                    return;
-                }
-                if (type === 'fragment') {
-                    const targetSlide = Number.isFinite(Number(payload.slideIndex))
-                        ? Math.trunc(Number(payload.slideIndex))
-                        : currentIndex;
-                    if (targetSlide !== currentIndex) goTo(targetSlide);
-                    const frags = _getFragments(document.getElementById('pv-current-inner'));
-                    const fragIdx = Number.isFinite(Number(payload.fragmentIndex))
-                        ? Math.trunc(Number(payload.fragmentIndex))
-                        : -1;
-                    const hidden = !!payload.hidden;
-                    if (hidden && fragIdx >= 0 && fragIdx < frags.length) {
-                        frags[fragIdx].classList.remove('visible');
-                        currentFragmentIndex = Math.max(-1, fragIdx - 1);
-                    } else if (!hidden && fragIdx >= 0 && fragIdx < frags.length) {
-                        frags[fragIdx].classList.add('visible');
-                        currentFragmentIndex = Math.max(currentFragmentIndex, fragIdx);
-                    }
-                    return;
-                }
-                if (type === 'black') {
-                    blackScreen = !!payload.on;
-                    document.getElementById('pv-current-frame').style.opacity = blackScreen ? '0' : '1';
-                }
-            };
-
-            const _startReplaySession = () => {
-                if (!_sessionRec.lastSession) return;
-                if (_sessionRec.active) return;
-                if (_sessionRec.replaying) {
-                    _stopReplay();
-                    return;
-                }
-                _sessionRec.replaying = true;
-                _updateRecordingUi();
-                const events = Array.isArray(_sessionRec.lastSession.events) ? _sessionRec.lastSession.events : [];
-                events.forEach(entry => {
-                    const delay = Math.max(0, Number(entry?.t || 0));
-                    const timer = setTimeout(() => _applyReplayEvent(entry), delay);
-                    _sessionRec.replayTimers.push(timer);
-                });
-                const totalMs = Math.max(0, Number(_sessionRec.lastSession.durationMs || 0));
-                _sessionRec.replayTimers.push(setTimeout(() => _stopReplay(), totalMs + 150));
-                if (_sessionRec.audioBlob) {
-                    try {
-                        const audio = new Audio(URL.createObjectURL(_sessionRec.audioBlob));
-                        _sessionRec.replayAudio = audio;
-                        audio.onended = () => {
-                            try { URL.revokeObjectURL(audio.src); } catch (_) {}
-                            if (_sessionRec.replayAudio === audio) _sessionRec.replayAudio = null;
-                        };
-                        audio.play().catch(() => {});
-                    } catch (_) {}
-                }
-            };
-
-            const _exportSessionRecording = () => {
-                if (_sessionRec.active) _stopSessionRecording();
-                if (!_sessionRec.lastSession) return;
-                if (!_sessionRec.audioBlob && _sessionRec.audioChunks.length) {
-                    _sessionRec.audioBlob = new Blob(_sessionRec.audioChunks, {
-                        type: _sessionRec.audioMimeType || 'audio/webm',
-                    });
-                    _sessionRec.lastSession.hasAudio = true;
-                    _sessionRec.lastSession.audioMimeType = _sessionRec.audioMimeType || 'audio/webm';
-                    _sessionRec.lastSession.audioBitsPerSecond = Number(_sessionRec.audioBitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
-                    _sessionRec.lastSession.audioCodec = _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType);
-                }
-                const sessionExport = normalizeReplaySessionExport(_sessionRec.lastSession, {
-                    title,
-                    slideCount: slides.length,
-                    hasAudio: !!_sessionRec.audioBlob,
-                    audioMimeType: _sessionRec.audioMimeType || 'audio/webm',
-                    audioCodec: _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType),
-                });
-                const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-                const base = `${_safeFilePart(title)}-${stamp}`;
-                const jsonBlob = new Blob([JSON.stringify(sessionExport, null, 2)], { type: 'application/json' });
-                _downloadBlob(jsonBlob, `${base}.json`);
-                if (_sessionRec.audioBlob) {
-                    const ext = _audioExtFromMime(_sessionRec.audioMimeType);
-                    _downloadBlob(_sessionRec.audioBlob, `${base}.${ext}`);
-                }
-            };
-
-            const _buildReplayStandaloneHtml = ({ session, audioDataUrl = '' }) => {
-                return buildReplayStandaloneHtml({
-                    title,
-                    slides,
-                    data,
-                    session,
-                    audioDataUrl,
-                    themeCss: document.getElementById('sl-theme-css')?.textContent || '',
-                    slidesRenderer: SlidesRenderer,
-                    slidesShared: SlidesShared,
-                });
-            };
-
-            const _exportReplayStandalone = async () => {
-                if (_sessionRec.exportBusy) return;
-                if (_sessionRec.active) _stopSessionRecording();
-                if (!_sessionRec.lastSession) return;
-                const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-                const base = `${_safeFilePart(title)}-replay-${stamp}`;
-                _sessionRec.exportBusy = true;
-                _setExportMessage('Préparation du replay HTML…');
-                try {
-                    const saveTarget = await _prepareSaveTarget(`${base}.html`, 'text/html', '.html');
-                    if (saveTarget?.kind === 'cancel') {
-                        _setExportMessage('Export replay annulé');
-                        return;
-                    }
-                    if (!_sessionRec.audioBlob && _sessionRec.audioChunks.length) {
-                        _sessionRec.audioBlob = new Blob(_sessionRec.audioChunks, {
-                            type: _sessionRec.audioMimeType || 'audio/webm',
-                        });
-                        _sessionRec.lastSession.hasAudio = true;
-                        _sessionRec.lastSession.audioMimeType = _sessionRec.audioMimeType || 'audio/webm';
-                        _sessionRec.lastSession.audioBitsPerSecond = Number(_sessionRec.audioBitsPerSecond || _recordAudioTargetBps) || _recordAudioTargetBps;
-                        _sessionRec.lastSession.audioCodec = _sessionRec.audioCodecLabel || _audioCodecLabelFromMime(_sessionRec.audioMimeType);
-                    }
-                    const audioDataUrl = await _blobToDataUrl(_sessionRec.audioBlob);
-                    const html = _buildReplayStandaloneHtml({
-                        session: _sessionRec.lastSession,
-                        audioDataUrl,
-                    });
-                    const htmlBlob = new Blob([html], { type: 'text/html' });
-                    const saved = await _saveBlob(saveTarget, htmlBlob, `${base}.html`);
-                    _setExportMessage(saved ? 'Replay HTML exporté' : 'Export replay annulé');
-                } catch (err) {
-                    console.error('Replay export error:', err);
-                    _setExportMessage(`Erreur export replay: ${err?.message || 'inconnue'}`);
-                } finally {
-                    _sessionRec.exportBusy = false;
-                    _updateRecordingUi();
-                }
-            };
-
+            const _startReplaySession = () => _sessionRecordingRuntime.startReplaySession();
+            const _exportSessionRecording = () => _sessionRecordingRuntime.exportSessionRecording();
+            const _exportReplayStandalone = async () => _sessionRecordingRuntime.exportReplayStandalone();
             // ── Session persistence (file + slide) ────────────────
             try {
                 const prevSess = storageGetJSON(PRESENTER_SESSION_KEY, null);
@@ -2744,6 +2018,34 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
             _presentationData = data;
             ViewerRuntime.presenterCurrentIndex = currentIndex;
             ViewerRuntime.presenterCurrentFragment = currentFragmentIndex;
+
+            const presentationId = buildPresentationStorageId(data);
+            const whiteboardStorageKey = presenterAnnotationsKey(presentationId);
+            const presenterDrawRect = () => {
+                const frame = document.getElementById('pv-current-frame');
+                if (frame && typeof frame.getBoundingClientRect === 'function') {
+                    const rect = frame.getBoundingClientRect();
+                    if (rect && rect.width > 8 && rect.height > 8) return rect;
+                }
+                return null;
+            };
+            if (!_whiteboard) {
+                _whiteboard = createWhiteboardController({
+                    roomIsActive: () => _room.active,
+                    roomBroadcast,
+                    ROOM_MSG,
+                    getCurrentSlideIndex: () => currentIndex,
+                    storageKey: whiteboardStorageKey,
+                    storageGetJSON,
+                    storageSetJSON,
+                    getDrawRect: presenterDrawRect,
+                    onSyncState: state => { _broadcastWhiteboardSync(state); },
+                    shouldRecordFrame: () => _whiteboardRecordFrames,
+                    onRecordFrame: frame => { _recordWhiteboardSnapshot(frame); },
+                });
+                _whiteboard.init();
+            }
+            _captureWhiteboardSyncState();
 
             // Retourne les .fragment du conteneur triés par data-fragment-index puis ordre DOM
             function _getFragments(container) {
@@ -2933,6 +2235,7 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
                 // Apply fragment visibility state (currentFragmentIndex)
                 _getFragments(currentInner).forEach((f, i) => f.classList.toggle('visible', i <= currentFragmentIndex));
                 ViewerRuntime.presenterCurrentFragment = currentFragmentIndex;
+                _whiteboard?.refresh();
             }
 
             function goTo(idx) {
@@ -2945,6 +2248,7 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
                 blackScreen = false;
                 _recordEvent('goTo', { index: idx });
                 renderCurrentSlide();
+                _whiteboard?.onSlideChange(idx);
                 channel.postMessage({ type: SYNC_MSG.GO_TO, index: currentIndex });
                 channel.postMessage({ type: SYNC_MSG.BLACK, on: false });
                 // Broadcast slide change to P2P connected students
@@ -3057,396 +2361,90 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
             document.getElementById('pv-prev').addEventListener('click', goPrev);
             document.getElementById('pv-next-btn').addEventListener('click', goNext);
 
-            function openPresenterRoomPanel() {
-                const roomModal = document.getElementById('sl-room-modal');
-                if (!roomModal) return;
-                switchRoomPresenterMode('technique', true);
-                roomModal.classList.add('open');
-                roomUpdatePanel();
-            }
-            function openPresenterNetworkPanel() {
-                openPresenterRoomPanel();
-                switchRoomTab('tools');
-                const diag = document.getElementById('rm-network-diagnostics');
-                if (diag && typeof diag.scrollIntoView === 'function') {
-                    diag.scrollIntoView({ block: 'nearest' });
-                }
-            }
-            PresenterControls.switchTab = null;
-            document.getElementById('pv-context-open-salle')?.addEventListener('click', openPresenterRoomPanel);
-
-            // Keep room panel as modal in presenter, force technique mode for a focused workflow.
-            const pvRoomPanelEl = document.getElementById('sl-room-panel');
-            if (pvRoomPanelEl) {
-                const remoteSection = document.getElementById('rm-remote-control');
-                if (remoteSection) remoteSection.remove();
-                switchRoomPresenterMode('technique', true);
-                roomUpdatePanel();
-            }
-
-            // Room toolbar button and quick action
-            document.getElementById('pv-btn-room')?.addEventListener('click', openPresenterRoomPanel);
-            document.getElementById('pv-btn-room-quick')?.addEventListener('click', () => {
-                if (!_room.active) {
-                    roomOpenPeer();
-                    return;
-                }
-                roomSetAudienceQrVisibility(!_pvQrVisible);
-            });
-            document.getElementById('pv-btn-network')?.addEventListener('click', () => {
-                if (!_room.active) roomOpenPeer();
-                openPresenterNetworkPanel();
-            });
-            roomUpdateQrButtonsUI();
-            roomUpdateNetworkDiagnostics();
-
-            // Toolbar buttons
-            document.getElementById('pv-btn-black').addEventListener('click', toggleBlack);
-            audienceLockBtn?.addEventListener('click', () => {
-                toggleAudienceLock();
-            });
-            exerciseModeBtn?.addEventListener('click', () => {
-                toggleExerciseMode();
-            });
-            document.getElementById('pv-btn-fullscreen')?.addEventListener('click', () => {
-                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-                else document.exitFullscreen();
-            });
-            document.getElementById('pv-btn-rec')?.addEventListener('click', async () => {
-                if (_sessionRec.active) {
-                    _stopSessionRecording();
-                    return;
-                }
-                await _startSessionRecording();
-            });
-            document.getElementById('pv-btn-rec-pause')?.addEventListener('click', () => {
-                if (!_sessionRec.active) return;
-                if (_sessionRec.paused) _resumeSessionRecording();
-                else _pauseSessionRecording();
-            });
-            document.getElementById('pv-btn-replay')?.addEventListener('click', () => {
-                _startReplaySession();
-            });
-            document.getElementById('pv-btn-export-session')?.addEventListener('click', () => {
-                _exportSessionRecording();
-            });
-            document.getElementById('pv-btn-export-replay')?.addEventListener('click', async () => {
-                await _exportReplayStandalone();
-            });
-            document.getElementById('pv-btn-editor').addEventListener('click', () => {
-                if (_sessionRec.active) _stopSessionRecording();
-                _stopReplay();
-                if (_presenterSyncChannel === channel) _presenterSyncChannel = null;
-                channel.close();
-                PresenterControls.goNext = null;
-                PresenterControls.goPrev = null;
-                PresenterControls.goTo = null;
-                PresenterControls.toggleBlack = null;
-                PresenterControls.timerToggle = null;
-                PresenterControls.timerReset = null;
-                PresenterControls.switchTab = null;
-                window.location.href = 'editor.html';
+            const { openPresenterRoomPanel } = bindPresenterRoomPanelControls({
+                switchRoomPresenterMode,
+                roomUpdatePanel,
+                switchRoomTab,
+                roomUpdateQrButtonsUI,
+                roomUpdateNetworkDiagnostics,
+                onRoomOpenPeer: () => { roomOpenPeer(); },
+                isRoomActive: () => !!_room.active,
+                getPvQrVisible: () => !!_pvQrVisible,
+                roomSetAudienceQrVisibility,
+                setPresenterSwitchTabNull: () => { PresenterControls.switchTab = null; },
             });
 
-            // Keyboard
-            document.addEventListener('keydown', e => {
-                if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter' || e.key === 'PageDown') {
-                    e.preventDefault(); goNext();
-                }
-                if (e.key === 'ArrowLeft' || e.key === 'Backspace' || e.key === 'PageUp') {
-                    e.preventDefault(); goPrev();
-                }
-                if (e.key === 'Home') { e.preventDefault(); goTo(0); }
-                if (e.key === 'End') { e.preventDefault(); goTo(slides.length - 1); }
-                if (e.key === 'b' || e.key === 'B' || e.key === '.') toggleBlack();
-                if (e.key === 'f' || e.key === 'F') {
-                    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-                    else document.exitFullscreen();
-                }
-                if (e.key === 't' || e.key === 'T') timerToggle();
-                if (e.key === 'r' || e.key === 'R') timerReset();
-                if (e.key === 'l' || e.key === 'L') {
-                    e.preventDefault();
-                    toggleAudienceLock();
-                }
-                if (e.key === 'x' || e.key === 'X') {
-                    e.preventDefault();
-                    toggleExerciseMode();
-                }
-                if ((e.key === 'p' || e.key === 'P') && _sessionRec.active) {
-                    e.preventDefault();
-                    if (_sessionRec.paused) _resumeSessionRecording();
-                    else _pauseSessionRecording();
-                }
-                if (e.key === 's' || e.key === 'S') openPresenterRoomPanel();
-                if (e.key === 'Escape') {
-                    if (document.fullscreenElement) document.exitFullscreen();
-                }
-                if (e.key === '+' || e.key === '=') {
-                    if (fontSizeIdx < FONT_SIZES.length - 1) { fontSizeIdx++; applyFontSize(); savePvLayout(); }
-                }
-                if (e.key === '-' || e.key === '_') {
-                    if (fontSizeIdx > 0) { fontSizeIdx--; applyFontSize(); savePvLayout(); }
-                }
-                // Number keys to jump to slide
-                if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.altKey) {
-                    const idx = parseInt(e.key) - 1;
-                    if (idx < slides.length) goTo(idx);
-                }
+            bindPresenterToolbarButtons({
+                toggleBlack,
+                toggleWhiteboard: wbToggle,
+                toggleAudienceLock,
+                toggleExerciseMode,
+                audienceLockBtn,
+                exerciseModeBtn,
+                sessionRec: _sessionRec,
+                stopSessionRecording: _stopSessionRecording,
+                startSessionRecording: _startSessionRecording,
+                pauseSessionRecording: _pauseSessionRecording,
+                resumeSessionRecording: _resumeSessionRecording,
+                startReplaySession: _startReplaySession,
+                exportSessionRecording: _exportSessionRecording,
+                exportReplayStandalone: _exportReplayStandalone,
+                beforeNavigateToEditor: () => {
+                    if (_sessionRec.active) _stopSessionRecording();
+                    _stopReplay();
+                    if (_presenterSyncChannel === channel) _presenterSyncChannel = null;
+                    channel.close();
+                    _whiteboardRecordFrames = false;
+                    _recordWhiteboardFrame = () => {};
+                    PresenterControls.goNext = null;
+                    PresenterControls.goPrev = null;
+                    PresenterControls.goTo = null;
+                    PresenterControls.toggleBlack = null;
+                    PresenterControls.timerToggle = null;
+                    PresenterControls.timerReset = null;
+                    PresenterControls.switchTab = null;
+                },
+                navigateToEditor: () => {
+                    window.location.href = 'editor.html';
+                },
+            });
+
+            const presenterLayoutControls = initPresenterLayoutControls({
+                documentRef: document,
+                windowRef: window,
+                presenterLayoutKey: PRESENTER_LAYOUT_KEY,
+                storageGetJSON,
+                storageSetJSON,
+                toTrimmedString,
+                toNumberOr,
+                renderCurrentSlide,
+            });
+
+            bindPresenterKeyboardShortcuts({
+                documentRef: document,
+                rootElement: document.documentElement,
+                goNext,
+                goPrev,
+                goTo,
+                getSlideCount: () => slides.length,
+                toggleBlack,
+                toggleWhiteboard: wbToggle,
+                timerToggle,
+                timerReset,
+                toggleAudienceLock,
+                toggleExerciseMode,
+                sessionRec: _sessionRec,
+                pauseSessionRecording: _pauseSessionRecording,
+                resumeSessionRecording: _resumeSessionRecording,
+                openPresenterRoomPanel,
+                increaseFontSize: () => { presenterLayoutControls.increaseFontSize(); },
+                decreaseFontSize: () => { presenterLayoutControls.decreaseFontSize(); },
             });
 
             // Resize handler to re-scale slides
             const resizeObs = new ResizeObserver(() => renderCurrentSlide());
             resizeObs.observe(document.getElementById('pv-current-frame'));
             resizeObs.observe(document.getElementById('pv-next-frame'));
-
-            // ── Font size control for notes ──────────────────
-            const FONT_SIZES = [0.75, 0.85, 0.95, 1.05, 1.15, 1.3, 1.5, 1.7, 2.0, 2.4];
-            let fontSizeIdx = 3; // default 1.05rem
-            const pvLayout = document.getElementById('presenter-view');
-
-            // Restore saved prefs
-            try {
-                const saved = storageGetJSON(PRESENTER_LAYOUT_KEY, null);
-                if (saved?.notesWidth) {
-                    pvLayout.style.setProperty('--pv-notes-width', saved.notesWidth + 'px');
-                }
-                if (saved?.currentHeight && document.getElementById('pv-splitter-h')) {
-                    pvLayout.style.setProperty('--pv-current-height', saved.currentHeight + '%');
-                }
-                if (saved?.fontSizeIdx !== undefined) {
-                    fontSizeIdx = Math.max(0, Math.min(FONT_SIZES.length - 1, saved.fontSizeIdx));
-                }
-                if (saved?.sceneId) {
-                    _pvSceneId = toTrimmedString(saved.sceneId, 24) || 'balanced';
-                }
-                if (saved?.customScene && typeof saved.customScene === 'object') {
-                    _pvCustomScene = {
-                        notesWidth: toNumberOr(saved.customScene.notesWidth, 420),
-                        fontSizeIdx: Math.max(0, Math.min(FONT_SIZES.length - 1, Math.trunc(toNumberOr(saved.customScene.fontSizeIdx, 3)))),
-                    };
-                    if (saved.customScene?.currentHeight != null) {
-                        _pvCustomScene.currentHeight = toNumberOr(saved.customScene.currentHeight, 60);
-                    }
-                }
-            } catch(e) {}
-
-            function applyFontSize() {
-                const sz = FONT_SIZES[fontSizeIdx];
-                pvLayout.style.setProperty('--pv-notes-font-size', sz + 'rem');
-                document.getElementById('pv-font-size-label').textContent = Math.round(sz * 100) + '%';
-            }
-            applyFontSize();
-
-            function savePvLayout() {
-                const notesCol = document.getElementById('pv-notes-col');
-                if (!notesCol) return;
-                const payload = {
-                    notesWidth: Math.round(notesCol.getBoundingClientRect().width),
-                    fontSizeIdx: fontSizeIdx,
-                    sceneId: _pvSceneId,
-                };
-                if (_pvCustomScene) payload.customScene = _pvCustomScene;
-                if (document.getElementById('pv-splitter-h')) {
-                    const currentPanel = document.getElementById('pv-current-panel');
-                    const slidesCol = document.getElementById('pv-slides-col');
-                    if (currentPanel && slidesCol) {
-                        const sh = slidesCol.getBoundingClientRect().height;
-                        const ch = currentPanel.getBoundingClientRect().height;
-                        payload.currentHeight = sh > 0 ? Math.round((ch / sh) * 100) : 60;
-                    }
-                }
-                storageSetJSON(PRESENTER_LAYOUT_KEY, payload);
-            }
-
-            document.getElementById('pv-font-up').addEventListener('click', () => {
-                if (fontSizeIdx < FONT_SIZES.length - 1) { fontSizeIdx++; applyFontSize(); savePvLayout(); }
-            });
-            document.getElementById('pv-font-down').addEventListener('click', () => {
-                if (fontSizeIdx > 0) { fontSizeIdx--; applyFontSize(); savePvLayout(); }
-            });
-
-            // ── Resizable splitters ──────────────────────────
-            const pvMain = document.getElementById('pv-main');
-            const pvSlidesCol = document.getElementById('pv-slides-col');
-            const pvNotesCol = document.getElementById('pv-notes-col');
-            const pvCurrentPanel = document.getElementById('pv-current-panel');
-            const pvSplitterV = document.getElementById('pv-splitter-v');
-            function clampNotesWidth(targetPx = null) {
-                if (!pvNotesCol) return;
-                const totalW = pvMain?.getBoundingClientRect().width || pvLayout.getBoundingClientRect().width || 0;
-                const minW = 280;
-                const minSlidesW = Math.max(340, Math.round(totalW * 0.34));
-                const splitterW = pvSplitterV?.getBoundingClientRect().width || 8;
-                const maxRatio = totalW > 0 ? (totalW * 0.62) : 620;
-                const maxBySpace = totalW > 0 ? (totalW - minSlidesW - splitterW) : 760;
-                const maxW = Math.max(minW, Math.min(860, maxRatio, maxBySpace));
-                const fallback = pvNotesCol.getBoundingClientRect().width || 420;
-                const fromCssVar = parseFloat(String(pvLayout.style.getPropertyValue('--pv-notes-width') || ''));
-                const raw = Number.isFinite(targetPx)
-                    ? Number(targetPx)
-                    : (Number.isFinite(fromCssVar) ? fromCssVar : fallback);
-                const clamped = Math.round(clampNumber(raw, minW, maxW));
-                pvLayout.style.setProperty('--pv-notes-width', `${clamped}px`);
-            }
-            clampNotesWidth();
-
-            const SCENE_PRESETS = {
-                balanced: { notesWidth: 420, fontSizeIdx: 3 },
-                slide: { notesWidth: 340, fontSizeIdx: 2 },
-                notes: { notesWidth: 560, fontSizeIdx: 5 },
-            };
-
-            const updateSceneButtons = () => {
-                document.getElementById('pv-scene-balanced')?.classList.toggle('active', _pvSceneId === 'balanced');
-                document.getElementById('pv-scene-slide')?.classList.toggle('active', _pvSceneId === 'slide');
-                document.getElementById('pv-scene-notes')?.classList.toggle('active', _pvSceneId === 'notes');
-                document.getElementById('pv-scene-custom')?.classList.toggle('active', _pvSceneId === 'custom');
-                document.getElementById('pv-scene-custom')?.toggleAttribute('disabled', !_pvCustomScene);
-            };
-
-            const captureCurrentScene = () => {
-                const out = {
-                    notesWidth: Math.round(pvNotesCol?.getBoundingClientRect().width || 420),
-                    fontSizeIdx,
-                };
-                if (document.getElementById('pv-splitter-h')) {
-                    const slidesCol = document.getElementById('pv-slides-col');
-                    const currentPanel = document.getElementById('pv-current-panel');
-                    const sh = slidesCol?.getBoundingClientRect().height || 0;
-                    const ch = currentPanel?.getBoundingClientRect().height || 0;
-                    if (sh > 0 && ch > 0) out.currentHeight = Math.round((ch / sh) * 100);
-                }
-                return out;
-            };
-
-            const applyScene = (scene, sceneId = '', persist = true) => {
-                if (!scene || typeof scene !== 'object') return;
-                if (Number.isFinite(Number(scene.notesWidth))) {
-                    clampNotesWidth(toNumberOr(scene.notesWidth, 420));
-                }
-                if (scene.currentHeight != null && document.getElementById('pv-splitter-h')) {
-                    const pct = clampNumber(toNumberOr(scene.currentHeight, 60), 28, 82);
-                    pvLayout.style.setProperty('--pv-current-height', `${Math.round(pct)}%`);
-                }
-                if (scene.fontSizeIdx != null) {
-                    fontSizeIdx = Math.max(0, Math.min(FONT_SIZES.length - 1, Math.trunc(toNumberOr(scene.fontSizeIdx, fontSizeIdx))));
-                    applyFontSize();
-                }
-                if (sceneId) _pvSceneId = sceneId;
-                updateSceneButtons();
-                renderCurrentSlide();
-                if (persist) savePvLayout();
-            };
-
-            const applyScenePreset = sceneId => {
-                const preset = SCENE_PRESETS[sceneId];
-                if (!preset) return;
-                applyScene(preset, sceneId, true);
-            };
-
-            document.getElementById('pv-scene-balanced')?.addEventListener('click', () => applyScenePreset('balanced'));
-            document.getElementById('pv-scene-slide')?.addEventListener('click', () => applyScenePreset('slide'));
-            document.getElementById('pv-scene-notes')?.addEventListener('click', () => applyScenePreset('notes'));
-            document.getElementById('pv-scene-save')?.addEventListener('click', () => {
-                _pvCustomScene = captureCurrentScene();
-                _pvSceneId = 'custom';
-                updateSceneButtons();
-                savePvLayout();
-            });
-            document.getElementById('pv-scene-custom')?.addEventListener('click', () => {
-                if (!_pvCustomScene) return;
-                applyScene(_pvCustomScene, 'custom', true);
-            });
-
-            if (_pvSceneId === 'custom' && _pvCustomScene) {
-                applyScene(_pvCustomScene, 'custom', false);
-            } else if (SCENE_PRESETS[_pvSceneId]) {
-                applyScene(SCENE_PRESETS[_pvSceneId], _pvSceneId, false);
-            } else {
-                _pvSceneId = 'balanced';
-                updateSceneButtons();
-            }
-
-            // Vertical splitter (notes column width)
-            if (pvSplitterV && pvNotesCol) {
-                pvSplitterV.addEventListener('pointerdown', e => {
-                    e.preventDefault();
-                    const pointerId = e.pointerId;
-                    pvSplitterV.classList.add('dragging');
-                    pvLayout.classList.add('resizing');
-                    const startX = e.clientX;
-                    const startNotesW = pvNotesCol.getBoundingClientRect().width;
-                    const onMove = ev => {
-                        if (ev.pointerId !== pointerId) return;
-                        const dx = startX - ev.clientX;
-                        const newW = startNotesW + dx;
-                        clampNotesWidth(newW);
-                        renderCurrentSlide();
-                    };
-                    const onUp = ev => {
-                        if (ev.pointerId !== pointerId) return;
-                        pvSplitterV.classList.remove('dragging');
-                        pvLayout.classList.remove('resizing');
-                        pvSplitterV.removeEventListener('pointermove', onMove);
-                        pvSplitterV.removeEventListener('pointerup', onUp);
-                        pvSplitterV.removeEventListener('pointercancel', onUp);
-                        try { pvSplitterV.releasePointerCapture(pointerId); } catch (_) {}
-                        savePvLayout();
-                        renderCurrentSlide();
-                    };
-                    try { pvSplitterV.setPointerCapture(pointerId); } catch (_) {}
-                    pvSplitterV.addEventListener('pointermove', onMove);
-                    pvSplitterV.addEventListener('pointerup', onUp);
-                    pvSplitterV.addEventListener('pointercancel', onUp);
-                });
-            }
-            let _pvResizeRaf = 0;
-            window.addEventListener('resize', () => {
-                if (_pvResizeRaf) cancelAnimationFrame(_pvResizeRaf);
-                _pvResizeRaf = requestAnimationFrame(() => {
-                    clampNotesWidth();
-                    renderCurrentSlide();
-                });
-            });
-
-            // Horizontal splitter (current slide / next slide split)
-            const splitterH = document.getElementById('pv-splitter-h');
-            if (splitterH && pvSlidesCol && pvCurrentPanel) {
-                splitterH.addEventListener('pointerdown', e => {
-                    e.preventDefault();
-                    const pointerId = e.pointerId;
-                    splitterH.classList.add('dragging');
-                    pvLayout.classList.add('resizing-h');
-                    const startY = e.clientY;
-                    const colRect = pvSlidesCol.getBoundingClientRect();
-                    const startCurH = pvCurrentPanel.getBoundingClientRect().height;
-                    const availH = colRect.height - 5; // 5 for splitter
-                    const onMove = ev => {
-                        if (ev.pointerId !== pointerId) return;
-                        const dy = ev.clientY - startY;
-                        const newH = clampNumber(startCurH + dy, 120, availH - 80);
-                        const pct = Math.round((newH / colRect.height) * 100);
-                        pvLayout.style.setProperty('--pv-current-height', pct + '%');
-                        renderCurrentSlide();
-                    };
-                    const onUp = ev => {
-                        if (ev.pointerId !== pointerId) return;
-                        splitterH.classList.remove('dragging');
-                        pvLayout.classList.remove('resizing-h');
-                        splitterH.removeEventListener('pointermove', onMove);
-                        splitterH.removeEventListener('pointerup', onUp);
-                        splitterH.removeEventListener('pointercancel', onUp);
-                        try { splitterH.releasePointerCapture(pointerId); } catch (_) {}
-                        savePvLayout();
-                        renderCurrentSlide();
-                    };
-                    try { splitterH.setPointerCapture(pointerId); } catch (_) {}
-                    splitterH.addEventListener('pointermove', onMove);
-                    splitterH.addEventListener('pointerup', onUp);
-                    splitterH.addEventListener('pointercancel', onUp);
-                });
-            }
 
             // Clean up on close
             window.addEventListener('beforeunload', () => {
@@ -3455,6 +2453,8 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
                 if (_presenterSyncChannel === channel) _presenterSyncChannel = null;
                 if (window.OEIPresenterSyncBridge?.post) window.OEIPresenterSyncBridge = null;
                 channel.close();
+                _whiteboardRecordFrames = false;
+                _recordWhiteboardFrame = () => {};
                 PresenterControls.goNext = null;
                 PresenterControls.goPrev = null;
                 PresenterControls.goTo = null;
@@ -3504,75 +2504,16 @@ document.getElementById('rm-lower-all')?.addEventListener('click', () => {
 
         // ── Normal mode toolbar buttons ──────────────────
         if (!isPresenterMode && !isAudienceMode) {
-            document.getElementById('btn-fullscreen').addEventListener('click', () => {
-                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-                else document.exitFullscreen();
-            });
-            document.getElementById('btn-overview').addEventListener('click', () => {
-                if (ViewerRuntime.revealDeck) ViewerRuntime.revealDeck.toggleOverview();
-            });
-            document.getElementById('btn-notes').addEventListener('click', () => {
-                // Switch to presenter mode
-                const url = new URL(location.href);
-                url.searchParams.set('mode', 'presenter');
-                window.open(url.toString(), '_blank');
-            });
-            document.getElementById('btn-editor').addEventListener('click', () => {
-                window.location.href = 'editor.html';
-            });
-
-            // Timer (normal mode)
-            let timerSeconds = 0, timerRunning = false, timerInterval = null;
-            const timerEl = document.getElementById('sl-timer');
-
-            function timerFmt(s) {
-                const m = String(Math.floor(s / 60)).padStart(2, '0');
-                const sec = String(s % 60).padStart(2, '0');
-                return `⏱ ${m}:${sec}`;
-            }
-            function timerToggle() {
-                if (timerRunning) {
-                    clearInterval(timerInterval);
-                    timerRunning = false;
-                    timerEl.classList.remove('running');
-                    timerEl.classList.add('paused');
-                } else {
-                    timerRunning = true;
-                    timerEl.classList.remove('paused');
-                    timerEl.classList.add('running');
-                    timerInterval = setInterval(() => {
-                        timerSeconds++;
-                        timerEl.textContent = timerFmt(timerSeconds);
-                    }, 1000);
-                }
-            }
-            function timerReset() {
-                clearInterval(timerInterval);
-                timerRunning = false;
-                timerSeconds = 0;
-                timerEl.textContent = timerFmt(0);
-                timerEl.classList.remove('running');
-                timerEl.classList.add('paused');
-            }
-            timerEl.addEventListener('click', timerToggle);
-
-            document.addEventListener('keydown', e => {
-                if (e.key === 'Escape') {
-                    const tb = document.getElementById('sl-toolbar');
-                    tb.classList.toggle('force-show');
-                    e.preventDefault();
-                    return;
-                }
-                if (e.key === 'f' || e.key === 'F') {
-                    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-                    else document.exitFullscreen();
-                }
-                if (e.key === 'p' || e.key === 'P') {
-                    document.getElementById('btn-notes').click();
-                }
-                if (e.key === 't' || e.key === 'T') timerToggle();
-                if (e.key === 'r' || e.key === 'R') timerReset();
-                if (e.key === 'w' || e.key === 'W') wbToggle();
-                if (e.key === 's' || e.key === 'S') document.getElementById('btn-notes').click();
+            initNormalModeToolbar({
+                viewerRuntime: ViewerRuntime,
+                wbToggle,
+                openPresenterView: () => {
+                    const url = new URL(location.href);
+                    url.searchParams.set('mode', 'presenter');
+                    window.open(url.toString(), '_blank');
+                },
+                openEditor: () => {
+                    window.location.href = 'editor.html';
+                },
             });
         }

@@ -83,6 +83,7 @@
         EXIT_TICKET_END: 'exit-ticket:end',
         RANK_ORDER_START: 'rank-order:start',
         RANK_ORDER_END: 'rank-order:end',
+        WHITEBOARD_SYNC: 'whiteboard:sync',
     });
 
     const syncTypes = new Set(Object.values(SYNC_MSG));
@@ -106,6 +107,32 @@
     const isNumberArray = (v, maxCount = 80) => Array.isArray(v) && v.length <= maxCount && v.every(isNumber);
     const isIntArray = (v, maxCount = 80) => Array.isArray(v) && v.length <= maxCount && v.every(isInt);
     const isWordCloudList = v => Array.isArray(v) && v.length <= 120 && v.every(row => Array.isArray(row) && row.length === 2 && isString(row[0], 120) && isNonNegInt(row[1]));
+    const isWhiteboardPoint = point => isObject(point) && isNumber(point.x) && isNumber(point.y);
+    const isWhiteboardCommands = (value, maxCount = 6000) => {
+        if (!Array.isArray(value) || value.length > maxCount) return false;
+        return value.every(cmd => {
+            if (!isObject(cmd) || !isString(cmd.kind, 20)) return false;
+            if (cmd.kind === 'stroke') {
+                return isString(cmd.tool || '', 24)
+                    && isString(cmd.color || '', 32)
+                    && isNumber(cmd.size)
+                    && Array.isArray(cmd.points)
+                    && cmd.points.length >= 2
+                    && cmd.points.length <= 6000
+                    && cmd.points.every(isWhiteboardPoint);
+            }
+            if (cmd.kind === 'shape') {
+                return isString(cmd.shape || '', 24)
+                    && isString(cmd.color || '', 32)
+                    && isNumber(cmd.size)
+                    && isNumber(cmd.startX)
+                    && isNumber(cmd.startY)
+                    && isNumber(cmd.endX)
+                    && isNumber(cmd.endY);
+            }
+            return false;
+        });
+    };
 
     /**
      * @param {unknown} v
@@ -236,6 +263,12 @@
             && isStringArray(msg.items || [], 40, 200)
             && (msg.title == null || isString(msg.title, 200)),
         [ROOM_MSG.RANK_ORDER_END]: msg => msg.rankId == null || isString(msg.rankId, 120),
+        [ROOM_MSG.WHITEBOARD_SYNC]: msg => isBoolean(msg.active)
+            && (msg.slideIndex == null || isNonNegInt(msg.slideIndex))
+            && (msg.updatedAt == null || isNonNegInt(msg.updatedAt))
+            && (msg.canvasWidth == null || isNonNegInt(msg.canvasWidth))
+            && (msg.canvasHeight == null || isNonNegInt(msg.canvasHeight))
+            && (msg.commands == null || isWhiteboardCommands(msg.commands)),
     });
 
     function validateByTypeMap(msg, typeSet, validators) {

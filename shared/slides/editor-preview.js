@@ -37,11 +37,11 @@ const _setPreviewCanvasEditor = value => {
 
 function _slideRenderOpts() {
     const activeEditor = _previewCtx().editor;
-    if (!activeEditor?.data) return {};
+    if (!activeEditor?.data) return { includeNotes: false };
     if (typeof SlidesShared?.buildRenderOptions === 'function') {
-        return SlidesShared.buildRenderOptions(activeEditor.data);
+        return SlidesShared.buildRenderOptions(activeEditor.data, { includeNotes: false });
     }
-    return {};
+    return { includeNotes: false };
 }
 
 function isSlideListInteractionContext() {

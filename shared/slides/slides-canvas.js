@@ -20,6 +20,50 @@ const CanvasHelpers = window.OEISlidesCanvasHelpers;
 if (!CanvasHelpers) {
     throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-helpers.js avant slides-canvas.js.');
 }
+const CanvasGuides = window.OEISlidesCanvasGuides;
+if (!CanvasGuides) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-guides.js avant slides-canvas.js.');
+}
+const CanvasCodeRuntime = window.OEISlidesCanvasCodeRuntime;
+if (!CanvasCodeRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-code-runtime.js avant slides-canvas.js.');
+}
+const CanvasWidgetRuntime = window.OEISlidesCanvasWidgetRuntime;
+if (!CanvasWidgetRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-widget-runtime.js avant slides-canvas.js.');
+}
+const CanvasOverflowRuntime = window.OEISlidesCanvasOverflowRuntime;
+if (!CanvasOverflowRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-overflow-runtime.js avant slides-canvas.js.');
+}
+const CanvasConnectorsRuntime = window.OEISlidesCanvasConnectorsRuntime;
+if (!CanvasConnectorsRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-connectors-runtime.js avant slides-canvas.js.');
+}
+const CanvasDomRuntime = window.OEISlidesCanvasDomRuntime;
+if (!CanvasDomRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-dom-runtime.js avant slides-canvas.js.');
+}
+const CanvasSelectionRuntime = window.OEISlidesCanvasSelectionRuntime;
+if (!CanvasSelectionRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-selection-runtime.js avant slides-canvas.js.');
+}
+const CanvasRenderRuntime = window.OEISlidesCanvasRenderRuntime;
+if (!CanvasRenderRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-render-runtime.js avant slides-canvas.js.');
+}
+const CanvasEventsRuntime = window.OEISlidesCanvasEventsRuntime;
+if (!CanvasEventsRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-events-runtime.js avant slides-canvas.js.');
+}
+const CanvasTransformRuntime = window.OEISlidesCanvasTransformRuntime;
+if (!CanvasTransformRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-transform-runtime.js avant slides-canvas.js.');
+}
+const CanvasSpecialRuntime = window.OEISlidesCanvasSpecialRuntime;
+if (!CanvasSpecialRuntime) {
+    throw new Error('[CanvasEditor] Module manquant: charger slides-canvas-special-runtime.js avant slides-canvas.js.');
+}
 
 class CanvasEditor {
 
@@ -968,25 +1012,16 @@ class CanvasEditor {
     }
 
     _isElementLocked(el) {
-        return !!el?.locked;
+        return CanvasSelectionRuntime.isElementLocked(el);
     }
 
     _syncLockVisual(div, el) {
-        if (!div || !el) return;
-        const locked = this._isElementLocked(el);
-        div.classList.toggle('is-locked', locked);
-        let badge = div.querySelector('.cel-lock-badge');
-        if (locked) {
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'cel-lock-badge';
-                badge.textContent = 'L';
-                badge.title = 'Élément verrouillé';
-                div.appendChild(badge);
-            }
-        } else if (badge) {
-            badge.remove();
-        }
+        CanvasSelectionRuntime.syncLockVisual({
+            div,
+            el,
+            isElementLocked: candidate => this._isElementLocked(candidate),
+            documentRef: document,
+        });
     }
 
     add(type) {
@@ -1126,83 +1161,33 @@ class CanvasEditor {
     }
 
     _updateSelectionVisuals() {
-        this.container.querySelectorAll('.cel').forEach(el => {
-            el.classList.toggle('selected', this.selectedIds.has(el.dataset.id));
+        CanvasSelectionRuntime.updateSelectionVisuals({
+            container: this.container,
+            selectedIds: this.selectedIds,
+            elements: this.elements,
+            documentRef: document,
         });
-        // Group bounding box overlays
-        this.container.querySelectorAll('.group-bbox').forEach(el => el.remove());
-        const groups = {};
-        for (const el of this.elements) {
-            if (el.groupId) {
-                if (!groups[el.groupId]) groups[el.groupId] = [];
-                groups[el.groupId].push(el);
-            }
-        }
-        for (const [gid, members] of Object.entries(groups)) {
-            if (members.length < 2) continue;
-            const minX = Math.min(...members.map(e => e.x));
-            const minY = Math.min(...members.map(e => e.y));
-            const maxX = Math.max(...members.map(e => e.x + e.w));
-            const maxY = Math.max(...members.map(e => e.y + e.h));
-            const bbox = document.createElement('div');
-            bbox.className = 'group-bbox';
-            const sAny = members.some(e => this.selectedIds.has(e.id));
-            bbox.style.left = `${minX - 4}px`;
-            bbox.style.top = `${minY - 4}px`;
-            bbox.style.width = `${maxX - minX + 8}px`;
-            bbox.style.height = `${maxY - minY + 8}px`;
-            bbox.style.borderColor = sAny ? 'var(--primary, #818cf8)' : 'rgba(255,255,255,0.2)';
-            const badge = document.createElement('span');
-            badge.className = 'group-bbox-badge';
-            badge.textContent = 'Groupe';
-            badge.style.color = sAny ? 'var(--primary, #818cf8)' : 'rgba(255,255,255,0.35)';
-            bbox.appendChild(badge);
-            this.container.appendChild(bbox);
-        }
     }
 
     /* ── Rendering ────────────────────────────────────────── */
 
     _renderAll(bg) {
-        const guide = this.container.querySelector('.canvas-guide-layer');
-        this.container.innerHTML = '';
-        if (bg) this.container.style.background = bg;
-        // Re-create connector overlay
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'cel-connector-overlay');
-        svg.setAttribute('width', '1280');
-        svg.setAttribute('height', '720');
-        svg.setAttribute('viewBox', '0 0 1280 720');
-        svg.innerHTML = '<defs></defs><g class="conn-paths"></g><line class="conn-temp" style="display:none" stroke="#818cf8" stroke-width="2" stroke-dasharray="6 4"/>';
-        this._connOverlay = svg;
-        this._connOverlay.addEventListener('mousedown', e => {
-            const g = e.target.closest('.conn-g');
-            if (g) { e.stopPropagation(); this.selectConnector(g.dataset.connId); }
+        const result = CanvasRenderRuntime.renderAll({
+            container: this.container,
+            bg,
+            elements: this.elements,
+            marqueeDiv: this._marqueeDiv,
+            addElementDOM: el => this._addElementDOM(el),
+            refreshConnectors: () => this._refreshConnectors(),
+            onConnectorMouseDown: connId => this.selectConnector(connId),
+            resolveConnector: connId => this.connectors.find(conn => conn.id === connId) || null,
+            onConnectorDblClick: (conn, event) => {
+                if (conn && this.onConnectorDblClick) this.onConnectorDblClick(conn, event);
+            },
+            documentRef: document,
         });
-        this._connOverlay.addEventListener('dblclick', e => {
-            const g = e.target.closest('.conn-g');
-            if (g) {
-                e.stopPropagation();
-                const conn = this.connectors.find(c => c.id === g.dataset.connId);
-                if (conn && this.onConnectorDblClick) this.onConnectorDblClick(conn, e);
-            }
-        });
-        this.container.appendChild(svg);
-        // Elements
-        const sorted = [...this.elements].sort((a, b) => (a.z || 0) - (b.z || 0));
-        for (const el of sorted) this._addElementDOM(el);
-        // Guide layer
-        const g = document.createElement('div');
-        g.className = 'canvas-guide-layer';
-        this.container.appendChild(g);
-        // Marquee div
-        if (!this._marqueeDiv || !this.container.contains(this._marqueeDiv)) {
-            this._marqueeDiv = document.createElement('div');
-            this._marqueeDiv.className = 'cel-marquee';
-            this.container.appendChild(this._marqueeDiv);
-        }
-        // Render connectors
-        this._refreshConnectors();
+        this._connOverlay = result.connOverlay || null;
+        this._marqueeDiv = result.marqueeDiv || null;
     }
 
     _addElementDOM(el) {
@@ -1255,39 +1240,16 @@ class CanvasEditor {
     }
 
     _shouldCheckOverflow(el) {
-        const type = String(el?.type || '');
-        return ![
-            'code', 'highlight', 'code-example', 'terminal-session', 'table', 'list',
-            'mermaid', 'diagramme', 'image', 'video', 'iframe', 'widget', 'quiz-live',
-            'poll-likert', 'mcq-single', 'mcq-multi', 'rank-order', 'flashcards-auto'
-        ].includes(type);
+        return CanvasOverflowRuntime.shouldCheckOverflow(el);
     }
 
     _updateOverflowVisual(div, el) {
-        if (!div || !el) return;
-        let badge = div.querySelector('.cel-overflow-badge');
-        if (!this._shouldCheckOverflow(el)) {
-            div.classList.remove('has-overflow');
-            if (badge) badge.remove();
-            return;
-        }
-        const inner = div.querySelector('.cel-inner');
-        if (!inner) return;
-        const deltaY = inner.scrollHeight - inner.clientHeight;
-        const deltaX = inner.scrollWidth - inner.clientWidth;
-        const hasOverflow = deltaX > 2 || deltaY > 2;
-        div.classList.toggle('has-overflow', hasOverflow);
-        if (!hasOverflow) {
-            if (badge) badge.remove();
-            return;
-        }
-        if (!badge) {
-            badge = document.createElement('span');
-            badge.className = 'cel-overflow-badge';
-            badge.title = 'Contenu rogné : agrandissez le bloc ou réduisez le texte';
-            badge.textContent = '!';
-            div.appendChild(badge);
-        }
+        CanvasOverflowRuntime.updateOverflowVisual({
+            div,
+            el,
+            documentRef: document,
+            shouldCheckOverflow: candidate => this._shouldCheckOverflow(candidate),
+        });
     }
 
     _renderContent(el) {
@@ -2099,591 +2061,209 @@ class CanvasEditor {
     /* ── Mermaid / KaTeX / QR lazy rendering ──────────────── */
 
     _renderMermaidElements() {
-        const els = this.container.querySelectorAll('.cel-mermaid-content');
-        if (!els.length) return;
-        if (!window._mermaidLoaded) {
-            window._mermaidLoaded = true;
-            const s = document.createElement('script');
-            s.src = '../vendor/mermaid/10.9.1/mermaid.min.js';
-            s.onload = () => {
-                window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
-                this._doRenderMermaid(els);
-            };
-            document.head.appendChild(s);
-        } else if (window.mermaid) {
-            this._doRenderMermaid(els);
-        }
-    }
-
-    async _doRenderMermaid(els) {
-        for (const el of els) {
-            const src = el.querySelector('.cel-mermaid-src');
-            const target = el.querySelector('.cel-mermaid-render');
-            if (!src || !target || target.dataset.rendered) continue;
-            try {
-                const id = el.dataset.mermaidId || 'mermaid-' + Math.random().toString(36).slice(2);
-                const { svg } = await window.mermaid.render(id + '-svg', src.textContent);
-                target.innerHTML = svg;
-                target.dataset.rendered = '1';
-            } catch (e) {
-                target.innerHTML = `<pre style="color:#f87171;font-size:12px;">${escHtml(e.message||'Erreur Mermaid')}</pre>`;
-            }
-        }
+        CanvasSpecialRuntime.renderMermaidElements({
+            container: this.container,
+            windowRef: window,
+            documentRef: document,
+            loadScript: src => this._loadScript(src),
+            escapeHtml: escHtml,
+        });
     }
 
     _renderLatexElements() {
-        const els = this.container.querySelectorAll('.cel-latex-content');
-        if (!els.length) return;
-        if (!window._katexLoaded) {
-            window._katexLoaded = true;
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = '../vendor/katex/0.16.11/katex.min.css';
-            document.head.appendChild(link);
-            const s = document.createElement('script');
-            s.src = '../vendor/katex/0.16.11/katex.min.js';
-            s.onload = () => this._doRenderLatex(els);
-            document.head.appendChild(s);
-        } else if (window.katex) {
-            this._doRenderLatex(els);
-        }
-    }
-
-    _doRenderLatex(els) {
-        els.forEach(el => {
-            const target = el.querySelector('.cel-latex-render');
-            if (!target || target.dataset.rendered) return;
-            const expr = el.dataset.latex || '';
-            try {
-                target.innerHTML = window.katex.renderToString(expr, { displayMode: true, throwOnError: false });
-                target.dataset.rendered = '1';
-            } catch (e) {
-                target.innerHTML = `<span style="color:#f87171">${escHtml(expr)}</span>`;
-            }
+        CanvasSpecialRuntime.renderLatexElements({
+            container: this.container,
+            windowRef: window,
+            documentRef: document,
+            loadScript: src => this._loadScript(src),
+            escapeHtml: escHtml,
         });
     }
 
     _renderQRElements() {
-        const els = this.container.querySelectorAll('.cel-qrcode-content');
-        if (!els.length) return;
-        if (!window._qrcodeLoaded) {
-            window._qrcodeLoaded = true;
-            const s = document.createElement('script');
-            s.src = '../vendor/qrcode-generator/1.4.4/qrcode.min.js';
-            s.onload = () => this._doRenderQR(els);
-            document.head.appendChild(s);
-        } else if (window.qrcode) {
-            this._doRenderQR(els);
-        }
-    }
-
-    _doRenderQR(els) {
-        els.forEach(container => {
-            const render = container.querySelector('.cel-qr-render');
-            if (!render || render.dataset.rendered) return;
-            const val = container.dataset.qrValue || '';
-            if (!val) { render.innerHTML = '<span style="color:var(--sl-muted);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;">QR</span>'; return; }
-            try {
-                const qr = window.qrcode(0, 'M');
-                qr.addData(val);
-                qr.make();
-                render.innerHTML = qr.createSvgTag({ scalable: true });
-                const svg = render.querySelector('svg');
-                if (svg) {
-                    svg.style.width = '100%';
-                    svg.style.height = '100%';
-                }
-                render.dataset.rendered = '1';
-            } catch (e) {
-                render.innerHTML = `<span style="color:#f87171">Erreur QR</span>`;
-            }
+        CanvasSpecialRuntime.renderQRElements({
+            container: this.container,
+            windowRef: window,
+            documentRef: document,
+            loadScript: src => this._loadScript(src),
         });
     }
 
     _initTimerElements() {
-        this.container.querySelectorAll('.cel-timer-content').forEach(el => {
-            if (el.dataset.timerBound) return;
-            el.dataset.timerBound = '1';
-            const dur = parseInt(el.dataset.duration) || 300;
-            let remaining = dur, interval = null, running = false;
-            const display = el.querySelector('.cel-timer-display');
-            const btnStart = el.querySelector('.cel-timer-start');
-            const btnPause = el.querySelector('.cel-timer-pause');
-            const btnReset = el.querySelector('.cel-timer-reset');
-            const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-            const tick = () => {
-                remaining = Math.max(0, remaining - 1);
-                display.textContent = fmt(remaining);
-                if (remaining <= 0) { clearInterval(interval); running = false; btnStart.style.display = ''; btnPause.style.display = 'none'; display.style.color = '#f87171'; }
-            };
-            btnStart?.addEventListener('click', (e) => { e.stopPropagation(); if (!running) { running = true; interval = setInterval(tick, 1000); btnStart.style.display = 'none'; btnPause.style.display = ''; } });
-            btnPause?.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(interval); running = false; btnStart.style.display = ''; btnPause.style.display = 'none'; });
-            btnReset?.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(interval); running = false; remaining = dur; display.textContent = fmt(dur); display.style.color = ''; btnStart.style.display = ''; btnPause.style.display = 'none'; });
+        CanvasSpecialRuntime.initTimerElements({
+            container: this.container,
         });
     }
 
     /* ── Connector system ─────────────────────────────────── */
 
     _getAnchorPos(el, anchor) {
-        switch (anchor) {
-            case 'top':    return { x: el.x + el.w / 2, y: el.y };
-            case 'right':  return { x: el.x + el.w,     y: el.y + el.h / 2 };
-            case 'bottom': return { x: el.x + el.w / 2, y: el.y + el.h };
-            case 'left':   return { x: el.x,             y: el.y + el.h / 2 };
-            default:       return { x: el.x + el.w / 2, y: el.y + el.h / 2 };
-        }
+        return CanvasHelpers.getAnchorPosition(el, anchor);
     }
 
     _anchorDir(anchor) {
-        switch (anchor) {
-            case 'top':    return { dx: 0, dy: -1 };
-            case 'right':  return { dx: 1, dy: 0 };
-            case 'bottom': return { dx: 0, dy: 1 };
-            case 'left':   return { dx: -1, dy: 0 };
-            default:       return { dx: 0, dy: 0 };
-        }
+        return CanvasHelpers.getAnchorDirection(anchor);
     }
 
     _connectorPathData(conn) {
         const src = this.elements.find(e => e.id === conn.sourceId);
         const tgt = this.elements.find(e => e.id === conn.targetId);
         if (!src || !tgt) return null;
-        const p1 = this._getAnchorPos(src, conn.sourceAnchor);
-        const p2 = this._getAnchorPos(tgt, conn.targetAnchor);
-        switch (conn.lineType) {
-            case 'curve': {
-                const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
-                const ddx = p2.x - p1.x, ddy = p2.y - p1.y;
-                return `M${p1.x},${p1.y} Q${mx - ddy * 0.3},${my + ddx * 0.3} ${p2.x},${p2.y}`;
-            }
-            case 'elbow': {
-                const pts = this._elbowPoints(p1, conn.sourceAnchor, p2, conn.targetAnchor);
-                return 'M' + pts.map(p => `${p.x},${p.y}`).join(' L');
-            }
-            case 'rounded': {
-                const pts = this._elbowPoints(p1, conn.sourceAnchor, p2, conn.targetAnchor);
-                return this._roundedPolyline(pts);
-            }
-            default:
-                return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
-        }
+        return CanvasHelpers.buildConnectorPathData(conn, src, tgt);
     }
 
     _elbowPoints(p1, a1, p2, a2) {
-        const GAP = 30;
-        const d1 = this._anchorDir(a1);
-        const d2 = this._anchorDir(a2);
-        const ext1 = { x: p1.x + d1.dx * GAP, y: p1.y + d1.dy * GAP };
-        const ext2 = { x: p2.x + d2.dx * GAP, y: p2.y + d2.dy * GAP };
-        const isH1 = d1.dx !== 0, isH2 = d2.dx !== 0;
-        if (isH1 && isH2) {
-            const mx = (ext1.x + ext2.x) / 2;
-            return [p1, ext1, { x: mx, y: ext1.y }, { x: mx, y: ext2.y }, ext2, p2];
-        } else if (!isH1 && !isH2) {
-            const my = (ext1.y + ext2.y) / 2;
-            return [p1, ext1, { x: ext1.x, y: my }, { x: ext2.x, y: my }, ext2, p2];
-        } else if (isH1) {
-            return [p1, ext1, { x: ext2.x, y: ext1.y }, ext2, p2];
-        } else {
-            return [p1, ext1, { x: ext1.x, y: ext2.y }, ext2, p2];
-        }
+        return CanvasHelpers.computeElbowPoints(p1, a1, p2, a2);
     }
 
     _roundedPolyline(pts) {
-        if (pts.length < 3) return 'M' + pts.map(p => `${p.x},${p.y}`).join(' L');
-        const R = 12;
-        let d = `M${pts[0].x},${pts[0].y}`;
-        for (let i = 1; i < pts.length - 1; i++) {
-            const prev = pts[i - 1], cur = pts[i], next = pts[i + 1];
-            const d1x = cur.x - prev.x, d1y = cur.y - prev.y;
-            const d2x = next.x - cur.x, d2y = next.y - cur.y;
-            const len1 = Math.sqrt(d1x * d1x + d1y * d1y);
-            const len2 = Math.sqrt(d2x * d2x + d2y * d2y);
-            const r = Math.min(R, len1 / 2, len2 / 2);
-            if (r < 1) { d += ` L${cur.x},${cur.y}`; continue; }
-            const arcStart = { x: cur.x - (d1x / len1) * r, y: cur.y - (d1y / len1) * r };
-            const arcEnd = { x: cur.x + (d2x / len2) * r, y: cur.y + (d2y / len2) * r };
-            d += ` L${arcStart.x},${arcStart.y} Q${cur.x},${cur.y} ${arcEnd.x},${arcEnd.y}`;
-        }
-        d += ` L${pts[pts.length - 1].x},${pts[pts.length - 1].y}`;
-        return d;
+        return CanvasHelpers.buildRoundedPolylinePath(pts);
     }
 
     _refreshConnectors() {
-        if (!this._connOverlay) return;
-        const pathsG = this._connOverlay.querySelector('.conn-paths');
-        const defs = this._connOverlay.querySelector('defs');
-        if (!pathsG || !defs) return;
-        pathsG.innerHTML = '';
-        defs.innerHTML = '';
-        for (const conn of this.connectors) {
-            const pathD = this._connectorPathData(conn);
-            if (!pathD) continue;
-            const s = conn.style || {};
-            const stroke = s.stroke || '#818cf8';
-            const sw = s.strokeWidth || 3;
-            const opacity = s.opacity != null ? s.opacity : 1;
-            const isSelected = conn.id === this._selectedConnectorId;
-            // Markers
-            const mkEnd = 'cme-' + conn.id;
-            const mkStart = 'cms-' + conn.id;
-            if (conn.arrowEnd) {
-                defs.innerHTML += `<marker id="${mkEnd}" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto" markerUnits="strokeWidth"><polygon points="0 0,10 3.5,0 7" fill="${stroke}"/></marker>`;
-            }
-            if (conn.arrowStart) {
-                defs.innerHTML += `<marker id="${mkStart}" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto" markerUnits="strokeWidth"><polygon points="10 0,0 3.5,10 7" fill="${stroke}"/></marker>`;
-            }
-            const me = conn.arrowEnd ? `marker-end="url(#${mkEnd})"` : '';
-            const ms = conn.arrowStart ? `marker-start="url(#${mkStart})"` : '';
-            // Group
-            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            g.setAttribute('class', 'conn-g' + (isSelected ? ' conn-selected' : ''));
-            g.dataset.connId = conn.id;
-            // Hit area (invisible wider path for easier clicking)
-            g.innerHTML = `<path class="conn-hit" d="${pathD}"/>`;
-            // Visible background (for selected state glow)
-            g.innerHTML += `<path class="conn-line-bg" d="${pathD}" fill="none" stroke="transparent" stroke-width="8"/>`;
-            // Visible line
-            const dashAttr = s.dashArray ? `stroke-dasharray="${s.dashArray}"` : '';
-            g.innerHTML += `<path class="conn-line" d="${pathD}" fill="none" stroke="${stroke}" stroke-width="${sw}" opacity="${opacity}" ${dashAttr} ${me} ${ms}/>`;
-            // Label
-            if (conn.label) {
-                const src = this.elements.find(e => e.id === conn.sourceId);
-                const tgt = this.elements.find(e => e.id === conn.targetId);
-                if (src && tgt) {
-                    const p1 = this._getAnchorPos(src, conn.sourceAnchor);
-                    const p2 = this._getAnchorPos(tgt, conn.targetAnchor);
-                    const lx = (p1.x + p2.x) / 2, ly = (p1.y + p2.y) / 2;
-                    g.innerHTML += `<rect x="${lx - conn.label.length * 4 - 4}" y="${ly - 11}" width="${conn.label.length * 8 + 8}" height="22" rx="4" fill="var(--sl-slide-bg, #1a1d27)" opacity="0.85"/>`;
-                    g.innerHTML += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${stroke}" font-size="13" font-family="var(--sl-font-body, system-ui)" style="pointer-events:none;">${escHtml(conn.label)}</text>`;
-                }
-            }
-            // Source/target endpoint dots (visible when selected)
-            if (isSelected) {
-                const src = this.elements.find(e => e.id === conn.sourceId);
-                const tgt = this.elements.find(e => e.id === conn.targetId);
-                if (src && tgt) {
-                    const p1 = this._getAnchorPos(src, conn.sourceAnchor);
-                    const p2 = this._getAnchorPos(tgt, conn.targetAnchor);
-                    g.innerHTML += `<circle cx="${p1.x}" cy="${p1.y}" r="5" fill="${stroke}" opacity="0.6" style="pointer-events:none;"/>`;
-                    g.innerHTML += `<circle cx="${p2.x}" cy="${p2.y}" r="5" fill="${stroke}" opacity="0.6" style="pointer-events:none;"/>`;
-                }
-            }
-            pathsG.appendChild(g);
-        }
+        CanvasConnectorsRuntime.refreshConnectors({
+            connOverlay: this._connOverlay,
+            connectors: this.connectors,
+            elements: this.elements,
+            selectedConnectorId: this._selectedConnectorId,
+            getConnectorPathData: conn => this._connectorPathData(conn),
+            getAnchorPos: (el, anchor) => this._getAnchorPos(el, anchor),
+            escapeHtml: escHtml,
+            documentRef: document,
+        });
     }
 
     _updateTempLine(mx, my) {
-        if (!this._connOverlay) return;
-        const line = this._connOverlay.querySelector('.conn-temp');
-        if (!line) return;
-        if (!this._connCreation) { line.style.display = 'none'; return; }
-        const src = this.elements.find(e => e.id === this._connCreation.sourceId);
-        if (!src) { line.style.display = 'none'; return; }
-        const p = this._getAnchorPos(src, this._connCreation.sourceAnchor);
-        line.setAttribute('x1', p.x);
-        line.setAttribute('y1', p.y);
-        line.setAttribute('x2', mx);
-        line.setAttribute('y2', my);
-        line.style.display = '';
+        CanvasConnectorsRuntime.updateTempLine({
+            connOverlay: this._connOverlay,
+            connCreation: this._connCreation,
+            elements: this.elements,
+            getAnchorPos: (el, anchor) => this._getAnchorPos(el, anchor),
+            mx,
+            my,
+        });
     }
 
     enterConnectorMode() {
-        this._connectorMode = true;
-        this._connCreation = null;
-        this.container.classList.add('canvas-connector-mode');
-        // Deselect elements
-        this.select(null);
+        CanvasConnectorsRuntime.enterConnectorMode({
+            state: this,
+            deselectElements: () => this.select(null),
+        });
     }
 
     exitConnectorMode() {
-        this._connectorMode = false;
-        this._connCreation = null;
-        this.container.classList.remove('canvas-connector-mode', 'conn-creating');
-        this.container.querySelectorAll('.anchor-active').forEach(a => a.classList.remove('anchor-active'));
-        const line = this._connOverlay?.querySelector('.conn-temp');
-        if (line) line.style.display = 'none';
+        CanvasConnectorsRuntime.exitConnectorMode({ state: this });
     }
 
     toggleConnectorMode() {
-        if (this._connectorMode) this.exitConnectorMode();
-        else this.enterConnectorMode();
+        CanvasConnectorsRuntime.toggleConnectorMode({
+            state: this,
+            deselectElements: () => this.select(null),
+        });
     }
 
     addConnector(connData) {
-        const conn = {
-            id: 'conn_' + Math.random().toString(36).slice(2, 9),
-            sourceId: connData.sourceId,
-            sourceAnchor: connData.sourceAnchor || 'right',
-            targetId: connData.targetId,
-            targetAnchor: connData.targetAnchor || 'left',
-            lineType: connData.lineType || 'straight',
-            arrowEnd: connData.arrowEnd !== false,
-            arrowStart: connData.arrowStart || false,
-            label: connData.label || '',
-            style: connData.style || { stroke: '#818cf8', strokeWidth: 3, opacity: 1 },
-        };
-        this.connectors.push(conn);
-        this._refreshConnectors();
-        this.selectConnector(conn.id);
-        this.onChange(this.serialize());
-        return conn;
+        return CanvasConnectorsRuntime.addConnector({
+            state: this,
+            refreshConnectors: () => this._refreshConnectors(),
+            selectConnector: id => this.selectConnector(id),
+            notifyChange: () => this.onChange(this.serialize()),
+        }, connData);
     }
 
     removeConnector(id) {
-        this.connectors = this.connectors.filter(c => c.id !== id);
-        if (this._selectedConnectorId === id) this._selectedConnectorId = null;
-        this._refreshConnectors();
-        this.onChange(this.serialize());
+        CanvasConnectorsRuntime.removeConnector({
+            state: this,
+            refreshConnectors: () => this._refreshConnectors(),
+            notifyChange: () => this.onChange(this.serialize()),
+        }, id);
     }
 
     updateConnector(id, patch) {
-        const conn = this.connectors.find(c => c.id === id);
-        if (!conn) return;
-        if (patch.lineType !== undefined)   conn.lineType = patch.lineType;
-        if (patch.arrowEnd !== undefined)   conn.arrowEnd = patch.arrowEnd;
-        if (patch.arrowStart !== undefined) conn.arrowStart = patch.arrowStart;
-        if (patch.label !== undefined)      conn.label = patch.label;
-        if (patch.sourceAnchor !== undefined) conn.sourceAnchor = patch.sourceAnchor;
-        if (patch.targetAnchor !== undefined) conn.targetAnchor = patch.targetAnchor;
-        if (patch.style) Object.assign(conn.style || (conn.style = {}), patch.style);
-        this._refreshConnectors();
-        this.onChange(this.serialize());
+        CanvasConnectorsRuntime.updateConnector({
+            state: this,
+            refreshConnectors: () => this._refreshConnectors(),
+            notifyChange: () => this.onChange(this.serialize()),
+        }, id, patch);
     }
 
     selectConnector(id) {
-        this._selectedConnectorId = id;
-        // Deselect elements
-        this.selectedIds.clear();
-        this.selectedId = null;
-        this._updateSelectionVisuals();
-        this._refreshConnectors();
-        this.onConnectorSelect(id ? (this.connectors.find(c => c.id === id) || null) : null);
+        CanvasConnectorsRuntime.selectConnector({
+            state: this,
+            clearElementSelection: () => {
+                this.selectedIds.clear();
+                this.selectedId = null;
+            },
+            updateSelectionVisuals: () => this._updateSelectionVisuals(),
+            refreshConnectors: () => this._refreshConnectors(),
+            notifyConnectorSelect: conn => this.onConnectorSelect(conn),
+        }, id);
     }
 
     getSelectedConnector() {
-        return this._selectedConnectorId ? (this.connectors.find(c => c.id === this._selectedConnectorId) || null) : null;
+        return CanvasConnectorsRuntime.getSelectedConnector({ state: this });
     }
 
     _refreshDOM(id) {
-        const div = this._dom(id);
-        if (!div) return;
-        const el = this.elements.find(e => e.id === id);
-        if (!el) return;
-        div.style.left   = el.x + 'px';
-        div.style.top    = el.y + 'px';
-        div.style.width  = el.w + 'px';
-        div.style.height = el.h + 'px';
-        div.style.zIndex = el.z || 1;
-        div.style.transform = (el.style?.rotate) ? `rotate(${el.style.rotate}deg)` : '';
-        this._syncLockVisual(div, el);
-        const inner = div.querySelector('.cel-inner');
-        if (inner) inner.innerHTML = this._renderContent(el);
-        if (el.type === 'widget') this._mountWidget(div, el);
-        if (el.type === 'code' || el.type === 'highlight' || el.type === 'code-example' || el.type === 'terminal-session') this._highlightCodeBlock(div);
-        this._postRenderElement(el);
-        requestAnimationFrame(() => this._updateOverflowVisual(div, el));
-        // Animation badge
-        let badge = div.querySelector('.cel-anim-badge');
-        if (el.animation && el.animation.type && el.animation.type !== 'none') {
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'cel-anim-badge';
-                div.appendChild(badge);
-            }
-            const orderStr = el.animation.order != null ? ` #${el.animation.order}` : '';
-            badge.textContent = '⚡' + orderStr;
-        } else if (badge) {
-            badge.remove();
-        }
+        CanvasDomRuntime.refreshElementDom({
+            id,
+            container: this.container,
+            elements: this.elements,
+            syncLockVisual: (div, el) => this._syncLockVisual(div, el),
+            renderContent: el => this._renderContent(el),
+            mountWidget: (div, el) => this._mountWidget(div, el),
+            highlightCodeBlock: div => this._highlightCodeBlock(div),
+            postRenderElement: el => this._postRenderElement(el),
+            updateOverflowVisual: (div, el) => this._updateOverflowVisual(div, el),
+            requestAnimationFrameFn: fn => requestAnimationFrame(fn),
+            documentRef: document,
+        });
     }
 
     _dom(id) {
-        return this.container.querySelector(`.cel[data-id="${id}"]`);
+        return CanvasDomRuntime.getElementDom(this.container, id);
     }
 
     /* ── Widget mounting ──────────────────────────────────── */
 
     _loadScript(src) {
-        if (document.querySelector(`script[src="${src}"]`)) return Promise.resolve();
-        return new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = src;
-            s.onload = resolve;
-            s.onerror = () => reject(new Error(`Failed to load ${src}`));
-            document.head.appendChild(s);
-        });
+        return CanvasCodeRuntime.loadScript(src, { documentRef: document });
     }
 
     async _mountWidget(div, el) {
-        const wid = el.data?.widget;
-        if (!wid) return;
-        const reg = CanvasEditor.WIDGET_REGISTRY[wid];
-        if (!reg) return;
-
-        const inner = div.querySelector('.cel-inner');
-        if (!inner) return;
-
-        try {
-            if (!window[reg.global]) {
-                const isAbsolute = typeof reg.script === 'string' && /^(https?:)?\/\//i.test(reg.script);
-                await this._loadScript(isAbsolute ? reg.script : (this.scriptBasePath + reg.script));
-            }
-            const cls = window[reg.global];
-            if (!cls || typeof cls.mount !== 'function') return;
-
-            // Mount into a wrapper with pointer-events disabled (editor: drag takes priority)
-            inner.innerHTML = '';
-            const mountTarget = document.createElement('div');
-            mountTarget.className = 'cel-widget-mount-target';
-            inner.appendChild(mountTarget);
-            cls.mount(mountTarget, Object.assign({}, el.data?.config || {}, { type: wid }));
-        } catch (err) {
-            inner.innerHTML = `<div class="cel-widget-placeholder"><span style="font-size:1.5rem">⚠️</span><span>${escHtml(wid)}</span></div>`;
-        }
+        await CanvasWidgetRuntime.mountWidget({
+            div,
+            el,
+            registry: CanvasEditor.WIDGET_REGISTRY,
+            scriptBasePath: this.scriptBasePath,
+            loadScript: src => this._loadScript(src),
+            windowRef: window,
+            documentRef: document,
+            escapeHtml: escHtml,
+        });
     }
 
     /* ── Syntax highlighting ──────────────────────────────── */
 
     _highlightCodeBlock(div) {
-        // For 'highlight' type, apply per-line highlighting to preserve wrapper spans
-        const isHighlight = div.dataset.type === 'highlight';
-        const codeEls = isHighlight
-            ? [div?.querySelector('.cel-code-scroll code')].filter(Boolean)
-            : Array.from(div?.querySelectorAll('.cel-code-scroll code, .cel-codeexample-live-code code, .cel-codeexample-stepper-code code') || []);
-        if (!codeEls.length || codeEls.every(node => node.dataset.highlighted)) return;
-
-        const apply = () => {
-            if (!window.hljs) return;
-            if (isHighlight) {
-                const codeEl = codeEls[0];
-                if (!codeEl) return;
-                // Highlight each line span individually to preserve .cel-hl-wrap wrappers
-                const lang = codeEl.className.replace('language-', '').trim();
-                codeEl.querySelectorAll('.cel-hl-wrap').forEach(span => {
-                    const raw = span.textContent.replace(/\n$/, '');
-                    try {
-                        const result = lang && lang !== 'text'
-                            ? window.hljs.highlight(raw, { language: lang, ignoreIllegals: true })
-                            : window.hljs.highlightAuto(raw);
-                        span.innerHTML = result.value + '\n';
-                    } catch (_) {
-                        // keep original content on error
-                    }
-                });
-                codeEl.dataset.highlighted = '1';
-            } else {
-                codeEls.forEach(codeEl => {
-                    if (!codeEl || codeEl.dataset.highlighted) return;
-                    try {
-                        window.hljs.highlightElement(codeEl);
-                    } catch (_) {}
-                    codeEl.dataset.highlighted = '1';
-                });
-            }
-        };
-        if (window.hljs) {
-            apply();
-        } else {
-            const CSS = '../vendor/highlightjs/11.9.0/styles/github-dark.min.css';
-            const JS  = '../vendor/highlightjs/11.9.0/highlight.min.js';
-            if (!document.querySelector(`link[href="${CSS}"]`)) {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet'; link.href = CSS;
-                document.head.appendChild(link);
-            }
-            this._loadScript(JS).then(apply).catch(() => {});
-        }
+        CanvasCodeRuntime.highlightCodeBlock({
+            div,
+            windowRef: window,
+            documentRef: document,
+            loadScript: src => this._loadScript(src),
+        });
     }
 
     /* ── Events ───────────────────────────────────────────── */
 
     _bindElementEvents(div, id) {
-        div.addEventListener('mousedown', e => {
-            // Don't intercept events when inline editing is active
-            if (div.classList.contains('editing')) return;
-            const el = this.elements.find(e2 => e2.id === id);
-            if (!el) return;
-            if (e.target.classList.contains('cel-handle')) {
-                e.stopPropagation();
-                if (el.locked) return;
-                this._resize = { id, origEl: { ...el }, handle: e.target.dataset.handle, startMX: e.clientX, startMY: e.clientY, aspectRatio: el.w / el.h };
-                e.preventDefault();
-                return;
-            }
-            // Connector anchor click
-            if (e.target.classList.contains('cel-anchor') && this._connectorMode) {
-                e.stopPropagation();
-                e.preventDefault();
-                const anchor = e.target.dataset.anchor;
-                if (!this._connCreation) {
-                    // Source selected
-                    this._connCreation = { sourceId: id, sourceAnchor: anchor };
-                    e.target.classList.add('anchor-active');
-                    this.container.classList.add('conn-creating');
-                } else {
-                    // Target selected — create connector
-                    if (this._connCreation.sourceId !== id || this._connCreation.sourceAnchor !== anchor) {
-                        this.addConnector({
-                            sourceId: this._connCreation.sourceId,
-                            sourceAnchor: this._connCreation.sourceAnchor,
-                            targetId: id,
-                            targetAnchor: anchor,
-                        });
-                    }
-                    this._connCreation = null;
-                    this.container.classList.remove('conn-creating');
-                    this.container.querySelectorAll('.anchor-active').forEach(a => a.classList.remove('anchor-active'));
-                    const tempLine = this._connOverlay?.querySelector('.conn-temp');
-                    if (tempLine) tempLine.style.display = 'none';
-                }
-                return;
-            }
-            e.stopPropagation();
-            // Pipette mode: intercept click to pick/apply style
-            if (typeof handlePipetteClick === 'function' && handlePipetteClick(id)) return;
-            // Multi-select with Ctrl/Meta key
-            if (e.ctrlKey || e.metaKey) {
-                this.toggleSelect(id);
-            } else if (!this.selectedIds.has(id)) {
-                this.select(id);
-            } else {
-                // Already selected — update primary
-                this.selectedId = id;
-                this.onSelect(this.elements.find(e2 => e2.id === id) || null);
-            }
-            if (el.locked) return;
-            // Store drag origins for all selected elements
-            const dragOrigins = {};
-            for (const sid of this.selectedIds) {
-                const sel = this.elements.find(e2 => e2.id === sid);
-                if (sel) dragOrigins[sid] = { origX: sel.x, origY: sel.y };
-            }
-            this._drag = { id, startMX: e.clientX, startMY: e.clientY, origX: el.x, origY: el.y, dragOrigins };
-            e.preventDefault();
-        });
-
-        // Right-click context menu
-        div.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!this.selectedIds.has(id)) this.select(id);
-            if (this.onContextMenu) this.onContextMenu(id, e);
-        });
-
-        // Double-click to inline-edit elements
-        div.addEventListener('dblclick', e => {
-            e.stopPropagation();
-            const el = this.elements.find(e2 => e2.id === id);
-            if (!el) return;
-            if (this._isElementLocked(el)) return;
-            if (['heading', 'text'].includes(el.type)) this._startInlineEdit(div, el, e);
-            else if (el.type === 'code')       this._startInlineEditCode(div, el);
-            else if (el.type === 'definition') this._startInlineEditDefinition(div, el);
-            else if (el.type === 'code-example') this._startInlineEditCodeExample(div, el);
-            else if (el.type === 'list')       this._startInlineEditList(div, el);
-            else if (el.type === 'table')      this._startInlineEditTable(div, el);
-            else if (this.onDblClick) this.onDblClick(el, e);
+        CanvasEventsRuntime.bindElementEvents({
+            div,
+            id,
+            editor: this,
+            tryHandlePipetteClick: candidateId => (
+                typeof handlePipetteClick === 'function' ? !!handlePipetteClick(candidateId) : false
+            ),
         });
     }
 
@@ -3198,249 +2778,34 @@ class CanvasEditor {
     }
 
     _onMouseMove(e) {
-        if (this._marquee && this._marquee.active) {
-            const rect = this.container.getBoundingClientRect();
-            const cx = (e.clientX - rect.left) / this.scale;
-            const cy = (e.clientY - rect.top) / this.scale;
-            const { startX, startY } = this._marquee;
-            const x = Math.min(startX, cx), y = Math.min(startY, cy);
-            const w = Math.abs(cx - startX), h = Math.abs(cy - startY);
-            if (this._marqueeDiv) {
-                this._marqueeDiv.style.display = 'block';
-                this._marqueeDiv.style.left = x + 'px';
-                this._marqueeDiv.style.top = y + 'px';
-                this._marqueeDiv.style.width = w + 'px';
-                this._marqueeDiv.style.height = h + 'px';
-            }
-            // Live highlight elements inside marquee
-            this._marqueeRect = { x, y, w, h };
-            return;
-        }
-        // Connector creation temp line
-        if (this._connCreation && this._connectorMode) {
-            const rect = this.container.getBoundingClientRect();
-            const mx = (e.clientX - rect.left) / this.scale;
-            const my = (e.clientY - rect.top) / this.scale;
-            this._updateTempLine(mx, my);
-            return;
-        }
-        if (this._drag) {
-            const { id, startMX, startMY, origX, origY, dragOrigins } = this._drag;
-            const el = this.elements.find(e2 => e2.id === id);
-            if (!el) return;
-            const dx = (e.clientX - startMX) / this.scale;
-            const dy = (e.clientY - startMY) / this.scale;
-            let nx = Math.round(origX + dx);
-            let ny = Math.round(origY + dy);
-            const { x, y, guideXs, guideYs } = this._computeSnap({ id, x: nx, y: ny, w: el.w, h: el.h });
-            const snapDX = x - nx, snapDY = y - ny;
-            el.x = x; el.y = y;
-            const div = this._dom(id);
-            if (div) { div.style.left = x + 'px'; div.style.top = y + 'px'; }
-            // Move other selected elements by the same delta
-            if (dragOrigins) {
-                for (const sid of this.selectedIds) {
-                    if (sid === id) continue;
-                    const sel = this.elements.find(e2 => e2.id === sid);
-                    const orig = dragOrigins[sid];
-                    if (!sel || !orig) continue;
-                    sel.x = Math.round(orig.origX + dx + snapDX);
-                    sel.y = Math.round(orig.origY + dy + snapDY);
-                    const sdiv = this._dom(sid);
-                    if (sdiv) { sdiv.style.left = sel.x + 'px'; sdiv.style.top = sel.y + 'px'; }
-                }
-            }
-            this._showGuides(guideXs, guideYs);
-            // Refresh connectors that reference moved elements
-            if (this.connectors.length) this._refreshConnectors();
-        }
-        if (this._resize) {
-            const { id, origEl, handle, startMX, startMY, aspectRatio } = this._resize;
-            const el = this.elements.find(e2 => e2.id === id);
-            if (!el) return;
-            const dx = (e.clientX - startMX) / this.scale;
-            const dy = (e.clientY - startMY) / this.scale;
-            let { x, y, w, h } = origEl;
-            const MIN_W = 40, MIN_H = 24;
-            if (handle.includes('e'))  w = Math.max(MIN_W, origEl.w + dx);
-            if (handle.includes('w'))  { const nw = Math.max(MIN_W, origEl.w - dx); x = origEl.x + (origEl.w - nw); w = nw; }
-            if (handle.includes('s'))  h = Math.max(MIN_H, origEl.h + dy);
-            if (handle.includes('n'))  { const nh = Math.max(MIN_H, origEl.h - dy); y = origEl.y + (origEl.h - nh); h = nh; }
-
-            // Ctrl: constrain proportions (corner handles)
-            if (e.ctrlKey && handle.length === 2 && aspectRatio) {
-                const absDx = Math.abs(dx), absDy = Math.abs(dy);
-                if (absDx / aspectRatio >= absDy) {
-                    // Width drives
-                    const newH = Math.max(MIN_H, w / aspectRatio);
-                    if (handle.includes('n')) y = origEl.y + origEl.h - newH;
-                    h = newH;
-                } else {
-                    // Height drives
-                    const newW = Math.max(MIN_W, h * aspectRatio);
-                    if (handle.includes('w')) x = origEl.x + origEl.w - newW;
-                    w = newW;
-                }
-            }
-
-            el.x = Math.round(x); el.y = Math.round(y);
-            el.w = Math.round(w); el.h = Math.round(h);
-
-            // Snap edges to other elements and canvas boundaries during resize
-            const SNAP = 8;
-            const guideXs = [], guideYs = [];
-            const others = this.elements.filter(e2 => e2.id !== id);
-            const xCands = [0, 640, 1280];
-            const yCands = [0, 360, 720];
-            if (this._gridSize > 0) {
-                const g = this._gridSize;
-                for (let gx = g; gx < 1280; gx += g) xCands.push(gx);
-                for (let gy = g; gy < 720; gy += g) yCands.push(gy);
-            }
-            for (const o of others) {
-                xCands.push(o.x, o.x + o.w / 2, o.x + o.w);
-                yCands.push(o.y, o.y + o.h / 2, o.y + o.h);
-            }
-
-            // Snap the edges being resized
-            if (handle.includes('e')) {
-                const right = el.x + el.w;
-                for (const cx of xCands) { if (Math.abs(right - cx) < SNAP) { el.w = cx - el.x; guideXs.push(cx); break; } }
-            }
-            if (handle.includes('w')) {
-                for (const cx of xCands) { if (Math.abs(el.x - cx) < SNAP) { el.w += el.x - cx; el.x = cx; guideXs.push(cx); break; } }
-            }
-            if (handle.includes('s')) {
-                const bottom = el.y + el.h;
-                for (const cy of yCands) { if (Math.abs(bottom - cy) < SNAP) { el.h = cy - el.y; guideYs.push(cy); break; } }
-            }
-            if (handle.includes('n')) {
-                for (const cy of yCands) { if (Math.abs(el.y - cy) < SNAP) { el.h += el.y - cy; el.y = cy; guideYs.push(cy); break; } }
-            }
-
-            // Symmetry snap: equal margins → snap to canvas center
-            if (guideXs.length === 0 && (handle.includes('e') || handle.includes('w'))) {
-                const lm = el.x, rm = 1280 - el.x - el.w;
-                if (Math.abs(lm - rm) < SNAP) {
-                    if (handle.includes('e')) el.w = 1280 - 2 * el.x;
-                    else                      el.x = Math.round((1280 - el.w) / 2);
-                    guideXs.push(640);
-                }
-            }
-            if (guideYs.length === 0 && (handle.includes('n') || handle.includes('s'))) {
-                const tm = el.y, bm = 720 - el.y - el.h;
-                if (Math.abs(tm - bm) < SNAP) {
-                    if (handle.includes('s')) el.h = 720 - 2 * el.y;
-                    else                      el.y = Math.round((720 - el.h) / 2);
-                    guideYs.push(360);
-                }
-            }
-            this._showGuides(guideXs, guideYs);
-
-            const div = this._dom(id);
-            if (div) {
-                div.style.left = el.x + 'px'; div.style.top = el.y + 'px';
-                div.style.width = el.w + 'px'; div.style.height = el.h + 'px';
-            }
-            // Update position inputs if panel is open
-            if (this.onPositionChange) this.onPositionChange(el);
-            // Refresh connectors that reference resized elements
-            if (this.connectors.length) this._refreshConnectors();
-        }
+        CanvasTransformRuntime.handleMouseMove({
+            editor: this,
+            computeSnap: payload => this._computeSnap(payload),
+        }, e);
     }
 
     _onMouseUp() {
-        if (this._marquee && this._marquee.active) {
-            if (this._marqueeDiv) this._marqueeDiv.style.display = 'none';
-            if (this._marqueeRect) {
-                const { x, y, w, h } = this._marqueeRect;
-                // Select elements intersecting the marquee rectangle (min 4px drag)
-                if (w > 4 || h > 4) {
-                    if (!this._marquee.shift) {
-                        this.selectedIds.clear();
-                        this.selectedId = null;
-                    }
-                    for (const el of this.elements) {
-                        const ex2 = el.x + el.w, ey2 = el.y + el.h;
-                        if (el.x < x + w && ex2 > x && el.y < y + h && ey2 > y) {
-                            this.selectedIds.add(el.id);
-                            if (!this.selectedId) this.selectedId = el.id;
-                        }
-                    }
-                    this._updateSelectionVisuals();
-                    this.onSelect(this.selectedId ? (this.elements.find(e => e.id === this.selectedId) || null) : null);
-                }
-            }
-            this._marquee = null;
-            this._marqueeRect = null;
-            return;
-        }
-        if (this._drag || this._resize) {
-            this._clearGuides();
-            const id = (this._drag || this._resize).id;
-            this._drag = null;
-            this._resize = null;
-            const el = this.elements.find(e2 => e2.id === id);
-            if (el && this.onPositionChange) this.onPositionChange(el);
-            this.onChange(this.serialize());
-        }
+        CanvasTransformRuntime.handleMouseUp({ editor: this });
     }
 
     /* ── Nudge & Align/Distribute ─────────────────────────── */
 
     nudge(dx, dy) {
-        const ids = this.selectedIds.size > 0 ? [...this.selectedIds] : (this.selectedId ? [this.selectedId] : []);
-        if (!ids.length) return;
-        let moved = false;
-        for (const id of ids) {
-            const el = this.elements.find(e => e.id === id);
-            if (!el || this._isElementLocked(el)) continue;
-            el.x = Math.round(el.x + dx);
-            el.y = Math.round(el.y + dy);
-            const div = this._dom(id);
-            if (div) { div.style.left = el.x + 'px'; div.style.top = el.y + 'px'; }
-            moved = true;
-        }
-        if (!moved) return;
-        if (this.onPositionChange) this.onPositionChange(this.elements.find(e => e.id === this.selectedId));
-        this.onChange(this.serialize());
+        CanvasTransformRuntime.nudge({ editor: this }, dx, dy);
     }
 
     alignElements(direction) {
-        const els = this.getSelectedElements().filter(el => !this._isElementLocked(el));
-        if (els.length < 2) return;
-        switch (direction) {
-            case 'left':   { const mn = Math.min(...els.map(e => e.x)); els.forEach(e => e.x = mn); break; }
-            case 'right':  { const mx = Math.max(...els.map(e => e.x + e.w)); els.forEach(e => e.x = mx - e.w); break; }
-            case 'top':    { const mn = Math.min(...els.map(e => e.y)); els.forEach(e => e.y = mn); break; }
-            case 'bottom': { const mx = Math.max(...els.map(e => e.y + e.h)); els.forEach(e => e.y = mx - e.h); break; }
-            case 'center-h': { const cx = Math.round(els.reduce((s, e) => s + e.x + e.w / 2, 0) / els.length); els.forEach(e => e.x = Math.round(cx - e.w / 2)); break; }
-            case 'center-v': { const cy = Math.round(els.reduce((s, e) => s + e.y + e.h / 2, 0) / els.length); els.forEach(e => e.y = Math.round(cy - e.h / 2)); break; }
-        }
-        els.forEach(e => this._refreshDOM(e.id));
-        this.onChange(this.serialize());
+        CanvasTransformRuntime.alignElements({
+            editor: this,
+            alignElementsRects: CanvasHelpers.alignElementsRects,
+        }, direction);
     }
 
     distributeElements(axis) {
-        const els = this.getSelectedElements().filter(el => !this._isElementLocked(el));
-        if (els.length < 3) return;
-        if (axis === 'h') {
-            els.sort((a, b) => a.x - b.x);
-            const totalW = els.reduce((s, e) => s + e.w, 0);
-            const minX = els[0].x, maxX = els[els.length - 1].x + els[els.length - 1].w;
-            const gap = (maxX - minX - totalW) / (els.length - 1);
-            let cx = minX;
-            els.forEach(e => { e.x = Math.round(cx); cx += e.w + gap; });
-        } else {
-            els.sort((a, b) => a.y - b.y);
-            const totalH = els.reduce((s, e) => s + e.h, 0);
-            const minY = els[0].y, maxY = els[els.length - 1].y + els[els.length - 1].h;
-            const gap = (maxY - minY - totalH) / (els.length - 1);
-            let cy = minY;
-            els.forEach(e => { e.y = Math.round(cy); cy += e.h + gap; });
-        }
-        els.forEach(e => this._refreshDOM(e.id));
-        this.onChange(this.serialize());
+        CanvasTransformRuntime.distributeElements({
+            editor: this,
+            distributeElementsRects: CanvasHelpers.distributeElementsRects,
+        }, axis);
     }
 
     /**
@@ -3450,197 +2815,32 @@ class CanvasEditor {
      * - Conserve les proportions lors du redimensionnement
      */
     autoLayoutSelected(options = {}) {
-        const els = this.getSelectedElements().filter(el => !this._isElementLocked(el));
-        if (els.length < 2) return { moved: false, count: els.length };
-
-        const CANVAS_W = 1280;
-        const CANVAS_H = 720;
-        const margin = Math.max(8, Math.min(140, Number(options.margin ?? 36)));
-        const gap = Math.max(4, Math.min(80, Number(options.gap ?? 18)));
-        const resizeToFit = options.resizeToFit !== false;
-
-        const sorted = [...els].sort((a, b) => (a.y - b.y) || (a.x - b.x));
-        const minX = Math.min(...sorted.map(e => e.x));
-        const maxX = Math.max(...sorted.map(e => e.x + e.w));
-        const minY = Math.min(...sorted.map(e => e.y));
-        const maxY = Math.max(...sorted.map(e => e.y + e.h));
-        const selectedW = Math.max(1, maxX - minX);
-        const selectedH = Math.max(1, maxY - minY);
-
-        // Zone cible: centrée sur le canvas, mais bornée par la taille de la sélection.
-        const areaW = Math.max(220, Math.min(CANVAS_W - margin * 2, Math.max(selectedW + margin, CANVAS_W - margin * 2)));
-        const areaH = Math.max(180, Math.min(CANVAS_H - margin * 2, Math.max(selectedH + margin, CANVAS_H - margin * 2)));
-        const areaX = Math.round((CANVAS_W - areaW) / 2);
-        const areaY = Math.round((CANVAS_H - areaH) / 2);
-
-        const targetCols = Math.max(1, Math.round(Math.sqrt((sorted.length * areaW) / areaH)));
-        let best = null;
-        for (let cols = 1; cols <= sorted.length; cols++) {
-            const rows = Math.ceil(sorted.length / cols);
-            const cellW = (areaW - gap * (cols - 1)) / cols;
-            const cellH = (areaH - gap * (rows - 1)) / rows;
-            if (cellW < 44 || cellH < 44) continue;
-
-            let scaleSum = 0;
-            for (const el of sorted) {
-                const scale = resizeToFit ? Math.min(1, cellW / Math.max(1, el.w), cellH / Math.max(1, el.h)) : 1;
-                scaleSum += scale;
-            }
-            const avgScale = scaleSum / sorted.length;
-            // Score: privilégie la lisibilité (avgScale) puis un nombre de colonnes raisonnable.
-            const score = avgScale * 100 - Math.abs(cols - targetCols) * 2;
-            if (!best || score > best.score) {
-                best = { cols, rows, cellW, cellH, score };
-            }
-        }
-        if (!best) return { moved: false, count: sorted.length };
-
-        let moved = false;
-        for (let i = 0; i < sorted.length; i++) {
-            const el = sorted[i];
-            const col = i % best.cols;
-            const row = Math.floor(i / best.cols);
-            const cellX = areaX + col * (best.cellW + gap);
-            const cellY = areaY + row * (best.cellH + gap);
-
-            let nextW = el.w;
-            let nextH = el.h;
-            if (resizeToFit) {
-                const fit = Math.min(1, best.cellW / Math.max(1, el.w), best.cellH / Math.max(1, el.h));
-                if (fit < 0.999) {
-                    nextW = Math.max(24, Math.round(el.w * fit));
-                    nextH = Math.max(24, Math.round(el.h * fit));
-                }
-            }
-
-            const nextX = Math.max(0, Math.min(CANVAS_W - nextW, Math.round(cellX + (best.cellW - nextW) / 2)));
-            const nextY = Math.max(0, Math.min(CANVAS_H - nextH, Math.round(cellY + (best.cellH - nextH) / 2)));
-
-            if (nextX !== el.x || nextY !== el.y || nextW !== el.w || nextH !== el.h) {
-                el.x = nextX;
-                el.y = nextY;
-                el.w = nextW;
-                el.h = nextH;
-                moved = true;
-            }
-            this._refreshDOM(el.id);
-        }
-
-        if (!moved) return { moved: false, count: sorted.length };
-        if (this.connectors.length) this._refreshConnectors();
-        if (this.onPositionChange) this.onPositionChange(this.elements.find(e => e.id === this.selectedId) || null);
-        this.onChange(this.serialize());
-        return { moved: true, count: sorted.length, cols: best.cols, rows: best.rows };
+        return CanvasTransformRuntime.autoLayoutSelected({
+            editor: this,
+            computeAutoLayoutRects: CanvasHelpers.computeAutoLayoutRects,
+        }, options);
     }
 
     removeSelected() {
-        // If a connector is selected, remove it
-        if (this._selectedConnectorId) {
-            this.removeConnector(this._selectedConnectorId);
-            return;
-        }
-        const ids = [...this.selectedIds];
-        if (!ids.length) return;
-        let removed = false;
-        ids.forEach(id => {
-            const el = this.elements.find(e => e.id === id);
-            if (!el || this._isElementLocked(el)) return;
-            const dom = this._dom(id);
-            if (dom) dom.remove();
-            this.elements = this.elements.filter(e => e.id !== id);
-            // Remove connectors referencing removed elements
-            this.connectors = this.connectors.filter(c => c.sourceId !== id && c.targetId !== id);
-            removed = true;
-        });
-        if (!removed) return;
-        this.selectedIds.clear();
-        this.selectedId = null;
-        this.onSelect(null);
-        this._refreshConnectors();
-        this.onChange(this.serialize());
+        CanvasTransformRuntime.removeSelected({ editor: this });
     }
 
     /* ── Alignment guides ─────────────────────────────────── */
 
     _computeSnap({ id, x: nx, y: ny, w, h }) {
-        const SNAP = 8;
-        const others = this.elements.filter(e => e.id !== id);
-
-        // Candidate snap lines
-        const xCands = [0, 640, 1280];
-        const yCands = [0, 360, 720];
-        // Grid snap candidates
-        if (this._gridSize > 0) {
-            const g = this._gridSize;
-            for (let gx = g; gx < 1280; gx += g) xCands.push(gx);
-            for (let gy = g; gy < 720; gy += g) yCands.push(gy);
-        }
-        for (const o of others) {
-            xCands.push(o.x, o.x + o.w / 2, o.x + o.w);
-            yCands.push(o.y, o.y + o.h / 2, o.y + o.h);
-        }
-
-        // Edges of the dragged element
-        const xEdgeOffsets = [0, w / 2, w];    // left, center, right
-        const yEdgeOffsets = [0, h / 2, h];    // top, center, bottom
-
-        let bestDX = SNAP, snapDX = 0, guideXs = [];
-        let bestDY = SNAP, snapDY = 0, guideYs = [];
-
-        for (const cx of xCands) {
-            for (const off of xEdgeOffsets) {
-                const d = Math.abs(cx - (nx + off));
-                if (d < bestDX) {
-                    bestDX = d;
-                    snapDX = cx - off - nx;
-                    guideXs = [cx];
-                }
-            }
-        }
-        for (const cy of yCands) {
-            for (const off of yEdgeOffsets) {
-                const d = Math.abs(cy - (ny + off));
-                if (d < bestDY) {
-                    bestDY = d;
-                    snapDY = cy - off - ny;
-                    guideYs = [cy];
-                }
-            }
-        }
-
-        return {
-            x: Math.round(nx + (bestDX < SNAP ? snapDX : 0)),
-            y: Math.round(ny + (bestDY < SNAP ? snapDY : 0)),
-            guideXs: bestDX < SNAP ? guideXs : [],
-            guideYs: bestDY < SNAP ? guideYs : [],
-        };
+        return CanvasHelpers.computeSnapResult(
+            { id, x: nx, y: ny, w, h },
+            this.elements,
+            { gridSize: this._gridSize, snapThreshold: 8, canvasWidth: 1280, canvasHeight: 720 }
+        );
     }
 
     _showGuides(xs, ys) {
-        const layer = this.container.querySelector('.canvas-guide-layer');
-        if (!layer) return;
-        layer.innerHTML = '';
-        // Compensate for the preview scale so guides are always ~2px visually
-        const thick = Math.ceil(2 / (this.scale || 1));
-        xs.forEach(x => {
-            const line = document.createElement('div');
-            line.className = 'canvas-guide-v';
-            line.style.left = (x - Math.floor(thick / 2)) + 'px';
-            line.style.width = thick + 'px';
-            layer.appendChild(line);
-        });
-        ys.forEach(y => {
-            const line = document.createElement('div');
-            line.className = 'canvas-guide-h';
-            line.style.top = (y - Math.floor(thick / 2)) + 'px';
-            line.style.height = thick + 'px';
-            layer.appendChild(line);
-        });
+        CanvasGuides.renderGuides(this.container, xs, ys, { scale: this.scale, documentRef: document });
     }
 
     _clearGuides() {
-        const layer = this.container.querySelector('.canvas-guide-layer');
-        if (layer) layer.innerHTML = '';
+        CanvasGuides.clearGuides(this.container);
     }
 }
 

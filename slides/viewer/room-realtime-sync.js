@@ -27,6 +27,30 @@ function safeSend(conn, payload) {
 }
 
 /**
+ * @param {any} raw
+ * @returns {any | null}
+ */
+function normalizeWhiteboardSyncPayload(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const active = !!raw.active;
+    const slideIndex = Number.isFinite(Number(raw.slideIndex)) ? Math.max(0, Math.trunc(Number(raw.slideIndex))) : 0;
+    const updatedAt = Number.isFinite(Number(raw.updatedAt)) ? Math.max(0, Math.trunc(Number(raw.updatedAt))) : Date.now();
+    const canvasWidth = Number.isFinite(Number(raw.canvasWidth)) ? Math.max(1, Math.trunc(Number(raw.canvasWidth))) : 1280;
+    const canvasHeight = Number.isFinite(Number(raw.canvasHeight)) ? Math.max(1, Math.trunc(Number(raw.canvasHeight))) : 720;
+    const commands = Array.isArray(raw.commands)
+        ? raw.commands.filter(entry => entry && typeof entry === 'object').map(entry => ({ ...entry })).slice(0, 8000)
+        : [];
+    return {
+        active,
+        slideIndex,
+        updatedAt,
+        canvasWidth,
+        canvasHeight,
+        commands,
+    };
+}
+
+/**
  * @param {{
  *   msg: any,
  *   peerId: string,
@@ -72,6 +96,7 @@ export function createStudentJoinRecord(params) {
  *   activeWordCloud: any,
  *   activeExitTicket: any,
  *   activeRankOrder: any,
+ *   whiteboardState?: any | (() => any),
  * }} params
  */
 export function sendActiveRoomActivities(params) {
@@ -81,6 +106,10 @@ export function sendActiveRoomActivities(params) {
     const activeWordCloud = params?.activeWordCloud;
     const activeExitTicket = params?.activeExitTicket;
     const activeRankOrder = params?.activeRankOrder;
+    const wbRaw = typeof params?.whiteboardState === 'function'
+        ? params.whiteboardState()
+        : params?.whiteboardState;
+    const whiteboardState = normalizeWhiteboardSyncPayload(wbRaw);
 
     if (activePoll) {
         safeSend(conn, {
@@ -115,6 +144,12 @@ export function sendActiveRoomActivities(params) {
             items: Array.isArray(activeRankOrder.items) ? activeRankOrder.items.slice() : [],
         });
     }
+    if (whiteboardState && ROOM_MSG.WHITEBOARD_SYNC) {
+        safeSend(conn, {
+            type: ROOM_MSG.WHITEBOARD_SYNC,
+            ...whiteboardState,
+        });
+    }
 }
 
 /**
@@ -128,6 +163,7 @@ export function sendActiveRoomActivities(params) {
  *   activeWordCloud: any,
  *   activeExitTicket: any,
  *   activeRankOrder: any,
+ *   whiteboardState?: any | (() => any),
  * }} params
  * @returns {boolean}
  */
@@ -318,4 +354,3 @@ export const testUtils = Object.freeze({
     defaultTrim,
     safeSend,
 });
-

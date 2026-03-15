@@ -2114,7 +2114,8 @@ class SlidesRenderer {
     /** Render a single slide as HTML (for preview or Reveal.js) */
     static renderSlide(slide, index = 0, opts = {}) {
         const type = slide.type || 'blank';
-        const notes = slide.notes ? `<aside class="notes">${slide.notes}</aside>` : '';
+        const includeNotes = opts.includeNotes !== false;
+        const notes = includeNotes && slide.notes ? `<aside class="notes">${slide.notes}</aside>` : '';
         const overlay = SlidesRenderer._slideOverlay(index, opts);
         let inner = '';
         switch (type) {

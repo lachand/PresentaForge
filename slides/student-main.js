@@ -223,6 +223,11 @@
         let quizData = null;
         let quizStartTime = 0;
         let quizTimerInterval = null;
+        const WHITEBOARD_BASE_WIDTH = 1280;
+        const WHITEBOARD_BASE_HEIGHT = 720;
+        let _whiteboardActive = false;
+        let _whiteboardCurrentSlide = 0;
+        const _whiteboardCommandsBySlide = {};
         const _syncStudentRuntime = patch => {
             if (!patch || typeof patch !== 'object') return;
             if (StudentRuntimeBridge?.sync) {
@@ -1186,6 +1191,173 @@
             }, 500);
         }
 
+        function sanitizeWhiteboardPoint(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            const x = Number(raw.x);
+            const y = Number(raw.y);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+            return {
+                x: Math.max(0, Math.min(WHITEBOARD_BASE_WIDTH, x)),
+                y: Math.max(0, Math.min(WHITEBOARD_BASE_HEIGHT, y)),
+            };
+        }
+
+        function sanitizeWhiteboardCommands(raw) {
+            if (!Array.isArray(raw)) return [];
+            const out = [];
+            raw.forEach(entry => {
+                if (!entry || typeof entry !== 'object') return;
+                if (entry.kind === 'stroke') {
+                    const tool = String(entry.tool || '');
+                    if (!['pen', 'highlighter', 'eraser'].includes(tool)) return;
+                    const size = Number(entry.size);
+                    if (!Number.isFinite(size) || size <= 0) return;
+                    const points = Array.isArray(entry.points) ? entry.points.map(sanitizeWhiteboardPoint).filter(Boolean) : [];
+                    if (points.length < 2) return;
+                    out.push({
+                        kind: 'stroke',
+                        tool,
+                        color: typeof entry.color === 'string' ? entry.color : '#ffffff',
+                        size,
+                        points,
+                    });
+                    return;
+                }
+                if (entry.kind === 'shape') {
+                    const shape = String(entry.shape || '');
+                    if (!['rect', 'circle', 'arrow'].includes(shape)) return;
+                    const size = Number(entry.size);
+                    const startX = Number(entry.startX);
+                    const startY = Number(entry.startY);
+                    const endX = Number(entry.endX);
+                    const endY = Number(entry.endY);
+                    if (![size, startX, startY, endX, endY].every(Number.isFinite) || size <= 0) return;
+                    out.push({
+                        kind: 'shape',
+                        shape,
+                        color: typeof entry.color === 'string' ? entry.color : '#ffffff',
+                        size,
+                        startX: Math.max(0, Math.min(WHITEBOARD_BASE_WIDTH, startX)),
+                        startY: Math.max(0, Math.min(WHITEBOARD_BASE_HEIGHT, startY)),
+                        endX: Math.max(0, Math.min(WHITEBOARD_BASE_WIDTH, endX)),
+                        endY: Math.max(0, Math.min(WHITEBOARD_BASE_HEIGHT, endY)),
+                    });
+                }
+            });
+            return out;
+        }
+
+        function drawWhiteboardArrow(ctx, x1, y1, x2, y2, lineWidth) {
+            const headlen = 10 + lineWidth;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), y2 - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), y2 - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.stroke();
+        }
+
+        function drawWhiteboardCommand(ctx, command, scaleX, scaleY) {
+            if (!command || typeof command !== 'object') return;
+            const uniformScale = Math.max(0.1, Math.min(scaleX, scaleY));
+            if (command.kind === 'stroke' && Array.isArray(command.points) && command.points.length > 1) {
+                ctx.save();
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                if (command.tool === 'eraser') {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.strokeStyle = 'rgba(0,0,0,1)';
+                    ctx.lineWidth = command.size * 2 * uniformScale;
+                    ctx.globalAlpha = 1;
+                } else if (command.tool === 'highlighter') {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = command.color;
+                    ctx.lineWidth = command.size * 2.5 * uniformScale;
+                    ctx.globalAlpha = 0.35;
+                } else {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = command.color;
+                    ctx.lineWidth = command.size * uniformScale;
+                    ctx.globalAlpha = 1;
+                }
+                ctx.beginPath();
+                ctx.moveTo(command.points[0].x * scaleX, command.points[0].y * scaleY);
+                for (let i = 1; i < command.points.length; i++) {
+                    const p = command.points[i];
+                    ctx.lineTo(p.x * scaleX, p.y * scaleY);
+                }
+                ctx.stroke();
+                ctx.closePath();
+                ctx.restore();
+                return;
+            }
+            if (command.kind === 'shape') {
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 1;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = command.color;
+                ctx.lineWidth = command.size * uniformScale;
+                const x1 = command.startX * scaleX;
+                const y1 = command.startY * scaleY;
+                const x2 = command.endX * scaleX;
+                const y2 = command.endY * scaleY;
+                if (command.shape === 'rect') {
+                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                } else if (command.shape === 'circle') {
+                    const r = Math.hypot(x2 - x1, y2 - y1);
+                    ctx.beginPath();
+                    ctx.arc(x1, y1, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (command.shape === 'arrow') {
+                    drawWhiteboardArrow(ctx, x1, y1, x2, y2, ctx.lineWidth);
+                }
+                ctx.restore();
+            }
+        }
+
+        function renderStudentWhiteboard() {
+            const canvas = /** @type {HTMLCanvasElement | null} */ (document.getElementById('student-whiteboard'));
+            const frame = document.getElementById('slide-frame');
+            if (!canvas || !frame) return;
+            const dpr = window.devicePixelRatio || 1;
+            const width = Math.max(1, Math.round(frame.clientWidth || 0));
+            const height = Math.max(1, Math.round(frame.clientHeight || 0));
+            if (!width || !height) return;
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            if (typeof ctx.setTransform === 'function') ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, width, height);
+            const commands = Array.isArray(_whiteboardCommandsBySlide[String(currentIndex)])
+                ? _whiteboardCommandsBySlide[String(currentIndex)]
+                : [];
+            const shouldShow = _whiteboardActive && currentIndex === _whiteboardCurrentSlide;
+            canvas.classList.toggle('active', shouldShow);
+            if (!shouldShow || !commands.length) return;
+            const scaleX = width / WHITEBOARD_BASE_WIDTH;
+            const scaleY = height / WHITEBOARD_BASE_HEIGHT;
+            commands.forEach(command => drawWhiteboardCommand(ctx, command, scaleX, scaleY));
+        }
+
+        function applyWhiteboardSyncMessage(msg) {
+            if (!msg || typeof msg !== 'object') return;
+            const slideIndex = toSafeInt(msg.slideIndex);
+            _whiteboardCurrentSlide = slideIndex === null ? Math.max(0, _presenterIndex) : Math.max(0, slideIndex);
+            _whiteboardActive = !!msg.active;
+            if (Array.isArray(msg.commands)) {
+                _whiteboardCommandsBySlide[String(_whiteboardCurrentSlide)] = sanitizeWhiteboardCommands(msg.commands);
+            }
+            renderStudentWhiteboard();
+        }
+
         // ── Slide rendering ───────────────────────────────
         function scaleSlide() {
             const frame = document.getElementById('slide-frame');
@@ -1199,6 +1371,7 @@
             frame.style.width = Math.round(1280 * scale) + 'px';
             frame.style.height = Math.round(720 * scale) + 'px';
             inner.style.transform = `scale(${scale})`;
+            renderStudentWhiteboard();
         }
 
         function maxPresenterAllowedIndex() {
@@ -1237,6 +1410,7 @@
             scaleSlide();
             mountCodeLive(inner);
             mountStudentWidgets(inner);
+            renderStudentWhiteboard();
             _loadSlideNotes(target);
             updateBookmarkControls();
             if (_revisionEnabled) {
@@ -1926,6 +2100,8 @@
                     if (msg.themeCSS) document.getElementById('presentation-theme').textContent = msg.themeCSS.replace(/\.reveal/g, '#slide-inner');
                     // Store slides
                     slidesHtml = msg.slidesHtml || [];
+                    Object.keys(_whiteboardCommandsBySlide).forEach(key => { delete _whiteboardCommandsBySlide[key]; });
+                    _whiteboardActive = false;
                     detectQuizSlides();
                     // Switch to main view
                     document.getElementById('join-screen').style.display = 'none';
@@ -1937,6 +2113,7 @@
                     // Show current slide
                     const initIndex = typeof msg.currentIndex === 'number' ? msg.currentIndex : 0;
                     _presenterIndex = initIndex;
+                    _whiteboardCurrentSlide = Math.max(0, initIndex);
                     _syncStudentRuntime({ presenterIndex: initIndex });
                     if (_revisionEnabled) {
                         const deck = revisionOrderedDeck();
@@ -1947,6 +2124,11 @@
                     }
                     const initFragOrder = toSafeInt(msg.currentFragmentOrder ?? msg.currentFragmentIndex);
                     if (initFragOrder !== null) applyFragmentProgress(initFragOrder);
+                    if (msg.whiteboard && typeof msg.whiteboard === 'object') {
+                        applyWhiteboardSyncMessage(msg.whiteboard);
+                    } else {
+                        renderStudentWhiteboard();
+                    }
                     updateRevisionControls();
                     break;
                 }
@@ -2005,6 +2187,10 @@
                     }
                     break;
                 }
+
+                case ROOM_MSG.WHITEBOARD_SYNC:
+                    applyWhiteboardSyncMessage(msg);
+                    break;
 
                 case ROOM_MSG.QUIZ_QUESTION:
                     showQuiz(msg);

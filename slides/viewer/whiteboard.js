@@ -1,7 +1,11 @@
 // @ts-check
 /**
- * Whiteboard controller for viewer mode.
+ * Whiteboard controller for viewer/presenter mode.
  * Keeps all drawing state isolated from viewer-main.
+ *
+ * Coordinates are stored in a canonical 1280x720 space so that
+ * drawings can be synced and replayed independently of viewport size.
+ *
  * @typedef {{ x: number, y: number }} WhiteboardPoint
  * @typedef {{
  *   kind: 'stroke',
@@ -21,6 +25,25 @@
  *   endY: number
  * }} WhiteboardShape
  * @typedef {WhiteboardStroke | WhiteboardShape} WhiteboardCommand
+ * @typedef {{ left: number, top: number, width: number, height: number }} WhiteboardDrawRect
+ * @typedef {{
+ *   active: boolean,
+ *   slideIndex: number,
+ *   updatedAt: number,
+ *   canvasWidth: number,
+ *   canvasHeight: number,
+ *   commands: WhiteboardCommand[]
+ * }} WhiteboardSyncState
+ * @typedef {{
+ *   active: boolean,
+ *   slideIndex: number,
+ *   updatedAt: number,
+ *   canvasWidth: number,
+ *   canvasHeight: number,
+ *   commandCount: number,
+ *   imageDataUrl: string,
+ *   reason: string
+ * }} WhiteboardRecordedFrame
  * @param {{
  *   roomIsActive: () => boolean,
  *   roomBroadcast: (msg: any) => void,
@@ -28,13 +51,22 @@
  *   getCurrentSlideIndex: () => number,
  *   storageKey?: string,
  *   storageGetJSON?: (key: string, fallback?: any) => any,
- *   storageSetJSON?: (key: string, value: any) => boolean
+ *   storageSetJSON?: (key: string, value: any) => boolean,
+ *   getDrawRect?: () => Partial<WhiteboardDrawRect> | DOMRect | null,
+ *   onSyncState?: (state: WhiteboardSyncState & { reason: string }) => void,
+ *   shouldRecordFrame?: () => boolean,
+ *   onRecordFrame?: (frame: WhiteboardRecordedFrame) => void,
+ *   now?: () => number,
  * }} deps
  */
 export function createWhiteboardController(deps) {
     const WB_SHAPE_TOOLS = ['rect', 'circle', 'arrow'];
     const WB_ALL_TOOLS = ['pen', 'highlighter', 'eraser', 'rect', 'circle', 'arrow'];
     const PERSIST_VERSION = 1;
+    const BASE_WIDTH = 1280;
+    const BASE_HEIGHT = 720;
+
+    const now = typeof deps.now === 'function' ? deps.now : () => Date.now();
 
     const wb = {
         active: false,
@@ -52,9 +84,78 @@ export function createWhiteboardController(deps) {
         drawings: /** @type {Record<string, WhiteboardCommand[]>} */ ({}),
         currentSlide: 0,
         persistTimer: null,
+        drawRect: /** @type {WhiteboardDrawRect} */ ({ left: 0, top: 0, width: BASE_WIDTH, height: BASE_HEIGHT }),
     };
     const canPersist = !!deps.storageKey && typeof deps.storageGetJSON === 'function' && typeof deps.storageSetJSON === 'function';
     let initialized = false;
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /**
+     * @returns {WhiteboardDrawRect}
+     */
+    function resolveDrawRect() {
+        const fallback = {
+            left: 0,
+            top: 0,
+            width: Math.max(8, Number(window.innerWidth || BASE_WIDTH)),
+            height: Math.max(8, Number(window.innerHeight || BASE_HEIGHT)),
+        };
+        if (typeof deps.getDrawRect !== 'function') return fallback;
+        let raw = null;
+        try {
+            raw = deps.getDrawRect();
+        } catch (_) {
+            raw = null;
+        }
+        if (!raw || typeof raw !== 'object') return fallback;
+        const left = Number(raw.left);
+        const top = Number(raw.top);
+        const width = Number(raw.width);
+        const height = Number(raw.height);
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width < 8 || height < 8) return fallback;
+        return {
+            left: Number.isFinite(left) ? left : fallback.left,
+            top: Number.isFinite(top) ? top : fallback.top,
+            width,
+            height,
+        };
+    }
+
+    /**
+     * @param {WhiteboardPoint} point
+     * @param {WhiteboardDrawRect} rect
+     */
+    function toViewportPoint(point, rect) {
+        return {
+            x: rect.left + (point.x / BASE_WIDTH) * rect.width,
+            y: rect.top + (point.y / BASE_HEIGHT) * rect.height,
+        };
+    }
+
+    /**
+     * @param {PointerEvent} event
+     * @param {boolean} allowOutside
+     * @returns {WhiteboardPoint | null}
+     */
+    function pointerToBasePoint(event, allowOutside) {
+        const rect = wb.drawRect || resolveDrawRect();
+        const cx = Number(event.clientX);
+        const cy = Number(event.clientY);
+        if (!Number.isFinite(cx) || !Number.isFinite(cy)) return null;
+        const rawX = cx - rect.left;
+        const rawY = cy - rect.top;
+        if (!allowOutside) {
+            if (rawX < 0 || rawY < 0 || rawX > rect.width || rawY > rect.height) return null;
+        }
+        const localX = clamp(rawX, 0, rect.width);
+        const localY = clamp(rawY, 0, rect.height);
+        const x = (localX / Math.max(1, rect.width)) * BASE_WIDTH;
+        const y = (localY / Math.max(1, rect.height)) * BASE_HEIGHT;
+        return { x: clamp(x, 0, BASE_WIDTH), y: clamp(y, 0, BASE_HEIGHT) };
+    }
 
     function init() {
         if (initialized) return;
@@ -64,7 +165,10 @@ export function createWhiteboardController(deps) {
         wb.preview = /** @type {HTMLCanvasElement} */ (document.getElementById('wb-preview'));
         wb.pCtx = wb.preview.getContext('2d');
 
+        if (!wb.canvas || !wb.ctx || !wb.preview || !wb.pCtx) return;
+
         loadPersisted();
+        wb.currentSlide = normalizeSlideIndex(deps.getCurrentSlideIndex?.());
         resize();
         window.addEventListener('resize', resize);
 
@@ -93,6 +197,18 @@ export function createWhiteboardController(deps) {
         document.getElementById('wb-clear')?.addEventListener('click', clearCurrent);
         document.getElementById('wb-close')?.addEventListener('click', toggle);
         document.getElementById('btn-whiteboard')?.addEventListener('click', toggle);
+
+        emitSyncState('init', false);
+    }
+
+    /**
+     * @param {any} value
+     * @returns {number}
+     */
+    function normalizeSlideIndex(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return 0;
+        return Math.max(0, Math.trunc(n));
     }
 
     function storageGetCommands(slide) {
@@ -141,7 +257,7 @@ export function createWhiteboardController(deps) {
      * @param {CanvasRenderingContext2D} ctx
      * @param {WhiteboardCommand} command
      */
-    function drawCommand(ctx, command) {
+    function drawCommandCanonical(ctx, command) {
         if (!command || typeof command !== 'object') return;
         if (command.kind === 'stroke') {
             if (!Array.isArray(command.points) || command.points.length < 2) return;
@@ -183,30 +299,53 @@ export function createWhiteboardController(deps) {
         }
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {WhiteboardCommand} command
+     * @param {WhiteboardDrawRect} rect
+     */
+    function drawCommandInRect(ctx, command, rect) {
+        ctx.save();
+        ctx.translate(rect.left, rect.top);
+        ctx.scale(rect.width / BASE_WIDTH, rect.height / BASE_HEIGHT);
+        drawCommandCanonical(ctx, command);
+        ctx.restore();
+    }
+
+    function clearCanvasLayers() {
+        if (wb.ctx && wb.canvas) wb.ctx.clearRect(0, 0, wb.canvas.width, wb.canvas.height);
+        if (wb.pCtx && wb.preview) wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+    }
+
     function renderSlide(idx) {
+        if (!wb.ctx || !wb.canvas || !wb.pCtx || !wb.preview) return;
+        wb.drawRect = resolveDrawRect();
         wb.ctx.clearRect(0, 0, wb.canvas.width, wb.canvas.height);
         const commands = storageGetCommands(idx);
-        commands.forEach(cmd => drawCommand(wb.ctx, cmd));
+        commands.forEach(cmd => drawCommandInRect(wb.ctx, cmd, wb.drawRect));
         wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
     }
 
     function resize() {
+        if (!wb.canvas || !wb.preview || !wb.ctx || !wb.pCtx) return;
         const dpr = window.devicePixelRatio || 1;
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        wb.canvas.width = w * dpr;
-        wb.canvas.height = h * dpr;
+        const w = Math.max(1, Math.floor(window.innerWidth || BASE_WIDTH));
+        const h = Math.max(1, Math.floor(window.innerHeight || BASE_HEIGHT));
+
+        wb.canvas.width = Math.floor(w * dpr);
+        wb.canvas.height = Math.floor(h * dpr);
         wb.canvas.style.width = `${w}px`;
         wb.canvas.style.height = `${h}px`;
-        wb.ctx.scale(dpr, dpr);
+        if (typeof wb.ctx.setTransform === 'function') wb.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        wb.preview.width = w * dpr;
-        wb.preview.height = h * dpr;
+        wb.preview.width = Math.floor(w * dpr);
+        wb.preview.height = Math.floor(h * dpr);
         wb.preview.style.width = `${w}px`;
         wb.preview.style.height = `${h}px`;
-        wb.pCtx.scale(dpr, dpr);
+        if (typeof wb.pCtx.setTransform === 'function') wb.pCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        renderSlide(wb.currentSlide);
+        if (wb.active) renderSlide(wb.currentSlide);
+        else clearCanvasLayers();
     }
 
     function persistSoon() {
@@ -216,7 +355,7 @@ export function createWhiteboardController(deps) {
             wb.persistTimer = null;
             deps.storageSetJSON?.(deps.storageKey, {
                 v: PERSIST_VERSION,
-                updatedAt: Date.now(),
+                updatedAt: now(),
                 slides: wb.drawings,
             });
         }, 220);
@@ -227,7 +366,10 @@ export function createWhiteboardController(deps) {
         const x = Number(raw.x);
         const y = Number(raw.y);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-        return { x, y };
+        return {
+            x: clamp(x, 0, BASE_WIDTH),
+            y: clamp(y, 0, BASE_HEIGHT),
+        };
     }
 
     /**
@@ -260,10 +402,10 @@ export function createWhiteboardController(deps) {
             if (item.kind === 'shape') {
                 const shape = WB_SHAPE_TOOLS.includes(item.shape) ? item.shape : 'rect';
                 const size = Number(item.size);
-                const sx = Number(item.startX);
-                const sy = Number(item.startY);
-                const ex = Number(item.endX);
-                const ey = Number(item.endY);
+                const sx = clamp(Number(item.startX), 0, BASE_WIDTH);
+                const sy = clamp(Number(item.startY), 0, BASE_HEIGHT);
+                const ex = clamp(Number(item.endX), 0, BASE_WIDTH);
+                const ey = clamp(Number(item.endY), 0, BASE_HEIGHT);
                 if (![size, sx, sy, ex, ey].every(Number.isFinite) || size <= 0) return;
                 const color = typeof item.color === 'string' ? item.color : '#ffffff';
                 out.push({
@@ -294,20 +436,89 @@ export function createWhiteboardController(deps) {
         });
     }
 
+    /**
+     * @returns {WhiteboardSyncState}
+     */
+    function getSyncState() {
+        const slideIndex = normalizeSlideIndex(wb.currentSlide);
+        const commands = sanitizeCommands(storageGetCommands(slideIndex));
+        return {
+            active: !!wb.active,
+            slideIndex,
+            updatedAt: now(),
+            canvasWidth: BASE_WIDTH,
+            canvasHeight: BASE_HEIGHT,
+            commands,
+        };
+    }
+
+    /**
+     * @param {number} slideIndex
+     * @returns {string}
+     */
+    function buildSlideImageDataUrl(slideIndex) {
+        try {
+            const offscreen = document.createElement('canvas');
+            offscreen.width = BASE_WIDTH;
+            offscreen.height = BASE_HEIGHT;
+            const ctx = offscreen.getContext('2d');
+            if (!ctx) return '';
+            ctx.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+            const commands = sanitizeCommands(storageGetCommands(slideIndex));
+            commands.forEach(command => drawCommandCanonical(ctx, command));
+            return offscreen.toDataURL('image/png');
+        } catch (_) {
+            return '';
+        }
+    }
+
+    /**
+     * @param {string} reason
+     * @param {boolean} recordFrame
+     */
+    function emitSyncState(reason = '', recordFrame = false) {
+        const state = getSyncState();
+        if (typeof deps.onSyncState === 'function') {
+            deps.onSyncState({ ...state, reason: String(reason || '').slice(0, 40) });
+        }
+        if (recordFrame && typeof deps.onRecordFrame === 'function') {
+            const shouldRecordFrame = typeof deps.shouldRecordFrame === 'function' ? deps.shouldRecordFrame() : true;
+            if (!shouldRecordFrame) return state;
+            const imageDataUrl = buildSlideImageDataUrl(state.slideIndex);
+            deps.onRecordFrame({
+                active: state.active,
+                slideIndex: state.slideIndex,
+                updatedAt: state.updatedAt,
+                canvasWidth: state.canvasWidth,
+                canvasHeight: state.canvasHeight,
+                commandCount: state.commands.length,
+                imageDataUrl,
+                reason: String(reason || '').slice(0, 40),
+            });
+        }
+        return state;
+    }
+
     function toggle() {
+        if (!wb.canvas || !wb.preview) return;
         wb.active = !wb.active;
         wb.canvas.classList.toggle('active', wb.active);
         wb.preview.classList.toggle('active', wb.active);
         document.getElementById('wb-toolbar')?.classList.toggle('active', wb.active);
         document.getElementById('btn-whiteboard')?.classList.toggle('active', wb.active);
+        document.getElementById('pv-btn-whiteboard')?.classList.toggle('active', wb.active);
 
         if (wb.active) {
-            wb.currentSlide = deps.getCurrentSlideIndex();
+            wb.currentSlide = normalizeSlideIndex(deps.getCurrentSlideIndex?.());
             renderSlide(wb.currentSlide);
-            if (deps.roomIsActive()) deps.roomBroadcast({ type: deps.ROOM_MSG.REACTION_SHOW, emoji: '✏️', pseudo: 'Prof' });
+            if (deps.roomIsActive()) {
+                deps.roomBroadcast({ type: deps.ROOM_MSG.REACTION_SHOW, emoji: '✏️', pseudo: 'Prof' });
+            }
         } else {
             persistSoon();
+            clearCanvasLayers();
         }
+        emitSyncState('toggle', true);
     }
 
     function setTool(tool) {
@@ -318,16 +529,17 @@ export function createWhiteboardController(deps) {
     }
 
     /**
-     * @param {PointerEvent} e
+     * @param {PointerEvent} event
      */
-    function start(e) {
-        if (!wb.active) return;
+    function start(event) {
+        if (!wb.active || !wb.canvas || !wb.ctx) return;
+        wb.drawRect = resolveDrawRect();
+        const point = pointerToBasePoint(event, false);
+        if (!point) return;
+
         wb.drawing = true;
-        const rect = wb.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        wb.startX = x;
-        wb.startY = y;
+        wb.startX = point.x;
+        wb.startY = point.y;
 
         if (!WB_SHAPE_TOOLS.includes(wb.tool)) {
             /** @type {WhiteboardStroke} */
@@ -336,22 +548,22 @@ export function createWhiteboardController(deps) {
                 tool: wb.tool === 'eraser' ? 'eraser' : (wb.tool === 'highlighter' ? 'highlighter' : 'pen'),
                 color: wb.color,
                 size: wb.size,
-                points: [{ x, y }],
+                points: [point],
             };
+            const vp = toViewportPoint(point, wb.drawRect);
             applyStrokeStyle(wb.ctx, wb.currentPath.tool, wb.currentPath.color, wb.currentPath.size);
             wb.ctx.beginPath();
-            wb.ctx.moveTo(x, y);
+            wb.ctx.moveTo(vp.x, vp.y);
         }
     }
 
     /**
-     * @param {PointerEvent} e
+     * @param {PointerEvent} event
      */
-    function move(e) {
-        if (!wb.active || !wb.drawing) return;
-        const rect = wb.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+    function move(event) {
+        if (!wb.active || !wb.drawing || !wb.ctx || !wb.pCtx || !wb.preview) return;
+        const point = pointerToBasePoint(event, true);
+        if (!point) return;
 
         if (WB_SHAPE_TOOLS.includes(wb.tool)) {
             wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
@@ -363,31 +575,32 @@ export function createWhiteboardController(deps) {
                 size: wb.size,
                 startX: wb.startX,
                 startY: wb.startY,
-                endX: x,
-                endY: y,
+                endX: point.x,
+                endY: point.y,
             };
-            drawCommand(wb.pCtx, shapeCommand);
+            drawCommandInRect(wb.pCtx, shapeCommand, wb.drawRect);
             return;
         }
 
         if (!wb.currentPath) return;
-        wb.currentPath.points.push({ x, y });
+        wb.currentPath.points.push(point);
+        const vp = toViewportPoint(point, wb.drawRect);
         applyStrokeStyle(wb.ctx, wb.currentPath.tool, wb.currentPath.color, wb.currentPath.size);
-        wb.ctx.lineTo(x, y);
+        wb.ctx.lineTo(vp.x, vp.y);
         wb.ctx.stroke();
     }
 
     /**
-     * @param {PointerEvent} e
+     * @param {PointerEvent} event
      */
-    function end(e) {
-        if (!wb.active || !wb.drawing) return;
+    function end(event) {
+        if (!wb.active || !wb.drawing || !wb.ctx || !wb.pCtx || !wb.preview) return;
         wb.drawing = false;
 
+        const point = pointerToBasePoint(event, true)
+            || /** @type {WhiteboardPoint} */ ({ x: wb.startX, y: wb.startY });
+
         if (WB_SHAPE_TOOLS.includes(wb.tool)) {
-            const rect = wb.canvas.getBoundingClientRect();
-            const x2 = e.clientX - rect.left;
-            const y2 = e.clientY - rect.top;
             /** @type {WhiteboardShape} */
             const shapeCommand = {
                 kind: 'shape',
@@ -396,26 +609,25 @@ export function createWhiteboardController(deps) {
                 size: wb.size,
                 startX: wb.startX,
                 startY: wb.startY,
-                endX: x2,
-                endY: y2,
+                endX: point.x,
+                endY: point.y,
             };
             storageGetCommands(wb.currentSlide).push(shapeCommand);
-            drawCommand(wb.ctx, shapeCommand);
+            drawCommandInRect(wb.ctx, shapeCommand, wb.drawRect);
             wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
             persistSoon();
+            emitSyncState('draw', true);
             return;
         }
 
         if (wb.currentPath && wb.currentPath.points.length > 1) {
-            const rect = wb.canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            wb.currentPath.points.push({ x, y });
+            wb.currentPath.points.push(point);
             storageGetCommands(wb.currentSlide).push(wb.currentPath);
             wb.ctx.closePath();
             wb.ctx.globalAlpha = 1;
             wb.ctx.globalCompositeOperation = 'source-over';
             persistSoon();
+            emitSyncState('draw', true);
         }
         wb.currentPath = null;
     }
@@ -424,20 +636,37 @@ export function createWhiteboardController(deps) {
         delete wb.drawings[String(wb.currentSlide)];
         renderSlide(wb.currentSlide);
         persistSoon();
+        emitSyncState('clear', true);
     }
 
     /**
      * @param {number} newIndex
      */
     function onSlideChange(newIndex) {
+        wb.currentSlide = normalizeSlideIndex(newIndex);
         if (!wb.active) return;
-        wb.currentSlide = newIndex;
-        renderSlide(newIndex);
+        renderSlide(wb.currentSlide);
+        emitSyncState('slide', true);
+    }
+
+    function refresh() {
+        if (!wb.active) return;
+        renderSlide(wb.currentSlide);
+    }
+
+    /**
+     * @param {string} [reason]
+     */
+    function captureFrame(reason = 'capture') {
+        emitSyncState(reason, true);
     }
 
     return {
         init,
         toggle,
         onSlideChange,
+        refresh,
+        captureFrame,
+        getSyncState,
     };
 }
