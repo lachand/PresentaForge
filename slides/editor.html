@@ -14,7 +14,7 @@
     <style id="sl-preview-theme"></style>
     <style id="sl-thumb-css"></style>
 </head>
-<body>
+<body class="is-loading">
 <!-- ── Loading progress bar (removed when bootstrap completes) ── -->
 <div id="sl-boot-wrap"><div id="sl-boot-bar"></div></div>
 <script>(function(){
@@ -29,8 +29,7 @@
         if(b) b.style.width='100%';
         var w=document.getElementById('sl-boot-wrap');
         if(w){w.style.opacity='0';setTimeout(function(){w.remove();},350);}
-        var s=document.getElementById('sl-skeleton-css');
-        if(s) setTimeout(function(){s.remove();},400);
+        document.body.classList.remove('is-loading');
     });
 })();</script>
 <div id="app">
@@ -644,11 +643,19 @@
             <div id="preview-scaler">
                 <div id="preview-frame">
                     <!-- skeleton preview (replaced by renderPreview) -->
-                    <div class="sl-skel-preview" aria-hidden="true">
-                        <div class="sl-skel sl-skel-prev-title"></div>
-                        <div class="sl-skel sl-skel-prev-sub"></div>
-                        <div class="sl-skel sl-skel-prev-body"></div>
-                        <div class="sl-skel sl-skel-prev-body2"></div>
+                    <div class="sl-skel-slide" aria-hidden="true">
+                        <div class="sl-skel-slide-accent"></div>
+                        <div class="sl-skel-slide-body">
+                            <div class="sl-skel sl-skel-slide-title"></div>
+                            <div class="sl-skel sl-skel-slide-sub"></div>
+                            <div class="sl-skel-slide-divider"></div>
+                            <div class="sl-skel sl-skel-slide-line"></div>
+                            <div class="sl-skel sl-skel-slide-line w80"></div>
+                            <div class="sl-skel sl-skel-slide-line"></div>
+                            <div class="sl-skel sl-skel-slide-line w60"></div>
+                            <div class="sl-skel sl-skel-slide-line"></div>
+                            <div class="sl-skel sl-skel-slide-line w75"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="preview-grid" id="preview-grid"></div>
