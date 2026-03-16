@@ -6,6 +6,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/theme-runtime.js?v=1',
     '../shared/slides/realtime-contract.js?v=3',
     '../shared/slides/network-session.js?v=2',
+    '../shared/slides/relay-config.js?v=1',
     '../shared/slides/ui-icons.js?v=2',
     '../shared/slides/student-runtime-bundle.js?v=1',
     '../vendor/peerjs/1.5.5/peerjs.min.js',
