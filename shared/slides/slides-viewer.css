@@ -361,6 +361,7 @@
         .rm-inline-row { display: flex; gap: 5px; }
         .rm-room-id-input { flex: 1; font-family: monospace; font-size: 0.8rem; }
         .rm-room-id-refresh { width: auto; padding: 4px 8px; margin-top: 0; flex-shrink: 0; }
+        .rm-inline-row .rm-input { flex: 1; width: auto; min-width: 100px; margin-top: 0; }
         .rm-help {
             font-size: 0.63rem; color: var(--viewer-muted-soft);
             margin-top: 3px; line-height: 1.4;
@@ -376,6 +377,11 @@
         .rm-room-status.warn { color: var(--viewer-warning); }
         .rm-room-status.error { color: var(--viewer-danger); }
         .rm-remote-pass { margin-top: 0; }
+        .rm-relay-ws-label { display:flex; flex-direction:column; gap:4px; margin-top:6px; }
+        .rm-relay-ws-hint { font-size:.7rem; opacity:.7; }
+        .rm-relay-ws-row { display:flex; gap:4px; }
+        .rm-relay-ws-input { flex:1; font-size:.72rem !important; margin-top:0 !important; }
+        .rm-relay-ws-row .rm-action-btn { white-space:nowrap; flex-shrink:0; margin-top:0; }
         .rm-remote-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1452,6 +1458,12 @@
             background: var(--viewer-surface-1);
             padding: 8px 0 6px;
             margin-top: 0;
+        }
+        /* Outils toujours visible quand l'onglet tools est actif */
+        #rm-panel-tools.rm-panel-active {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 10px;
         }
         .pv-layout.salle-active #rm-panel-tools {
             display: grid;

@@ -87,7 +87,10 @@ export function createRoomPanelController(context = {}) {
         });
         ROOM_TABS.forEach(name => {
             const panel = documentRef.getElementById(`rm-panel-${name}`);
-            if (panel) panel.style.display = name === safeTab ? '' : 'none';
+            if (panel) {
+                panel.style.display = name === safeTab ? '' : 'none';
+                panel.classList.toggle('rm-panel-active', name === safeTab);
+            }
         });
         if (safeTab === 'dashboard') onRenderDashboard();
         return safeTab;

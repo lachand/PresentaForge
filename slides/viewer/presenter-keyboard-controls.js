@@ -44,6 +44,9 @@ export function bindPresenterKeyboardShortcuts(context = {}) {
     const decreaseFontSize = typeof context.decreaseFontSize === 'function' ? context.decreaseFontSize : () => {};
 
     const handler = event => {
+        // Ne pas intercepter les touches si le focus est dans un champ de saisie
+        const tag = (event.target?.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || event.target?.isContentEditable) return;
         if (event.key === 'ArrowRight' || event.key === ' ' || event.key === 'Enter' || event.key === 'PageDown') {
             event.preventDefault();
             goNext();

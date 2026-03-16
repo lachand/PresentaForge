@@ -92,6 +92,8 @@ export function initNormalModeToolbar(context = {}) {
     if (timerEl && !timerEl.textContent) timerEl.textContent = formatToolbarTimer(0);
 
     documentRef.addEventListener('keydown', event => {
+        const _tag = (event.target?.tagName || '').toLowerCase();
+        if (_tag === 'input' || _tag === 'textarea' || _tag === 'select' || event.target?.isContentEditable) return;
         if (event.key === 'Escape') {
             const tb = documentRef.getElementById('sl-toolbar');
             tb?.classList.toggle('force-show');

@@ -772,6 +772,41 @@ import {
             }
         }
 
+        function roomInitRelayWsInput() {
+            const input = document.getElementById('rm-relay-ws-input');
+            const applyBtn = document.getElementById('rm-relay-ws-apply');
+            if (!input || !applyBtn) return;
+            // Pré-remplir avec l'URL relay actuelle
+            if (RELAY_OPTIONS.wsUrl) input.value = RELAY_OPTIONS.wsUrl;
+            applyBtn.addEventListener('click', () => {
+                const wsUrl = input.value.trim();
+                if (wsUrl && !/^wss?:\/\//i.test(wsUrl)) {
+                    input.style.outline = '2px solid #f87171';
+                    setTimeout(() => { input.style.outline = ''; }, 1500);
+                    return;
+                }
+                // Mettre à jour RELAY_OPTIONS (objet mutable passé par référence)
+                RELAY_OPTIONS.wsUrl = wsUrl;
+                RELAY_OPTIONS.enabled = !!wsUrl;
+                // Persister dans localStorage
+                const stored = storageGetJSON ? storageGetJSON('oei-v1-relay-options', {}) : {};
+                const next = Object.assign({}, stored, { wsUrl, token: RELAY_OPTIONS.token || '' });
+                try { localStorage.setItem('oei-v1-relay-options', JSON.stringify(next)); } catch(_) {}
+                // Reconnexion relay si la salle est active
+                if (_room.active && wsUrl) {
+                    const roomId = _room.peer?.id || '';
+                    if (roomId) _relayOpen(roomId);
+                } else if (!wsUrl) {
+                    _relayClose();
+                }
+                roomUpdateNetworkDiagnostics();
+                applyBtn.textContent = '✓';
+                setTimeout(() => { applyBtn.textContent = 'Appliquer'; }, 1500);
+            });
+            // Appliquer aussi sur Entrée
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') applyBtn.click(); });
+        }
+
         function roomUpdateQrButtonsUI() {
             const toolbarBtn = document.getElementById('pv-btn-room-quick');
             if (toolbarBtn) {
@@ -1610,6 +1645,7 @@ import {
             withIcon,
             writeClipboard: text => navigator.clipboard.writeText(text),
         });
+        roomInitRelayWsInput();
 
         /* ── Reveal.js mode (normal presentation) ─────────── */
         async function initRevealMode(data) {
