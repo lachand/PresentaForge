@@ -10,7 +10,8 @@
     "relay:server": "node tools/slides/relay-server.mjs",
     "relay:kit": "bash tools/slides/start-with-relay.sh",
     "replay:build": "node tools/slides/replay-standalone.mjs",
-    "replay:api": "node tools/slides/replay-api-server.mjs"
+    "replay:api": "node tools/slides/replay-api-server.mjs",
+    "relay:deploy": "bash tools/slides/deploy-relay-railway.sh"
   },
   "dependencies": {
     "ws": "^8.19.0"
