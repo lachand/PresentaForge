@@ -10,11 +10,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
-    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=30">
+    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=31">
     <style id="sl-preview-theme"></style>
     <style id="sl-thumb-css"></style>
 </head>
 <body>
+<!-- ── Loading progress bar (removed when bootstrap completes) ── -->
+<div id="sl-boot-wrap"><div id="sl-boot-bar"></div></div>
+<script>(function(){
+    var loaded=0, TOTAL=76;
+    window.addEventListener('oei:editor-bootstrap-progress',function(){
+        loaded++;
+        var b=document.getElementById('sl-boot-bar');
+        if(b) b.style.width=Math.min(Math.round(loaded/TOTAL*100),99)+'%';
+    });
+    window.addEventListener('oei:editor-bootstrap-ready',function(){
+        var b=document.getElementById('sl-boot-bar');
+        if(b) b.style.width='100%';
+        var w=document.getElementById('sl-boot-wrap');
+        if(w){w.style.opacity='0';setTimeout(function(){w.remove();},350);}
+        var s=document.getElementById('sl-skeleton-css');
+        if(s) setTimeout(function(){s.remove();},400);
+    });
+})();</script>
 <div id="app">
     <!-- ═══════ RIBBON ═══════ -->
     <div id="ribbon">
@@ -598,7 +616,14 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
         </div>
-        <div id="slides-items"></div>
+        <div id="slides-items">
+            <!-- skeleton thumbnails (replaced by renderSlideList) -->
+            <div class="sl-skel-item" aria-hidden="true"><div class="sl-skel sl-skel-outer"></div><div class="sl-skel-info"><div class="sl-skel sl-skel-num"></div><div class="sl-skel sl-skel-title"></div></div></div>
+            <div class="sl-skel-item" aria-hidden="true"><div class="sl-skel sl-skel-outer"></div><div class="sl-skel-info"><div class="sl-skel sl-skel-num"></div><div class="sl-skel sl-skel-title"></div></div></div>
+            <div class="sl-skel-item" aria-hidden="true"><div class="sl-skel sl-skel-outer"></div><div class="sl-skel-info"><div class="sl-skel sl-skel-num"></div><div class="sl-skel sl-skel-title"></div></div></div>
+            <div class="sl-skel-item" aria-hidden="true"><div class="sl-skel sl-skel-outer"></div><div class="sl-skel-info"><div class="sl-skel sl-skel-num"></div><div class="sl-skel sl-skel-title"></div></div></div>
+            <div class="sl-skel-item" aria-hidden="true"><div class="sl-skel sl-skel-outer"></div><div class="sl-skel-info"><div class="sl-skel sl-skel-num"></div><div class="sl-skel sl-skel-title"></div></div></div>
+        </div>
         <div id="add-slide-panel">
             <button class="tb-btn ui-btn" id="btn-add-slide-big">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -617,7 +642,15 @@
 
         <div id="preview-wrap">
             <div id="preview-scaler">
-                <div id="preview-frame"></div>
+                <div id="preview-frame">
+                    <!-- skeleton preview (replaced by renderPreview) -->
+                    <div class="sl-skel-preview" aria-hidden="true">
+                        <div class="sl-skel sl-skel-prev-title"></div>
+                        <div class="sl-skel sl-skel-prev-sub"></div>
+                        <div class="sl-skel sl-skel-prev-body"></div>
+                        <div class="sl-skel sl-skel-prev-body2"></div>
+                    </div>
+                </div>
                 <div class="preview-grid" id="preview-grid"></div>
             </div>
             <div class="drop-overlay" id="drop-overlay"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg> Déposer ici (image ou JSON)</div>

@@ -9,6 +9,15 @@ export async function loadClassicScripts(sources, options = {}) {
     if (!parent) {
         throw new Error('Impossible de charger les scripts: document indisponible');
     }
+    // Kick off all fetches in parallel so the browser can pipeline network requests.
+    // Execution still happens sequentially below to preserve dependency order.
+    for (const src of sources) {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'script';
+        link.href = src;
+        document.head.appendChild(link);
+    }
     for (const source of sources) {
         await _loadClassicScript(parent, source);
         if (typeof options.onProgress === 'function') {
