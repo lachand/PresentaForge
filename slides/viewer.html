@@ -117,6 +117,12 @@
                         Export replay
                     </button>
                 </div>
+                <div class="pv-toolbar-group" aria-label="Sous-titres">
+                    <button class="pv-toolbar-btn" id="pv-btn-subtitle" title="Sous-titres live (reconnaissance vocale)">
+                        <span class="pv-ms">closed_caption</span>
+                        Sous-titres
+                    </button>
+                </div>
                 <div class="pv-toolbar-group pv-toolbar-group-end" aria-label="Navigation">
                     <button class="pv-toolbar-btn" id="pv-btn-editor" title="Retour à l'éditeur">
                         <span class="pv-ms">edit_document</span>
@@ -130,6 +136,10 @@
                 <div class="pv-current" id="pv-current-panel">
                     <div class="pv-current-frame" id="pv-current-frame">
                         <div class="pv-current-inner" id="pv-current-inner"></div>
+                    </div>
+                    <!-- Live subtitle overlay -->
+                    <div id="pv-subtitle-overlay" class="pv-subtitle-overlay">
+                        <div id="pv-subtitle-text" class="pv-subtitle-text"></div>
                     </div>
                     <!-- Floating glass nav pill -->
                     <div class="pv-float-nav" id="pv-float-nav">
@@ -274,6 +284,12 @@
                 </div>
                 <button id="sl-room-copy" class="rm-action-btn ui-btn primary ui-btn--success rm-copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copier le lien stable</button>
                 <div id="rm-room-status" class="rm-room-status"></div>
+                <!-- QR auto — shown when room is active -->
+                <div id="rm-qr-block" class="rm-qr-block" style="display:none">
+                    <div class="rm-qr-label">Scanner pour rejoindre</div>
+                    <div id="rm-qr-img"></div>
+                    <div id="rm-qr-url" class="rm-qr-url"></div>
+                </div>
                 <div class="rm-connect-block">
                     <div class="rm-id-label"><svg class="rm-title-icon-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7a12 12 0 0 1 16 0"/><path d="M7 10a8 8 0 0 1 10 0"/><path d="M10 13a4 4 0 0 1 4 0"/><circle cx="12" cy="18" r="1"/></svg>Relay WebSocket (fallback eduroam)</div>
                     <div class="rm-inline-row">

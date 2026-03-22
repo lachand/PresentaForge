@@ -847,6 +847,22 @@ import {
                     toolbarBtn.classList.remove('active');
                 }
             }
+            // Update inline QR in room panel (auto-shown when room opens)
+            const qrBlock = document.getElementById('rm-qr-block');
+            if (qrBlock) {
+                if (_room.active) {
+                    const url = roomAudienceQrUrl();
+                    if (url) {
+                        const imgEl = document.getElementById('rm-qr-img');
+                        if (imgEl) imgEl.innerHTML = `<img src="${_buildQrImageSrc(url, 160)}" width="160" height="160" alt="QR Code" style="display:block;margin:0 auto">`;
+                        const urlEl = document.getElementById('rm-qr-url');
+                        if (urlEl) urlEl.textContent = url;
+                    }
+                    qrBlock.style.display = '';
+                } else {
+                    qrBlock.style.display = 'none';
+                }
+            }
         }
 
         function roomSetAudienceQrVisibility(show) {

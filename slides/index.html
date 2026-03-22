@@ -433,6 +433,19 @@
             background: rgba(255,255,255,0.12);
             pointer-events: none;
         }
+        /* HTML slide thumbnail inside dashboard cards */
+        .pres-slide-mini-outer {
+            position: absolute; inset: 0; overflow: hidden;
+            pointer-events: none; z-index: 0;
+        }
+        .pres-slide-mini-inner {
+            width: 1280px; height: 720px;
+            transform: scale(0.1875); transform-origin: top left;
+            pointer-events: none;
+        }
+        .pres-cover .cover-kicker,
+        .pres-cover .pres-thumb-title,
+        .pres-cover .cover-icon { position: relative; z-index: 2; }
         .cover-kicker {
             font-size: 0.6rem; font-weight: 700;
             letter-spacing: 0.08em; text-transform: uppercase;
@@ -808,6 +821,22 @@
         return Number.isFinite(t) ? t : fallback;
     }
 
+    // Parse rawData JSON and return the first slide object (for HTML thumbnail)
+    function _firstSlide(rawData) {
+        try { return JSON.parse(String(rawData || ''))?.slides?.[0] || null; } catch { return null; }
+    }
+
+    // Inject thumbnail theme CSS once (dark theme scoped to .pres-slide-mini-inner)
+    let _thumbThemeCssInjected = false;
+    function _ensureThumbThemeCss() {
+        if (_thumbThemeCssInjected || !window.SlidesThemes) return;
+        _thumbThemeCssInjected = true;
+        const s = document.createElement('style');
+        s.textContent = SlidesThemes.generateCSS(SlidesThemes.BUILT_IN.dark)
+            .replace(/\.reveal/g, '.pres-slide-mini-inner');
+        document.head.appendChild(s);
+    }
+
     // Extract thumbnail info from parsed presentation data (first slide)
     function _slideThumb(data) {
         const slide = data?.slides?.[0];
@@ -1148,13 +1177,19 @@
             return;
         }
 
+        _ensureThumbThemeCss();
         host.innerHTML = `<div class="pres-grid">${rows.map((deck, idx) => {
             const titleText = deck.thumb?.text || deck.title || '';
             const thumbBg   = deck.thumb?.bg || (titleText ? _colorFromTitle(titleText) : null);
             const coverStyle = thumbBg ? `background:${thumbBg}` : `--cover:${themeColor('dark')}`;
+            const firstSlide = deck.rawData ? _firstSlide(deck.rawData) : null;
+            const miniHtml = firstSlide && window.SlidesRenderer
+                ? SlidesRenderer.renderSlide(firstSlide, 0, { includeNotes: false })
+                : '';
             return `
             <article class="pres-card">
                 <div class="pres-cover" style="${coverStyle}">
+                    ${miniHtml ? `<div class="pres-slide-mini-outer"><div class="pres-slide-mini-inner">${miniHtml}</div></div>` : ''}
                     <span class="cover-kicker">${deck.sourceLabel || (deck.source === 'recent' ? 'Récente' : 'Bibliothèque')}</span>
                     ${titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`}
                 </div>

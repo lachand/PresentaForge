@@ -349,6 +349,10 @@
         .rm-room-status.ok { color: var(--viewer-success); }
         .rm-room-status.warn { color: var(--viewer-warning); }
         .rm-room-status.error { color: var(--viewer-danger); }
+        /* QR auto block */
+        .rm-qr-block { background:#fff; border-radius:8px; padding:10px; margin:8px 0; text-align:center; }
+        .rm-qr-label { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#555; margin-bottom:8px; }
+        .rm-qr-url { font-size:0.58rem; color:#888; word-break:break-all; margin-top:6px; max-height:2.4em; overflow:hidden; }
         .rm-remote-pass { margin-top: 0; }
         .rm-relay-ws-label { display:flex; flex-direction:column; gap:4px; margin-top:6px; }
         .rm-relay-ws-hint { font-size:.7rem; opacity:.7; }
@@ -2019,6 +2023,25 @@
 }
 .pv-qa-btn .pv-ms { font-size: 18px; }
 .pv-toolbar-btn .pv-ms { font-size: 14px; }
+
+/* ── Live subtitle overlay ────────────────────────────────── */
+.pv-subtitle-overlay {
+    display: none;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 20;
+    background: rgba(0,0,0,0.78);
+    padding: 10px 20px;
+    min-height: 44px;
+    text-align: center;
+}
+.pv-subtitle-overlay.active { display: block; }
+.pv-subtitle-text {
+    color: #fff;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    font-family: var(--font-ui, Inter, sans-serif);
+}
 
 /* ── Floating glass nav pill ──────────────────────────────── */
 .pv-current { position: relative; }

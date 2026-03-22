@@ -176,4 +176,72 @@ export function bindPresenterToolbarButtons(context = {}) {
         beforeNavigateToEditor();
         navigateToEditor();
     });
+
+    // Live subtitle toggle — Web Speech API
+    const _subtitleBtn = documentRef.getElementById('pv-btn-subtitle');
+    const _subtitleOverlay = documentRef.getElementById('pv-subtitle-overlay');
+    const _subtitleText = documentRef.getElementById('pv-subtitle-text');
+    let _subtitleRecog = null;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (_subtitleBtn) {
+        if (!SpeechRecognition) {
+            _subtitleBtn.disabled = true;
+            _subtitleBtn.title = 'Reconnaissance vocale non supportée par ce navigateur';
+        } else {
+            const _stopSubtitle = () => {
+                const r = _subtitleRecog;
+                _subtitleRecog = null;
+                try { r?.stop(); } catch (_) {}
+                _subtitleBtn.classList.remove('active');
+                _subtitleOverlay?.classList.remove('active');
+            };
+            const _startNewRecog = () => {
+                const r = new SpeechRecognition();
+                r.continuous = true;
+                r.interimResults = true;
+                r.lang = 'fr-FR';
+                r.onresult = (e) => {
+                    let text = '';
+                    for (let i = e.resultIndex; i < e.results.length; i++) {
+                        text += e.results[i][0].transcript;
+                    }
+                    if (_subtitleText) _subtitleText.textContent = text;
+                };
+                // onend fires on silence/pause — create a fresh instance to continue
+                r.onend = () => {
+                    if (_subtitleRecog) {
+                        try { _subtitleRecog = _startNewRecog(); } catch (_) { _stopSubtitle(); }
+                    }
+                };
+                r.onerror = (e) => {
+                    console.error('[Sous-titres] SpeechRecognition error', e.error, e);
+                    const msg = {
+                        'not-allowed':         'Microphone refusé — autorisez l\'accès dans les paramètres du navigateur',
+                        'service-not-allowed': 'Service de reconnaissance vocale non autorisé (Chromium sans clé Google ?)',
+                        'network':             'Erreur réseau — vérifiez que vous utilisez Google Chrome (pas Chromium/Brave)',
+                        'audio-capture':       'Aucun microphone détecté',
+                        'aborted':             'Reconnaissance interrompue',
+                        'no-speech':           null,
+                    }[e.error] ?? `Erreur reconnaissance vocale : ${e.error}`;
+                    if (msg && _subtitleText) _subtitleText.textContent = `⚠ ${msg}`;
+                    if (e.error !== 'no-speech') {
+                        setTimeout(_stopSubtitle, 4000);
+                    }
+                };
+                r.start();
+                return r;
+            };
+            _subtitleBtn.addEventListener('click', () => {
+                if (_subtitleRecog) {
+                    _stopSubtitle();
+                } else {
+                    try {
+                        _subtitleRecog = _startNewRecog();
+                        _subtitleBtn.classList.add('active');
+                        _subtitleOverlay?.classList.add('active');
+                    } catch (_) {}
+                }
+            });
+        }
+    }
 }
