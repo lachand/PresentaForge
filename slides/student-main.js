@@ -323,8 +323,9 @@
 
         function _saveSlideNotes() {
             const area = document.getElementById('notes-area');
-            if (!area) return;
-            const text = area.value;
+            const areaSide = document.getElementById('notes-area-side');
+            // Prefer the active (focused) area; fall back to either
+            const text = (document.activeElement === areaSide ? areaSide?.value : area?.value) ?? '';
             if (text.trim()) _notesData[String(currentIndex)] = text;
             else delete _notesData[String(currentIndex)];
             localSetJSON(NOTES_KEY, _notesData);
@@ -332,9 +333,15 @@
 
         function _loadSlideNotes(idx) {
             const area = document.getElementById('notes-area');
-            if (!area) return;
-            area.value = _notesData[String(idx)] || '';
-            area.placeholder = `Notes — slide ${idx + 1}\u2026`;
+            if (area) {
+                area.value = _notesData[String(idx)] || '';
+                area.placeholder = `Notes — slide ${idx + 1}\u2026`;
+            }
+            const areaSide = document.getElementById('notes-area-side');
+            if (areaSide) {
+                areaSide.value = _notesData[String(idx)] || '';
+                areaSide.placeholder = `Notes — slide ${idx + 1}\u2026`;
+            }
             _updateNotesLabel();
         }
 
@@ -1358,6 +1365,26 @@
             renderStudentWhiteboard();
         }
 
+        let _laserDotHideTimer = null;
+        function applyLaserMessage(msg) {
+            const dot = document.getElementById('student-laser-dot');
+            if (!dot) return;
+            if (!msg.active) {
+                dot.style.display = 'none';
+                return;
+            }
+            const frame = document.getElementById('slide-frame');
+            if (!frame) return;
+            const rect = frame.getBoundingClientRect();
+            const nx = typeof msg.x === 'number' ? msg.x : 0;
+            const ny = typeof msg.y === 'number' ? msg.y : 0;
+            dot.style.display = 'block';
+            dot.style.left = (rect.left + nx * rect.width) + 'px';
+            dot.style.top  = (rect.top  + ny * rect.height) + 'px';
+            if (_laserDotHideTimer) clearTimeout(_laserDotHideTimer);
+            _laserDotHideTimer = setTimeout(() => { dot.style.display = 'none'; }, 3000);
+        }
+
         // ── Slide rendering ───────────────────────────────
         function scaleSlide() {
             const frame = document.getElementById('slide-frame');
@@ -1407,11 +1434,27 @@
             const nextBtn = document.getElementById('nav-next');
             if (prevBtn) prevBtn.disabled = target === 0;
             if (nextBtn) nextBtn.disabled = target >= allowedMax;
+            // Sync float nav pill
+            const sfnCounter = document.getElementById('sfn-counter');
+            const sfnPrev = document.getElementById('sfn-prev');
+            const sfnNext = document.getElementById('sfn-next');
+            if (sfnCounter) sfnCounter.textContent = `${target + 1} / ${slidesHtml.length}`;
+            if (sfnPrev) sfnPrev.disabled = target === 0;
+            if (sfnNext) sfnNext.disabled = target >= allowedMax;
             scaleSlide();
             mountCodeLive(inner);
             mountStudentWidgets(inner);
+            mountSpecialRender(inner);
             renderStudentWhiteboard();
             _loadSlideNotes(target);
+            // Update desktop side panel slide info
+            const sspNum = document.getElementById('ssp-slide-num');
+            const sspTitle = document.getElementById('ssp-slide-title');
+            if (sspNum) sspNum.textContent = `Slide ${target + 1}`;
+            if (sspTitle) {
+                const h = inner.querySelector('.sl-heading, h1, h2');
+                sspTitle.textContent = h ? h.textContent.trim().slice(0, 64) : '—';
+            }
             updateBookmarkControls();
             if (_revisionEnabled) {
                 const now = Date.now();
@@ -1508,6 +1551,73 @@
                     }
                 });
             });
+        }
+
+        // ── LaTeX + syntax highlight (lazy-loaded) ────────
+        function mountSpecialRender(container) {
+            // LaTeX — KaTeX
+            const latexEls = Array.from(container.querySelectorAll('.sl-latex-pending:not([data-rendered])'));
+            if (latexEls.length) {
+                const doLatex = () => {
+                    latexEls.forEach(el => {
+                        const target = el.querySelector('.sl-latex-render');
+                        if (!target) return;
+                        const expr = el.dataset.latex || target.textContent || '';
+                        try {
+                            target.innerHTML = window.katex.renderToString(expr, { displayMode: true, throwOnError: false });
+                            el.dataset.rendered = '1';
+                        } catch (_) {}
+                    });
+                };
+                if (window.katex) {
+                    doLatex();
+                } else {
+                    if (!document.getElementById('student-katex-css')) {
+                        const link = document.createElement('link');
+                        link.id = 'student-katex-css'; link.rel = 'stylesheet';
+                        link.href = '../vendor/katex/0.16.11/katex.min.css';
+                        document.head.appendChild(link);
+                    }
+                    if (!document.getElementById('student-katex-js')) {
+                        const s = document.createElement('script');
+                        s.id = 'student-katex-js';
+                        s.src = '../vendor/katex/0.16.11/katex.min.js';
+                        s.onload = doLatex;
+                        document.head.appendChild(s);
+                    } else {
+                        const poll = setInterval(() => { if (window.katex) { clearInterval(poll); doLatex(); } }, 50);
+                    }
+                }
+            }
+
+            // Syntax highlighting — hljs
+            const codeEls = Array.from(container.querySelectorAll('pre > code[class*="language-"]:not([data-highlighted])'));
+            if (codeEls.length) {
+                const doHighlight = () => {
+                    codeEls.forEach(el => {
+                        try { window.hljs.highlightElement(el); } catch (_) {}
+                    });
+                };
+                if (window.hljs) {
+                    doHighlight();
+                } else {
+                    if (!document.getElementById('student-hljs-css')) {
+                        const link = document.createElement('link');
+                        link.id = 'student-hljs-css'; link.rel = 'stylesheet';
+                        link.href = '../vendor/revealjs/5.1.0/plugin/highlight/monokai.css';
+                        document.head.appendChild(link);
+                    }
+                    if (!document.getElementById('student-hljs-js')) {
+                        const s = document.createElement('script');
+                        s.id = 'student-hljs-js';
+                        s.src = '../vendor/highlightjs/11.9.0/highlight.min.js';
+                        s.onload = doHighlight;
+                        document.head.appendChild(s);
+                    } else {
+                        const poll = setInterval(() => { if (window.hljs) { clearInterval(poll); doHighlight(); } }, 50);
+                    }
+                }
+            }
         }
 
         async function runJS(code, consoleEl) {
@@ -2192,6 +2302,10 @@
                     applyWhiteboardSyncMessage(msg);
                     break;
 
+                case ROOM_MSG.LASER:
+                    applyLaserMessage(msg);
+                    break;
+
                 case ROOM_MSG.QUIZ_QUESTION:
                     showQuiz(msg);
                     break;
@@ -2207,6 +2321,7 @@
                 case ROOM_MSG.HAND_LOWER:
                     _handRaised = false;
                     document.getElementById('hand-btn').classList.remove('raised');
+                    document.getElementById('ssp-hand-btn')?.classList.remove('active');
                     sendStudentTelemetry('hand-lower', true);
                     break;
 
@@ -2236,6 +2351,14 @@
                 case ROOM_MSG.WORDCLOUD_END:
                     _activeCloudId = null;
                     document.getElementById('wordcloud-overlay').style.display = 'none';
+                    break;
+
+                case ROOM_MSG.CHAT_BROADCAST:
+                    dpAddMessage('discussion', { text: msg.text, from: msg.from || 'Présentateur', own: false, broadcast: true });
+                    break;
+
+                case ROOM_MSG.ROOM_KEYNOTE:
+                    dpUpdateKeynotes(msg.points || []);
                     break;
 
                 case ROOM_MSG.EXIT_TICKET_START:
@@ -2308,6 +2431,14 @@
                 setTimeout(() => { btn.disabled = false; }, 2000);
             });
         });
+        // Side panel reactions delegate to original buttons
+        document.querySelectorAll('.ssp-reaction-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const emoji = btn.dataset.emoji;
+                const orig = document.querySelector(`#reaction-bar .reaction-btn[data-emoji="${CSS.escape(emoji)}"]`);
+                if (orig && !orig.disabled) orig.click();
+            });
+        });
         document.querySelectorAll('.feedback-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 sendDiscreteFeedback(btn.dataset.feedback, btn.dataset.text);
@@ -2334,6 +2465,86 @@
             document.getElementById('nav-follow').classList.remove('active');
             showByModeStep(1);
         });
+        // ── Discussion panel ────────────────────────────────
+        let _dpActiveTab = 'discussion';
+
+        function dpSetTab(tab) {
+            _dpActiveTab = tab;
+            document.querySelectorAll('.dp-tab').forEach(b => b.classList.toggle('active', b.dataset.dpTab === tab));
+            document.querySelectorAll('.dp-pane').forEach(p => p.classList.toggle('active', p.id === `dp-pane-${tab}`));
+        }
+        document.querySelectorAll('.dp-tab').forEach(btn => {
+            btn.addEventListener('click', () => dpSetTab(btn.dataset.dpTab));
+        });
+
+        function dpAddMessage(pane, { text, from, own, broadcast }) {
+            const container = document.getElementById(`dp-pane-${pane}`);
+            if (!container) return;
+            const empty = container.querySelector('.dp-empty');
+            if (empty) empty.remove();
+            const msg = document.createElement('div');
+            if (broadcast) {
+                msg.className = 'dp-broadcast';
+                msg.innerHTML = `<span class="dp-broadcast-icon">📢</span><span>${_escHtml(text)}</span>`;
+            } else {
+                const initials = (from || '?').slice(0, 2).toUpperCase();
+                msg.className = 'dp-msg';
+                msg.innerHTML = `<div class="dp-msg-avatar">${initials}</div><div><div class="dp-msg-bubble${own ? ' own' : ''}">${_escHtml(text)}</div><div class="dp-msg-meta">${_escHtml(from || '')}</div></div>`;
+            }
+            container.appendChild(msg);
+            container.scrollTop = container.scrollHeight;
+            if (pane === 'qa') {
+                const badge = document.getElementById('dp-qa-badge');
+                if (badge) badge.textContent = container.querySelectorAll('.dp-msg').length;
+            }
+        }
+
+        function dpUpdateKeynotes(points) {
+            const container = document.getElementById('ssp-keynotes');
+            if (!container) return;
+            if (!points.length) {
+                container.innerHTML = '<div class="ssp-keynotes-empty">Le présentateur n\'a pas encore partagé de points clés.</div>';
+                return;
+            }
+            container.innerHTML = points.map(p =>
+                `<div class="ssp-keynote-item"><div class="ssp-keynote-dot"></div><span>${_escHtml(p)}</span></div>`
+            ).join('');
+        }
+
+        function _escHtml(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        // ── FAB "Ajouter une note" ──────────────────────────
+        document.getElementById('fab-note')?.addEventListener('click', () => {
+            const ta = document.getElementById('notes-area-side');
+            if (ta) { ta.focus(); ta.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+        });
+
+        // ── Side panel action buttons (desktop) ────────────
+        document.getElementById('ssp-hand-btn')?.addEventListener('click', () => document.getElementById('hand-btn').click());
+        document.getElementById('ssp-question-btn')?.addEventListener('click', () => document.getElementById('question-btn').click());
+        document.getElementById('ssp-notes-export-btn')?.addEventListener('click', () => document.getElementById('notes-export-btn').click());
+
+        // ── Float nav (delegates to nav-prev / nav-next) ───
+        document.getElementById('sfn-prev')?.addEventListener('click', () => document.getElementById('nav-prev').click());
+        document.getElementById('sfn-next')?.addEventListener('click', () => document.getElementById('nav-next').click());
+
+        // ── Keyboard navigation (← →) ──────────────────────
+        document.addEventListener('keydown', e => {
+            if (document.getElementById('main-view')?.style.display === 'none') return;
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+            const overlayActive = ['quiz-overlay', 'question-overlay', 'poll-overlay',
+                'wordcloud-overlay', 'exitticket-overlay', 'rankorder-overlay'].some(id => {
+                const el = document.getElementById(id);
+                return el && (el.classList.contains('active') || (el.style.display && el.style.display !== 'none'));
+            });
+            if (overlayActive) return;
+            if (e.key === 'ArrowLeft')  { e.preventDefault(); document.getElementById('nav-prev').click(); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); document.getElementById('nav-next').click(); }
+        });
+
         document.getElementById('bookmark-btn').addEventListener('click', () => {
             const key = String(currentIndex);
             if (_bookmarks.has(key)) _bookmarks.delete(key);
@@ -2407,6 +2618,7 @@
         document.getElementById('hand-btn').addEventListener('click', () => {
             _handRaised = !_handRaised;
             document.getElementById('hand-btn').classList.toggle('raised', _handRaised);
+            document.getElementById('ssp-hand-btn')?.classList.toggle('active', _handRaised);
             sendReliable({ type: ROOM_MSG.STUDENT_HAND, raised: _handRaised }, { maxRetries: 3, retryDelay: 1400 });
             sendStudentTelemetry('hand-toggle', true);
         });
@@ -2419,10 +2631,19 @@
         document.getElementById('question-cancel').addEventListener('click', () => {
             document.getElementById('question-overlay').style.display = 'none';
         });
+
+        // ── Dismiss buttons (fermeture locale des overlays) ─────
+        ['poll', 'wc', 'exitticket', 'rankorder'].forEach(id => {
+            const overlayId = id === 'wc' ? 'wordcloud-overlay' : `${id}-overlay`;
+            document.getElementById(`${id}-dismiss`)?.addEventListener('click', () => {
+                document.getElementById(overlayId).style.display = 'none';
+            });
+        });
         document.getElementById('question-send').addEventListener('click', () => {
             const text = document.getElementById('question-text').value.trim();
             if (!text) return;
             sendReliable({ type: ROOM_MSG.STUDENT_QUESTION, text, qid: `q-${Date.now()}` }, { maxRetries: 3, retryDelay: 1400 });
+            dpAddMessage('qa', { text, from: 'Vous', own: true });
             document.getElementById('question-text').value = '';
             document.getElementById('question-overlay').style.display = 'none';
         });
@@ -2726,6 +2947,18 @@
                     if (indicator) { indicator.textContent = 'Sauvegardé ✓'; setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1500); }
                 }, 600);
             });
+
+            // Side panel notes textarea auto-save (desktop)
+            const areaSide = document.getElementById('notes-area-side');
+            if (areaSide) {
+                let _noteSideTimer = null;
+                areaSide.addEventListener('input', () => {
+                    // Mirror to mobile area so _saveSlideNotes picks it up correctly
+                    area.value = areaSide.value;
+                    if (_noteSideTimer) clearTimeout(_noteSideTimer);
+                    _noteSideTimer = setTimeout(() => { _saveSlideNotes(); }, 600);
+                });
+            }
 
             // ── Export PDF — 1 feuille A4 par slide ────────
             document.getElementById('notes-export-btn')?.addEventListener('click', e => {

@@ -483,10 +483,125 @@ export async function initAudienceMode(ctx) {
                 showAudienceRoulettePick(msg.pseudo);
                 break;
             }
+            case SYNC_MSG.LASER: {
+                applyAudienceLaser(!!msg.active, typeof msg.x === 'number' ? msg.x : 0, typeof msg.y === 'number' ? msg.y : 0);
+                break;
+            }
+            case SYNC_MSG.WHITEBOARD: {
+                applyAudienceWhiteboard(!!msg.active, msg.commands || []);
+                break;
+            }
             default:
                 break;
         }
     };
+
+    // ── Shared helper: actual rendered slide bounds ────────────────────
+    // Reveal.js centers/scales slides inside `.reveal .slides`. Using `.reveal`
+    // alone would include letterbox bars, causing offset/scale mismatches.
+    function _getSlideRect() {
+        const el = document.querySelector('.reveal .slides section.present')
+                || document.querySelector('.reveal .slides')
+                || document.querySelector('.reveal');
+        if (!el) return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+        return el.getBoundingClientRect();
+    }
+
+    // ── Laser pointer overlay ──────────────────────────────────────────
+    const laserDotEl = document.getElementById('sl-laser-dot');
+    function applyAudienceLaser(active, nx, ny) {
+        if (!laserDotEl) return;
+        if (!active) { laserDotEl.style.display = 'none'; return; }
+        const rect = _getSlideRect();
+        const px = rect.left + nx * rect.width;
+        const py = rect.top  + ny * rect.height;
+        laserDotEl.style.display = 'block';
+        laserDotEl.style.left = px + 'px';
+        laserDotEl.style.top  = py + 'px';
+    }
+
+    // ── Whiteboard canvas overlay ──────────────────────────────────────
+    let _audienceWbCanvas = null;
+    let _audienceWbCtx = null;
+
+    function _getOrCreateWbCanvas() {
+        if (_audienceWbCanvas) return _audienceWbCanvas;
+        if (!document.querySelector('.reveal')) return null;
+        const canvas = document.createElement('canvas');
+        canvas.id = 'sl-audience-wb-canvas';
+        canvas.style.cssText = 'position:fixed;pointer-events:none;z-index:500;';
+        document.body.appendChild(canvas);
+        _audienceWbCanvas = canvas;
+        _audienceWbCtx = canvas.getContext('2d');
+        return canvas;
+    }
+
+    function applyAudienceWhiteboard(active, commands) {
+        const canvas = _getOrCreateWbCanvas();
+        if (!canvas || !_audienceWbCtx) return;
+        const ctx = _audienceWbCtx;
+        if (!active || !commands.length) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (canvas.parentNode) canvas.style.display = active ? 'block' : 'none';
+            return;
+        }
+        canvas.style.display = 'block';
+        // Position canvas exactly over the rendered slide area (accounts for letterboxing)
+        const rect = _getSlideRect();
+        canvas.width  = rect.width;
+        canvas.height = rect.height;
+        canvas.style.left   = rect.left + 'px';
+        canvas.style.top    = rect.top  + 'px';
+        canvas.style.width  = rect.width  + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Scale factor from canonical 1280x720 to current viewport
+        const BASE_W = 1280, BASE_H = 720;
+        const sx = rect.width  / BASE_W;
+        const sy = rect.height / BASE_H;
+        commands.forEach(cmd => {
+            if (!cmd || typeof cmd !== 'object') return;
+            ctx.save();
+            if (cmd.kind === 'stroke') {
+                const pts = Array.isArray(cmd.points) ? cmd.points : [];
+                if (pts.length < 2) { ctx.restore(); return; }
+                ctx.globalAlpha = cmd.tool === 'highlighter' ? 0.35 : 1;
+                ctx.globalCompositeOperation = cmd.tool === 'eraser' ? 'destination-out' : 'source-over';
+                ctx.strokeStyle = cmd.color || '#ffffff';
+                ctx.lineWidth   = (cmd.size || 3) * Math.min(sx, sy);
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x * sx, pts[0].y * sy);
+                for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * sx, pts[i].y * sy);
+                ctx.stroke();
+            } else if (cmd.kind === 'shape') {
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = cmd.color || '#ffffff';
+                ctx.lineWidth   = (cmd.size || 3) * Math.min(sx, sy);
+                const x1 = cmd.startX * sx, y1 = cmd.startY * sy;
+                const x2 = cmd.endX   * sx, y2 = cmd.endY   * sy;
+                ctx.beginPath();
+                if (cmd.shape === 'rect') {
+                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                } else if (cmd.shape === 'circle') {
+                    const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
+                    ctx.ellipse((x1 + x2) / 2, (y1 + y2) / 2, rx, ry, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (cmd.shape === 'arrow') {
+                    ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+                    const angle = Math.atan2(y2 - y1, x2 - x1);
+                    const hs = (cmd.size || 3) * Math.min(sx, sy) * 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x2, y2);
+                    ctx.lineTo(x2 - hs * Math.cos(angle - 0.4), y2 - hs * Math.sin(angle - 0.4));
+                    ctx.moveTo(x2, y2);
+                    ctx.lineTo(x2 - hs * Math.cos(angle + 0.4), y2 - hs * Math.sin(angle + 0.4));
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        });
+    }
 
     window.addEventListener('beforeunload', () => channel.close());
 }

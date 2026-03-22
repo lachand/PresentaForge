@@ -187,19 +187,24 @@ async function handleSlidesDryRun(req, res) {
     });
 }
 
-export function createReplayApiServer() {
-    return createServer(async (req, res) => {
-        const method = String(req.method || 'GET').toUpperCase();
-        const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+/**
+ * Route une requête HTTP vers les handlers API slides/replay.
+ * À utiliser pour intégrer l'API dans un serveur HTTP existant.
+ * @param {import('node:http').IncomingMessage} req
+ * @param {import('node:http').ServerResponse} res
+ * @returns {Promise<boolean>} true si la requête a été traitée, false sinon.
+ */
+export async function handleApiRequest(req, res) {
+    const method = String(req.method || 'GET').toUpperCase();
+    const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
-        if (method === 'GET' && samePath(url, '/api/replay/healthz')) {
-            sendJson(res, 200, { ok: true, service: 'replay-api' });
-            return;
-        }
+    if (method === 'GET' && samePath(url, '/api/replay/healthz')) {
+        sendJson(res, 200, { ok: true, service: 'replay-api' });
+        return true;
+    }
 
-        if (method === 'GET' && (samePath(url, '/api/replay/docs') || samePath(url, '/api/replay/docs/'))) {
-            const origin = `${url.protocol}//${url.host}`;
-            const html = `<!DOCTYPE html>
+    if (method === 'GET' && (samePath(url, '/api/replay/docs') || samePath(url, '/api/replay/docs/'))) {
+        const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
@@ -213,7 +218,7 @@ export function createReplayApiServer() {
   <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
     window.ui = SwaggerUIBundle({
-      url: '${origin}/api/replay/openapi.yaml',
+      url: '/api/replay/openapi.yaml',
       dom_id: '#swagger-ui',
       deepLinking: true,
       docExpansion: 'list',
@@ -224,40 +229,46 @@ export function createReplayApiServer() {
   </script>
 </body>
 </html>`;
-            sendText(res, 200, html, 'text/html; charset=utf-8');
-            return;
-        }
+        sendText(res, 200, html, 'text/html; charset=utf-8');
+        return true;
+    }
 
-        if (method === 'GET' && samePath(url, '/api/replay/openapi.yaml')) {
-            try {
-                const yaml = await fs.readFile(OPENAPI_PATH, 'utf8');
-                sendText(res, 200, yaml, 'application/yaml; charset=utf-8');
-            } catch (_) {
-                sendJson(res, 500, { error: 'openapi.yaml introuvable' });
-            }
-            return;
+    if (method === 'GET' && samePath(url, '/api/replay/openapi.yaml')) {
+        try {
+            const yaml = await fs.readFile(OPENAPI_PATH, 'utf8');
+            sendText(res, 200, yaml, 'application/yaml; charset=utf-8');
+        } catch (_) {
+            sendJson(res, 500, { error: 'openapi.yaml introuvable' });
         }
+        return true;
+    }
 
-        if (method === 'POST' && samePath(url, '/api/replay/build')) {
-            await handleBuild(req, res);
-            return;
-        }
+    if (method === 'POST' && samePath(url, '/api/replay/build')) {
+        await handleBuild(req, res);
+        return true;
+    }
 
-        if (method === 'POST' && samePath(url, '/api/replay/dry-run')) {
-            await handleDryRun(req, res);
-            return;
-        }
+    if (method === 'POST' && samePath(url, '/api/replay/dry-run')) {
+        await handleDryRun(req, res);
+        return true;
+    }
 
-        if (method === 'POST' && samePath(url, '/api/slides/build')) {
-            await handleSlidesBuild(req, res);
-            return;
-        }
+    if (method === 'POST' && samePath(url, '/api/slides/build')) {
+        await handleSlidesBuild(req, res);
+        return true;
+    }
 
-        if (method === 'POST' && samePath(url, '/api/slides/dry-run')) {
-            await handleSlidesDryRun(req, res);
-            return;
-        }
+    if (method === 'POST' && samePath(url, '/api/slides/dry-run')) {
+        await handleSlidesDryRun(req, res);
+        return true;
+    }
 
+    return false;
+}
+
+export function createReplayApiServer() {
+    return createServer(async (req, res) => {
+        if (await handleApiRequest(req, res)) return;
         sendJson(res, 404, { error: 'Not found' });
     });
 }

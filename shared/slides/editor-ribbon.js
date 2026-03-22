@@ -118,9 +118,10 @@
         });
 
         if (propsPanel) {
+            // Panel starts collapsed visually but _userCollapsed is false so
+            // updatePropsPanel() can auto-open it when content is available.
             propsPanel.classList.add('collapsed');
-            // Start in sticky-collapsed mode: opening the panel must be an explicit user action.
-            propsPanel._userCollapsed = true;
+            propsPanel._userCollapsed = false;
             if (rightHandle) rightHandle.classList.add('hidden');
         }
     }

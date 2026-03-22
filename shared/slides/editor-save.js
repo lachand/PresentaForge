@@ -470,6 +470,7 @@ async function openRevisionHistory() {
             </div>
         </div>`;
     document.body.appendChild(modal);
+    modal.style.display = 'flex';
 
     modal.querySelector('#close-revision-modal').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });

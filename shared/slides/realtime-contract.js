@@ -27,6 +27,8 @@
         EXERCISE_MODE: 'exercise:mode',
         ROOM_QR: 'room:qr',
         ELEMENT_STATE: 'element:state',
+        LASER: 'laser',
+        WHITEBOARD: 'whiteboard',
         POLL_START: 'poll:start',
         POLL_UPDATE: 'poll:update',
         POLL_END: 'poll:end',
@@ -84,6 +86,9 @@
         RANK_ORDER_START: 'rank-order:start',
         RANK_ORDER_END: 'rank-order:end',
         WHITEBOARD_SYNC: 'whiteboard:sync',
+        LASER: 'room:laser',
+        CHAT_BROADCAST: 'chat:broadcast',
+        ROOM_KEYNOTE: 'room:keynote',
     });
 
     const syncTypes = new Set(Object.values(SYNC_MSG));
@@ -152,6 +157,8 @@
             && (msg.title == null || isString(msg.title, 160))
             && (msg.message == null || isString(msg.message, 400)),
         [SYNC_MSG.ROOM_QR]: msg => isBoolean(msg.show) && (msg.url == null || isString(msg.url, 2500)),
+        [SYNC_MSG.LASER]: msg => isBoolean(msg.active) && (msg.x == null || typeof msg.x === 'number') && (msg.y == null || typeof msg.y === 'number'),
+        [SYNC_MSG.WHITEBOARD]: msg => isBoolean(msg.active) && (msg.commands == null || Array.isArray(msg.commands)),
         [SYNC_MSG.ELEMENT_STATE]: msg => isString(msg.elementType || '', 80)
             && (msg.slideIndex == null || isNonNegInt(msg.slideIndex))
             && (msg.elementId == null || isString(msg.elementId, 160))
@@ -263,12 +270,15 @@
             && isStringArray(msg.items || [], 40, 200)
             && (msg.title == null || isString(msg.title, 200)),
         [ROOM_MSG.RANK_ORDER_END]: msg => msg.rankId == null || isString(msg.rankId, 120),
+        [ROOM_MSG.LASER]: msg => isBoolean(msg.active) && (msg.x == null || isNumber(msg.x)) && (msg.y == null || isNumber(msg.y)),
         [ROOM_MSG.WHITEBOARD_SYNC]: msg => isBoolean(msg.active)
             && (msg.slideIndex == null || isNonNegInt(msg.slideIndex))
             && (msg.updatedAt == null || isNonNegInt(msg.updatedAt))
             && (msg.canvasWidth == null || isNonNegInt(msg.canvasWidth))
             && (msg.canvasHeight == null || isNonNegInt(msg.canvasHeight))
             && (msg.commands == null || isWhiteboardCommands(msg.commands)),
+        [ROOM_MSG.CHAT_BROADCAST]: msg => isString(msg.text || '', 800) && (msg.from == null || isString(msg.from, 120)),
+        [ROOM_MSG.ROOM_KEYNOTE]: msg => isStringArray(msg.points || [], 20, 400),
     });
 
     function validateByTypeMap(msg, typeSet, validators) {

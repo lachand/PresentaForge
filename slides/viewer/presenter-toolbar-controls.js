@@ -35,7 +35,7 @@ export function bindPresenterRoomPanelControls(context = {}) {
     const openPresenterRoomPanel = () => {
         const roomModal = documentRef.getElementById('sl-room-modal');
         if (!roomModal) return;
-        switchRoomPresenterMode('technique', true);
+        switchRoomPresenterMode('live', true);
         roomModal.classList.add('open');
         roomUpdatePanel();
     };
@@ -55,12 +55,12 @@ export function bindPresenterRoomPanelControls(context = {}) {
 
     documentRef.getElementById('pv-context-open-salle')?.addEventListener('click', openPresenterRoomPanel);
 
-    // Keep room panel as modal in presenter, force technique mode for a focused workflow.
+    // Keep room panel as modal in presenter, default to live mode to show students/hands/questions.
     const pvRoomPanelEl = documentRef.getElementById('sl-room-panel');
     if (pvRoomPanelEl) {
         const remoteSection = documentRef.getElementById('rm-remote-control');
         if (remoteSection) remoteSection.remove();
-        switchRoomPresenterMode('technique', true);
+        switchRoomPresenterMode('live', true);
         roomUpdatePanel();
     }
 

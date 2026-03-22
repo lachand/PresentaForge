@@ -15,6 +15,12 @@ export function updateRoomPanelRuntime(context = {}) {
         _roomFeedback = { events: [] },
         _activePoll = null,
         _activeWordCloud = null,
+        _activeExitTicket = null,
+        _activeRankOrder = null,
+        onEndPoll,
+        onEndCloud,
+        onEndExitTicket,
+        onEndRankOrder,
         _pvContextView: initialContextView = 'status',
         ROOM_MSG = {},
         UI_ICONS = {},
@@ -80,6 +86,27 @@ export function updateRoomPanelRuntime(context = {}) {
     // Tabs visibles uniquement si salle active
     const tabs = document.getElementById('rm-tabs');
     if (tabs) tabs.style.display = _room.active ? '' : 'none';
+
+    // ── Bannière activités en cours ───────────────────
+    const activeToolsBanner = document.getElementById('rm-active-tools');
+    if (activeToolsBanner) {
+        const activeItems = [
+            _activePoll ? { label: 'Sondage actif', onEnd: onEndPoll } : null,
+            _activeWordCloud ? { label: 'Nuage de mots actif', onEnd: onEndCloud } : null,
+            _activeExitTicket ? { label: 'Exit Ticket actif', onEnd: onEndExitTicket } : null,
+            _activeRankOrder ? { label: 'Classement actif', onEnd: onEndRankOrder } : null,
+        ].filter(Boolean);
+        clearNode(activeToolsBanner);
+        activeToolsBanner.classList.toggle('has-items', activeItems.length > 0);
+        activeItems.forEach(item => {
+            const pill = el('div', { className: 'rm-active-tool-pill' });
+            const label = el('span', { className: 'rm-active-tool-label', text: item.label });
+            const btn = el('button', { className: 'rm-action-btn rm-active-tool-end ui-btn danger ui-btn--danger', text: 'Terminer' });
+            if (typeof item.onEnd === 'function') btn.addEventListener('click', item.onEnd);
+            appendAll(pill, [label, btn]);
+            activeToolsBanner.appendChild(pill);
+        });
+    }
 
     // ── Onglet Étudiants ─────────────────────────────
     const studentsEl = document.getElementById('sl-room-students');

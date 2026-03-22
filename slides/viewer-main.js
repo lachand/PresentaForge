@@ -127,6 +127,23 @@ import {
         const params = new URLSearchParams(location.search);
         let file = params.get('file') || '../data/slides/exemple-git.json';
         const isPresenterMode = params.get('mode') === 'presenter';
+        // Firebase public share: ?firebase=<uid>/<id>
+        const _firebaseParam = params.get('firebase');
+        if (_firebaseParam) {
+            const _sep = _firebaseParam.indexOf('/');
+            if (_sep > 0) {
+                const _fbUid = _firebaseParam.slice(0, _sep);
+                const _fbId  = _firebaseParam.slice(_sep + 1);
+                // Will be loaded async in loadData override below
+                file = '__firebase_public__';
+                window._firebasePublicLoad = async () => {
+                    const fb = window.OEIFirebase;
+                    if (!fb) throw new Error('Firebase non disponible');
+                    await fb.ready();
+                    return fb.loadPublicPresentation(_fbUid, _fbId);
+                };
+            }
+        }
         const Storage = window.OEIStorage || null;
         const STORAGE_KEYS = Storage?.KEYS || {};
         const STORAGE_CHANNELS = Storage?.CHANNELS || {};
@@ -264,6 +281,7 @@ import {
 
         async function loadData() {
             if (draftData) return draftData;
+            if (file === '__firebase_public__' && window._firebasePublicLoad) return window._firebasePublicLoad();
             const res = await fetch(file);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
@@ -307,12 +325,20 @@ import {
             const normalized = _normalizeWhiteboardSyncPayload(payload);
             if (!normalized) return;
             _whiteboardLastSync = normalized;
+            // Sync to student room via WebRTC
             if (_room.active && ROOM_MSG.WHITEBOARD_SYNC) {
                 roomBroadcast({
                     type: ROOM_MSG.WHITEBOARD_SYNC,
                     ...normalized,
                 });
             }
+            // Sync to audience window via BroadcastChannel
+            _postPresenterSync({
+                type: SYNC_MSG.WHITEBOARD,
+                active: normalized.active,
+                slideIndex: normalized.slideIndex,
+                commands: normalized.commands,
+            });
         };
         const _recordWhiteboardSnapshot = frame => {
             if (!frame || typeof frame !== 'object') return;
@@ -843,6 +869,12 @@ import {
                 _roomFeedback,
                 _activePoll,
                 _activeWordCloud,
+                _activeExitTicket,
+                _activeRankOrder,
+                onEndPoll: roomEndPoll,
+                onEndCloud: roomEndWordCloud,
+                onEndExitTicket: roomEndExitTicket,
+                onEndRankOrder: roomEndRankOrder,
                 _pvContextView,
                 ROOM_MSG,
                 UI_ICONS,
@@ -889,6 +921,33 @@ import {
             });
             if (panelState && typeof panelState._pvContextView === 'string') {
                 _pvContextView = panelState._pvContextView;
+            }
+            // Update spectateur count badge in context panel
+            const specEl = document.getElementById('pv-spectateurs-count');
+            if (specEl) {
+                const n = Object.keys(_room.students || {}).length;
+                specEl.textContent = n === 0 ? '0 spectateur' : n === 1 ? '1 spectateur' : `${n} spectateurs`;
+                specEl.classList.toggle('has-students', n > 0);
+            }
+            // Refresh inline quick panel if open
+            if (typeof renderPresenterQuickPanel === 'function') renderPresenterQuickPanel();
+
+            // Update hands & questions quick-open badges
+            const handsBtn = document.getElementById('pv-ctx-hands-btn');
+            const handsN = document.getElementById('pv-ctx-hands-n');
+            if (handsBtn && handsN) {
+                const hn = _roomHands.length;
+                handsN.textContent = String(hn);
+                handsBtn.style.display = hn > 0 ? '' : 'none';
+                handsBtn.classList.toggle('has-alert', hn > 0);
+            }
+            const questionsBtn = document.getElementById('pv-ctx-questions-btn');
+            const questionsN = document.getElementById('pv-ctx-questions-n');
+            if (questionsBtn && questionsN) {
+                const qn = _roomQuestions.filter(q => !q.resolved && !q.hidden).length;
+                questionsN.textContent = String(qn);
+                questionsBtn.style.display = qn > 0 ? '' : 'none';
+                questionsBtn.classList.toggle('has-alert', qn > 0);
             }
         }
 
@@ -1888,6 +1947,14 @@ import {
                         return false;
                     }
                 },
+                broadcastLaser: (x, y, active) => {
+                    if (!_room.active) return;
+                    roomBroadcast({ type: ROOM_MSG.LASER, active: !!active, x: Number(x) || 0, y: Number(y) || 0 });
+                },
+                // Navigation helpers for supplemental scripts (e.g. slide overview overlay)
+                goTo: idx => { PresenterControls.goTo?.(idx); },
+                getSlides: () => slides,
+                getCurrentIndex: () => currentIndex,
             };
             const audienceUrl = new URL(location.href);
             audienceUrl.searchParams.set('mode', 'audience');
@@ -2058,9 +2125,11 @@ import {
             const presentationId = buildPresentationStorageId(data);
             const whiteboardStorageKey = presenterAnnotationsKey(presentationId);
             const presenterDrawRect = () => {
-                const frame = document.getElementById('pv-current-frame');
-                if (frame && typeof frame.getBoundingClientRect === 'function') {
-                    const rect = frame.getBoundingClientRect();
+                // Use pv-current-inner (the scaled slide content) not pv-current-frame
+                // (the outer container) — matches the reference used by audience & student.
+                const inner = document.getElementById('pv-current-inner');
+                if (inner && typeof inner.getBoundingClientRect === 'function') {
+                    const rect = inner.getBoundingClientRect();
                     if (rect && rect.width > 8 && rect.height > 8) return rect;
                 }
                 return null;
@@ -2104,6 +2173,11 @@ import {
             function broadcastState() {
                 channel.postMessage({ type: SYNC_MSG.GO_TO, index: currentIndex });
                 if (blackScreen) channel.postMessage({ type: SYNC_MSG.BLACK, on: true });
+                // Broadcast current whiteboard state if active
+                const _wbState = _captureWhiteboardSyncState();
+                if (_wbState?.active) {
+                    channel.postMessage({ type: SYNC_MSG.WHITEBOARD, active: true, slideIndex: _wbState.slideIndex, commands: _wbState.commands });
+                }
                 channel.postMessage({
                     type: SYNC_MSG.AUDIENCE_LOCK,
                     locked: audienceLockActive,
@@ -2288,7 +2362,17 @@ import {
                 channel.postMessage({ type: SYNC_MSG.GO_TO, index: currentIndex });
                 channel.postMessage({ type: SYNC_MSG.BLACK, on: false });
                 // Broadcast slide change to P2P connected students
-                if (_room.active) roomBroadcast({ type: ROOM_MSG.SLIDE_CHANGE, index: idx, fragmentOrder: -1, fragmentIndex: -1 });
+                if (_room.active) {
+                    roomBroadcast({ type: ROOM_MSG.SLIDE_CHANGE, index: idx, fragmentOrder: -1, fragmentIndex: -1 });
+                    const _kpSlide = slides[idx];
+                    const _kpPoints = Array.isArray(_kpSlide?.keypoints) && _kpSlide.keypoints.length
+                        ? _kpSlide.keypoints.map(p => String(p || '').trim()).filter(Boolean)
+                        : (_kpSlide?.notes || '').split('\n')
+                            .map(l => l.replace(/^[\-\*•]\s*/, '').trim())
+                            .filter(Boolean)
+                            .slice(0, 5);
+                    roomBroadcast({ type: ROOM_MSG.ROOM_KEYNOTE, points: _kpPoints });
+                }
                 // Persist current slide for resume
                 try {
                     const s = storageGetJSON(PRESENTER_SESSION_KEY, {});
@@ -2475,6 +2559,90 @@ import {
                 openPresenterRoomPanel,
                 increaseFontSize: () => { presenterLayoutControls.increaseFontSize(); },
                 decreaseFontSize: () => { presenterLayoutControls.decreaseFontSize(); },
+            });
+
+            // Context panel — inline quick panel (mains / questions sous les notes)
+            let _pvQuickPanelView = null; // null | 'hands' | 'questions'
+
+            function renderPresenterQuickPanel() {
+                const panel = document.getElementById('pv-room-quickpanel');
+                if (!panel) return;
+                const handsBtn = document.getElementById('pv-ctx-hands-btn');
+                const questionsBtn = document.getElementById('pv-ctx-questions-btn');
+                handsBtn?.classList.toggle('active', _pvQuickPanelView === 'hands');
+                questionsBtn?.classList.toggle('active', _pvQuickPanelView === 'questions');
+                if (!_pvQuickPanelView) { panel.style.display = 'none'; return; }
+                panel.style.display = '';
+                const titleEl = document.getElementById('pvqp-title');
+                const lowerAllBtn = document.getElementById('pvqp-lower-all');
+                const listEl = document.getElementById('pvqp-list');
+                if (!listEl) return;
+                listEl.innerHTML = '';
+                if (_pvQuickPanelView === 'hands') {
+                    if (titleEl) titleEl.textContent = 'Mains levées';
+                    if (lowerAllBtn) lowerAllBtn.style.display = _roomHands.length > 1 ? '' : 'none';
+                    if (_roomHands.length === 0) {
+                        const e = document.createElement('div'); e.className = 'pvqp-empty'; e.textContent = 'Aucune main levée.'; listEl.appendChild(e);
+                    } else {
+                        _roomHands.forEach(h => {
+                            const row = document.createElement('div'); row.className = 'pvqp-hand-row';
+                            const name = document.createElement('span'); name.className = 'pvqp-hand-name'; name.textContent = String(h.pseudo || 'Anonyme');
+                            const btn = document.createElement('button'); btn.className = 'pvqp-action-btn'; btn.textContent = 'Baisser';
+                            btn.addEventListener('click', () => {
+                                const conn = _room.connections.find(c => c.peer === h.peerId && c.open);
+                                if (conn) { try { conn.send({ type: ROOM_MSG.HAND_LOWER }); } catch (_) {} }
+                                clearRaisedHandForPeer(_roomHands, _room.students, h.peerId);
+                                roomUpdatePanel();
+                            });
+                            row.appendChild(name); row.appendChild(btn); listEl.appendChild(row);
+                        });
+                    }
+                } else {
+                    if (titleEl) titleEl.textContent = 'Questions';
+                    if (lowerAllBtn) lowerAllBtn.style.display = 'none';
+                    const open = _roomQuestions.filter(q => !q.resolved && !q.hidden);
+                    if (open.length === 0) {
+                        const e = document.createElement('div'); e.className = 'pvqp-empty'; e.textContent = 'Aucune question ouverte.'; listEl.appendChild(e);
+                    } else {
+                        open.forEach(q => {
+                            const row = document.createElement('div'); row.className = 'pvqp-question-row';
+                            const txt = document.createElement('div'); txt.className = 'pvqp-q-text'; txt.textContent = String(q.text || '');
+                            const acts = document.createElement('div'); acts.className = 'pvqp-q-actions';
+                            const resolveBtn = document.createElement('button');
+                            resolveBtn.className = 'pvqp-action-btn' + (q.resolved ? ' active' : '');
+                            resolveBtn.textContent = 'Résoudre';
+                            resolveBtn.addEventListener('click', () => { if (toggleQuestionResolved(q)) roomUpdatePanel(); });
+                            const pinBtn = document.createElement('button');
+                            pinBtn.className = 'pvqp-action-btn' + (q.pinned ? ' active' : '');
+                            pinBtn.textContent = q.pinned ? 'Désépingler' : 'Épingler';
+                            pinBtn.addEventListener('click', () => { if (toggleQuestionPinned(q)) roomUpdatePanel(); });
+                            const hideBtn = document.createElement('button');
+                            hideBtn.className = 'pvqp-action-btn';
+                            hideBtn.textContent = 'Masquer';
+                            hideBtn.addEventListener('click', () => { if (toggleQuestionHidden(q)) roomUpdatePanel(); });
+                            acts.appendChild(resolveBtn); acts.appendChild(pinBtn); acts.appendChild(hideBtn);
+                            row.appendChild(txt); row.appendChild(acts); listEl.appendChild(row);
+                        });
+                    }
+                }
+            }
+
+            const togglePresenterQuickPanel = (view) => {
+                _pvQuickPanelView = _pvQuickPanelView === view ? null : view;
+                renderPresenterQuickPanel();
+            };
+
+            document.getElementById('pv-ctx-hands-btn')?.addEventListener('click', () => togglePresenterQuickPanel('hands'));
+            document.getElementById('pv-ctx-questions-btn')?.addEventListener('click', () => togglePresenterQuickPanel('questions'));
+            document.getElementById('pvqp-close')?.addEventListener('click', () => { _pvQuickPanelView = null; renderPresenterQuickPanel(); });
+            document.getElementById('pvqp-lower-all')?.addEventListener('click', () => {
+                _roomHands.forEach(hand => {
+                    const conn = _room.connections?.find?.(c => c.peer === hand.peerId && c.open);
+                    if (!conn) return;
+                    try { conn.send({ type: ROOM_MSG.HAND_LOWER }); } catch (_) {}
+                });
+                clearAllRaisedHands(_roomHands, _room.students || {});
+                roomUpdatePanel();
             });
 
             // Resize handler to re-scale slides

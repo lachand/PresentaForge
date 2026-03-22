@@ -1814,6 +1814,7 @@ function _buildStudentExportDocument(data) {
         totalSlides: visibleSlides.length,
         chapterNumbers: SlidesRenderer._buildChapterNumbers(visibleSlides, data.autoNumberChapters),
         typography: SlidesShared.resolveTypographyDefaults(data.typography),
+        includeNotes: false,
     };
     let slideCards = '';
     let navItems = '';
@@ -1822,12 +1823,9 @@ function _buildStudentExportDocument(data) {
         const slideHtml = SlidesRenderer.renderSlide(slide, i, htmlOpts);
         const title = slide.title || `Slide ${num}`;
         const titleClean = title.replace(/<[^>]*>/g, '').slice(0, 60);
-        const notes = slide.notes ? `<div class="stu-notes"><strong>📝 Notes :</strong><div class="stu-notes-body">${SlidesShared.formatInlineRichText(slide.notes)}</div></div>` : '';
-
         slideCards += `<div class="stu-card" id="slide-${num}">
             <div class="stu-card-header"><span class="stu-num">${num}</span> ${esc(titleClean)}</div>
             <div class="stu-slide-wrap"><div class="stu-slide-inner reveal">${slideHtml}</div></div>
-            ${notes}
         </div>\n`;
 
         navItems += `<a href="#slide-${num}" class="stu-nav-item"><span class="stu-nav-num">${num}</span>${esc(titleClean)}</a>\n`;
@@ -1836,35 +1834,43 @@ function _buildStudentExportDocument(data) {
     const html = `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${titleEsc} — Mode étudiant</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 ${_buildThemeFontLinks(themeData)}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
 ${_buildThemeRootCSS(themeData)}
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; display: flex; min-height: 100vh; }
+body { font-family: 'Inter', system-ui, sans-serif; background: #fef8f5; color: #1d1b1a; display: flex; min-height: 100vh; }
 
-/* Sidebar */
-.stu-sidebar { position: sticky; top: 0; left: 0; width: 260px; height: 100vh; background: #1e293b; color: #e2e8f0; overflow-y: auto; flex-shrink: 0; padding: 16px 0; z-index: 100; }
-.stu-sidebar-title { padding: 0 16px 16px; font-size: 0.9rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 8px; }
-.stu-nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: #94a3b8; text-decoration: none; font-size: 0.78rem; transition: background 0.15s, color 0.15s; border-left: 3px solid transparent; }
-.stu-nav-item:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
-.stu-nav-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,0.08); font-size: 0.7rem; font-weight: 600; flex-shrink: 0; }
+/* Sidebar — warm neutral, no border */
+.stu-sidebar { position: sticky; top: 0; left: 0; width: 264px; height: 100vh; background: #f3edea; color: #1d1b1a; overflow-y: auto; flex-shrink: 0; padding: 16px 0; z-index: 100; }
+.stu-sidebar-brand { padding: 4px 16px 16px; }
+.stu-sidebar-brand-name { font-family: 'Manrope', sans-serif; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8a9099; display: block; }
+.stu-sidebar-title { font-family: 'Manrope', sans-serif; font-size: 0.875rem; font-weight: 700; color: #1d1b1a; display: block; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stu-sidebar-divider { height: 1px; background: rgba(193,199,210,0.20); margin: 0 0 8px; }
+.stu-nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: #414750; text-decoration: none; font-size: 0.78rem; font-weight: 500; transition: background 0.12s, color 0.12s; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; margin-right: 8px; }
+.stu-nav-item:hover { background: #ede7e4; color: #1d1b1a; }
+.stu-nav-item.active { background: #ffffff; color: #00508d; border-left-color: #596400; font-weight: 600; box-shadow: 0 1px 3px rgba(29,27,26,0.04); }
+.stu-nav-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: #e7e1de; color: #414750; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+.stu-nav-item.active .stu-nav-num { background: #d2e4ff; color: #001c37; }
 
 /* Main */
-.stu-main { flex: 1; padding: 32px; max-width: 960px; margin: 0 auto; }
-.stu-header { text-align: center; margin-bottom: 32px; }
-.stu-header h1 { font-size: 1.8rem; margin-bottom: 8px; }
-.stu-header .stu-meta { color: #64748b; font-size: 0.85rem; }
+.stu-main { flex: 1; padding: 40px 48px; max-width: 980px; }
+.stu-header { margin-bottom: 32px; }
+.stu-header h1 { font-family: 'Manrope', sans-serif; font-size: 1.75rem; font-weight: 700; color: #1d1b1a; margin-bottom: 6px; }
+.stu-header .stu-meta { color: #8a9099; font-size: 0.85rem; }
 
 /* Cards */
-.stu-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 24px; overflow: hidden; scroll-margin-top: 16px; }
-.stu-card-header { padding: 12px 16px; font-weight: 600; font-size: 0.85rem; border-bottom: 1px solid #e2e8f0; color: #475569; display: flex; align-items: center; gap: 8px; }
-.stu-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: #6366f1; color: #fff; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+.stu-card { background: #ffffff; border-radius: 1rem; box-shadow: 0 1px 3px rgba(29,27,26,0.04); margin-bottom: 24px; overflow: hidden; scroll-margin-top: 16px; }
+.stu-card-header { padding: 12px 16px; font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 0.85rem; color: #414750; display: flex; align-items: center; gap: 10px; background: #f8f2ef; }
+.stu-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #00508d, #2869a9); color: #fff; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
 .stu-slide-wrap { position: relative; width: 100%; padding-top: ${(dims[1] / dims[0] * 100).toFixed(2)}%; overflow: hidden; background: var(--sl-bg, #1a1a2e); }
 .stu-slide-inner { position: absolute; top: 0; left: 0; width: ${dims[0]}px; height: ${dims[1]}px; transform-origin: top left; }
-.stu-notes { padding: 12px 16px; background: #fffbeb; border-top: 1px solid #fde68a; font-size: 0.8rem; line-height: 1.6; }
-.stu-notes strong { color: #92400e; }
-.stu-notes-body { margin-top: 4px; color: #78350f; }
 
 /* Slide rendering */
 ${themeCSS}
@@ -1880,13 +1886,17 @@ ${themeCSS}
 @media print {
     .stu-sidebar { display: none; }
     body { background: #fff; }
-    .stu-card { break-inside: avoid; box-shadow: none; border: 1px solid #e2e8f0; margin-bottom: 16px; }
+    .stu-card { break-inside: avoid; box-shadow: none; border: 1px solid #ede7e4; margin-bottom: 16px; }
     .stu-main { max-width: 100%; padding: 0; }
 }
 </style>
 </head><body>
 <nav class="stu-sidebar">
-    <div class="stu-sidebar-title">📚 ${titleEsc}</div>
+    <div class="stu-sidebar-brand">
+        <span class="stu-sidebar-brand-name">Mode étudiant</span>
+        <span class="stu-sidebar-title">${titleEsc}</span>
+    </div>
+    <div class="stu-sidebar-divider"></div>
     ${navItems}
 </nav>
 <main class="stu-main">
@@ -1914,14 +1924,29 @@ new ResizeObserver(scaleSlides).observe(document.querySelector('.stu-main'));
 const observer = new IntersectionObserver(entries => {
     entries.forEach(e => {
         if (e.isIntersecting) {
-            document.querySelectorAll('.stu-nav-item').forEach(a => a.style.borderLeftColor = 'transparent');
+            document.querySelectorAll('.stu-nav-item').forEach(a => a.classList.remove('active'));
             const id = e.target.id;
             const link = document.querySelector('.stu-nav-item[href="#' + id + '"]');
-            if (link) { link.style.borderLeftColor = '#6366f1'; link.style.color = '#e2e8f0'; }
+            if (link) link.classList.add('active');
         }
     });
 }, { threshold: 0.3 });
 document.querySelectorAll('.stu-card').forEach(card => observer.observe(card));
+
+// LaTeX rendering (KaTeX is deferred — wait for load)
+window.addEventListener('load', function() {
+    if (window.katex) {
+        document.querySelectorAll('.sl-latex-pending:not([data-rendered])').forEach(el => {
+            const target = el.querySelector('.sl-latex-render');
+            const expr = el.dataset.latex || (target ? target.textContent : '') || '';
+            if (!target || !expr) return;
+            try { target.innerHTML = window.katex.renderToString(expr, { displayMode: true, throwOnError: false }); el.dataset.rendered = '1'; } catch(_) {}
+        });
+    }
+    document.querySelectorAll('pre > code[class*="language-"]:not([data-highlighted])').forEach(el => {
+        if (window.hljs) try { window.hljs.highlightElement(el); } catch(_) {}
+    });
+});
 </script>
 </body></html>`;
     return {

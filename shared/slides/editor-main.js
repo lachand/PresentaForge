@@ -104,6 +104,33 @@ function init() {
         }, 600);
     });
 
+    // Keypoints textarea handler (debounced) — one point per line
+    let _kpSaveTimer;
+    document.getElementById('keypoints-textarea')?.addEventListener('input', e => {
+        clearTimeout(_kpSaveTimer);
+        _kpSaveTimer = setTimeout(() => {
+            if (editor.currentSlide) {
+                const points = e.target.value.split('\n').map(l => l.trim()).filter(Boolean);
+                editor.data.slides[editor.selectedIndex].keypoints = points;
+                editor._push();
+            }
+        }, 600);
+    });
+
+    // Firebase — restaurer l'ID courant (URL param > sessionStorage, persiste après hard refresh)
+    const _fbOpenId = params.get('firebase') || (() => { try { return sessionStorage.getItem('oei-firebase-open-id'); } catch { return null; } })();
+    if (_fbOpenId) {
+        // Sync both stores so they stay consistent
+        try { sessionStorage.setItem('oei-firebase-open-id', _fbOpenId); } catch {}
+        if (!params.get('firebase')) try { history.replaceState({}, '', '?firebase=' + encodeURIComponent(_fbOpenId)); } catch {}
+        window.OEIFirebase?.ready().then(() => {
+            if (window.OEIFirebase?.isReady()) {
+                window.OEIFirebase.setCurrentId(_fbOpenId);
+                window.updateFirebaseCloudBadge?.('saved');
+            }
+        });
+    }
+
     // Command palette input events
     document.getElementById('cmd-input')?.addEventListener('input', e => renderCommandResults(e.target.value));
     document.getElementById('cmd-input')?.addEventListener('keydown', e => {

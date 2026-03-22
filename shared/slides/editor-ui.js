@@ -212,6 +212,10 @@ function initSplitButtons() {
     document.getElementById('btn-open-new')?.addEventListener('click', async () => {
         if (await OEIDialog.confirm('Créer une nouvelle présentation ? Les modifications non sauvegardées seront perdues.')) {
             editor.new();
+            window.OEIFirebase?.clearCurrentId();
+            try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
+            try { history.replaceState({}, '', location.pathname); } catch {}
+            window.updateFirebaseCloudBadge?.('hidden');
             notify('Nouvelle présentation', 'success');
         }
         document.getElementById('split-open-menu').classList.add('hidden');
@@ -296,11 +300,49 @@ let _savedState = true;
 
 function updateSaveIndicator(saved) {
     _savedState = saved;
-    const dot = document.getElementById('save-dot');
+    const fb = window.OEIFirebase;
+    const fbActive = fb?.isReady?.() && fb?.getCurrentId?.();
+    const dot  = document.getElementById('save-dot');
     const text = document.getElementById('save-text');
-    if (dot) { dot.className = 'save-dot ' + (saved ? 'saved' : 'unsaved'); }
-    if (text) text.textContent = saved ? 'Brouillon sauvé' : 'Non sauvegardé';
+    if (fbActive) {
+        // Firebase active : chaque modification est "en attente de sync"
+        // updateFirebaseCloudBadge('saved') remettra le point au vert après la sync
+        if (dot)  dot.className    = 'save-dot unsaved';
+        if (text) text.textContent = 'Modifications en attente';
+    } else {
+        if (dot)  dot.className    = 'save-dot ' + (saved ? 'saved' : 'unsaved');
+        if (text) text.textContent = saved ? '' : 'Non sauvegardé';
+    }
 }
+
+/* ── Firebase cloud badge ── */
+// state: 'hidden' | 'idle' | 'syncing' | 'saved' | 'error'
+function updateFirebaseCloudBadge(state) {
+    const badge = document.getElementById('fb-cloud-badge');
+    if (badge) {
+        const icon = badge.querySelector('.ms');
+        const icons  = { idle: 'cloud', syncing: 'sync', saved: 'cloud_done', error: 'cloud_off', hidden: 'cloud_off' };
+        const titles = { idle: 'Firebase connecté', syncing: 'Synchronisation Firebase…', saved: 'Sauvegardé sur Firebase', error: 'Erreur de sauvegarde Firebase', hidden: 'Firebase non connecté' };
+        badge.className = 'fb-cloud-badge' + (state && state !== 'hidden' ? ' state-' + state : '');
+        badge.style.display = state === 'hidden' ? 'none' : 'flex';
+        badge.title = titles[state] || 'Firebase';
+        if (icon) icon.textContent = icons[state] || 'cloud';
+    }
+    // Piloter aussi le point principal + texte quand Firebase est actif
+    const dot      = document.getElementById('save-dot');
+    const text     = document.getElementById('save-text');
+    const label    = document.getElementById('file-name-indicator');
+    const fbActive = state !== 'hidden' && state !== 'idle';
+    // Masquer "Brouillon" quand Firebase gère la sauvegarde
+    if (label) label.style.display = fbActive ? 'none' : '';
+    if (!dot || !text) return;
+    if (!fbActive) return; // pas de document Firebase tracké
+    const dotClass = { syncing: 'saving', saved: 'saved', error: 'unsaved' }[state];
+    if (dotClass) dot.className = 'save-dot ' + dotClass;
+    const msgs = { syncing: 'Synchronisation…', saved: 'Présentation sauvée', error: 'Erreur Firebase' };
+    text.textContent = msgs[state] ?? '';
+}
+window.updateFirebaseCloudBadge = updateFirebaseCloudBadge;
 
 /* ── I4: Breadcrumb ────────────────────────────────────── */
 

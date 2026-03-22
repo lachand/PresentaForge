@@ -14,6 +14,7 @@
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { handleApiRequest } from '../tools/slides/replay-api-server.mjs';
 
 const require = createRequire(import.meta.url);
 const { WebSocketServer } = require('ws');
@@ -21,6 +22,7 @@ const { WebSocketServer } = require('ws');
 const RELAY_HOST = process.env.RELAY_HOST || '0.0.0.0';
 const RELAY_PORT = Math.max(1, Math.min(65535, Number(process.env.PORT || process.env.RELAY_PORT || 8787) || 8787));
 const RELAY_TOKEN_DEFAULT = String(process.env.RELAY_TOKEN || '').trim();
+const CORS_ORIGIN = String(process.env.CORS_ORIGIN || '*').trim();
 const ROOM_IDLE_TTL_MS = Math.max(60_000, Number(process.env.RELAY_ROOM_IDLE_TTL_MS || 45 * 60_000) || (45 * 60_000));
 const DEBUG = ['1', 'true', 'yes', 'on'].includes(String(process.env.RELAY_DEBUG || '').toLowerCase());
 
@@ -309,7 +311,18 @@ function handlePacket(ws, payload) {
     }
 }
 
-const httpServer = createServer((req, res) => {
+const httpServer = createServer(async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    if (await handleApiRequest(req, res)) return;
+
     if (req.url === '/healthz') {
         res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({

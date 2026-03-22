@@ -9,9 +9,13 @@
     <link rel="stylesheet" href="../vendor/revealjs/5.1.0/dist/reset.css">
     <link rel="stylesheet" href="../vendor/revealjs/5.1.0/dist/reveal.css">
     <link rel="stylesheet" href="../vendor/revealjs/5.1.0/plugin/highlight/monokai.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
     <style id="sl-theme-css">/* injected by slides-core.js */</style>
-    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=6">
+    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=7">
 </head>
 <body>
     <div id="sl-toolbar-hover-zone"></div>
@@ -28,6 +32,7 @@
         <button class="sl-tb-btn" id="btn-notes" title="Mode présentateur (P/S)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg><span>Présentateur</span></button>
         <button class="sl-tb-btn" id="btn-student-room" title="Salle étudiants"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Salle</span></button>
         <button class="sl-tb-btn" id="btn-editor" title="Retour à l'éditeur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>Éditeur</span></button>
+        <button class="sl-tb-btn" id="btn-firebase" title="Ouvrir depuis Firebase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Firebase</span></button>
     </div>
     <div class="reveal" id="reveal-root">
         <div class="slides" id="slides-root"></div>
@@ -75,50 +80,46 @@
             </div>
             <div class="pv-toolbar-actions" aria-label="Actions présentateur">
                 <div class="pv-toolbar-group" aria-label="Affichage">
-                    <button class="pv-toolbar-btn" id="pv-btn-theme" title="Thème clair/sombre (Ctrl+L)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-                        Thème
-                    </button>
                     <button class="pv-toolbar-btn" id="pv-btn-black" title="Écran noir (B)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        <span class="pv-ms">tv_off</span>
                         Noir
                     </button>
                     <button class="pv-toolbar-btn" id="pv-btn-whiteboard" title="Tableau blanc (W)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h6"/><path d="M14.5 3.5l6 6L9 21H3v-6z"/></svg>
+                        <span class="pv-ms">draw</span>
                         Tableau
                     </button>
                 </div>
                 <div class="pv-toolbar-group" aria-label="Salle">
                     <button class="pv-toolbar-btn" id="pv-btn-room-quick" title="Ouvrir la salle / QR audience">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span class="pv-ms">group</span>
                         Ouvrir salle
                     </button>
                     <button class="pv-toolbar-btn" id="pv-btn-network" title="Diagnostic réseau / fallback relay">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7a12 12 0 0 1 16 0"/><path d="M7 10a8 8 0 0 1 10 0"/><path d="M10 13a4 4 0 0 1 4 0"/><circle cx="12" cy="18" r="1"/></svg>
+                        <span class="pv-ms">wifi</span>
                         Réseau
                     </button>
                 </div>
                 <div class="pv-toolbar-group" aria-label="Enregistrement">
                     <button class="pv-toolbar-btn" id="pv-btn-rec" title="Démarrer/arrêter l'enregistrement de session">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>
+                        <span class="pv-ms">radio_button_checked</span>
                         Enregistrer
                     </button>
                     <button class="pv-toolbar-btn" id="pv-btn-rec-pause" title="Mettre en pause / reprendre l'enregistrement">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+                        <span class="pv-ms">pause_circle</span>
                         Pause
                     </button>
                     <button class="pv-toolbar-btn" id="pv-btn-export-session" title="Exporter session (JSON + audio)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span class="pv-ms">download</span>
                         Export session
                     </button>
                     <button class="pv-toolbar-btn" id="pv-btn-export-replay" title="Exporter replay autonome (HTML + audio synchronisé)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="14" rx="2"/><polygon points="11 8 16 10.5 11 13 11 8"/><path d="M8 21h8"/></svg>
+                        <span class="pv-ms">smart_display</span>
                         Export replay
                     </button>
                 </div>
                 <div class="pv-toolbar-group pv-toolbar-group-end" aria-label="Navigation">
                     <button class="pv-toolbar-btn" id="pv-btn-editor" title="Retour à l'éditeur">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <span class="pv-ms">edit_document</span>
                         Éditeur
                     </button>
                 </div>
@@ -130,13 +131,20 @@
                     <div class="pv-current-frame" id="pv-current-frame">
                         <div class="pv-current-inner" id="pv-current-inner"></div>
                     </div>
-                    <div class="pv-slide-counter" id="pv-counter">Slide 1 / 1</div>
+                    <!-- Floating glass nav pill -->
+                    <div class="pv-float-nav" id="pv-float-nav">
+                        <button class="pv-nav-btn" id="pv-prev" title="Slide précédent (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+                        <span class="pv-float-counter" id="pv-counter">Slide 1 / 1</span>
+                        <button class="pv-nav-btn" id="pv-next-btn" title="Slide suivant (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+                    </div>
                 </div>
                 <div class="pv-lower-zone" id="pv-lower-zone">
-                    <div class="pv-next">
-                        <div class="pv-next-label">Slide suivante</div>
-                        <div class="pv-next-frame" id="pv-next-frame">
-                            <div class="pv-next-inner" id="pv-next-inner"></div>
+                    <div class="pv-thumb-strip">
+                        <div class="pv-thumb">
+                            <div class="pv-thumb-label">Suivante</div>
+                            <div class="pv-next-frame pv-thumb-frame" id="pv-next-frame">
+                                <div class="pv-next-inner pv-thumb-inner" id="pv-next-inner"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="pv-context-panel">
@@ -151,9 +159,24 @@
                             <div class="pv-timer-display" id="pv-timer" title="Clic pour démarrer/pauser · Double-clic pour réinitialiser">00:00</div>
                             <div class="pv-progress-badge" id="pv-progress"></div>
                         </div>
-                        <div class="pv-nav-btns">
-                            <button class="pv-nav-btn" id="pv-prev" title="Slide précédent (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-                            <button class="pv-nav-btn" id="pv-next-btn" title="Slide suivant (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+                        <div class="pv-spectateurs-row">
+                            <span class="pv-spectateurs-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span>
+                            <span class="pv-spectateurs-count" id="pv-spectateurs-count">0 spectateur</span>
+                            <button class="pv-ctx-live-btn" id="pv-ctx-hands-btn" title="Mains levées" style="display:none">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 11V6a1 1 0 0 1 2 0v5"/><path d="M10 11V5a1 1 0 0 1 2 0v6"/><path d="M14 11V6a1 1 0 0 1 2 0v5"/><path d="M18 11V8a1 1 0 0 1 2 0v6c0 4-3 7-7 7h-1c-3 0-6-2-7-5l-1-3a1.5 1.5 0 0 1 2.8-1.1L8 13"/></svg>
+                                <span id="pv-ctx-hands-n">0</span>
+                            </button>
+                            <button class="pv-ctx-live-btn" id="pv-ctx-questions-btn" title="Questions" style="display:none">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg>
+                                <span id="pv-ctx-questions-n">0</span>
+                            </button>
+                        </div>
+                        <div class="pv-clock-row">
+                            <div>
+                                <span class="pv-clock-label">Heure actuelle</span>
+                                <span class="pv-clock-time" id="pv-clock">--:--</span>
+                            </div>
+                            <button class="pv-end-show-btn" id="pv-btn-end-show">Fin du show</button>
                         </div>
                         <div class="pv-room-mini" id="pv-room-mini"><span class="pv-room-mini-empty">Salle inactive</span></div>
                         <div class="pv-context-dynamic" id="pv-context-dynamic"></div>
@@ -185,7 +208,49 @@
                     <div class="pv-rec-live" id="pv-rec-live"></div>
                     <div class="pv-notes-content" id="pv-notes"></div>
                 </div>
+                <!-- Panneau mains / questions inline (toggle depuis icônes contexte) -->
+                <div id="pv-room-quickpanel" style="display:none">
+                    <div class="pvqp-header">
+                        <span id="pvqp-title"></span>
+                        <button id="pvqp-lower-all" class="pvqp-action-btn" style="display:none">Baisser toutes</button>
+                        <button id="pvqp-close" class="pvqp-close-btn" title="Fermer">&#x2715;</button>
+                    </div>
+                    <div id="pvqp-list" class="pvqp-list"></div>
+                </div>
+                <div class="pv-quick-actions">
+                    <button class="pv-qa-btn" id="pv-qa-laser" title="Pointeur laser (maintenir pour activer)">
+                        <span class="pv-ms">highlight</span>
+                        Laser
+                    </button>
+                    <button class="pv-qa-btn" id="pv-qa-overview" title="Aller à une slide">
+                        <span class="pv-ms">grid_view</span>
+                        Slides
+                    </button>
+                    <button class="pv-qa-btn" id="pv-qa-fullscreen" title="Plein écran">
+                        <span class="pv-ms">fullscreen</span>
+                        Plein écran
+                    </button>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Laser dot overlay (shown fixed over slide in presenter mode, on .reveal in audience mode) -->
+    <div id="pv-laser-dot" style="display:none;position:fixed;width:16px;height:16px;border-radius:50%;background:rgba(220,38,38,0.9);box-shadow:0 0 8px 3px rgba(220,38,38,0.5);pointer-events:none;transform:translate(-50%,-50%);z-index:9999;transition:opacity 0.1s;"></div>
+    <!-- Audience laser dot (positioned over Reveal viewport) -->
+    <div id="sl-laser-dot" style="display:none;position:fixed;width:16px;height:16px;border-radius:50%;background:rgba(220,38,38,0.9);box-shadow:0 0 8px 3px rgba(220,38,38,0.5);pointer-events:none;transform:translate(-50%,-50%);z-index:9999;"></div>
+    <!-- Slide overview overlay (presenter mode) -->
+    <div id="pv-slide-jump" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(29,27,26,0.72);backdrop-filter:blur(6px);align-items:flex-start;justify-content:center;padding-top:48px;">
+        <div style="background:#fef8f5;border-radius:1.25rem;width:min(960px,92vw);max-height:calc(100vh - 96px);display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(29,27,26,0.4);">
+            <!-- Header -->
+            <div style="display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid rgba(193,199,210,0.18);flex-shrink:0;">
+                <span style="font-family:'Manrope',sans-serif;font-size:0.9375rem;font-weight:700;color:#1d1b1a;flex:1;">Vue d'ensemble</span>
+                <span id="pv-jump-count" style="font-family:'Manrope',sans-serif;font-size:0.75rem;font-weight:600;color:#8a9099;"></span>
+                <input id="pv-jump-input" type="search" placeholder="Rechercher…" style="padding:6px 10px;background:#ede7e4;border:none;border-radius:8px;font-size:0.8125rem;color:#1d1b1a;outline:none;width:180px;">
+                <button id="pv-jump-close" style="width:28px;height:28px;border-radius:50%;border:none;background:#ede7e4;color:#414750;cursor:pointer;font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center;" title="Fermer (Échap)">✕</button>
+            </div>
+            <!-- Grid -->
+            <div id="pv-jump-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px;overflow-y:auto;padding:16px;"></div>
         </div>
     </div>
 
@@ -217,6 +282,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Bannière activités en cours (visible quel que soit l'onglet actif) -->
+            <div id="rm-active-tools"></div>
 
             <!-- Tabs (visibles quand salle active) -->
             <div class="rm-tabs ui-tabs" id="rm-tabs">
@@ -381,7 +449,7 @@
     <script src="../shared/slides/theme-runtime.js?v=1"></script>
     <script src="../shared/slides/widget-plugins.js?v=2"></script>
     <script src="../shared/slides/design-tokens.js?v=2"></script>
-    <script src="../shared/slides/realtime-contract.js?v=3"></script>
+    <script src="../shared/slides/realtime-contract.js?v=4"></script>
     <script src="../shared/slides/network-session.js?v=2"></script>
     <script src="../shared/slides/relay-config.js?v=1"></script>
     <script src="../shared/slides/background-utils.js?v=1"></script>
@@ -397,6 +465,237 @@
     <script src="../shared/slides/slides-renderer-canvas.js?v=1"></script>
     <script src="../shared/slides/ui-icons.js?v=2"></script>
     <script src="../vendor/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script src="../shared/slides/firebase-storage.js?v=1"></script>
+    <script src="../shared/slides/firebase-modal.js?v=1"></script>
     <script type="module" src="viewer-main.js?v=15"></script>
+    <script>
+    // ── Presenter supplemental controls (laser, slide jump, clock, etc.) ──
+    window.addEventListener('load', function () {
+
+        // ── Clock ──────────────────────────────────────────────────────
+        var clockEl = document.getElementById('pv-clock');
+        function updateClock() {
+            if (!clockEl) return;
+            var now = new Date();
+            clockEl.textContent =
+                String(now.getHours()).padStart(2,'0') + ':' +
+                String(now.getMinutes()).padStart(2,'0') + ':' +
+                String(now.getSeconds()).padStart(2,'0');
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ── End Show (→ editor) ────────────────────────────────────────
+        var btnEndShow = document.getElementById('pv-btn-end-show');
+        if (btnEndShow) {
+            btnEndShow.addEventListener('click', function () {
+                document.getElementById('pv-btn-editor')?.click();
+            });
+        }
+
+        // ── Fullscreen quick-action ────────────────────────────────────
+        var qaFullscreen = document.getElementById('pv-qa-fullscreen');
+        if (qaFullscreen) {
+            qaFullscreen.addEventListener('click', function () {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+                else document.exitFullscreen?.();
+            });
+        }
+
+        // ── Laser pointer ───────────────────────────────────────────────
+        var laserBtn = document.getElementById('pv-qa-laser');
+        var laserDot = document.getElementById('pv-laser-dot');
+        var currentFrame = document.getElementById('pv-current-frame');
+        var laserActive = false;
+        var laserBtnActive = false;  // button held / toggled
+
+        function postLaser(x, y, active) {
+            var bridge = window.OEIPresenterSyncBridge;
+            if (bridge && bridge.post) {
+                bridge.post({ type: 'laser', x: x, y: y, active: active });
+            }
+            if (bridge && bridge.broadcastLaser) {
+                bridge.broadcastLaser(x, y, active);
+            }
+        }
+
+        function activateLaser() {
+            if (laserActive) return;
+            laserActive = true;
+            if (laserBtn) laserBtn.classList.add('active');
+            document.body.style.cursor = 'crosshair';
+        }
+        function deactivateLaser() {
+            if (!laserActive) return;
+            laserActive = false;
+            laserBtnActive = false;
+            if (laserBtn) laserBtn.classList.remove('active');
+            if (laserDot) laserDot.style.display = 'none';
+            document.body.style.cursor = '';
+            postLaser(0, 0, false);
+        }
+
+        if (laserBtn && currentFrame && laserDot) {
+            // Toggle on click
+            laserBtn.addEventListener('click', function () {
+                laserBtnActive = !laserBtnActive;
+                if (laserBtnActive) activateLaser();
+                else deactivateLaser();
+            });
+
+            // Track mouse over the presenter slide frame
+            currentFrame.addEventListener('mousemove', function (e) {
+                if (!laserActive) return;
+                // Normalize relative to pv-current-inner (actual slide bounds after scale)
+                // so coordinates match what audience and students see
+                var inner = document.getElementById('pv-current-inner');
+                var refRect = (inner && inner.getBoundingClientRect().width > 8)
+                    ? inner.getBoundingClientRect()
+                    : currentFrame.getBoundingClientRect();
+                var px = Math.max(0, Math.min(1, (e.clientX - refRect.left) / refRect.width));
+                var py = Math.max(0, Math.min(1, (e.clientY - refRect.top) / refRect.height));
+                // Show fixed-position dot at cursor location
+                laserDot.style.display = 'block';
+                laserDot.style.left = e.clientX + 'px';
+                laserDot.style.top  = e.clientY + 'px';
+                // Broadcast normalized coords to audience and students
+                postLaser(px, py, true);
+            });
+
+            currentFrame.addEventListener('mouseleave', function () {
+                if (!laserActive) return;
+                if (laserDot) laserDot.style.display = 'none';
+                postLaser(0, 0, false);
+            });
+
+            // Escape deactivates laser
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && laserActive) deactivateLaser();
+            });
+        }
+
+        // ── Slide overview grid ──────────────────────────────────────────
+        var qaOverview  = document.getElementById('pv-qa-overview');
+        var jumpOverlay = document.getElementById('pv-slide-jump');
+        var jumpInput   = document.getElementById('pv-jump-input');
+        var jumpGrid    = document.getElementById('pv-jump-grid');
+        var jumpCount   = document.getElementById('pv-jump-count');
+        var jumpClose   = document.getElementById('pv-jump-close');
+
+        // Scale factor for thumbnail (1280→160px)
+        var THUMB_W = 160, THUMB_H = 90, THUMB_SCALE = THUMB_W / 1280;
+
+        function _makeThumbCard(slide, i, currentIdx) {
+            var title = (slide.title || '').replace(/<[^>]*>/g, '').trim() || ('Slide ' + (i + 1));
+            var isCurrent = (i === currentIdx);
+            var card = document.createElement('button');
+            card.dataset.idx = String(i);
+            card.dataset.title = title.toLowerCase();
+            card.style.cssText = [
+                'display:flex;flex-direction:column;align-items:stretch;gap:6px;',
+                'border:none;border-radius:10px;padding:6px;cursor:pointer;',
+                'background:' + (isCurrent ? '#d2e4ff' : '#ffffff') + ';',
+                'box-shadow:' + (isCurrent ? '0 0 0 2px #00508d' : '0 1px 4px rgba(29,27,26,0.08)') + ';',
+                'transition:box-shadow 0.12s,background 0.12s;',
+            ].join('');
+
+            // Thumbnail frame
+            var frame = document.createElement('div');
+            frame.style.cssText = 'position:relative;width:' + THUMB_W + 'px;height:' + THUMB_H + 'px;overflow:hidden;border-radius:6px;background:#f3edea;flex-shrink:0;align-self:stretch;';
+
+            // Render slide HTML via SlidesRenderer if available
+            var rendered = typeof window.SlidesRenderer?.renderSlide === 'function'
+                ? window.SlidesRenderer.renderSlide(slide, i, {})
+                : null;
+            if (rendered) {
+                var inner = document.createElement('div');
+                inner.style.cssText = 'width:1280px;height:720px;transform-origin:top left;transform:scale(' + THUMB_SCALE + ');pointer-events:none;overflow:hidden;';
+                inner.innerHTML = rendered;
+                frame.appendChild(inner);
+            } else {
+                frame.style.display = 'flex';
+                frame.style.alignItems = 'center';
+                frame.style.justifyContent = 'center';
+                frame.innerHTML = '<span style="font-family:Manrope,sans-serif;font-size:1.5rem;font-weight:700;color:#c1c7d2;">' + (i + 1) + '</span>';
+            }
+
+            // Number badge
+            var badge = document.createElement('div');
+            badge.style.cssText = 'position:absolute;bottom:4px;left:4px;background:rgba(29,27,26,0.55);color:#fff;border-radius:4px;padding:1px 5px;font-size:0.625rem;font-weight:700;font-family:Manrope,sans-serif;';
+            badge.textContent = String(i + 1);
+            frame.appendChild(badge);
+
+            // Title
+            var titleEl = document.createElement('div');
+            titleEl.style.cssText = 'font-family:Manrope,sans-serif;font-size:0.6875rem;font-weight:600;color:' + (isCurrent ? '#00508d' : '#414750') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px 2px;';
+            titleEl.title = title;
+            titleEl.textContent = title;
+
+            card.appendChild(frame);
+            card.appendChild(titleEl);
+
+            card.addEventListener('mouseenter', function () {
+                if (!isCurrent) card.style.background = '#f3edea';
+            });
+            card.addEventListener('mouseleave', function () {
+                if (!isCurrent) card.style.background = '#ffffff';
+            });
+            card.addEventListener('click', function () {
+                window.OEIPresenterSyncBridge?.goTo(i);
+                closeSlideJump();
+            });
+            return card;
+        }
+
+        function openSlideJump() {
+            if (!jumpOverlay || !jumpGrid) return;
+            var bridge = window.OEIPresenterSyncBridge;
+            var slides = bridge?.getSlides?.() || [];
+            var currentIdx = bridge?.getCurrentIndex?.() ?? (window.ViewerRuntime?.presenterCurrentIndex ?? -1);
+            jumpGrid.innerHTML = '';
+            if (jumpInput) jumpInput.value = '';
+            if (jumpCount) jumpCount.textContent = slides.length + ' slide' + (slides.length > 1 ? 's' : '');
+            slides.forEach(function (slide, i) {
+                jumpGrid.appendChild(_makeThumbCard(slide, i, currentIdx));
+            });
+            jumpOverlay.style.display = 'flex';
+            setTimeout(function () {
+                if (jumpInput) jumpInput.focus();
+                // Scroll current slide into view
+                var cur = jumpGrid.querySelector('[data-idx="' + currentIdx + '"]');
+                if (cur) cur.scrollIntoView({ block: 'nearest' });
+            }, 50);
+        }
+        function closeSlideJump() {
+            if (jumpOverlay) jumpOverlay.style.display = 'none';
+        }
+
+        if (jumpInput) {
+            jumpInput.addEventListener('input', function () {
+                var val = jumpInput.value.trim().toLowerCase();
+                Array.from(jumpGrid?.children || []).forEach(function (card) {
+                    var title = card.dataset.title || '';
+                    var num = card.dataset.idx ? String(parseInt(card.dataset.idx, 10) + 1) : '';
+                    card.style.display = (!val || num.startsWith(val) || title.includes(val)) ? '' : 'none';
+                });
+            });
+            jumpInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeSlideJump();
+            });
+        }
+        if (jumpClose) jumpClose.addEventListener('click', closeSlideJump);
+        if (jumpOverlay) {
+            jumpOverlay.addEventListener('click', function (e) {
+                if (e.target === jumpOverlay) closeSlideJump();
+            });
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && jumpOverlay?.style.display === 'flex') closeSlideJump();
+        });
+        if (qaOverview) {
+            qaOverview.addEventListener('click', openSlideJump);
+        }
+    });
+    </script>
 </body>
 </html>

@@ -139,6 +139,10 @@ function _ensureMetadataModal() {
                         <input type="text" id="meta-author-input" placeholder="Nom de l’auteur">
                     </div>
                     <div class="field">
+                        <label for="meta-course-input">Cours</label>
+                        <input type="text" id="meta-course-input" placeholder="ex: L1 Info, Algo S1, Réseaux">
+                    </div>
+                    <div class="field">
                         <label for="meta-level-input">Niveau</label>
                         <input type="text" id="meta-level-input" placeholder="ex: Licence 2, Master 1, Terminale">
                     </div>
@@ -202,6 +206,7 @@ function _populateMetadataModal(modal) {
 
     modal.querySelector('#meta-title-input').value = String(meta.title || '');
     modal.querySelector('#meta-author-input').value = String(meta.author || '');
+    modal.querySelector('#meta-course-input').value = String(meta.course || '');
     modal.querySelector('#meta-level-input').value = String(meta.level || '');
     modal.querySelector('#meta-institution-input').value = String(meta.institution || '');
     modal.querySelector('#meta-id-input').value = String(meta.id || '');
@@ -226,6 +231,7 @@ function _saveMetadataFromModal(modal) {
         ...prevMeta,
         title,
         author: String(modal.querySelector('#meta-author-input')?.value || '').trim(),
+        course: String(modal.querySelector('#meta-course-input')?.value || '').trim(),
         level: String(modal.querySelector('#meta-level-input')?.value || '').trim(),
         institution: String(modal.querySelector('#meta-institution-input')?.value || '').trim(),
         description: String(modal.querySelector('#meta-description-input')?.value || '').trim(),
@@ -306,6 +312,10 @@ function bindToolbar() {
 
     document.getElementById('btn-import').addEventListener('click', () => {
         openFromFile();
+        window.OEIFirebase?.clearCurrentId();
+        try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
+        try { history.replaceState({}, '', location.pathname); } catch {}
+        window.updateFirebaseCloudBadge?.('hidden');
     });
     document.getElementById('btn-edit-metadata')?.addEventListener('click', openMetadataModal);
 
@@ -317,6 +327,23 @@ function bindToolbar() {
     document.getElementById('btn-import-pdf')?.addEventListener('click', () => {
         importPDF();
         document.getElementById('split-open-menu')?.classList.add('hidden');
+    });
+
+    // Firebase — ouvrir depuis Firebase
+    document.getElementById('btn-open-firebase')?.addEventListener('click', () => {
+        document.getElementById('split-open-menu')?.classList.add('hidden');
+        if (!window.OEIFirebaseModal) { _bindingsNotify('Module Firebase non chargé', 'error'); return; }
+        window.OEIFirebaseModal.open({
+            mode: 'open',
+            onLoad: (data, id) => {
+                activeEditor.load(data);
+                window.OEIFirebase?.setCurrentId(id);
+                try { sessionStorage.setItem('oei-firebase-open-id', id); } catch {}
+                try { history.replaceState({}, '', '?firebase=' + encodeURIComponent(id)); } catch {}
+                window.updateFirebaseCloudBadge?.('saved');
+                _bindingsNotify('Présentation chargée depuis Firebase', 'success');
+            },
+        });
     });
 
     // Export buttons (in ribbon Affichage tab)
@@ -374,6 +401,75 @@ function bindToolbar() {
     document.getElementById('btn-optimize-media')?.addEventListener('click', async () => {
         await window.optimizePresentationMedia?.({ force: true, reason: 'manual-action' });
         document.getElementById('split-export-menu')?.classList.add('hidden');
+    });
+
+    // Firebase — sauvegarder sur Firebase
+    document.getElementById('btn-save-firebase')?.addEventListener('click', () => {
+        document.getElementById('split-export-menu')?.classList.add('hidden');
+        if (!window.OEIFirebaseModal) { _bindingsNotify('Module Firebase non chargé', 'error'); return; }
+        window.OEIFirebaseModal.open({
+            mode: 'save',
+            currentData: JSON.parse(JSON.stringify(activeEditor.data)),
+            onSave: (id) => {
+                window.OEIFirebase?.setCurrentId(id);
+                try { sessionStorage.setItem('oei-firebase-open-id', id); } catch {}
+                try { history.replaceState({}, '', '?firebase=' + encodeURIComponent(id)); } catch {}
+                window.updateFirebaseCloudBadge?.('saved');
+                _bindingsNotify('Sauvegardé sur Firebase', 'success');
+            },
+        });
+    });
+
+    // Firebase — sauvegarde directe (Ctrl+S ou badge)
+    async function _saveToFirebaseNow() {
+        const fb = window.OEIFirebase;
+        if (!fb || !fb.isReady() || !fb.getCurrentId()) return false;
+        const data = activeEditor?.data;
+        if (!data) return false;
+        window.updateFirebaseCloudBadge?.('syncing');
+        try {
+            const json = JSON.stringify(data);
+            const course = data.metadata?.course || '';
+            await fb.savePresentation(JSON.parse(json), fb.getCurrentId(), { course });
+            _fbAutoSaveHash = json.length + '|' + json.slice(0, 120);
+            window.updateFirebaseCloudBadge?.('saved');
+            _bindingsNotify('Sauvegardé sur Firebase', 'success');
+            return true;
+        } catch (e) {
+            window.updateFirebaseCloudBadge?.('error');
+            _bindingsNotify('Erreur Firebase : ' + e.message, 'error');
+            return false;
+        }
+    }
+    window._saveToFirebaseNow = _saveToFirebaseNow;
+
+    // Firebase — sauvegarde automatique toutes les 60s
+    let _fbAutoSaveHash = null;
+    setInterval(async () => {
+        const fb = window.OEIFirebase;
+        if (!fb || !fb.isReady() || !fb.getCurrentId()) return;
+        const data = activeEditor?.data;
+        if (!data) return;
+        // Hash rapide pour détecter les changements
+        const json  = JSON.stringify(data);
+        const hash  = json.length + '|' + json.slice(0, 120);
+        if (hash === _fbAutoSaveHash) return;
+        window.updateFirebaseCloudBadge?.('syncing');
+        try {
+            const course = data.metadata?.course || '';
+            await fb.savePresentation(JSON.parse(json), fb.getCurrentId(), { course });
+            _fbAutoSaveHash = hash;
+            window.updateFirebaseCloudBadge?.('saved');
+        } catch { window.updateFirebaseCloudBadge?.('error'); }
+    }, 60_000);
+
+    // Rafraîchir le badge cloud au démarrage si Firebase déjà connecté
+    window.OEIFirebase?.ready().then(() => {
+        if (window.OEIFirebase?.isReady() && window.OEIFirebase?.getCurrentId()) {
+            window.updateFirebaseCloudBadge?.('saved');
+        } else if (window.OEIFirebase?.isReady()) {
+            window.updateFirebaseCloudBadge?.('idle');
+        }
     });
 
     document.getElementById('btn-theme-manager').addEventListener('click', openThemeManager);
@@ -858,7 +954,15 @@ function bindKeyboard() {
             if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); runtimeEditor.undo(); }
             if (e.key === 'z' && e.shiftKey) { e.preventDefault(); runtimeEditor.redo(); }
             if (e.key === 'y') { e.preventDefault(); runtimeEditor.redo(); }
-            if (e.key === 's') { e.preventDefault(); saveToFile(); }
+            if (e.key === 's') {
+                e.preventDefault();
+                const _fb = window.OEIFirebase;
+                if (_fb?.isReady() && _fb?.getCurrentId()) {
+                    window._saveToFirebaseNow?.();
+                } else {
+                    saveToFile();
+                }
+            }
             if (e.key === 'k') { e.preventDefault(); openCommandPalette(); }
             if (e.key === 'f') { e.preventDefault(); openSearchDialog(); }
             if (e.key === 'x') { e.preventDefault(); clipboardCut(); }

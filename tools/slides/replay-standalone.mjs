@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SLIDES_CORE_PATH = path.join(REPO_ROOT, 'shared', 'slides', 'slides-core.js');
 const SLIDES_THEMES_PATH = path.join(REPO_ROOT, 'shared', 'slides', 'slides-themes.js');
+const SLIDES_TYPOGRAPHY_PATH = path.join(REPO_ROOT, 'shared', 'slides', 'slides-typography.js');
 const DEFAULT_SLIDE_MS = 8000;
 const LEVEL_VALUES = [1, 2, 3, 4];
 
@@ -434,8 +435,9 @@ function escHtml(value) {
 }
 
 export async function buildReplayStandaloneHtml(payload) {
-    const slidesCoreCode = await fs.readFile(SLIDES_CORE_PATH, 'utf8');
-    const slidesThemesCode = await fs.readFile(SLIDES_THEMES_PATH, 'utf8');
+    const slidesTypographyCode = (await fs.readFile(SLIDES_TYPOGRAPHY_PATH, 'utf8')).replace(/<\/script/gi, '<\\/script');
+    const slidesCoreCode = (await fs.readFile(SLIDES_CORE_PATH, 'utf8')).replace(/^\/\*\*[\s\S]*?\*\//m, '').replace(/<\/script/gi, '<\\/script');
+    const slidesThemesCode = (await fs.readFile(SLIDES_THEMES_PATH, 'utf8')).replace(/<\/script/gi, '<\\/script');
     const payloadJson = JSON.stringify(payload).replace(/</g, '\\u003c');
     const safeTitle = escHtml(payload?.title || 'Replay de session');
 
@@ -514,6 +516,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
   </div>
 </div>
 <audio id="rp-audio" preload="auto" style="display:none"></audio>
+<script>${slidesTypographyCode}</script>
 <script>${slidesCoreCode}</script>
 <script>${slidesThemesCode}</script>
 <script id="rp-data" type="application/json">${payloadJson}</script>
@@ -1037,8 +1040,9 @@ async function main() {
  * @returns {Promise<string>} standalone HTML
  */
 export async function buildSlidesStandaloneHtml({ slidesData, title = '' }) {
-    const slidesCoreCode = await fs.readFile(SLIDES_CORE_PATH, 'utf8');
-    const slidesThemesCode = await fs.readFile(SLIDES_THEMES_PATH, 'utf8');
+    const slidesTypographyCode = (await fs.readFile(SLIDES_TYPOGRAPHY_PATH, 'utf8')).replace(/<\/script/gi, '<\\/script');
+    const slidesCoreCode = (await fs.readFile(SLIDES_CORE_PATH, 'utf8')).replace(/^\/\*\*[\s\S]*?\*\//m, '').replace(/<\/script/gi, '<\\/script');
+    const slidesThemesCode = (await fs.readFile(SLIDES_THEMES_PATH, 'utf8')).replace(/<\/script/gi, '<\\/script');
 
     const normalizedSlidesData = sanitizeSlidesDataWithLevels(slidesData);
     const slides = Array.isArray(normalizedSlidesData?.slides) ? normalizedSlidesData.slides : [];
@@ -1092,6 +1096,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
     </div>
   </div>
 </div>
+<script>${slidesTypographyCode}</script>
 <script>${slidesCoreCode}</script>
 <script>${slidesThemesCode}</script>
 <script id="sv-data" type="application/json">${slidesDataJson}</script>

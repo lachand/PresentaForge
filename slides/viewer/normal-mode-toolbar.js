@@ -38,6 +38,7 @@ export function initNormalModeToolbar(context = {}) {
     const btnOverview = documentRef.getElementById('btn-overview');
     const btnNotes = documentRef.getElementById('btn-notes');
     const btnEditor = documentRef.getElementById('btn-editor');
+    const btnFirebase = documentRef.getElementById('btn-firebase');
     const timerEl = documentRef.getElementById('sl-timer');
 
     const toggleFullscreen = () => {
@@ -54,6 +55,20 @@ export function initNormalModeToolbar(context = {}) {
     });
     btnEditor?.addEventListener('click', () => {
         openEditor();
+    });
+    btnFirebase?.addEventListener('click', () => {
+        if (!window.OEIFirebaseModal) return;
+        window.OEIFirebaseModal.open({
+            mode: 'open',
+            onLoad: (data) => {
+                try {
+                    localStorage.setItem('oei-slide-present-data', JSON.stringify(data));
+                    window.location.href = window.location.pathname + '?file=__draft__';
+                } catch (e) {
+                    alert('Erreur lors du chargement : ' + e.message);
+                }
+            },
+        });
     });
 
     let timerSeconds = 0;

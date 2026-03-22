@@ -331,6 +331,8 @@ function renderPreview() {
     // preview-label removed
     const notesArea = document.getElementById('notes-textarea');
     if (notesArea && document.activeElement !== notesArea) notesArea.value = slide.notes || '';
+    const kpArea = document.getElementById('keypoints-textarea');
+    if (kpArea && document.activeElement !== kpArea) kpArea.value = Array.isArray(slide.keypoints) ? slide.keypoints.join('\n') : '';
     if (slide.type === 'canvas') {
         mountCanvasEditor(slide);
     } else {

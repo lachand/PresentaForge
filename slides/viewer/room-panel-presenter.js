@@ -58,8 +58,6 @@ export function buildPresenterMiniViews(params) {
             text: modeLabel,
         },
         { id: 'users', cls: '', icon: 'users', text: String(studentsCount) },
-        { id: 'hands', cls: '', icon: 'hand', text: String(handsCount) },
-        { id: 'questions', cls: '', icon: 'question', text: String(questionsCount) },
     ];
     if (feedbackUrgentCount > 0) {
         views.push({ id: 'urgent', cls: 'warn', icon: 'feedback_unclear', text: String(feedbackUrgentCount) });

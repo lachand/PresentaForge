@@ -23,6 +23,7 @@ RÈGLES :
 - Le JSON doit être valide et complet.
 - IMPORTANT : Les chaînes JSON ne doivent JAMAIS contenir de retour à la ligne littéral. Toujours écrire les valeurs sur UNE SEULE LIGNE. Pour mettre du HTML multi-paragraphe, concaténer tout sur une seule ligne : "html": "<p>Premier paragraphe.</p><p>Deuxième paragraphe.</p>"
 - IMPORTANT : Les guillemets doubles à l'intérieur des chaînes JSON doivent être échappés avec un antislash : \"mot\". Ne jamais écrire "mot" sans échappement dans une valeur JSON. Préférer les guillemets français « » ou les apostrophes pour les citations dans le texte.
+- IMPORTANT : Dans les expressions LaTeX (champ "expression" de l'élément `latex`), chaque backslash LaTeX doit être doublé car la chaîne est dans du JSON. Exemples : `\frac` → `\\frac`, `\overline` → `\\overline`, `\sum` → `\\sum`, `\sigma` → `\\sigma`, `\sqrt` → `\\sqrt`, `\text` → `\\text`, `\binom` → `\\binom`, `\times` → `\\times`, `\cup` → `\\cup`, `\cap` → `\\cap`, `\approx` → `\\approx`, `\quad` → `\\quad`. Règle générale : tout `\commande` LaTeX devient `\\commande` en JSON.
 - Pour les images/illustrations, préfère les placeholders `asset://...` (ex: `asset://icon/usb?label=Clé USB`) qui seront matérialisés localement en base64 à l'import. Si tu fournis déjà une data URL base64 valide, elle est acceptée.
 - Utilise les variables CSS var(--sl-*) pour les couleurs (elles s'adaptent au thème).
 - Alterne entre slides template (title, bullets, code, etc.) et slides canvas pour varier le rythme.
@@ -309,6 +310,9 @@ Animations : "none", "fade-in", "fade-up", "fade-down", "fade-left", "fade-right
   data: { "expression": "E = mc^2" }
   style: { "fontSize": 32, "color": "var(--sl-text)" }
   Taille par défaut : 500×120
+  ⚠️ ATTENTION JSON : tous les backslashes LaTeX doivent être doublés dans la chaîne JSON.
+  Exemples corrects : "\\frac{1}{n}", "\\overline{x}", "\\sum_{i=1}^{n}", "\\sigma = \\sqrt{v}", "\\binom{n}{k}"
+  Exemples incorrects (JSON invalide) : "\frac{1}{n}", "\overline{x}"
 
 ▸ highlight — Élément de code (avec surbrillance pas-à-pas optionnelle)
   data: {
