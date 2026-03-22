@@ -198,6 +198,7 @@ export function bindPresenterToolbarButtons(context = {}) {
                 try { r?.stop(); } catch (_) {}
                 _subtitleBtn.classList.remove('active');
                 _subtitleOverlay?.classList.remove('active');
+                onSubtitleActive(false);
             };
             const _startNewRecog = () => {
                 const r = new SpeechRecognition();

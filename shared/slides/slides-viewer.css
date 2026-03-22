@@ -1928,30 +1928,16 @@
     width: auto !important;
 }
 
-/* ── New components (pv-clock, pv-quick-actions) ─────────── */
-.pv-clock-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 4px;
-    background: var(--surface-container, #f3edea);
-    border-radius: var(--radius-md, 0.75rem);
-}
-.pv-clock-label {
-    display: block;
-    font-size: 0.58rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--on-surface-muted, #8a9099);
+/* ── Clock inline in context header ──────────────────────── */
+.pv-clock-inline {
     font-family: var(--font-editorial, 'Manrope', sans-serif);
-}
-.pv-clock-time {
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
-    font-size: 1.25rem;
+    font-size: 0.8rem;
     font-weight: 700;
-    color: var(--on-surface, #1d1b1a);
+    color: var(--on-surface-variant, #414750);
     font-variant-numeric: tabular-nums;
+    margin-left: auto;
+    margin-right: 4px;
+    flex-shrink: 0;
 }
 .pv-end-show-btn {
     background: var(--danger-light, #ffebee);
@@ -1968,6 +1954,12 @@
 .pv-end-show-btn:hover {
     background: var(--danger, #c62828);
     color: #ffffff;
+}
+.pv-end-show-compact {
+    margin-left: auto;
+    padding: 2px 8px;
+    font-size: 0.62rem;
+    border-radius: var(--radius-sm, 4px);
 }
 
 /* Quick actions toolbar — glassmorphism léger */

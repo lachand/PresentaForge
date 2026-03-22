@@ -160,6 +160,7 @@
                     <div class="pv-context-panel">
                         <div class="pv-context-head">
                             <div class="pv-context-title">Contexte</div>
+                            <span class="pv-clock-time pv-clock-inline" id="pv-clock">--:--</span>
                             <button class="pv-context-link" id="pv-context-open-salle" title="Ouvrir l'onglet salle">
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
                                 Salle
@@ -180,13 +181,7 @@
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg>
                                 <span id="pv-ctx-questions-n">0</span>
                             </button>
-                        </div>
-                        <div class="pv-clock-row">
-                            <div>
-                                <span class="pv-clock-label">Heure actuelle</span>
-                                <span class="pv-clock-time" id="pv-clock">--:--</span>
-                            </div>
-                            <button class="pv-end-show-btn" id="pv-btn-end-show">Fin du show</button>
+                            <button class="pv-end-show-btn pv-end-show-compact" id="pv-btn-end-show" title="Terminer la présentation">&#x25A0; Fin</button>
                         </div>
                         <div class="pv-room-mini" id="pv-room-mini"><span class="pv-room-mini-empty">Salle inactive</span></div>
                         <div class="pv-context-dynamic" id="pv-context-dynamic"></div>
@@ -465,7 +460,7 @@
     <script src="../shared/slides/theme-runtime.js?v=1"></script>
     <script src="../shared/slides/widget-plugins.js?v=2"></script>
     <script src="../shared/slides/design-tokens.js?v=2"></script>
-    <script src="../shared/slides/realtime-contract.js?v=4"></script>
+    <script src="../shared/slides/realtime-contract.js?v=5"></script>
     <script src="../shared/slides/network-session.js?v=2"></script>
     <script src="../shared/slides/relay-config.js?v=1"></script>
     <script src="../shared/slides/background-utils.js?v=1"></script>

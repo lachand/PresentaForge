@@ -207,7 +207,7 @@
         let _followPresenter = true;
         let _handRaised = false;
         let _subtitlePresenterActive = false;
-        let _subtitleStudentEnabled = true;
+        let _subtitleStudentEnabled = false;
         let _subtitleLastText = '';
         function _updateStudentSubtitleOverlay() {
             const overlay = document.getElementById('student-subtitle-overlay');
@@ -2452,11 +2452,18 @@
                 setTimeout(() => { btn.disabled = false; }, 2000);
             });
         });
-        document.getElementById('student-cc-btn')?.addEventListener('click', (e) => {
+        const _toggleCc = () => {
             _subtitleStudentEnabled = !_subtitleStudentEnabled;
-            e.currentTarget.classList.toggle('active', _subtitleStudentEnabled);
+            document.getElementById('student-cc-btn')?.classList.toggle('active', _subtitleStudentEnabled);
+            document.getElementById('ssp-cc-btn')?.classList.toggle('active', _subtitleStudentEnabled);
+            if (_subtitleStudentEnabled && _subtitleLastText) {
+                const el = document.getElementById('student-subtitle-text');
+                if (el) el.textContent = _subtitleLastText;
+            }
             _updateStudentSubtitleOverlay();
-        });
+        };
+        document.getElementById('student-cc-btn')?.addEventListener('click', _toggleCc);
+        document.getElementById('ssp-cc-btn')?.addEventListener('click', _toggleCc);
         // Side panel reactions delegate to original buttons
         document.querySelectorAll('.ssp-reaction-btn').forEach(btn => {
             btn.addEventListener('click', () => {

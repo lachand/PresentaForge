@@ -4,7 +4,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/components/base/WidgetRegistry.js',
     '../shared/slides/storage.js?v=2',
     '../shared/slides/theme-runtime.js?v=1',
-    '../shared/slides/realtime-contract.js?v=4',
+    '../shared/slides/realtime-contract.js?v=5',
     '../shared/slides/network-session.js?v=2',
     '../shared/slides/relay-config.js?v=1',
     '../shared/slides/ui-icons.js?v=2',

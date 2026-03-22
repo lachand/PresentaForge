@@ -173,7 +173,7 @@
             color: #fff; font-size: 0.95rem; line-height: 1.45;
             font-family: var(--font-ui, Inter, sans-serif);
         }
-        .reaction-btn.cc-btn { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.03em; padding: 0 8px; }
+        .reaction-btn.cc-btn { padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; }
         .reaction-btn.cc-btn.active { background: var(--primary, #00508d); color: #fff; }
         #slide-inner { width: 1280px; height: 720px; transform-origin: top left; position: relative; }
         #slide-inner > section { width: 1280px !important; height: 720px !important; }
@@ -1328,7 +1328,7 @@
             <button class="reaction-btn" data-emoji="😕" title="Je suis perdu">😕</button>
             <button class="reaction-btn" data-emoji="❓" title="J'ai une question">❓</button>
             <button class="reaction-btn" data-emoji="🔥" title="Super !">🔥</button>
-            <button class="reaction-btn cc-btn" id="student-cc-btn" title="Afficher/masquer les sous-titres">CC</button>
+            <button class="reaction-btn cc-btn" id="student-cc-btn" title="Afficher/masquer les sous-titres"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg></button>
         </div>
         <div id="feedback-bar">
             <button class="feedback-btn ui-btn" data-feedback="fast" data-icon="feedback_fast" data-text="Le rythme est trop rapide"><span class="feedback-btn-icon"></span><span>Rapide</span></button>
@@ -1407,6 +1407,7 @@
                         <button class="ssp-reaction-btn" data-emoji="😕" title="Je suis perdu">😕</button>
                         <button class="ssp-reaction-btn" data-emoji="❓" title="J'ai une question">❓</button>
                         <button class="ssp-reaction-btn" data-emoji="🔥" title="Super !">🔥</button>
+                        <button class="reaction-btn cc-btn" id="ssp-cc-btn" title="Afficher/masquer les sous-titres"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg></button>
                     </div>
                 </div>
             </div>

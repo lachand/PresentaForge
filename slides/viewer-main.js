@@ -399,6 +399,7 @@ import {
         };
         let _roomPresenterMode = 'live';
         let _pvQrVisible = false;
+        let _subtitleActive = false;
         let _pvContextView = 'status';
         let _activePoll = null;      // { pollId, type, prompt, options, multi, responses: Map }
         let _activeWordCloud = null; // { cloudId, prompt, words: Map }
@@ -583,6 +584,7 @@ import {
                 footerText: null,
                 totalSlides: slides.length,
                 typography: SlidesShared.resolveTypographyDefaults(_presentationData.typography),
+                includeNotes: false,
             };
             return {
                 type: ROOM_MSG.INIT,
@@ -1408,6 +1410,7 @@ import {
                     });
                     safePeerSend(conn, { type: ROOM_MSG.WELCOME, title: _presentationData?.metadata?.title || 'Présentation', peerId });
                     if (conn.__transport === 'relay') _roomSendInit(conn);
+                    if (_subtitleActive) safePeerSend(conn, { type: ROOM_MSG.SUBTITLE_ACTIVE, active: true });
                     sendActiveRoomActivities({
                         conn,
                         ROOM_MSG,
@@ -2544,7 +2547,10 @@ import {
                     window.location.href = 'editor.html';
                 },
                 onSubtitleText: (text) => roomBroadcast({ type: ROOM_MSG.SUBTITLE_TEXT, text }),
-                onSubtitleActive: (active) => roomBroadcast({ type: ROOM_MSG.SUBTITLE_ACTIVE, active }),
+                onSubtitleActive: (active) => {
+                    _subtitleActive = active;
+                    roomBroadcast({ type: ROOM_MSG.SUBTITLE_ACTIVE, active });
+                },
             });
 
             const presenterLayoutControls = initPresenterLayoutControls({
