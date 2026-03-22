@@ -2543,6 +2543,8 @@ import {
                 navigateToEditor: () => {
                     window.location.href = 'editor.html';
                 },
+                onSubtitleText: (text) => roomBroadcast({ type: ROOM_MSG.SUBTITLE_TEXT, text }),
+                onSubtitleActive: (active) => roomBroadcast({ type: ROOM_MSG.SUBTITLE_ACTIVE, active }),
             });
 
             const presenterLayoutControls = initPresenterLayoutControls({

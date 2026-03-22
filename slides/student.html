@@ -162,6 +162,19 @@
             box-shadow: var(--shadow-ambient, 0 10px 30px -10px rgba(29,27,26,0.08));
             border-radius: var(--radius-md, 0.75rem); overflow: hidden;
         }
+        /* Subtitle overlay */
+        #student-subtitle-overlay {
+            display: none; position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.78); padding: 8px 16px; text-align: center;
+            z-index: 20; pointer-events: none;
+        }
+        #student-subtitle-overlay.active { display: block; }
+        #student-subtitle-text {
+            color: #fff; font-size: 0.95rem; line-height: 1.45;
+            font-family: var(--font-ui, Inter, sans-serif);
+        }
+        .reaction-btn.cc-btn { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.03em; padding: 0 8px; }
+        .reaction-btn.cc-btn.active { background: var(--primary, #00508d); color: #fff; }
         #slide-inner { width: 1280px; height: 720px; transform-origin: top left; position: relative; }
         #slide-inner > section { width: 1280px !important; height: 720px !important; }
         #student-whiteboard {
@@ -1217,6 +1230,9 @@
                 <canvas id="student-whiteboard" aria-hidden="true"></canvas>
                 <div id="student-laser-dot" style="display:none;position:fixed;width:16px;height:16px;border-radius:50%;background:rgba(220,38,38,0.9);box-shadow:0 0 8px 3px rgba(220,38,38,0.5);pointer-events:none;transform:translate(-50%,-50%);z-index:999;"></div>
             </div>
+            <div id="student-subtitle-overlay">
+                <div id="student-subtitle-text"></div>
+            </div>
             <div id="quiz-overlay"></div>
             <div id="waiting-overlay">
                 <div class="waiting-spinner"></div>
@@ -1312,6 +1328,7 @@
             <button class="reaction-btn" data-emoji="😕" title="Je suis perdu">😕</button>
             <button class="reaction-btn" data-emoji="❓" title="J'ai une question">❓</button>
             <button class="reaction-btn" data-emoji="🔥" title="Super !">🔥</button>
+            <button class="reaction-btn cc-btn" id="student-cc-btn" title="Afficher/masquer les sous-titres">CC</button>
         </div>
         <div id="feedback-bar">
             <button class="feedback-btn ui-btn" data-feedback="fast" data-icon="feedback_fast" data-text="Le rythme est trop rapide"><span class="feedback-btn-icon"></span><span>Rapide</span></button>

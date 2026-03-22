@@ -89,6 +89,8 @@
         LASER: 'room:laser',
         CHAT_BROADCAST: 'chat:broadcast',
         ROOM_KEYNOTE: 'room:keynote',
+        SUBTITLE_TEXT: 'subtitle:text',
+        SUBTITLE_ACTIVE: 'subtitle:active',
     });
 
     const syncTypes = new Set(Object.values(SYNC_MSG));
@@ -279,6 +281,8 @@
             && (msg.commands == null || isWhiteboardCommands(msg.commands)),
         [ROOM_MSG.CHAT_BROADCAST]: msg => isString(msg.text || '', 800) && (msg.from == null || isString(msg.from, 120)),
         [ROOM_MSG.ROOM_KEYNOTE]: msg => isStringArray(msg.points || [], 20, 400),
+        [ROOM_MSG.SUBTITLE_TEXT]: msg => msg.text == null || isString(msg.text, 2000),
+        [ROOM_MSG.SUBTITLE_ACTIVE]: msg => isBoolean(msg.active),
     });
 
     function validateByTypeMap(msg, typeSet, validators) {

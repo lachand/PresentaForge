@@ -106,6 +106,8 @@ export function bindPresenterRoomPanelControls(context = {}) {
  *   exportReplayStandalone?: () => Promise<void>,
  *   beforeNavigateToEditor?: () => void,
  *   navigateToEditor?: () => void,
+ *   onSubtitleText?: (text: string) => void,
+ *   onSubtitleActive?: (active: boolean) => void,
  * }} context
  */
 export function bindPresenterToolbarButtons(context = {}) {
@@ -131,6 +133,8 @@ export function bindPresenterToolbarButtons(context = {}) {
     const navigateToEditor = typeof context.navigateToEditor === 'function'
         ? context.navigateToEditor
         : () => { window.location.href = 'editor.html'; };
+    const onSubtitleText = typeof context.onSubtitleText === 'function' ? context.onSubtitleText : () => {};
+    const onSubtitleActive = typeof context.onSubtitleActive === 'function' ? context.onSubtitleActive : () => {};
 
     const audienceLockBtn = context.audienceLockBtn || null;
     const exerciseModeBtn = context.exerciseModeBtn || null;
@@ -206,6 +210,7 @@ export function bindPresenterToolbarButtons(context = {}) {
                         text += e.results[i][0].transcript;
                     }
                     if (_subtitleText) _subtitleText.textContent = text;
+                    onSubtitleText(text);
                 };
                 // onend fires on silence/pause — create a fresh instance to continue
                 r.onend = () => {
@@ -234,11 +239,13 @@ export function bindPresenterToolbarButtons(context = {}) {
             _subtitleBtn.addEventListener('click', () => {
                 if (_subtitleRecog) {
                     _stopSubtitle();
+                    onSubtitleActive(false);
                 } else {
                     try {
                         _subtitleRecog = _startNewRecog();
                         _subtitleBtn.classList.add('active');
                         _subtitleOverlay?.classList.add('active');
+                        onSubtitleActive(true);
                     } catch (_) {}
                 }
             });

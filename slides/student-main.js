@@ -206,6 +206,14 @@
         let _presenterIndex = 0;
         let _followPresenter = true;
         let _handRaised = false;
+        let _subtitlePresenterActive = false;
+        let _subtitleStudentEnabled = true;
+        let _subtitleLastText = '';
+        function _updateStudentSubtitleOverlay() {
+            const overlay = document.getElementById('student-subtitle-overlay');
+            if (!overlay) return;
+            overlay.classList.toggle('active', _subtitlePresenterActive && _subtitleStudentEnabled);
+        }
         let _activePollId = null;
         let _activeCloudId = null;
         let _activeExitTicketId = null;
@@ -2361,6 +2369,18 @@
                     dpUpdateKeynotes(msg.points || []);
                     break;
 
+                case ROOM_MSG.SUBTITLE_ACTIVE:
+                    _subtitlePresenterActive = !!msg.active;
+                    _updateStudentSubtitleOverlay();
+                    break;
+
+                case ROOM_MSG.SUBTITLE_TEXT: {
+                    _subtitleLastText = msg.text || '';
+                    const _stEl = document.getElementById('student-subtitle-text');
+                    if (_stEl) _stEl.textContent = _subtitleLastText;
+                    break;
+                }
+
                 case ROOM_MSG.EXIT_TICKET_START:
                     _activeExitTicketId = msg.ticketId || null;
                     showExitTicketOverlay(msg);
@@ -2422,6 +2442,7 @@
         }
 
         document.querySelectorAll('.reaction-btn').forEach(btn => {
+            if (btn.id === 'student-cc-btn') return; // handled separately
             btn.addEventListener('click', () => {
                 const emoji = btn.dataset.emoji;
                 showLocalReaction(emoji);
@@ -2430,6 +2451,11 @@
                 btn.disabled = true;
                 setTimeout(() => { btn.disabled = false; }, 2000);
             });
+        });
+        document.getElementById('student-cc-btn')?.addEventListener('click', (e) => {
+            _subtitleStudentEnabled = !_subtitleStudentEnabled;
+            e.currentTarget.classList.toggle('active', _subtitleStudentEnabled);
+            _updateStudentSubtitleOverlay();
         });
         // Side panel reactions delegate to original buttons
         document.querySelectorAll('.ssp-reaction-btn').forEach(btn => {
