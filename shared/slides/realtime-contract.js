@@ -91,6 +91,7 @@
         ROOM_KEYNOTE: 'room:keynote',
         SUBTITLE_TEXT: 'subtitle:text',
         SUBTITLE_ACTIVE: 'subtitle:active',
+        ACTIVITIES_REQUEST: 'activities:request',
     });
 
     const syncTypes = new Set(Object.values(SYNC_MSG));
@@ -217,6 +218,7 @@
         [ROOM_MSG.REMOTE_REVOKED]: msg => msg.reason == null || isString(msg.reason, 300),
         [ROOM_MSG.ACK]: msg => msg.rid == null || isString(msg.rid, 160),
         [ROOM_MSG.SYNC_REQUEST]: msg => (msg.roomId == null || isString(msg.roomId, 80)) && (msg.want == null || isStringArray(msg.want, 30, 80)),
+        [ROOM_MSG.ACTIVITIES_REQUEST]: () => true,
         [ROOM_MSG.QUIZ_QUESTION]: msg => isString(msg.quizId, 120) && isString(msg.question || '', 1400) && isStringArray(msg.options || [], 20, 420),
         [ROOM_MSG.QUIZ_END]: msg => msg.quizId == null || isString(msg.quizId, 120),
         [ROOM_MSG.STUDENT_JOIN]: msg => isString(msg.pseudo || '', 160),

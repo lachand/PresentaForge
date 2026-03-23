@@ -2248,6 +2248,14 @@
                         renderStudentWhiteboard();
                     }
                     updateRevisionControls();
+                    // Relay : demande légère des activités seules (sans re-envoi des slides)
+                    if (transportMode === 'relay') {
+                        setTimeout(() => {
+                            if (_connectionState === CONNECTION_STATE.CONNECTED) {
+                                sendReliable({ type: ROOM_MSG.ACTIVITIES_REQUEST }, { maxRetries: 2, retryDelay: 1000 });
+                            }
+                        }, 1200);
+                    }
                     break;
                 }
 

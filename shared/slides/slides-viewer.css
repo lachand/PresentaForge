@@ -1147,7 +1147,7 @@
             box-shadow: var(--shadow-sm, 0 1px 3px rgba(29,27,26,0.04));
             padding: 8px 9px;
             gap: 8px;
-            overflow: hidden;
+            overflow-y: auto;
         }
         .pv-context-head {
             min-width: 0;
@@ -1192,9 +1192,9 @@
         }
         .pv-context-dynamic {
             min-width: 0;
+            flex: 1;
             min-height: 62px;
-            max-height: 142px;
-            overflow: auto;
+            overflow-y: auto;
             border: none;
             border-radius: var(--radius-md, 0.75rem);
             background: var(--surface-container, #f3edea);
@@ -1324,6 +1324,8 @@
             flex-shrink: 0;
             flex-wrap: wrap;
             gap: 8px;
+            overflow: hidden;
+            min-width: 0;
         }
         .pv-font-controls { display: flex; align-items: center; gap: 4px; }
         .pv-scene-controls {
@@ -1331,6 +1333,7 @@
             align-items: center;
             gap: 4px;
             flex-wrap: wrap;
+            min-width: 0;
         }
         .pv-scene-btn {
             border: none;
@@ -1956,7 +1959,6 @@
     color: #ffffff;
 }
 .pv-end-show-compact {
-    margin-left: auto;
     padding: 2px 8px;
     font-size: 0.62rem;
     border-radius: var(--radius-sm, 4px);
@@ -2119,6 +2121,9 @@
 }
 .pv-ctx-live-btn.active:hover {
     background: rgba(210, 228, 255, 0.7);
+}
+.pv-ctx-live-btn.inactive {
+    opacity: 0.35;
 }
 
 /* fbm-* styles déplacés dans ui-primitives.css */

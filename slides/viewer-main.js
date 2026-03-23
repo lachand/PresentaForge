@@ -956,16 +956,18 @@ import {
             if (handsBtn && handsN) {
                 const hn = _roomHands.length;
                 handsN.textContent = String(hn);
-                handsBtn.style.display = hn > 0 ? '' : 'none';
+                handsBtn.style.display = '';
                 handsBtn.classList.toggle('has-alert', hn > 0);
+                handsBtn.classList.toggle('inactive', hn === 0);
             }
             const questionsBtn = document.getElementById('pv-ctx-questions-btn');
             const questionsN = document.getElementById('pv-ctx-questions-n');
             if (questionsBtn && questionsN) {
                 const qn = _roomQuestions.filter(q => !q.resolved && !q.hidden).length;
                 questionsN.textContent = String(qn);
-                questionsBtn.style.display = qn > 0 ? '' : 'none';
+                questionsBtn.style.display = '';
                 questionsBtn.classList.toggle('has-alert', qn > 0);
+                questionsBtn.classList.toggle('inactive', qn === 0);
             }
         }
 
@@ -1567,6 +1569,18 @@ import {
                         });
                         roomUpdatePanel();
                     }
+                    break;
+                }
+                case ROOM_MSG.ACTIVITIES_REQUEST: {
+                    sendActiveRoomActivities({
+                        conn,
+                        ROOM_MSG,
+                        activePoll: _activePoll,
+                        activeWordCloud: _activeWordCloud,
+                        activeExitTicket: _activeExitTicket,
+                        activeRankOrder: _activeRankOrder,
+                        whiteboardState: () => _captureWhiteboardSyncState(),
+                    });
                     break;
                 }
                 case ROOM_MSG.SYNC_REQUEST: {
