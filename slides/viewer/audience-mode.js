@@ -81,6 +81,7 @@ export async function initAudienceMode(ctx) {
 
     let audienceWordCloudId = null;
     let audiencePollId = null;
+    let _lastPollState = null;
     let audienceExitTicketId = null;
     let audienceRankOrderId = null;
     let audienceRouletteTimer = null;
@@ -195,7 +196,7 @@ export async function initAudienceMode(ctx) {
         overlay.classList.toggle('open', !!visible);
     };
 
-    const renderAudiencePoll = (pollType, prompt, countsRaw, totalRaw, optionsRaw, multiRaw, totalSelectionsRaw) => {
+    const renderAudiencePoll = (pollType, prompt, countsRaw, totalRaw, optionsRaw, multiRaw, totalSelectionsRaw, isActive = false) => {
         const promptEl = document.getElementById('sl-audience-poll-prompt');
         const resultsEl = document.getElementById('sl-audience-poll-results');
         const totalEl = document.getElementById('sl-audience-poll-total');
@@ -217,6 +218,12 @@ export async function initAudienceMode(ctx) {
         const safePrompt = toTrimmedString(prompt, 180)
             || (type === 'thumbs' ? '👍 Pour / 👎 Contre' : (type === 'scale5' ? 'Évaluez de 1 à 5' : 'QCM live'));
         if (promptEl) promptEl.textContent = safePrompt;
+
+        if (isActive) {
+            resultsEl.innerHTML = '<div class="aud-poll-waiting">Collecte des réponses en cours…</div>';
+            totalEl.textContent = `${total} réponse(s) reçue(s)`;
+            return;
+        }
 
         resultsEl.innerHTML = safeLabels.map((label, i) => {
             const count = counts[i] || 0;
@@ -405,15 +412,22 @@ export async function initAudienceMode(ctx) {
                 const pollId = toTrimmedString(msg.pollId, 80);
                 if (audiencePollId && pollId && pollId !== audiencePollId) break;
                 if (!audiencePollId) audiencePollId = pollId || 'active';
+                _lastPollState = { type: msg.pollType, prompt: msg.prompt || '', counts: msg.counts, total: msg.total, options: msg.options, multi: msg.multi, totalSelections: msg.totalSelections };
                 setAudiencePollVisible(true);
-                renderAudiencePoll(msg.pollType, msg.prompt || '', msg.counts, msg.total, msg.options, msg.multi, msg.totalSelections);
+                renderAudiencePoll(msg.pollType, msg.prompt || '', msg.counts, msg.total, msg.options, msg.multi, msg.totalSelections, true);
                 break;
             }
             case SYNC_MSG.POLL_END: {
                 const pollId = toTrimmedString(msg.pollId, 80);
                 if (audiencePollId && pollId && pollId !== audiencePollId) break;
                 audiencePollId = null;
-                setAudiencePollVisible(false);
+                if (_lastPollState) {
+                    const s = _lastPollState;
+                    renderAudiencePoll(s.type, s.prompt, s.counts, s.total, s.options, s.multi, s.totalSelections, false);
+                    setTimeout(() => { _lastPollState = null; setAudiencePollVisible(false); }, 6000);
+                } else {
+                    setAudiencePollVisible(false);
+                }
                 break;
             }
             case SYNC_MSG.WORDCLOUD_START: {
@@ -485,6 +499,21 @@ export async function initAudienceMode(ctx) {
             }
             case SYNC_MSG.LASER: {
                 applyAudienceLaser(!!msg.active, typeof msg.x === 'number' ? msg.x : 0, typeof msg.y === 'number' ? msg.y : 0);
+                break;
+            }
+            case SYNC_MSG.ZOOM: {
+                const reveal = document.querySelector('.reveal');
+                if (!reveal) break;
+                if (!msg.active) {
+                    /** @type {HTMLElement} */ (reveal).style.transform = '';
+                    /** @type {HTMLElement} */ (reveal).style.transformOrigin = '';
+                } else {
+                    const scale = typeof msg.scale === 'number' && msg.scale > 1 ? msg.scale : 2;
+                    const nx = typeof msg.x === 'number' ? Math.max(0, Math.min(1, msg.x)) : 0.5;
+                    const ny = typeof msg.y === 'number' ? Math.max(0, Math.min(1, msg.y)) : 0.5;
+                    /** @type {HTMLElement} */ (reveal).style.transformOrigin = `${nx * 100}% ${ny * 100}%`;
+                    /** @type {HTMLElement} */ (reveal).style.transform = `scale(${scale})`;
+                }
                 break;
             }
             case SYNC_MSG.WHITEBOARD: {

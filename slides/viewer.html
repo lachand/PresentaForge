@@ -227,6 +227,10 @@
                         <span class="pv-ms">highlight</span>
                         Laser
                     </button>
+                    <button class="pv-qa-btn" id="pv-qa-zoom" title="Zoom (Z)">
+                        <span class="pv-ms">zoom_in</span>
+                        Zoom
+                    </button>
                     <button class="pv-qa-btn" id="pv-qa-overview" title="Aller à une slide">
                         <span class="pv-ms">grid_view</span>
                         Slides
@@ -584,6 +588,84 @@
                 if (e.key === 'Escape' && laserActive) deactivateLaser();
             });
         }
+
+        // ── Zoom ────────────────────────────────────────────────────────
+        var zoomBtn = document.getElementById('pv-qa-zoom');
+        var zoomActive = false;
+        var zoomLevel = 2;
+        var zoomNx = 0.5, zoomNy = 0.5;
+
+        function postZoom(active, x, y, scale) {
+            var bridge = window.OEIPresenterSyncBridge;
+            if (bridge && bridge.post) bridge.post({ type: 'zoom', active: active, x: x, y: y, scale: scale });
+        }
+
+        function applyPresenterZoom() {
+            if (!currentFrame) return;
+            if (zoomActive) {
+                currentFrame.style.transform = 'scale(' + zoomLevel + ')';
+                currentFrame.style.transformOrigin = (zoomNx * 100) + '% ' + (zoomNy * 100) + '%';
+            } else {
+                currentFrame.style.transform = '';
+                currentFrame.style.transformOrigin = '';
+            }
+        }
+
+        function activateZoom(nx, ny) {
+            zoomActive = true;
+            zoomNx = typeof nx === 'number' ? Math.max(0, Math.min(1, nx)) : 0.5;
+            zoomNy = typeof ny === 'number' ? Math.max(0, Math.min(1, ny)) : 0.5;
+            if (zoomBtn) zoomBtn.classList.add('active');
+            applyPresenterZoom();
+            postZoom(true, zoomNx, zoomNy, zoomLevel);
+        }
+
+        function deactivateZoom() {
+            if (!zoomActive) return;
+            zoomActive = false;
+            zoomLevel = 2;
+            if (zoomBtn) zoomBtn.classList.remove('active');
+            applyPresenterZoom();
+            postZoom(false, 0.5, 0.5, 1);
+        }
+
+        if (zoomBtn) {
+            zoomBtn.addEventListener('click', function () {
+                if (zoomActive) deactivateZoom();
+                else activateZoom(0.5, 0.5);
+            });
+        }
+
+        if (currentFrame) {
+            currentFrame.addEventListener('click', function (e) {
+                if (!zoomActive) return;
+                var inner = document.getElementById('pv-current-inner');
+                var refRect = (inner && inner.getBoundingClientRect().width > 8)
+                    ? inner.getBoundingClientRect()
+                    : currentFrame.getBoundingClientRect();
+                var nx = Math.max(0, Math.min(1, (e.clientX - refRect.left) / refRect.width));
+                var ny = Math.max(0, Math.min(1, (e.clientY - refRect.top) / refRect.height));
+                activateZoom(nx, ny);
+            });
+
+            currentFrame.addEventListener('wheel', function (e) {
+                if (!zoomActive) return;
+                e.preventDefault();
+                zoomLevel = Math.max(1.2, Math.min(5, zoomLevel - e.deltaY * 0.005));
+                applyPresenterZoom();
+                postZoom(true, zoomNx, zoomNy, zoomLevel);
+            }, { passive: false });
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && zoomActive) deactivateZoom();
+            if (e.key === 'z' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+                var tag = document.activeElement && document.activeElement.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+                if (zoomActive) deactivateZoom();
+                else activateZoom(0.5, 0.5);
+            }
+        });
 
         // ── Slide overview grid ──────────────────────────────────────────
         var qaOverview  = document.getElementById('pv-qa-overview');

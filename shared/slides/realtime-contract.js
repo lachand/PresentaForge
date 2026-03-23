@@ -42,6 +42,7 @@
         RANK_ORDER_UPDATE: 'rank-order:update',
         RANK_ORDER_END: 'rank-order:end',
         ROULETTE_PICK: 'roulette:pick',
+        ZOOM: 'zoom',
     });
 
     const ROOM_MSG = Object.freeze({
@@ -186,6 +187,10 @@
             && (msg.responsesCount == null || isNonNegInt(msg.responsesCount)),
         [SYNC_MSG.RANK_ORDER_END]: msg => msg.rankId == null || isString(msg.rankId, 120),
         [SYNC_MSG.ROULETTE_PICK]: msg => isString(msg.pseudo || '', 160),
+        [SYNC_MSG.ZOOM]: msg => (msg.active == null || typeof msg.active === 'boolean')
+            && (msg.x == null || typeof msg.x === 'number')
+            && (msg.y == null || typeof msg.y === 'number')
+            && (msg.scale == null || typeof msg.scale === 'number'),
     });
 
     const ROOM_VALIDATORS = Object.freeze({
