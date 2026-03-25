@@ -67,8 +67,17 @@ export function buildPollStartPayload(state) {
  * @param {{ pollId: string } | null | undefined} state
  * @returns {{ pollId: string }}
  */
-export function buildPollEndPayload(state) {
-    return { pollId: String(state?.pollId || '') };
+export function buildPollEndPayload(state, snap) {
+    return {
+        pollId: String(state?.pollId || ''),
+        pollType: String(state?.type || ''),
+        prompt: String(state?.prompt || ''),
+        options: Array.isArray(state?.options) ? state.options.slice() : [],
+        multi: !!state?.multi,
+        counts: Array.isArray(snap?.counts) ? snap.counts.slice() : [],
+        total: snap?.total ?? 0,
+        totalSelections: snap?.totalSelections ?? 0,
+    };
 }
 
 /**

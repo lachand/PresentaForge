@@ -95,7 +95,12 @@
                             || (active ? `${total} réponse(s) — ${currentRemaining}s restantes` : 'Piloté par le présentateur');
                     }
                     if (!resultsEl) return;
-                    const shouldShow = active || total > 0 || sync.ended === true;
+                    if (active && sync.ended !== true) {
+                        resultsEl.style.display = '';
+                        resultsEl.innerHTML = `<div style="font-size:0.85rem;color:var(--sl-muted,#94a3b8);text-align:center;padding:12px 0;">⏳ Collecte des réponses…</div>`;
+                        return;
+                    }
+                    const shouldShow = total > 0 || sync.ended === true;
                     resultsEl.style.display = shouldShow ? '' : 'none';
                     if (!shouldShow) return;
                     let html = `<div style="font-size:0.75rem;color:var(--sl-muted);margin-bottom:8px;">${total} réponse${total > 1 ? 's' : ''}</div>`;
@@ -168,6 +173,7 @@
                         question: questionText,
                         options: optLabels,
                         duration: duration,
+                        startedAt: Date.now(),
                     });
 
                     resultsEl.style.display = '';

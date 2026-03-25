@@ -1393,14 +1393,34 @@
             _laserDotHideTimer = setTimeout(() => { dot.style.display = 'none'; }, 3000);
         }
 
+        // Zoom appliqué sur #slide-frame (pas sur #slide-inner qui porte le scale de base)
+        function applyZoomMessage(msg) {
+            const frame = document.getElementById('slide-frame');
+            if (!frame) return;
+            if (!msg.active) {
+                frame.style.transform = '';
+                frame.style.transformOrigin = '';
+                return;
+            }
+            const nx = typeof msg.x === 'number' ? msg.x : 0.5;
+            const ny = typeof msg.y === 'number' ? msg.y : 0.5;
+            const zoomScale = typeof msg.scale === 'number' && msg.scale > 0 ? msg.scale : 2;
+            frame.style.transformOrigin = (nx * 100) + '% ' + (ny * 100) + '%';
+            frame.style.transform = 'scale(' + zoomScale + ')';
+        }
+
         // ── Slide rendering ───────────────────────────────
         function scaleSlide() {
             const frame = document.getElementById('slide-frame');
             const inner = document.getElementById('slide-inner');
             if (!frame || !inner) return;
             const host = frame.parentElement || frame;
-            const fw = Math.max(0, host.clientWidth || 0);
-            const fh = Math.max(0, host.clientHeight || 0);
+            // Soustraire le padding pour que le frame tienne dans la zone utile
+            const cs = getComputedStyle(host);
+            const px = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+            const py = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+            const fw = Math.max(0, (host.clientWidth || 0) - px);
+            const fh = Math.max(0, (host.clientHeight || 0) - py);
             if (!fw || !fh) return;
             const scale = Math.max(0.05, Math.min(fw / 1280, fh / 720));
             frame.style.width = Math.round(1280 * scale) + 'px';
@@ -1450,6 +1470,10 @@
             if (sfnPrev) sfnPrev.disabled = target === 0;
             if (sfnNext) sfnNext.disabled = target >= allowedMax;
             scaleSlide();
+            // Si le layout n'était pas encore prêt (ex: main-view venait d'être affiché),
+            // rescaler après que le navigateur ait recalculé le layout
+            requestAnimationFrame(scaleSlide);
+            applyZoomMessage({ active: false });
             mountCodeLive(inner);
             mountStudentWidgets(inner);
             mountSpecialRender(inner);
@@ -1541,10 +1565,10 @@
             container.querySelectorAll('.sl-codelive-pending').forEach(el => {
                 if (el.dataset.studentBound) return;
                 el.dataset.studentBound = '1';
-                const lang = el.dataset.lang || 'javascript';
-                const textarea = el.querySelector('textarea') || el.querySelector('.sl-code-area');
-                const btnRun = el.querySelector('.sl-code-run') || el.querySelector('.sl-run-btn') || el.querySelector('button');
-                const consoleEl = el.querySelector('.sl-code-console') || el.querySelector('.sl-console');
+                const lang = el.dataset.language || el.dataset.lang || 'javascript';
+                const textarea = el.querySelector('.sl-codelive-code') || el.querySelector('textarea');
+                const btnRun = el.querySelector('.sl-codelive-run') || el.querySelector('.sl-run-btn');
+                const consoleEl = el.querySelector('.sl-codelive-console') || el.querySelector('.sl-console');
                 if (!textarea || !btnRun || !consoleEl) return;
 
                 textarea.readOnly = false;
@@ -1708,7 +1732,8 @@
             const overlay = document.getElementById('quiz-overlay');
             overlay.innerHTML = '';
             const duration = parseInt(data.duration) || 30;
-            let remaining = duration;
+            const elapsed = data.startedAt ? Math.floor((Date.now() - data.startedAt) / 1000) : 0;
+            let remaining = Math.max(1, duration - elapsed);
 
             // Header row (label + timer)
             const headerDiv = document.createElement('div');
@@ -1920,6 +1945,7 @@
             if (!RELAY_OPTIONS.enabled || !RELAY_OPTIONS.wsUrl) return false;
             clearConnOpenTimer();
             clearPeerOpenTimer();
+            clearReconnectTimer();
             _buildConnPending = false;
             if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
             peer = null;
@@ -1928,15 +1954,17 @@
             _syncTransportMode();
             _setConnectionState(CONNECTION_STATE.CONNECTING, 'Relay · connexion…', 'warn');
             setReconnectMessage(reason || 'fallback relay');
+            let mySocket;
             try {
-                relaySocket = new WebSocket(RELAY_OPTIONS.wsUrl);
+                mySocket = relaySocket = new WebSocket(RELAY_OPTIONS.wsUrl);
             } catch (e) {
                 _lastConnectError = 'relay-init';
                 scheduleReconnect(_lastConnectError);
                 return false;
             }
 
-            relaySocket.addEventListener('open', () => {
+            mySocket.addEventListener('open', () => {
+                if (relaySocket !== mySocket) return;
                 relayOpen = true;
                 reconnectAttempts = 0;
                 _lastConnectError = '';
@@ -1956,7 +1984,8 @@
                 saveScore();
             });
 
-            relaySocket.addEventListener('message', ev => {
+            mySocket.addEventListener('message', ev => {
+                if (relaySocket !== mySocket) return;
                 let payload = null;
                 try { payload = JSON.parse(String(ev.data || '')); } catch (e) { return; }
                 const packets = Array.isArray(payload) ? payload : [payload];
@@ -1977,14 +2006,16 @@
                 });
             });
 
-            relaySocket.addEventListener('close', () => {
+            mySocket.addEventListener('close', () => {
+                if (relaySocket !== mySocket) return; // ancienne socket fermée lors d'une reconnexion, on ignore
                 relayOpen = false;
                 if (conn && conn.__transport === 'relay') conn.open = false;
                 setConnected(false);
                 scheduleReconnect('relay fermé');
             });
 
-            relaySocket.addEventListener('error', () => {
+            mySocket.addEventListener('error', () => {
+                if (relaySocket !== mySocket) return;
                 relayOpen = false;
                 _lastConnectError = 'relay-error';
                 setConnected(false);
@@ -2320,6 +2351,10 @@
 
                 case ROOM_MSG.LASER:
                     applyLaserMessage(msg);
+                    break;
+
+                case ROOM_MSG.ZOOM:
+                    applyZoomMessage(msg);
                     break;
 
                 case ROOM_MSG.QUIZ_QUESTION:

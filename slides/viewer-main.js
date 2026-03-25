@@ -1081,7 +1081,8 @@ import {
 
         function roomEndPoll() {
             if (_activePoll) {
-                const endPayload = buildPollEndPayload(_activePoll);
+                const snap = _roomBridgeSnapshotPoll();
+                const endPayload = buildPollEndPayload(_activePoll, snap);
                 roomBroadcast({ type: ROOM_MSG.POLL_END, ...endPayload });
                 _postPresenterSync({ type: SYNC_MSG.POLL_END, ...endPayload });
             }
@@ -1440,8 +1441,8 @@ import {
                     break;
                 }
                 case ROOM_MSG.QUIZ_ANSWER: {
-                    const handler = ViewerRuntime.activeQuizHandler;
-                    if (handler) handler(peerId, msg.answer);
+                    const handler = ViewerRuntime.activeQuizHandler ?? window._activeQuizHandler;
+                    if (typeof handler === 'function') handler(peerId, msg.answer);
                     break;
                 }
                 case ROOM_MSG.STUDENT_SCORE: {
@@ -1983,6 +1984,9 @@ import {
                 broadcastLaser: (x, y, active) => {
                     if (!_room.active) return;
                     roomBroadcast({ type: ROOM_MSG.LASER, active: !!active, x: Number(x) || 0, y: Number(y) || 0 });
+                },
+                broadcastZoom: (active, x, y, scale) => {
+                    roomBroadcast({ type: ROOM_MSG.ZOOM, active: !!active, x: Number(x) || 0, y: Number(y) || 0, scale: Number(scale) || 1 });
                 },
                 // Navigation helpers for supplemental scripts (e.g. slide overview overlay)
                 goTo: idx => { PresenterControls.goTo?.(idx); },

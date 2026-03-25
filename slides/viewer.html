@@ -598,6 +598,7 @@
         function postZoom(active, x, y, scale) {
             var bridge = window.OEIPresenterSyncBridge;
             if (bridge && bridge.post) bridge.post({ type: 'zoom', active: active, x: x, y: y, scale: scale });
+            if (bridge && bridge.broadcastZoom) bridge.broadcastZoom(active, x, y, scale);
         }
 
         function applyPresenterZoom() {

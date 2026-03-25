@@ -221,7 +221,7 @@ export async function initAudienceMode(ctx) {
 
         if (isActive) {
             resultsEl.innerHTML = '<div class="aud-poll-waiting">Collecte des réponses en cours…</div>';
-            totalEl.textContent = `${total} réponse(s) reçue(s)`;
+            if (totalEl) totalEl.textContent = '';
             return;
         }
 
@@ -342,6 +342,8 @@ export async function initAudienceMode(ctx) {
                 const rawIndex = toIntOrNull(msg.index);
                 if (rawIndex === null) return;
                 deck.slide(clampIndexForAudienceLock(rawIndex), 0, -1);
+                // Masquer l'overlay poll/quiz quand le présentateur change de slide
+                if (audiencePollId === null) { _lastPollState = null; setAudiencePollVisible(false); }
                 break;
             }
             case SYNC_MSG.FRAGMENT_STEP: {
@@ -403,9 +405,10 @@ export async function initAudienceMode(ctx) {
             }
             case SYNC_MSG.POLL_START: {
                 audiencePollId = toTrimmedString(msg.pollId, 80) || 'active';
+                _lastPollState = null;
                 setAudiencePollVisible(true);
                 const type = toTrimmedString(msg.pollType, 20) || 'scale5';
-                renderAudiencePoll(type, msg.prompt || '', [], 0, msg.options, msg.multi, 0);
+                renderAudiencePoll(type, msg.prompt || '', [], 0, msg.options, msg.multi, 0, true);
                 break;
             }
             case SYNC_MSG.POLL_UPDATE: {
@@ -421,13 +424,20 @@ export async function initAudienceMode(ctx) {
                 const pollId = toTrimmedString(msg.pollId, 80);
                 if (audiencePollId && pollId && pollId !== audiencePollId) break;
                 audiencePollId = null;
-                if (_lastPollState) {
-                    const s = _lastPollState;
+                // Préférer les données du message (plus à jour), sinon _lastPollState
+                const endState = (msg.counts != null) ? {
+                    type: msg.pollType, prompt: msg.prompt || '',
+                    counts: msg.counts, total: msg.total,
+                    options: msg.options, multi: msg.multi, totalSelections: msg.totalSelections
+                } : _lastPollState;
+                if (endState) {
+                    const s = endState;
                     renderAudiencePoll(s.type, s.prompt, s.counts, s.total, s.options, s.multi, s.totalSelections, false);
-                    setTimeout(() => { _lastPollState = null; setAudiencePollVisible(false); }, 6000);
+                    // Résultats visibles jusqu'au prochain changement de slide (GO_TO masquera l'overlay)
                 } else {
                     setAudiencePollVisible(false);
                 }
+                _lastPollState = null;
                 break;
             }
             case SYNC_MSG.WORDCLOUD_START: {

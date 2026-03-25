@@ -12,6 +12,8 @@
      */
     async function mountCodeElements(container, ctx) {
         const isAudienceReadOnly = !!ctx?.isAudienceReadOnly;
+        const emitFn = typeof ctx?.emitAudienceElementState === 'function' ? ctx.emitAudienceElementState : null;
+        const subscribeFn = typeof ctx?.subscribeAudienceElementState === 'function' ? ctx.subscribeAudienceElementState : null;
 
         // ── Code Live (in-browser code execution) ──
         container.querySelectorAll('.sl-codelive-pending').forEach(el => {
@@ -36,6 +38,12 @@
                 note.style.cssText = 'font-size:0.68rem;color:var(--sl-muted,#64748b);padding:6px 10px;border-top:1px solid var(--sl-border,#2d3347);';
                 note.textContent = 'Exécution réservée au présentateur';
                 consoleEl.parentElement?.appendChild(note);
+                // Subscribe to output sync from presenter
+                if (subscribeFn) {
+                    subscribeFn(el, 'code', (state) => {
+                        if (state.output != null) consoleEl.textContent = state.output;
+                    });
+                }
                 return;
             }
 
@@ -49,16 +57,22 @@
                 }
             });
 
+            let _outputText = '';
             const appendOutput = (text, color) => {
                 const span = document.createElement('span');
                 span.style.color = color || 'inherit';
                 span.textContent = text;
                 consoleEl.appendChild(span);
                 consoleEl.scrollTop = consoleEl.scrollHeight;
+                _outputText += text;
+            };
+            const emitOutput = () => {
+                if (emitFn) emitFn(el, 'code', { output: _outputText });
             };
 
             const runJS = async (code) => {
                 consoleEl.textContent = '';
+                _outputText = '';
                 if (typeof Worker === 'undefined' || typeof Blob === 'undefined' || !URL?.createObjectURL) {
                     appendOutput('❌ Sandbox JavaScript indisponible dans ce navigateur\n', '#f87171');
                     return;
@@ -110,17 +124,20 @@
                         appendOutput(`❌ ${String(payload.error || 'Erreur JavaScript')}\n`, '#f87171');
                     }
                     closeWorker();
+                    emitOutput();
                 };
                 worker.onerror = (event) => {
                     clearTimeout(timeout);
                     closeWorker();
                     appendOutput(`❌ Sandbox JavaScript: ${String(event?.message || 'Erreur worker')}\n`, '#f87171');
+                    emitOutput();
                 };
                 worker.postMessage({ code: String(code || '') });
             };
 
             const runPython = async (code) => {
                 consoleEl.textContent = '';
+                _outputText = '';
                 appendOutput('⏳ Chargement de Python…\n', 'var(--sl-muted)');
                 if (!global._slPyodideLoaded) {
                     global._slPyodideLoaded = true;
@@ -151,6 +168,7 @@
                 } catch(err) {
                     appendOutput('❌ ' + (err.message || String(err)) + '\n', '#f87171');
                 }
+                emitOutput();
             };
 
             btnRun.addEventListener('click', (e) => {
@@ -163,6 +181,8 @@
             btnClear?.addEventListener('click', (e) => {
                 e.stopPropagation(); e.preventDefault();
                 consoleEl.textContent = '';
+                _outputText = '';
+                emitOutput();
             });
 
             // Auto-run if configured

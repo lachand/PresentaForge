@@ -88,6 +88,7 @@
         RANK_ORDER_END: 'rank-order:end',
         WHITEBOARD_SYNC: 'whiteboard:sync',
         LASER: 'room:laser',
+        ZOOM: 'room:zoom',
         CHAT_BROADCAST: 'chat:broadcast',
         ROOM_KEYNOTE: 'room:keynote',
         SUBTITLE_TEXT: 'subtitle:text',
@@ -280,6 +281,10 @@
             && (msg.title == null || isString(msg.title, 200)),
         [ROOM_MSG.RANK_ORDER_END]: msg => msg.rankId == null || isString(msg.rankId, 120),
         [ROOM_MSG.LASER]: msg => isBoolean(msg.active) && (msg.x == null || isNumber(msg.x)) && (msg.y == null || isNumber(msg.y)),
+        [ROOM_MSG.ZOOM]: msg => (msg.active == null || typeof msg.active === 'boolean')
+            && (msg.x == null || isNumber(msg.x))
+            && (msg.y == null || isNumber(msg.y))
+            && (msg.scale == null || isNumber(msg.scale)),
         [ROOM_MSG.WHITEBOARD_SYNC]: msg => isBoolean(msg.active)
             && (msg.slideIndex == null || isNonNegInt(msg.slideIndex))
             && (msg.updatedAt == null || isNonNegInt(msg.updatedAt))
