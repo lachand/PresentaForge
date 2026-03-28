@@ -389,7 +389,7 @@ const OEI_WIDGET_REGISTRY = {
         description: 'Simulation de portes logiques ET, OU, NON, XOR avec visualisation',
         level: 'L1',
         tags: ['logique', 'portes', 'booléen', 'circuits'],
-        defaultConfig: {},
+        defaultConfig: { gates: ['AND', 'OR', 'NOT'], showIntro: false },
         staticFallback: _sf('⚙️', 'Portes logiques'),
     },
     'boolean-simplifier': {

@@ -381,17 +381,26 @@ class BooleanGatesWidget {
     init() {
         if (!this.container) return;
 
+        const gateNames = Array.isArray(this.config.gates) && this.config.gates.length
+            ? this.config.gates.map((n) => n.toUpperCase())
+            : null;
+        const visibleGates = gateNames
+            ? this.gates.filter((g) => gateNames.includes(g.name))
+            : this.gates;
+
+        const showIntro = this.config.showIntro !== false;
+
         this.container.classList.add('boolean-gates-widget');
         this.container.innerHTML = `
-            <div class="boolean-gates-intro">
+            ${showIntro ? `<div class="boolean-gates-intro">
                 <strong>Mode d'emploi:</strong> bascule A/B sur chaque porte pour observer la sortie instantanee, puis clique sur la carte (hors boutons d'entree) pour la retourner et afficher sa table de verite.
-            </div>
+            </div>` : ''}
             <div class="boolean-gates-grid" data-role="grid"></div>
         `;
 
         this.gridEl = this.container.querySelector('[data-role="grid"]');
 
-        this.gates.forEach((gate) => {
+        visibleGates.forEach((gate) => {
             this.renderGateCard(gate);
             this.updateGateOutput(gate.name);
             this.renderTruthTableForGate(gate.name);
