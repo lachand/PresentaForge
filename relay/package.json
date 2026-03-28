@@ -1,0 +1,17 @@
+{
+  "name": "oei-relay-server",
+  "version": "1.0.0",
+  "description": "WebSocket relay server for OEI Slides student rooms (PeerJS fallback for eduroam)",
+  "type": "module",
+  "main": "relay-server.mjs",
+  "scripts": {
+    "start": "node relay-server.mjs",
+    "dev": "RELAY_DEBUG=1 node relay-server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

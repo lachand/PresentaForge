@@ -4,8 +4,9 @@ services:
     runtime: node
     plan: free
     autoDeploy: true
+    rootDir: relay
     buildCommand: npm install --omit=dev
-    startCommand: node tools/slides/relay-server.mjs
+    startCommand: node relay-server.mjs
     healthCheckPath: /healthz
     envVars:
       - key: NODE_ENV
