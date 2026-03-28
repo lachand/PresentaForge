@@ -1228,10 +1228,11 @@ function _bindPropsPanel(el) {
             if (btn) btn.addEventListener('click', () => {
                 WidgetPickerModal.open({
                     currentId: el.data?.widget || null,
-                    onSelect: (widgetId) => {
+                    currentConfig: el.data?.config || null,
+                    onSelect: (widgetId, config) => {
                         const reg = window.OEI_WIDGET_REGISTRY || {};
                         if (labelEl) labelEl.textContent = reg[widgetId]?.label || widgetId;
-                        canvasEditor.updateData(id, { data: { widget: widgetId } });
+                        canvasEditor.updateData(id, { data: { widget: widgetId, config: config || {} } });
                     }
                 });
             });

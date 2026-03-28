@@ -512,10 +512,12 @@ function openTemplatePopover(slide, refEvent) {
             const hidden = popover.querySelector(`input[type="hidden"][data-field="${fieldKey}"]`);
             WidgetPickerModal.open({
                 currentId: hidden?.value || null,
-                onSelect: (id) => {
+                currentConfig: slide.config || null,
+                onSelect: (id, config) => {
                     if (!hidden) return;
                     hidden.value = id;
                     hidden.dispatchEvent(new Event('input'));
+                    activeEditor.updateSlide(activeEditor.selectedIndex, { config: config || {} });
                     const labelEl = btn.querySelector(`[data-wpm-label="${fieldKey}"]`);
                     if (labelEl) {
                         const reg = window.OEI_WIDGET_REGISTRY || {};

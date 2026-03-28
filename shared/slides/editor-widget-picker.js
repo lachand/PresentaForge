@@ -117,14 +117,15 @@ class WidgetPickerModal {
         document.head.appendChild(el);
     }
 
-    static open({ currentId = null, onSelect }) {
+    static open({ currentId = null, currentConfig = null, onSelect }) {
         document.querySelectorAll('.wpm-backdrop').forEach(e => e.remove());
         WidgetPickerModal.ensureStyles();
-        new WidgetPickerModal(currentId, onSelect)._show();
+        new WidgetPickerModal(currentId, currentConfig, onSelect)._show();
     }
 
-    constructor(currentId, onSelect) {
+    constructor(currentId, currentConfig, onSelect) {
         this.currentId = currentId;
+        this.currentConfig = currentConfig;
         this.onSelect = onSelect;
         this.selectedId = currentId;
         this.filterCat = 'all';
@@ -354,7 +355,9 @@ class WidgetPickerModal {
         if (cfgSection && cfgTa) {
             cfgSection.style.display = 'flex';
             if (cfgTa.dataset.lastId !== id) {
-                const cfg = r.defaultConfig || {};
+                const cfg = (id === this.currentId && this.currentConfig != null)
+                    ? this.currentConfig
+                    : (r.defaultConfig || {});
                 cfgTa.value = Object.keys(cfg).length ? JSON.stringify(cfg, null, 2) : '{}';
                 cfgTa.dataset.lastId = id;
             }
@@ -446,8 +449,9 @@ class WidgetPickerModal {
     _confirm() {
         if (!this.selectedId) return;
         const id = this.selectedId;
+        const config = this._getConfig() || {};
         this._close();
-        this.onSelect(id);
+        this.onSelect(id, config);
     }
 }
 
