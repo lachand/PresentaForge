@@ -29,6 +29,8 @@ class SlidesShared {
     static formatInlineRichText(value) {
         const escaped = SlidesShared.esc(value);
         return escaped
+            // Restore HTML named/numeric/hex entities escaped by esc() (e.g. &or; &#8744; &#x2228;)
+            .replace(/&amp;([a-zA-Z][a-zA-Z0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, '&$1')
             // Basic markdown support for bold emphasis in list-like fields.
             .replace(/\*\*([^*\n][^*\n]*?)\*\*/g, '<strong>$1</strong>')
             .replace(/__([^_\n][^_\n]*?)__/g, '<strong>$1</strong>')
@@ -576,6 +578,9 @@ class SlidesRenderer {
     }
 
     static _comparison(s) {
+        // Pipeline normalizes left/right into data.left/data.right — support both forms
+        const leftData  = s.left  || s.data?.left;
+        const rightData = s.right || s.data?.right;
         const title = s.title ? `<h2>${SlidesRenderer.esc(s.title)}</h2>` : '';
         const renderCol = (col) => {
             if (!col) return '';
@@ -588,7 +593,7 @@ class SlidesRenderer {
             </div>`;
         };
         const vs = `<div class="sl-cmp-vs">vs</div>`;
-        return `${title}<div class="sl-cmp-layout">${renderCol(s.left)}${vs}${renderCol(s.right)}</div>`;
+        return `${title}<div class="sl-cmp-layout">${renderCol(leftData)}${vs}${renderCol(rightData)}</div>`;
     }
 
     static _image(s) {

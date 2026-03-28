@@ -144,54 +144,94 @@ function openCopyToSlideDialog() {
 
     const slides = runtimeEditor.data.slides;
     const currentIdx = runtimeEditor.selectedIndex;
+    const selectedIds = new Set(selected.map(e => e.id));
 
-    // Build list of canvas slides (excluding current)
-    const canvasSlides = slides
-        .map((s, i) => ({ slide: s, index: i }))
-        .filter(s => s.slide.type === 'canvas' && s.index !== currentIdx);
-
-    if (!canvasSlides.length) {
-        _clipboardNotify('Aucun autre slide canvas disponible', 'info');
-        return;
-    }
+    // Connectors whose both endpoints are among selected elements
+    const relatedConnectors = (runtimeCanvas.connectors || []).filter(
+        c => selectedIds.has(c.sourceId) && selectedIds.has(c.targetId)
+    );
 
     // Create modal dialog
     const overlay = document.createElement('div');
     overlay.className = 'copy-slide-overlay';
+    const connNote = relatedConnectors.length ? ` + ${relatedConnectors.length} connecteur(s)` : '';
     overlay.innerHTML = `
         <div class="copy-slide-panel">
             <h3 class="copy-slide-title">Copier vers un slide</h3>
-            <p class="copy-slide-meta">${selected.length} élément(s) sélectionné(s)</p>
+            <p class="copy-slide-meta">${selected.length} élément(s)${connNote} — choisir la ou les destinations</p>
             <div class="copy-slide-list" id="copy-slide-list"></div>
             <div class="copy-slide-actions">
                 <button id="copy-slide-cancel" class="copy-slide-cancel-btn">Annuler</button>
+                <button id="copy-slide-confirm" class="copy-slide-confirm-btn" disabled>Copier</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);
 
     const list = overlay.querySelector('#copy-slide-list');
-    canvasSlides.forEach(({ slide, index }) => {
-        const title = slide.title || `Slide ${index + 1}`;
-        const count = (slide.elements || []).length;
-        const btn = document.createElement('button');
-        btn.className = 'copy-slide-target-btn';
-        btn.innerHTML = `<b>Slide ${index + 1}</b> — ${count} élément(s)`;
-        btn.addEventListener('click', () => {
-            // Deep-clone selected elements and add to target slide
+    const confirmBtn = overlay.querySelector('#copy-slide-confirm');
+
+    const updateConfirm = () => {
+        const checked = list.querySelectorAll('input[type=checkbox]:checked');
+        confirmBtn.disabled = checked.length === 0;
+        confirmBtn.textContent = checked.length > 1 ? `Copier vers ${checked.length} slides` : 'Copier';
+    };
+
+    slides.forEach((slide, index) => {
+        const isCanvas = slide.type === 'canvas';
+        const isCurrent = index === currentIdx;
+        const disabled = !isCanvas || isCurrent;
+
+        const row = document.createElement('label');
+        row.className = 'copy-slide-row' + (disabled ? ' copy-slide-row--disabled' : '');
+
+        const typeLabel = isCanvas ? '' : `<span class="copy-slide-type">${slide.type || '?'}</span>`;
+        const title = slide.title ? `<span class="copy-slide-row-title">${slide.title}</span>` : '';
+        const elemCount = isCanvas ? `<span class="copy-slide-row-count">${(slide.elements || []).length} él.</span>` : '';
+        const currentMark = isCurrent ? '<span class="copy-slide-current">actuelle</span>' : '';
+
+        row.innerHTML = `
+            <input type="checkbox" value="${index}" ${disabled ? 'disabled' : ''}>
+            <span class="copy-slide-row-num">Slide ${index + 1}</span>
+            ${title}${typeLabel}${elemCount}${currentMark}`;
+        row.querySelector('input')?.addEventListener('change', updateConfirm);
+        list.appendChild(row);
+    });
+
+    confirmBtn.addEventListener('click', () => {
+        const checked = [...list.querySelectorAll('input[type=checkbox]:checked')];
+        if (!checked.length) return;
+        let total = 0;
+        checked.forEach(cb => {
+            const index = parseInt(cb.value, 10);
             const cloned = JSON.parse(JSON.stringify(selected));
             const targetElements = slides[index].elements || [];
             const maxZ = targetElements.reduce((max, e) => Math.max(max, e.z || 0), 0);
+            const idMap = {};
             cloned.forEach((el, i) => {
-                el.id = 'el_' + Math.random().toString(36).slice(2, 9);
+                const newId = 'el_' + Math.random().toString(36).slice(2, 9);
+                idMap[el.id] = newId;
+                el.id = newId;
                 el.z = maxZ + 1 + i;
             });
             if (!slides[index].elements) slides[index].elements = [];
             slides[index].elements.push(...cloned);
-            runtimeEditor._push();
-            overlay.remove();
-            _clipboardNotify(`${cloned.length} élément(s) copié(s) vers le slide ${index + 1}`, 'success');
+            // Copy connectors, remapping IDs
+            if (relatedConnectors.length) {
+                if (!slides[index].connectors) slides[index].connectors = [];
+                relatedConnectors.forEach(c => {
+                    const cc = JSON.parse(JSON.stringify(c));
+                    cc.id = 'cn_' + Math.random().toString(36).slice(2, 9);
+                    cc.sourceId = idMap[c.sourceId] || c.sourceId;
+                    cc.targetId = idMap[c.targetId] || c.targetId;
+                    slides[index].connectors.push(cc);
+                });
+            }
+            total += cloned.length;
         });
-        list.appendChild(btn);
+        runtimeEditor._push();
+        overlay.remove();
+        const dest = checked.length > 1 ? `${checked.length} slides` : `slide ${parseInt(checked[0].value, 10) + 1}`;
+        _clipboardNotify(`${total} élément(s) copié(s) vers ${dest}`, 'success');
     });
 
     overlay.querySelector('#copy-slide-cancel').addEventListener('click', () => overlay.remove());
