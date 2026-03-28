@@ -470,8 +470,9 @@ class SlidesRenderer {
     static _title(s) {
         const eyebrow = s.eyebrow ? `<div class="sl-title-eyebrow">${SlidesRenderer.esc(s.eyebrow)}</div>` : '';
         const subtitle = s.subtitle ? `<p class="sl-title-sub">${s.subtitle}</p>` : '';
-        const meta = (s.author || s.date)
-            ? `<div class="sl-title-meta">${s.author ? `<span>${SlidesRenderer.esc(s.author)}</span>` : ''}${s.date ? `<span>${SlidesRenderer.esc(s.date)}</span>` : ''}</div>`
+        const emailHtml = s.email ? `<span><a href="mailto:${SlidesRenderer.esc(s.email)}" class="sl-title-meta-email">${SlidesRenderer.esc(s.email)}</a></span>` : '';
+        const meta = (s.author || s.date || s.email)
+            ? `<div class="sl-title-meta">${s.author ? `<span>${SlidesRenderer.esc(s.author)}</span>` : ''}${s.date ? `<span>${SlidesRenderer.esc(s.date)}</span>` : ''}${emailHtml}</div>`
             : '';
         return `<div class="sl-title-content">${eyebrow}<h1>${s.title || 'Sans titre'}</h1>${subtitle}${meta}</div>`;
     }

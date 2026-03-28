@@ -377,6 +377,8 @@ body { background: var(--sl-bg); }
 .sl-title-eyebrow { font-size: var(--sl-label-size, 0.8em); font-family: var(--sl-font-mono); color: var(--sl-primary); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
 .sl-title-sub { font-size: var(--sl-title-sub-size, clamp(1rem,2.2vw,1.4rem)); color: var(--sl-muted); margin-top: 0.5rem; line-height: 1.35; }
 .sl-title-meta { display: flex; gap: 1.5rem; margin-top: 2rem; font-size: var(--sl-title-meta-size, 0.8em); color: var(--sl-muted); justify-content: center; }
+.sl-title-meta-email { color: inherit; text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--sl-muted) 50%, transparent); }
+.sl-title-meta-email:hover { border-bottom-color: var(--sl-muted); }
 
 /* Chapter */
 .sl-chapter { display: flex; flex-direction: column; text-align: center; align-items: center; justify-content: center; min-height: 100%; background: linear-gradient(135deg, var(--sl-slide-bg) 0%, color-mix(in srgb, var(--sl-primary) 15%, var(--sl-slide-bg)) 100%) !important; }

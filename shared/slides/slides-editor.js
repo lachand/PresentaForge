@@ -845,6 +845,7 @@ class SlidesEditor {
                 { key: 'title',     label: 'Titre',                   type: 'text',     required: true },
                 { key: 'subtitle',  label: 'Sous-titre',              type: 'text' },
                 { key: 'author',    label: 'Auteur',                  type: 'text' },
+                { key: 'email',     label: 'Email',                   type: 'text',     placeholder: 'ex: prenom.nom@univ.fr' },
                 { key: 'date',      label: 'Date',                    type: 'text',     placeholder: 'ex: 2026-02' },
                 { key: 'keypoints', label: 'Points clés étudiants',   type: 'items',    placeholder: 'Résumé visible par les étudiants...' },
                 { key: 'notes',     label: 'Notes orateur',           type: 'textarea' },
