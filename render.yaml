@@ -11,8 +11,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: RELAY_TOKEN
-        sync: false
       - key: RELAY_ROOM_IDLE_TTL_MS
         value: "2700000"
   - type: web
