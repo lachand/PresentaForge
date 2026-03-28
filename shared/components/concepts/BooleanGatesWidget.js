@@ -109,35 +109,57 @@ class BooleanGatesWidget {
         const style = document.createElement('style');
         style.id = 'boolean-gates-widget-styles';
         style.textContent = `
-            .boolean-gates-widget { display: grid; gap: 1rem; }
+            /* Variables locales : se raccordent aux vars slides (--sl-*) quand les vars page
+               (--card, --bg, etc.) ne sont pas définies (viewer.html ne charge pas style.css) */
+            .boolean-gates-widget {
+                display: grid;
+                gap: 0.8rem;
+                --_bg:       var(--bg,               var(--sl-slide-bg,  #0f172a));
+                --_card:     var(--card,    color-mix(in srgb, var(--sl-slide-bg, #1e293b) 82%, white));
+                --_bd:       var(--border,            rgba(148,163,184,.22));
+                --_primary:  var(--primary,            var(--sl-primary,   #818cf8));
+                --_muted:    var(--muted,              var(--sl-muted,     #94a3b8));
+                --_text:     var(--text,               var(--sl-text,      #e2e8f0));
+                --_accent:   var(--accent,             var(--sl-accent,    #10b981));
+                --_danger:   var(--danger,             #ef4444);
+                --_mono:     var(--font-mono,          var(--sl-font-mono, ui-monospace, monospace));
+                --_r:        var(--radius-sm,          8px);
+                --_indigo-bg: var(--tone-indigo-bg,    rgba(99,102,241,.12));
+                --_indigo-bd: var(--tone-indigo-border,rgba(99,102,241,.35));
+                --_indigo-tx: var(--tone-indigo-text,  var(--sl-primary,   #818cf8));
+                --_ok-bg:    var(--tone-success-bg,    rgba(16,185,129,.15));
+                --_ok-tx:    var(--tone-success-text,  #34d399);
+                --_no-tx:    var(--tone-danger-text,   #f87171);
+            }
             .boolean-gates-intro {
-                border: 1px solid var(--tone-indigo-border);
-                background: var(--tone-indigo-bg);
-                color: var(--tone-indigo-text);
-                border-radius: var(--radius-sm);
+                border: 1px solid var(--_indigo-bd);
+                background: var(--_indigo-bg);
+                color: var(--_indigo-tx);
+                border-radius: var(--_r);
                 padding: 0.55rem 0.65rem;
                 font-size: 0.84rem;
                 line-height: 1.45;
             }
             .boolean-gates-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-                gap: 0.8rem;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 0.7rem;
             }
             .boolean-gate-card {
                 position: relative;
                 perspective: 1200px;
-                min-height: 306px;
+                min-height: 260px;
                 cursor: pointer;
             }
             .boolean-gate-card:focus-visible {
-                outline: 2px solid var(--primary);
+                outline: 2px solid var(--_primary);
                 outline-offset: 2px;
             }
             .boolean-gate-card-inner {
                 position: relative;
                 width: 100%;
-                min-height: 306px;
+                height: 100%;
+                min-height: 260px;
                 transform-style: preserve-3d;
                 transition: transform 280ms ease;
             }
@@ -145,13 +167,14 @@ class BooleanGatesWidget {
                 transform: rotateY(180deg);
             }
             .boolean-gate-face {
-                border: 1px solid var(--border);
-                border-radius: var(--radius-sm);
-                padding: 0.75rem;
-                background: var(--card);
+                border: 1px solid var(--_bd);
+                border-radius: var(--_r);
+                padding: 0.65rem;
+                background: var(--_card);
                 display: grid;
-                gap: 0.55rem;
-                min-height: 306px;
+                gap: 0.45rem;
+                min-height: 260px;
+                overflow: hidden;
                 backface-visibility: hidden;
                 -webkit-backface-visibility: hidden;
             }
@@ -159,42 +182,45 @@ class BooleanGatesWidget {
                 position: absolute;
                 inset: 0;
                 transform: rotateY(180deg);
-                background: var(--bg);
+                background: var(--_bg);
+                border: 1px solid var(--_bd);
+                border-radius: var(--_r);
+                overflow: hidden;
             }
-            .boolean-gate-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
-            .boolean-gate-name { margin: 0; font-size: 0.92rem; color: var(--primary); }
-            .boolean-gate-label { margin: 0; font-size: 0.76rem; color: var(--muted); }
+            .boolean-gate-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; overflow: hidden; }
+            .boolean-gate-name { margin: 0; font-size: 0.92rem; color: var(--_primary); }
+            .boolean-gate-label { margin: 0; font-size: 0.76rem; color: var(--_muted); white-space: nowrap; }
             .boolean-gate-card-hint {
                 margin: 0;
-                font-size: 0.74rem;
-                color: var(--muted);
+                font-size: 0.72rem;
+                color: var(--_muted);
             }
             .boolean-gate-symbol {
                 margin: 0;
-                font-family: var(--font-mono);
-                font-size: 0.78rem;
-                color: var(--muted);
+                font-family: var(--_mono);
+                font-size: 0.76rem;
+                color: var(--_muted);
             }
             .boolean-gate-visual {
                 display: grid;
                 grid-template-columns: auto minmax(0, 1fr) auto;
                 align-items: center;
-                gap: 0.5rem;
-                min-height: 88px;
+                gap: 0.4rem;
+                min-height: 80px;
             }
             .boolean-gate-inputs {
                 display: grid;
-                gap: 0.42rem;
+                gap: 0.38rem;
             }
             .boolean-gate-input-row {
                 display: flex;
                 align-items: center;
                 justify-content: flex-end;
-                gap: 0.35rem;
+                gap: 0.3rem;
             }
             .boolean-gate-input-row label {
-                font-size: 0.74rem;
-                color: var(--muted);
+                font-size: 0.72rem;
+                color: var(--_muted);
                 font-weight: 600;
                 width: 14px;
                 text-align: center;
@@ -202,59 +228,61 @@ class BooleanGatesWidget {
             .boolean-toggle {
                 width: 26px;
                 height: 26px;
+                flex-shrink: 0;
                 border-radius: 999px;
-                border: 1px solid var(--border);
-                background: var(--card);
-                color: var(--muted);
+                border: 1px solid var(--_bd);
+                background: var(--_bg);
+                color: var(--_text);
                 font-weight: 700;
-                font-family: var(--font-mono);
+                font-family: var(--_mono);
                 cursor: pointer;
             }
             .boolean-toggle:focus-visible {
-                outline: 2px solid var(--primary);
+                outline: 2px solid var(--_primary);
                 outline-offset: 2px;
             }
             .boolean-toggle[data-value="1"] {
-                background: var(--primary);
-                border-color: var(--primary);
+                background: var(--_primary);
+                border-color: var(--_primary);
                 color: #fff;
             }
             .boolean-gate-svg-wrap {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                min-height: 88px;
+                min-height: 80px;
+                overflow: hidden;
             }
             .boolean-gate-svg-panel {
-                border: 1px solid var(--border);
+                border: 1px solid var(--_bd);
                 border-radius: 10px;
-                background: var(--bg);
+                background: var(--_bg);
                 padding: 0.2rem 0.3rem;
                 display: grid;
                 justify-items: center;
-                gap: 0.15rem;
+                gap: 0.12rem;
                 transition: border-color 120ms ease, box-shadow 120ms ease;
             }
             .boolean-gate-svg-panel.signal-0 {
-                border-color: var(--danger);
+                border-color: var(--_danger);
             }
             .boolean-gate-svg-panel.signal-1 {
-                border-color: var(--accent);
+                border-color: var(--_accent);
             }
             .boolean-gate-svg-panel.signal-pulse {
                 animation: booleanSignalPulse 280ms ease;
             }
             .boolean-gate-svg-label {
-                font-size: 0.72rem;
-                color: var(--muted);
+                font-size: 0.68rem;
+                color: var(--_muted);
                 text-transform: uppercase;
                 letter-spacing: 0.04em;
             }
             .boolean-gate-svg {
-                width: 124px;
-                height: 74px;
+                width: 100px;
+                height: 60px;
                 display: block;
-                color: var(--text);
+                color: var(--_text);
             }
             .boolean-gate-svg path,
             .boolean-gate-svg line,
@@ -266,12 +294,12 @@ class BooleanGatesWidget {
                 fill: none;
             }
             .boolean-gate-svg .gate-bubble {
-                fill: var(--card);
+                fill: var(--_bg);
             }
             .boolean-output-wrap {
                 display: grid;
                 justify-items: center;
-                gap: 0.2rem;
+                gap: 0.18rem;
             }
             .boolean-output-row {
                 display: flex;
@@ -279,75 +307,80 @@ class BooleanGatesWidget {
                 justify-content: space-between;
                 gap: 0.5rem;
             }
-            .boolean-output-label { font-size: 0.76rem; color: var(--muted); }
+            .boolean-output-label { font-size: 0.74rem; color: var(--_muted); }
             .boolean-output-value {
-                min-width: 30px;
+                min-width: 28px;
                 text-align: center;
                 border-radius: 999px;
-                border: 1px solid var(--border);
-                padding: 0.15rem 0.5rem;
-                font-family: var(--font-mono);
+                border: 1px solid var(--_bd);
+                padding: 0.12rem 0.45rem;
+                font-family: var(--_mono);
                 font-weight: 700;
-                color: var(--text);
-                background: var(--card);
+                color: var(--_text);
+                background: var(--_bg);
             }
             .boolean-output-value[data-value="1"] {
-                background: var(--tone-success-bg);
-                color: var(--tone-success-text);
-                border-color: var(--accent);
+                background: var(--_ok-bg);
+                color: var(--_ok-tx);
+                border-color: var(--_accent);
             }
             .boolean-gate-formula {
-                font-family: var(--font-mono);
-                font-size: 0.76rem;
-                color: var(--text);
-                border: 1px solid var(--border);
+                font-family: var(--_mono);
+                font-size: 0.74rem;
+                color: var(--_text);
+                border: 1px solid var(--_bd);
                 border-radius: 999px;
-                padding: 0.2rem 0.5rem;
-                background: var(--card);
+                padding: 0.18rem 0.45rem;
+                background: var(--_bg);
                 justify-self: start;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
             }
             .boolean-gate-table-meta {
                 margin: 0;
-                font-size: 0.78rem;
-                color: var(--text);
+                font-size: 0.76rem;
+                color: var(--_text);
                 font-weight: 600;
             }
             .boolean-gate-back-table {
                 overflow: auto;
-                border: 1px solid var(--border);
+                border: 1px solid var(--_bd);
                 border-radius: 8px;
-                background: var(--card);
+                background: var(--_bg);
+                max-height: 160px;
             }
             .boolean-truth-hint {
-                margin: 0 0 0.55rem;
-                font-size: 0.78rem;
-                color: var(--muted);
+                margin: 0 0 0.5rem;
+                font-size: 0.76rem;
+                color: var(--_muted);
             }
-            .boolean-truth-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.82rem; }
+            .boolean-truth-table { width: 100%; border-collapse: collapse; font-family: var(--_mono); font-size: 0.8rem; }
             .boolean-truth-table th,
             .boolean-truth-table td {
-                border: 1px solid var(--border);
-                padding: 0.36rem 0.45rem;
+                border: 1px solid var(--_bd);
+                padding: 0.3rem 0.4rem;
                 text-align: center;
             }
-            .boolean-truth-table th { background: var(--bg); color: var(--text); }
-            .boolean-truth-row-current td { background: var(--tone-indigo-bg); }
-            .boolean-result-one { color: var(--tone-success-text); font-weight: 700; }
-            .boolean-result-zero { color: var(--tone-danger-text); font-weight: 700; }
+            .boolean-truth-table th { background: var(--_bg); color: var(--_text); }
+            .boolean-truth-row-current td { background: var(--_indigo-bg); }
+            .boolean-result-one { color: var(--_ok-tx); font-weight: 700; }
+            .boolean-result-zero { color: var(--_no-tx); font-weight: 700; }
             @keyframes booleanSignalPulse {
                 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45); }
                 100% { box-shadow: 0 0 0 11px rgba(59, 130, 246, 0); }
             }
             @media (max-width: 900px) {
                 .boolean-gates-grid {
-                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 }
             }
             @media (max-width: 640px) {
                 .boolean-gate-visual {
                     grid-template-columns: 1fr;
                     justify-items: center;
-                    gap: 0.42rem;
+                    gap: 0.38rem;
                 }
                 .boolean-gate-inputs {
                     width: 100%;
