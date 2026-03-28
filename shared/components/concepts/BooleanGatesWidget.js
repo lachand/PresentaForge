@@ -148,7 +148,6 @@ class BooleanGatesWidget {
             .boolean-gate-card {
                 position: relative;
                 perspective: 1200px;
-                min-height: 260px;
                 cursor: pointer;
             }
             .boolean-gate-card:focus-visible {
@@ -156,10 +155,9 @@ class BooleanGatesWidget {
                 outline-offset: 2px;
             }
             .boolean-gate-card-inner {
-                position: relative;
-                width: 100%;
-                height: 100%;
-                min-height: 260px;
+                display: grid;
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr;
                 transform-style: preserve-3d;
                 transition: transform 280ms ease;
             }
@@ -167,25 +165,23 @@ class BooleanGatesWidget {
                 transform: rotateY(180deg);
             }
             .boolean-gate-face {
+                grid-area: 1 / 1;
                 border: 1px solid var(--_bd);
                 border-radius: var(--_r);
                 padding: 0.65rem;
                 background: var(--_card);
-                display: grid;
+                display: flex;
+                flex-direction: column;
                 gap: 0.45rem;
-                min-height: 260px;
+                min-height: 240px;
                 overflow: hidden;
                 backface-visibility: hidden;
                 -webkit-backface-visibility: hidden;
             }
             .boolean-gate-face-back {
-                position: absolute;
-                inset: 0;
+                grid-area: 1 / 1;
                 transform: rotateY(180deg);
                 background: var(--_bg);
-                border: 1px solid var(--_bd);
-                border-radius: var(--_r);
-                overflow: hidden;
             }
             .boolean-gate-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; overflow: hidden; }
             .boolean-gate-name { margin: 0; font-size: 0.92rem; color: var(--_primary); }
