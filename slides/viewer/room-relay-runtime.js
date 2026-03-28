@@ -77,6 +77,7 @@ export function createRoomRelayRuntime(params) {
     if (!relayRoom.peers || typeof relayRoom.peers.set !== 'function') {
         relayRoom.peers = new Map();
     }
+    if (!('keepAliveTimer' in relayRoom)) relayRoom.keepAliveTimer = null;
 
     function wsOpen() {
         return !!(relayRoom.ws && relayRoom.ws.readyState === WebSocket.OPEN);
@@ -152,6 +153,13 @@ export function createRoomRelayRuntime(params) {
         }
     }
 
+    function clearKeepAliveTimer() {
+        if (relayRoom.keepAliveTimer) {
+            clearInterval(relayRoom.keepAliveTimer);
+            relayRoom.keepAliveTimer = null;
+        }
+    }
+
     function scheduleReconnect(reason = '') {
         if (!room?.active || !relayOptions.enabled || !relayOptions.wsUrl) return;
         if (relayRoom.reconnectTimer) return;
@@ -189,6 +197,12 @@ export function createRoomRelayRuntime(params) {
                 token: relayOptions.token || '',
                 at: now(),
             });
+            // Keepalive ping every 25s to prevent idle-disconnect on Railway
+            clearKeepAliveTimer();
+            relayRoom.keepAliveTimer = setInterval(() => {
+                if (!wsOpen()) { clearKeepAliveTimer(); return; }
+                sendRaw({ type: 'ping', at: now() });
+            }, 25_000);
             roomSetStatus('Salle active (P2P + relay).', 'ok');
         });
 
@@ -199,7 +213,9 @@ export function createRoomRelayRuntime(params) {
                 parsed.forEach(handleIncoming);
                 return;
             }
-            if (parsed?.type === 'relay:error') {
+            const msgType = parsed?.type || '';
+            if (msgType === 'pong' || msgType === 'relay:joined') return;
+            if (msgType === 'relay:error') {
                 roomSetStatus(`Relay: ${roomEsc(parsed.reason || 'erreur')}`, 'warn');
                 return;
             }
@@ -210,6 +226,7 @@ export function createRoomRelayRuntime(params) {
             relayRoom.active = false;
             relayRoom.ws = null;
             relayRoom.peers.clear();
+            clearKeepAliveTimer();
             scheduleReconnect('close');
         });
 
@@ -221,6 +238,7 @@ export function createRoomRelayRuntime(params) {
 
     function close() {
         clearReconnectTimer();
+        clearKeepAliveTimer();
         relayRoom.reconnectAttempts = 0;
         relayRoom.active = false;
         relayRoom.roomId = '';

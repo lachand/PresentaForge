@@ -139,6 +139,7 @@
         let peer = null;
         let conn = null;
         let relaySocket = null;
+        let relayKeepaliveTimer = null;
         let relayOpen = false;
         const relayClientId = `st-${Math.random().toString(36).slice(2, 10)}`;
         let transportMode = 'p2p';
@@ -1908,6 +1909,7 @@
 
         function closeRelaySocket(resetTransport = true) {
             relayOpen = false;
+            if (relayKeepaliveTimer) { clearInterval(relayKeepaliveTimer); relayKeepaliveTimer = null; }
             if (conn && conn.__transport === 'relay') conn.open = false;
             if (relaySocket) {
                 try { relaySocket.close(); } catch (e) {}
@@ -1977,6 +1979,16 @@
                     close: () => closeRelaySocket(true),
                 };
                 relaySendEnvelope('relay:join', null, { role: 'student', clientId: relayClientId, pseudo });
+                // Keepalive ping every 25s to prevent Railway idle-disconnect
+                if (relayKeepaliveTimer) clearInterval(relayKeepaliveTimer);
+                relayKeepaliveTimer = setInterval(() => {
+                    if (relaySocket === mySocket && relaySocketReady()) {
+                        try { mySocket.send(JSON.stringify({ type: 'ping', at: Date.now() })); } catch (_) {}
+                    } else {
+                        clearInterval(relayKeepaliveTimer);
+                        relayKeepaliveTimer = null;
+                    }
+                }, 25_000);
                 setConnected(true);
                 sendReliable({ type: ROOM_MSG.STUDENT_JOIN, pseudo }, { maxRetries: 4, retryDelay: 1200 });
                 _flushReliableQueue('relay-open');
@@ -1991,6 +2003,18 @@
                 const packets = Array.isArray(payload) ? payload : [payload];
                 packets.forEach(packet => {
                     if (!packet || typeof packet !== 'object') return;
+                    // Handle relay control messages before routing
+                    const ptype = toSafeString(packet.type ?? '', 40);
+                    if (ptype === 'pong') return;
+                    if (ptype === 'relay:joined') return; // join ack — already handled by open event
+                    if (ptype === 'relay:error') {
+                        const code = toSafeString(packet.code ?? '', 40);
+                        if (code === 'no_presenter') {
+                            // Presenter not yet in relay room — show waiting state, keep socket open
+                            setConnectionDetail('Relay · en attente du présentateur…', 'warn');
+                        }
+                        return;
+                    }
                     const target = toSafeString(packet.to ?? packet.clientIdTo, 120);
                     if (target && target !== relayClientId && target !== '*' && target !== 'all') return;
                     const msg = (packet.message && typeof packet.message === 'object')
