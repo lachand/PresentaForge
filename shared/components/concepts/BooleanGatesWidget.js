@@ -144,6 +144,7 @@ class BooleanGatesWidget {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
                 gap: 0.7rem;
+                padding: 2px;
             }
             .boolean-gate-card {
                 position: relative;
@@ -174,7 +175,7 @@ class BooleanGatesWidget {
                 flex-direction: column;
                 gap: 0.45rem;
                 min-height: 240px;
-                overflow: hidden;
+                box-sizing: border-box;
                 backface-visibility: hidden;
                 -webkit-backface-visibility: hidden;
             }
@@ -316,8 +317,8 @@ class BooleanGatesWidget {
                 background: var(--_bg);
             }
             .boolean-output-value[data-value="1"] {
-                background: var(--_ok-bg);
-                color: var(--_ok-tx);
+                background: var(--_accent);
+                color: #fff;
                 border-color: var(--_accent);
             }
             .boolean-gate-formula {
