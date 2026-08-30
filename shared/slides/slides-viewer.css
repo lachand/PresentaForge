@@ -1510,6 +1510,26 @@
         }
         .pv-timer-display.running { color: var(--success, #2e7d32); }
         .pv-timer-display:hover { color: var(--primary, #00508d); }
+        .pv-slide-countdown {
+            font-family: var(--font-editorial, 'Manrope', sans-serif);
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--on-surface-variant, #414750);
+            background: var(--surface-container, #f3edea);
+            border-radius: 6px;
+            padding: 2px 8px;
+            letter-spacing: 0.02em;
+            transition: color 0.3s, background 0.3s;
+            white-space: nowrap;
+        }
+        .pv-slide-countdown.warning { color: #b45309; background: #fef3c7; }
+        .pv-slide-countdown.danger  { color: #b91c1c; background: #fee2e2; animation: pv-countdown-pulse 1s ease infinite; }
+        .pv-slide-countdown.hidden  { display: none; }
+        @keyframes pv-countdown-pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.55; }
+        }
         .pv-progress-badge {
             font-size: 0.78rem;
             color: var(--on-surface-muted, #8a9099);
@@ -1739,7 +1759,7 @@
             z-index: 500; pointer-events: none; cursor: default;
         }
         #wb-canvas.active {
-            pointer-events: auto; cursor: crosshair;
+            pointer-events: auto; cursor: crosshair; touch-action: none;
         }
         #wb-toolbar {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -2134,3 +2154,135 @@
 }
 
 /* fbm-* styles déplacés dans ui-primitives.css */
+
+/* ── Presenter mobile tab bar (≤ 860px) ─────────────────────────── */
+.pv-mobile-tabs {
+    display: none;
+    flex-shrink: 0;
+    background: var(--surface-container-lowest, #ffffff);
+    border-top: 1px solid var(--border, rgba(0,0,0,0.08));
+    padding: 4px 8px;
+}
+.pv-mobile-tab {
+    flex: 1;
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    background: transparent;
+    color: var(--on-surface-muted, #8a9099);
+    font-size: 0.78rem; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    font-family: var(--font-editorial, 'Manrope', sans-serif);
+}
+.pv-mobile-tab.active {
+    background: var(--primary-fixed, #d2e4ff);
+    color: var(--primary, #00508d);
+}
+
+@media (max-width: 860px) {
+    .pv-mobile-tabs { display: flex; gap: 4px; }
+    /* When context tab is active (default): show lower-zone, hide notes */
+    .pv-layout .pv-notes-col { display: none; }
+    .pv-layout.pv-notes-active .pv-notes-col { display: flex; }
+    .pv-layout.pv-notes-active .pv-lower-zone,
+    .pv-layout.pv-notes-active .pv-slides-col .pv-lower-zone { display: none; }
+}
+
+/* ── Touch splitter — wider hit target ──────────────────────────── */
+@media (pointer: coarse) {
+    .pv-splitter-v { width: 16px; }
+    .pv-scene-btn { padding: 6px 12px; font-size: 0.72rem; min-height: 36px; }
+    .pv-font-btn { width: 36px; height: 36px; font-size: 1rem; }
+    .pv-toolbar-btn { min-height: 40px; padding: 4px 12px; }
+}
+
+/* ── Print mode — one slide per page, no Reveal.js chrome ───────── */
+@media print {
+    /* Hide UI elements */
+    #sl-toolbar, #sl-toolbar-hover-zone, #sl-keyboard-hint,
+    #sl-audience-brand, #wb-toolbar, #wb-canvas, #wb-preview,
+    #presenter-view, #sl-shortcuts-modal { display: none !important; }
+
+    /* Reset body */
+    html, body { height: auto; overflow: visible; background: white; }
+
+    /* Make reveal and slides visible, one per page */
+    .reveal { position: static !important; width: 100% !important; height: auto !important; overflow: visible !important; }
+    .reveal .slides { position: static !important; transform: none !important; width: 100% !important; height: auto !important; }
+    .reveal .slides section {
+        position: static !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 180mm;
+        page-break-after: always;
+        break-after: page;
+        box-sizing: border-box;
+        padding: 20mm;
+        background: white;
+        color: black;
+    }
+    .reveal .slides section:last-child { page-break-after: avoid; break-after: avoid; }
+
+    /* Hide nested sections (sub-slides) that aren't the main content */
+    .reveal .slides > section > section { page-break-after: avoid; break-after: avoid; min-height: 0; padding: 0; }
+
+    /* Reset font colors for print */
+    .reveal .slides section * { color: inherit; }
+    .reveal .slides section .sl-slide-title,
+    .reveal .slides section h1, .reveal .slides section h2 { color: #111; }
+
+    /* Hide interactive elements */
+    .sl-quizlive-wrap, .sl-widget-wrap, .sl-codelive-wrap { display: none !important; }
+}
+
+/* ── Embed mode (viewer loaded in iframe from SlidesEmbed widget) ── */
+body.viewer-embed #sl-toolbar-hover-zone,
+body.viewer-embed #sl-toolbar,
+body.viewer-embed #sl-keyboard-hint,
+body.viewer-embed #sl-audience-brand,
+body.viewer-embed #wb-toolbar,
+body.viewer-embed #wb-canvas,
+body.viewer-embed #wb-preview,
+body.viewer-embed #sl-shortcuts-modal { display: none !important; }
+body.viewer-embed .reveal { border-radius: 0; }
+body.viewer-embed html, body.viewer-embed body { overflow: hidden; }
+
+/* ── Review mode (?mode=review) — scrollable self-study layout ──── */
+body.viewer-review { background: #0f1117; color: #e2e8f0; overflow-y: auto; }
+#rv-root { min-height: 100vh; }
+.rv-header {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px; background: rgba(15,17,23,.92);
+    backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.rv-header-title { font-size: 0.9rem; font-weight: 600; color: #e2e8f0; }
+.rv-header-count { font-size: 0.75rem; color: #94a3b8; background: rgba(255,255,255,.08); padding: 2px 8px; border-radius: 10px; }
+.rv-slides { max-width: 900px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 48px; }
+.rv-card { display: flex; flex-direction: column; gap: 8px; }
+.rv-card-num { font-size: 0.68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #64748b; }
+.rv-card-title { font-size: 1rem; font-weight: 600; color: #cbd5e1; margin-bottom: 4px; }
+/* 16:9 stage */
+.rv-stage {
+    position: relative; width: 100%; padding-top: 56.25%;
+    background: #000; border-radius: 8px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.rv-stage-inner {
+    position: absolute; inset: 0;
+    transform-origin: top left;
+}
+/* Scale the Reveal section to fit container — done via JS-free CSS zoom */
+.rv-stage-inner .reveal { width: 100% !important; height: 100% !important; }
+.rv-stage-inner section { width: 100% !important; height: 100% !important; }
+.rv-notes {
+    margin-top: 8px; padding: 12px 16px; border-radius: 6px;
+    background: rgba(255,255,255,.05); border-left: 3px solid #3b82f6;
+}
+.rv-notes-label { font-size: 0.65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #3b82f6; margin-bottom: 6px; }
+.rv-notes-body { font-size: 0.82rem; color: #94a3b8; white-space: pre-wrap; line-height: 1.6; }

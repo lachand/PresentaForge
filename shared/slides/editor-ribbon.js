@@ -149,7 +149,10 @@
         const ribbonId = options.ribbonId || DEFAULT_IDS.ribbon;
 
         document.querySelectorAll(tabSelector).forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.ribbon === normalizedTabId);
+            const selected = tab.dataset.ribbon === normalizedTabId;
+            tab.classList.toggle('active', selected);
+            tab.setAttribute('aria-selected', String(selected));
+            tab.tabIndex = selected ? 0 : -1;
         });
         document.querySelectorAll(panelSelector).forEach(panel => {
             panel.classList.toggle('active', panel.id === 'ribbon-' + normalizedTabId);

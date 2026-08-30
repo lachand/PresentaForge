@@ -663,6 +663,8 @@ class SlidesEditor {
 
     get canUndo() { return this._historyIndex > 0; }
     get canRedo() { return this._historyIndex < this._historyStack.length - 1; }
+    get undoCount() { return this._historyIndex; }
+    get redoCount() { return this._historyStack.length - 1 - this._historyIndex; }
 
     // ── Persistence ────────────────────────────────────────
 

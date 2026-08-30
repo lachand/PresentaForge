@@ -175,7 +175,7 @@ async function importPDF() {
                 notify(`Importé : ${data.slides.length} slides depuis ${file.name}`, 'success');
                 resolve(true);
             } catch (err) {
-                console.error('PDF import error:', err);
+                console.error('[OEI] PDF import error:', err);
                 notify(`Erreur import PDF : ${err?.message || err}`, 'error');
                 resolve(false);
             }

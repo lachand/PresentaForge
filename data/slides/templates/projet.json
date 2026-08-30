@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "title": "Présentation de projet",
+    "author": "",
+    "created": "2026-01-01",
+    "modified": "2026-01-01"
+  },
+  "theme": "gradient",
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Projet · Année",
+      "title": "Nom du projet",
+      "subtitle": "Présentation finale",
+      "author": "Équipe",
+      "date": "2026"
+    },
+    {
+      "type": "bullets",
+      "title": "Sommaire",
+      "items": [
+        "1. Contexte et problématique",
+        "2. Solution proposée",
+        "3. Architecture technique",
+        "4. Démonstration",
+        "5. Résultats et bilan"
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "1",
+      "title": "Contexte",
+      "subtitle": "Problématique et enjeux"
+    },
+    {
+      "type": "blank",
+      "title": "Problématique",
+      "content": "<p>Décrire ici le problème identifié et pourquoi il mérite d'être résolu.</p>"
+    },
+    {
+      "type": "chapter",
+      "number": "2",
+      "title": "Solution",
+      "subtitle": "Notre approche"
+    },
+    {
+      "type": "bullets",
+      "title": "Fonctionnalités clés",
+      "items": [
+        "Fonctionnalité 1",
+        "Fonctionnalité 2",
+        "Fonctionnalité 3"
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "3",
+      "title": "Architecture",
+      "subtitle": "Choix techniques"
+    },
+    {
+      "type": "bullets",
+      "title": "Stack technique",
+      "items": [
+        "Backend : …",
+        "Frontend : …",
+        "Base de données : …",
+        "Déploiement : …"
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "4",
+      "title": "Démonstration",
+      "subtitle": "En direct"
+    },
+    {
+      "type": "blank",
+      "title": "Bilan",
+      "content": "<p>Ce que nous avons appris. Perspectives d'amélioration.</p>"
+    }
+  ]
+}

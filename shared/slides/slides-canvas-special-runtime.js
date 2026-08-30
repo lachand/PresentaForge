@@ -11,6 +11,19 @@
     const KATEX_SRC = '../vendor/katex/0.16.11/katex.min.js';
     const QRCODE_SRC = '../vendor/qrcode-generator/1.4.4/qrcode.min.js';
 
+    /** Thème Mermaid ('dark'/'default') selon la luminance du fond de slide résolu. */
+    function mermaidThemeForSlide(windowRef) {
+        try {
+            const cs = (windowRef || root).getComputedStyle((windowRef || root).document.documentElement);
+            const raw = (cs.getPropertyValue('--sl-slide-bg') || cs.getPropertyValue('--sl-bg') || '').trim();
+            const m = raw.match(/^#?([0-9a-f]{6})$/i);
+            if (!m) return 'default';
+            const h = m[1];
+            const lum = (0.2126 * parseInt(h.slice(0, 2), 16) + 0.7152 * parseInt(h.slice(2, 4), 16) + 0.0722 * parseInt(h.slice(4, 6), 16)) / 255;
+            return lum < 0.5 ? 'dark' : 'default';
+        } catch (_) { return 'default'; }
+    }
+
     let mermaidLoading = false;
     let katexLoading = false;
     let qrcodeLoading = false;
@@ -78,7 +91,7 @@
         mermaidLoading = true;
         loadScript(MERMAID_SRC).then(() => {
             if (windowRef.mermaid?.initialize) {
-                windowRef.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+                windowRef.mermaid.initialize({ startOnLoad: false, theme: mermaidThemeForSlide(windowRef), securityLevel: 'loose' });
             }
             return doRenderMermaid(els, context);
         }).catch(() => {}).finally(() => {

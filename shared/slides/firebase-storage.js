@@ -85,6 +85,7 @@
             return !!_user;
         } catch (e) {
             console.warn('[OEIFirebase] Auto-init failed:', e.message);
+            document.dispatchEvent(new CustomEvent('oei:firebase-init-failed', { detail: { message: e.message } }));
             return false;
         }
     })();

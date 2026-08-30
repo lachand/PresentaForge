@@ -6,7 +6,7 @@
     <title>presentaForge — Télécommande mobile</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
-    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
+    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=2">
     <style>
         :root {
             --bg: #0f172a;
@@ -46,7 +46,7 @@
         .remote-title {
             font-size: 0.95rem;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin: 0 0 8px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -106,7 +106,7 @@
             line-height: 1.4;
             color: var(--muted);
             min-height: 34px;
-            margin-top: 2px;
+            margin: 2px 0 0;
         }
         .remote-status.ok { color: var(--success); }
         .remote-status.warn { color: var(--warn); }
@@ -120,7 +120,7 @@
         .remote-subline {
             font-size: 0.74rem;
             color: var(--muted);
-            margin-top: 5px;
+            margin: 5px 0 0;
         }
         @media (max-width: 420px) {
             .remote-grid {
@@ -130,30 +130,32 @@
     </style>
 </head>
 <body>
-    <div class="remote-wrap">
-        <section class="remote-card">
-            <div class="remote-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><circle cx="12" cy="18" r="1"/></svg>
-                Télécommande Présentateur
-            </div>
+    <main class="remote-wrap">
+        <section class="remote-card" aria-labelledby="remote-conn-title">
+            <h1 class="remote-title" id="remote-conn-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><circle cx="12" cy="18" r="1"/></svg>
+                Télécommande présentateur
+            </h1>
             <div class="remote-row">
-                <input id="remote-room" class="remote-field ui-input" maxlength="40" placeholder="ID de salle">
+                <label class="ui-sr-only" for="remote-room">ID de salle</label>
+                <input id="remote-room" class="remote-field ui-input" maxlength="40" placeholder="ID de salle" autocomplete="off" aria-describedby="remote-status">
                 <button id="remote-connect" class="remote-btn ui-btn primary ui-btn--primary">Connecter</button>
             </div>
             <div class="remote-row">
-                <input id="remote-password" type="password" class="remote-field ui-input" maxlength="64" placeholder="Mot de passe">
+                <label class="ui-sr-only" for="remote-password">Mot de passe</label>
+                <input id="remote-password" type="password" class="remote-field ui-input" maxlength="64" placeholder="Mot de passe" autocomplete="current-password" aria-describedby="remote-status">
                 <button id="remote-auth" class="remote-btn ui-btn">Authentifier</button>
             </div>
-            <div id="remote-status" class="remote-status">Entrez l’ID de salle et le mot de passe.</div>
-            <div id="remote-session" class="remote-subline"></div>
+            <p id="remote-status" class="remote-status" role="status" aria-live="polite">Entrez l’ID de salle et le mot de passe.</p>
+            <p id="remote-session" class="remote-subline" aria-live="polite"></p>
         </section>
 
-        <section class="remote-card">
-            <div class="remote-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg>
+        <section class="remote-card" aria-labelledby="remote-ctrl-title">
+            <h2 class="remote-title" id="remote-ctrl-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg>
                 Contrôles
-            </div>
-            <div class="remote-grid">
+            </h2>
+            <div class="remote-grid" role="group" aria-label="Navigation et minuteur">
                 <button class="remote-btn ui-btn" data-cmd="prev">Précédent</button>
                 <button class="remote-btn ui-btn" data-cmd="next">Suivant</button>
                 <button class="remote-btn ui-btn" data-cmd="black">Noir</button>
@@ -162,11 +164,12 @@
                 <button class="remote-btn ui-btn" data-cmd="timer-reset">Timer reset</button>
             </div>
             <div class="remote-row remote-row-goto">
+                <label class="ui-sr-only" for="remote-goto-index">Aller à la slide numéro</label>
                 <input id="remote-goto-index" class="remote-field ui-input" type="number" min="1" step="1" placeholder="Aller à la slide #">
                 <button id="remote-goto-btn" class="remote-btn ui-btn">Aller</button>
             </div>
         </section>
-    </div>
+    </main>
 
     <script src="../shared/slides/realtime-contract.js?v=5"></script>
     <script src="../shared/slides/network-session.js?v=2"></script>
@@ -200,6 +203,7 @@
             ? NetworkSession.buildPeerOptions(qs, readPeerJSON, window.OEI_PEER_OPTIONS)
             : { debug: 0 };
         const roomFromUrl = (qs.get('room') || '').trim();
+        const autoConnect = qs.get('auto') === '1';
         if (roomFromUrl) document.getElementById('remote-room').value = roomFromUrl;
 
         const statusEl = document.getElementById('remote-status');
@@ -407,6 +411,8 @@
         }
 
         connectBtn.addEventListener('click', connectRoom);
+        // Auto-connect if ?room=<id>&auto=1 is in the URL
+        if (roomFromUrl && autoConnect) setTimeout(() => connectRoom(), 300);
         authBtn.addEventListener('click', authenticate);
         document.getElementById('remote-password').addEventListener('keydown', e => {
             if (e.key === 'Enter') {
@@ -415,8 +421,13 @@
                 else connectRoom();
             }
         });
+        const _haptic = (ms = 30) => { try { navigator.vibrate?.(ms); } catch (_) {} };
         cmdButtons.forEach(btn => {
-            btn.addEventListener('click', () => sendCommand(btn.dataset.cmd, null));
+            btn.addEventListener('click', () => {
+                const cmd = btn.dataset.cmd;
+                if (cmd === 'prev' || cmd === 'next') _haptic(30);
+                sendCommand(cmd, null);
+            });
         });
         gotoBtn.addEventListener('click', () => {
             const raw = document.getElementById('remote-goto-index').value;

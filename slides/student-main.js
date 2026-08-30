@@ -102,8 +102,80 @@
         const StudentTransportUIFactory = window.OEIStudentTransportUI?.create || null;
 
         if (!roomId) {
-            setJoinStatus('Aucune salle spécifiée. Scannez le QR code depuis la présentation.', 'error');
-            document.getElementById('join-btn').disabled = true;
+            // Show manual room ID input + QR scan
+            const roomInputRow = document.getElementById('room-input-row');
+            const roomIdInput = document.getElementById('room-id-input');
+            const joinBtn = document.getElementById('join-btn');
+            const btnScanQr = document.getElementById('btn-scan-qr');
+            const qrOverlay = document.getElementById('qr-scan-overlay');
+            const qrVideo = document.getElementById('qr-scan-video');
+            const qrClose = document.getElementById('qr-scan-close');
+
+            if (roomInputRow) roomInputRow.classList.add('visible');
+            setJoinStatus('Entrez l\'ID de la salle ou scannez le QR code.', 'info');
+
+            // Redirect with room param when join is clicked
+            if (joinBtn) {
+                joinBtn.disabled = false;
+                joinBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const rid = roomIdInput?.value?.trim();
+                    if (!rid) { setJoinStatus('ID de salle requis.', 'error'); return; }
+                    const url = new URL(location.href);
+                    url.searchParams.set('room', rid);
+                    location.href = url.toString();
+                }, { once: true });
+            }
+
+            // QR scan via BarcodeDetector API
+            let _qrStream = null;
+            const stopQr = () => {
+                if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); _qrStream = null; }
+                if (qrOverlay) qrOverlay.classList.remove('active');
+                if (qrVideo) qrVideo.srcObject = null;
+            };
+
+            if (btnScanQr) {
+                const hasBarcodeDetector = 'BarcodeDetector' in window;
+                if (!hasBarcodeDetector) {
+                    btnScanQr.disabled = true;
+                    btnScanQr.title = 'Scanner QR non disponible dans ce navigateur';
+                } else {
+                    btnScanQr.addEventListener('click', async () => {
+                        try {
+                            _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                            if (qrVideo) qrVideo.srcObject = _qrStream;
+                            if (qrOverlay) qrOverlay.classList.add('active');
+                            const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+                            const scan = async () => {
+                                if (!qrOverlay?.classList.contains('active')) return;
+                                try {
+                                    const codes = await detector.detect(qrVideo);
+                                    for (const code of codes) {
+                                        const val = code.rawValue || '';
+                                        // Extract room param from a presentaForge student URL
+                                        try {
+                                            const u = new URL(val);
+                                            const rid = u.searchParams.get('room');
+                                            if (rid) { stopQr(); const url = new URL(location.href); url.searchParams.set('room', rid); location.href = url.toString(); return; }
+                                        } catch (_) {}
+                                        // Or treat the raw value as a peer ID directly
+                                        if (/^[a-zA-Z0-9_-]{8,80}$/.test(val)) {
+                                            stopQr(); const url = new URL(location.href); url.searchParams.set('room', val); location.href = url.toString(); return;
+                                        }
+                                    }
+                                } catch (_) {}
+                                requestAnimationFrame(scan);
+                            };
+                            requestAnimationFrame(scan);
+                        } catch (err) {
+                            setJoinStatus('Accès caméra refusé : ' + err.message, 'error');
+                        }
+                    });
+                }
+            }
+            if (qrClose) qrClose.addEventListener('click', stopQr);
             return;
         }
 
@@ -785,9 +857,30 @@
             localSetJSON(LS_KEY, data);
         }
 
-        function updateScoreDisplay() {
-            document.getElementById('score-pts').textContent = score.toLocaleString();
-            document.getElementById('score-quizzes').textContent = `${quizCorrect}/${quizCount} quiz`;
+        function updateScoreDisplay(earnedDelta = 0) {
+            const ptsEl = document.getElementById('score-pts');
+            if (ptsEl) {
+                ptsEl.textContent = score.toLocaleString();
+                if (earnedDelta > 0) {
+                    ptsEl.classList.remove('flash');
+                    void ptsEl.offsetWidth; // force reflow to restart animation
+                    ptsEl.classList.add('flash');
+                    ptsEl.addEventListener('animationend', () => ptsEl.classList.remove('flash'), { once: true });
+                    // Floating +pts delta
+                    const delta = document.createElement('span');
+                    delta.className = 'score-delta';
+                    delta.textContent = `+${earnedDelta.toLocaleString()}`;
+                    delta.style.cssText = 'position:absolute;';
+                    const rect = ptsEl.getBoundingClientRect();
+                    delta.style.left = `${rect.left + rect.width / 2}px`;
+                    delta.style.top = `${rect.top}px`;
+                    delta.style.position = 'fixed';
+                    document.body.appendChild(delta);
+                    delta.addEventListener('animationend', () => delta.remove(), { once: true });
+                }
+            }
+            const quizzesEl = document.getElementById('score-quizzes');
+            if (quizzesEl) quizzesEl.textContent = `${quizCorrect}/${quizCount} quiz`;
         }
 
         function setConnectionDetail(text, tone = '') {
@@ -1849,7 +1942,7 @@
             }
 
             saveScore();
-            updateScoreDisplay();
+            updateScoreDisplay(quizAnswered && quizSelectedAnswer !== null && quizSelectedAnswer === (data.correctAnswer ?? -1) ? quizEarnedPoints : 0);
 
             // Report score to presenter for leaderboard
             sendReliable({ type: ROOM_MSG.STUDENT_SCORE, score, quizCount, quizCorrect, pseudo }, { maxRetries: 3, retryDelay: 1500 });

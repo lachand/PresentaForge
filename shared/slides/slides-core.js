@@ -21,7 +21,7 @@
    ========================================================= */
 
 class SlidesShared {
-    static esc(t) { return String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    static esc(t) { return String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     /**
      * Render a tiny safe inline subset for text coming from data fields.
      * Allowed tags (no attributes): b, strong, i, em, u, code, sub, sup, br.
@@ -297,14 +297,15 @@ class SlidesRenderer {
     static esc(str) {
         return String(str ?? '')
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    /** Render all slides into a Reveal.js container */
+    /** Render all slides into a Reveal.js container (les slides masquées sont exclues, comme
+     *  sur toutes les autres surfaces — présentateur, audience, review, export). */
     static renderToReveal(data, container) {
-        const slides = data.slides || [];
-        const opts = SlidesShared.buildRenderOptions(data);
-        container.innerHTML = slides.map((s, i) => SlidesRenderer.renderSlide(s, i, opts)).join('\n');
+        const visible = (data.slides || []).filter(s => !s || !s.hidden);
+        const opts = SlidesShared.buildRenderOptions({ ...data, slides: visible });
+        container.innerHTML = visible.map((s, i) => SlidesRenderer.renderSlide(s, i, opts)).join('\n');
     }
 
     /** Compute automatic chapter numbers: returns a Map(slideIndex → formatted number) */
@@ -441,7 +442,12 @@ class SlidesRenderer {
     static renderSlide(slide, index = 0, opts = {}) {
         const type = slide.type || 'blank';
         const includeNotes = opts.includeNotes !== false;
-        const notes = includeNotes && slide.notes ? `<aside class="notes">${slide.notes}</aside>` : '';
+        // Les notes présentateur sont échappées puis rendues avec le sous-ensemble
+        // inline sûr (gras/italique/br…) — cohérent avec la vue présentateur
+        // (_pvFormatInline) et sans injection HTML brute dans les exports HTML.
+        const notes = includeNotes && slide.notes
+            ? `<aside class="notes">${SlidesShared.formatInlineRichText(slide.notes)}</aside>`
+            : '';
         const overlay = SlidesRenderer._slideOverlay(index, opts);
         let inner = '';
         switch (type) {

@@ -24,6 +24,28 @@ function notify(msg, type = '') {
     setTimeout(() => el.remove(), 3000);
 }
 
+/**
+ * Toast avec bouton "Annuler" — supprime le toast et appelle undoFn si cliqué avant le timeout.
+ * @param {string} msg
+ * @param {() => void} undoFn
+ * @param {number} [timeout=5000]
+ */
+function notifyUndo(msg, undoFn, timeout = 5000) {
+    const el = document.createElement('div');
+    el.className = 'notif-item notif-undo-item warning';
+    el.innerHTML = `<span class="notif-icon">🗑</span><span class="notif-undo-msg">${esc(msg)}</span>`
+        + `<button class="notif-undo-btn">Annuler</button>`;
+    document.getElementById('notif').appendChild(el);
+    let done = false;
+    const dismiss = () => { if (!done) { done = true; el.remove(); } };
+    const timer = setTimeout(dismiss, timeout);
+    el.querySelector('.notif-undo-btn').addEventListener('click', () => {
+        clearTimeout(timer);
+        dismiss();
+        undoFn();
+    });
+}
+
 function colorToHex(color) {
     if (!color) return '#000000';
     // 6-digit hex

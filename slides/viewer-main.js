@@ -2,7 +2,7 @@
         import Reveal from '../vendor/revealjs/5.1.0/dist/reveal.esm.js';
         import Highlight from '../vendor/revealjs/5.1.0/plugin/highlight/highlight.esm.js';
         import { createWhiteboardController } from './viewer/whiteboard.js';
-        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=5';
+        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=6';
         import { clearNode, el, appendAll } from './viewer/dom-utils.js';
         import { resolveRealtimeContract } from './viewer/runtime-contracts.js';
         import { createViewerAppState } from './viewer/app-state.js';
@@ -99,7 +99,7 @@ import {
     bindPresenterToolbarButtons,
 } from './viewer/presenter-toolbar-controls.js';
 import { bindPresenterKeyboardShortcuts } from './viewer/presenter-keyboard-controls.js';
-import { initPresenterLayoutControls } from './viewer/presenter-layout-controls.js';
+import { initPresenterLayoutControls, initMobilePresenterTabs } from './viewer/presenter-layout-controls.js';
 import {
     createRoomRemoteControl,
     runRemotePresenterCommand,
@@ -127,6 +127,8 @@ import {
         const params = new URLSearchParams(location.search);
         let file = params.get('file') || '../data/slides/exemple-git.json';
         const isPresenterMode = params.get('mode') === 'presenter';
+        const isEmbedMode = params.get('mode') === 'embed';
+        const isReviewMode = params.get('mode') === 'review';
         // Firebase public share: ?firebase=<uid>/<id>
         const _firebaseParam = params.get('firebase');
         if (_firebaseParam) {
@@ -1873,6 +1875,8 @@ import {
         const CHANNEL_NAME = SYNC_CHANNEL_NAME;
         const isAudienceMode = params.get('mode') === 'audience';
         if (isAudienceMode) document.body.classList.add('viewer-audience');
+        if (isEmbedMode) document.body.classList.add('viewer-embed');
+        if (isReviewMode) document.body.classList.add('viewer-review');
 
         async function initAudienceMode(data) {
             window.OEIAudienceModePolicy = AUDIENCE_POLICY;
@@ -2001,6 +2005,7 @@ import {
             let currentIndex = 0;
             let currentFragmentIndex = -1; // -1 = aucun fragment visible
             let blackScreen = false;
+            let _slideCountdownInterval = null;
             let audienceLockActive = false;
             let audienceLockIndex = 0;
             let exerciseModeActive = false;
@@ -2311,9 +2316,46 @@ import {
                 innerEl.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
             }
 
+            const _fmtCountdown = (sec) => {
+                const m = Math.floor(sec / 60);
+                const s = sec % 60;
+                return `${m}:${String(s).padStart(2, '0')}`;
+            };
+            const _clearSlideCountdown = () => {
+                if (_slideCountdownInterval) { clearInterval(_slideCountdownInterval); _slideCountdownInterval = null; }
+                const el = document.getElementById('pv-slide-countdown');
+                if (el) { el.classList.add('hidden'); el.classList.remove('warning', 'danger'); }
+            };
+            const _startSlideCountdown = (duration) => {
+                _clearSlideCountdown();
+                const el = document.getElementById('pv-slide-countdown');
+                if (!el || !duration || duration <= 0) return;
+                let remaining = duration;
+                const update = () => {
+                    el.textContent = _fmtCountdown(remaining);
+                    const ratio = remaining / duration;
+                    el.classList.toggle('warning', ratio <= 0.3 && ratio > 0.15);
+                    el.classList.toggle('danger', ratio <= 0.15);
+                };
+                update();
+                el.classList.remove('hidden');
+                _slideCountdownInterval = setInterval(() => {
+                    remaining--;
+                    update();
+                    if (remaining <= 0) { clearInterval(_slideCountdownInterval); _slideCountdownInterval = null; }
+                }, 1000);
+            };
+
             function renderCurrentSlide() {
                 const slide = slides[currentIndex];
                 if (!slide) return;
+
+                // Per-slide countdown timer
+                if (slide.duration && Number(slide.duration) > 0) {
+                    _startSlideCountdown(Number(slide.duration));
+                } else {
+                    _clearSlideCountdown();
+                }
 
                 // Current slide
                 const currentFrame = document.getElementById('pv-current-frame');
@@ -2582,6 +2624,8 @@ import {
                 renderCurrentSlide,
             });
 
+            initMobilePresenterTabs({ documentRef: document });
+
             bindPresenterKeyboardShortcuts({
                 documentRef: document,
                 rootElement: document.documentElement,
@@ -2718,6 +2762,63 @@ import {
             timerToggle();
         }
 
+        /* ── Review mode (autonomous self-study scrolling view) ─ */
+        function initReviewMode(data) {
+            document.getElementById('reveal-root').style.display = 'none';
+            document.getElementById('sl-toolbar-hover-zone').style.display = 'none';
+            document.getElementById('sl-toolbar').style.display = 'none';
+            document.getElementById('sl-keyboard-hint').style.display = 'none';
+
+            const slides = (data.slides || []).filter(s => !s.hidden);
+            const opts = { isViewer: true, isPresenterMode: false };
+            const _esc = t => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            const root = document.createElement('div');
+            root.id = 'rv-root';
+            root.innerHTML = `
+                <header class="rv-header">
+                    <span class="rv-header-title">${_esc(data.metadata?.title || 'Révision')}</span>
+                    <span class="rv-header-count">${slides.length} slide${slides.length > 1 ? 's' : ''}</span>
+                </header>
+                <div class="rv-slides" id="rv-slides"></div>`;
+            document.body.appendChild(root);
+
+            const container = root.querySelector('#rv-slides');
+            slides.forEach((slide, i) => {
+                const card = document.createElement('div');
+                card.className = 'rv-card';
+                card.id = `rv-card-${i}`;
+                const html = SlidesRenderer.renderSlide(slide, i, opts);
+                const title = _esc(slide.title || slide.quote || slide.term || `Slide ${i + 1}`);
+                const notes = slide.notes ? `<div class="rv-notes"><div class="rv-notes-label">Notes</div><div class="rv-notes-body">${_esc(slide.notes)}</div></div>` : '';
+                card.innerHTML = `
+                    <div class="rv-card-num">Slide ${i + 1}</div>
+                    <div class="rv-card-title">${title}</div>
+                    <div class="rv-stage"><div class="rv-stage-inner">${html}</div></div>
+                    ${notes}`;
+                container.appendChild(card);
+            });
+
+            // Mount math, mermaid, etc.
+            if (typeof SlidesRenderer?.mountSpecialElements === 'function') SlidesRenderer.mountSpecialElements(container);
+
+            // Apply theme
+            if (data.metadata?.theme) SlidesThemes?.apply?.(data.metadata.theme);
+
+            // Keyboard navigation
+            const cards = Array.from(container.querySelectorAll('.rv-card'));
+            let currentIdx = 0;
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown') {
+                    currentIdx = Math.min(currentIdx + 1, cards.length - 1);
+                    cards[currentIdx]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                    currentIdx = Math.max(currentIdx - 1, 0);
+                    cards[currentIdx]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+
         /* ── Bootstrap ────────────────────────────────────── */
         async function boot() {
             try {
@@ -2726,13 +2827,15 @@ import {
                     initPresenterMode(data);
                 } else if (isAudienceMode) {
                     await initAudienceMode(data);
+                } else if (isReviewMode) {
+                    initReviewMode(data);
                 } else {
                     await initRevealMode(data);
                 }
             } catch(e) {
                 document.getElementById('slides-root').innerHTML =
                     `<section><h2 class="load-error-title">Erreur de chargement</h2><p class="load-error-msg">${e.message}</p></section>`;
-                if (!isPresenterMode && !isAudienceMode) {
+                if (!isPresenterMode && !isAudienceMode && !isReviewMode) {
                     const deck = new Reveal({ hash: false });
                     deck.initialize();
                 }
@@ -2741,15 +2844,15 @@ import {
 
         boot();
 
-        // Show keyboard hint briefly on load (normal mode only)
-        if (!isPresenterMode && !isAudienceMode) {
+        // Show keyboard hint briefly on load (normal mode only, not embed/review)
+        if (!isPresenterMode && !isAudienceMode && !isEmbedMode && !isReviewMode) {
             const hintEl = document.getElementById('sl-keyboard-hint');
             setTimeout(() => hintEl.classList.add('show'), 500);
             setTimeout(() => hintEl.classList.remove('show'), 4000);
         }
 
         // ── Normal mode toolbar buttons ──────────────────
-        if (!isPresenterMode && !isAudienceMode) {
+        if (!isPresenterMode && !isAudienceMode && !isReviewMode) {
             initNormalModeToolbar({
                 viewerRuntime: ViewerRuntime,
                 wbToggle,

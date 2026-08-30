@@ -45,12 +45,16 @@ Variables utiles :
 - `HTTP_PORT` (défaut `8080`)
 - `RELAY_PORT` (défaut `8787`)
 - `PUBLIC_HOST` (IP/hostname à partager, sinon auto-détection)
-- `RELAY_TOKEN` (optionnel, recommandé hors LAN privé)
+
+> Depuis mars 2026 le relay tourne **sans authentification** (`RELAY_TOKEN` a été retiré,
+> commit `0ba48f7`). La confiance repose sur la validation des messages côté client
+> (`realtime-contract.js`) et sur des IDs de salle non devinables. Ne pas exposer un relay
+> public à des présentations sensibles.
 
 Exemple :
 
 ```bash
-PUBLIC_HOST=10.42.0.15 RELAY_TOKEN=mon-token npm run relay:kit
+PUBLIC_HOST=10.42.0.15 npm run relay:kit
 ```
 
 Ensuite dans `Mode présentateur > Salle > Diagnostic réseau` :
@@ -69,9 +73,8 @@ Le dépôt contient un blueprint prêt à l'emploi : `render.yaml` (2 services):
 
 1. Pousser le dépôt sur GitHub.
 2. Dans Render : `New` > `Blueprint`, sélectionner le dépôt.
-3. Créer la variable d'environnement `RELAY_TOKEN` (valeur secrète) pour le service relay.
-4. Déployer.
-5. Récupérer les URLs Render, par exemple:
+3. Déployer (le relay ne demande aucune variable secrète).
+4. Récupérer les URLs Render, par exemple:
    - `https://presentaforge-relay.onrender.com`
    - `https://presentaforge-replay-api.onrender.com`
 
@@ -79,7 +82,6 @@ Utilisation côté présentateur :
 
 - ouvrir `viewer.html` avec :
   - `relayWs=wss://presentaforge-relay.onrender.com`
-  - `relayToken=<votre_token>`
 - puis partager le `lien relay` depuis le diagnostic réseau.
 
 Replay API:

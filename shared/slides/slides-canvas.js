@@ -904,6 +904,8 @@ class CanvasEditor {
         container.style.overflow = 'hidden';
         container.style.userSelect = 'none';
         container.addEventListener('mousedown', e => {
+            // Focus the container so keyboard navigation works immediately after click
+            container.focus({ preventScroll: true });
             if (e.target === container || e.target.classList.contains('canvas-guide-layer')) {
                 if (!e.shiftKey) this.select(null);
                 // Start marquee selection
@@ -925,6 +927,36 @@ class CanvasEditor {
         const gl = document.createElement('div');
         gl.className = 'canvas-guide-layer';
         container.appendChild(gl);
+
+        // Keyboard navigation — move selected element(s) with arrow keys
+        if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '0');
+        container.setAttribute('role', 'application');
+        container.setAttribute('aria-label', 'Canvas de présentation — utilisez les flèches pour déplacer l\'élément sélectionné');
+        container.addEventListener('keydown', e => {
+            // Only handle when focus is on the container itself, not on an inner input/textarea
+            if (document.activeElement !== container) return;
+            const DIRS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+            const dir = DIRS[e.key];
+            if (!dir) return;
+            if (this.selectedIds.size === 0) return;
+            e.preventDefault();
+            const step = e.shiftKey ? 10 : 1;
+            const dx = dir[0] * step;
+            const dy = dir[1] * step;
+            let changed = false;
+            for (const id of this.selectedIds) {
+                const el = this.elements.find(el => el.id === id);
+                if (!el || this._isElementLocked(el)) continue;
+                el.x = (el.x || 0) + dx;
+                el.y = (el.y || 0) + dy;
+                this._refreshDOM(id);
+                changed = true;
+            }
+            if (changed) {
+                this._refreshConnectors();
+                this.onChange(this.serialize());
+            }
+        });
     }
 
     destroy() {

@@ -104,6 +104,23 @@ function init() {
         }, 600);
     });
 
+    // Per-slide duration (presenter countdown) — debounced
+    let _durSaveTimer;
+    document.getElementById('slide-duration-input')?.addEventListener('input', e => {
+        clearTimeout(_durSaveTimer);
+        _durSaveTimer = setTimeout(() => {
+            if (editor.currentSlide) {
+                const val = parseInt(e.target.value, 10);
+                if (val > 0) {
+                    editor.data.slides[editor.selectedIndex].duration = val;
+                } else {
+                    delete editor.data.slides[editor.selectedIndex].duration;
+                }
+                editor._push();
+            }
+        }, 600);
+    });
+
     // Keypoints textarea handler (debounced) — one point per line
     let _kpSaveTimer;
     document.getElementById('keypoints-textarea')?.addEventListener('input', e => {

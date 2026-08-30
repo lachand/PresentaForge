@@ -91,126 +91,8 @@ function setMediaPipelineSettings(patch = {}) {
 window.getMediaPipelineSettings = getMediaPipelineSettings;
 window.setMediaPipelineSettings = setMediaPipelineSettings;
 
-const _importExportAssets = window.OEIImportExportAssets || null;
-
-function _isDataImageUrl(value) {
-    if (_importExportAssets?.isDataImageUrl) return _importExportAssets.isDataImageUrl(value);
-    return typeof value === 'string' && value.startsWith('data:image/');
-}
-
-function _estimateDataUrlBytes(dataUrl) {
-    if (_importExportAssets?.estimateDataUrlBytes) return _importExportAssets.estimateDataUrlBytes(dataUrl);
-    if (!_isDataImageUrl(dataUrl)) return 0;
-    const comma = dataUrl.indexOf(',');
-    if (comma === -1) return 0;
-    const payload = dataUrl.slice(comma + 1);
-    return Math.max(0, Math.floor((payload.length * 3) / 4));
-}
-
-function _summarizeAssetUrls(urls = []) {
-    if (_importExportAssets?.summarizeAssetUrls) return _importExportAssets.summarizeAssetUrls(urls);
-    const list = Array.isArray(urls) ? urls : [];
-    return {
-        total: list.length,
-        dataUri: list.filter(url => /^data:/i.test(url)).length,
-        web: list.filter(url => /^https?:\/\//i.test(url)).length,
-        local: list.filter(url => !/^https?:\/\//i.test(url) && !/^data:/i.test(url)).length,
-    };
-}
-
-function _computeMediaSignature(slides) {
-    let count = 0;
-    let bytes = 0;
-    const walk = node => {
-        if (!node) return;
-        if (Array.isArray(node)) {
-            node.forEach(walk);
-            return;
-        }
-        if (typeof node === 'object') {
-            Object.values(node).forEach(walk);
-            return;
-        }
-        if (_isDataImageUrl(node)) {
-            count += 1;
-            bytes += _estimateDataUrlBytes(node);
-        }
-    };
-    walk(slides);
-    return `${count}:${bytes}`;
-}
-
-async function _optimizeDataImageUrl(dataUrl, options = {}) {
-    if (!_isDataImageUrl(dataUrl)) {
-        return { changed: false, dataUrl, before: 0, after: 0 };
-    }
-    const before = _estimateDataUrlBytes(dataUrl);
-    const maxBytes = Math.max(32_000, Number(options.maxBytes || 280_000));
-    const maxDimension = Math.max(320, Number(options.maxDimension || 1920));
-    const maxPixels = Math.max(200_000, Number(options.maxPixels || 2_400_000));
-    const quality = Math.max(0.55, Math.min(0.95, Number(options.quality || 0.84)));
-    const minGainBytes = Math.max(2_048, Number(options.minGainBytes || 12_000));
-    const force = !!options.force;
-
-    if (!force && before <= maxBytes) {
-        return { changed: false, dataUrl, before, after: before };
-    }
-
-    const img = new Image();
-    img.decoding = 'async';
-    await new Promise((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('image-load-failed'));
-        img.src = dataUrl;
-    });
-
-    const srcW = Math.max(1, Number(img.naturalWidth || img.width || 1));
-    const srcH = Math.max(1, Number(img.naturalHeight || img.height || 1));
-
-    let scale = Math.min(1, maxDimension / srcW, maxDimension / srcH);
-    const scaledPixels = srcW * srcH * scale * scale;
-    if (scaledPixels > maxPixels) {
-        scale = Math.min(scale, Math.sqrt(maxPixels / (srcW * srcH)));
-    }
-    scale = Math.max(0.05, Math.min(1, scale));
-
-    const outW = Math.max(1, Math.round(srcW * scale));
-    const outH = Math.max(1, Math.round(srcH * scale));
-    const mimeMatch = /^data:([^;,]+)/i.exec(dataUrl);
-    const srcMime = String(mimeMatch?.[1] || 'image/png').toLowerCase();
-
-    const canvas = document.createElement('canvas');
-    canvas.width = outW;
-    canvas.height = outH;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return { changed: false, dataUrl, before, after: before };
-    ctx.drawImage(img, 0, 0, outW, outH);
-
-    let primaryMime = srcMime;
-    if (!/image\/(png|jpe?g|webp)/.test(primaryMime)) {
-        primaryMime = 'image/jpeg';
-    }
-    let optimized = canvas.toDataURL(primaryMime, quality);
-    let after = _estimateDataUrlBytes(optimized);
-
-    // Optionnel: conversion PNG -> WebP (désactivée par défaut pour compatibilité export PPTX).
-    if (srcMime === 'image/png' && options.tryWebpForPng === true) {
-        try {
-            const webp = canvas.toDataURL('image/webp', Math.min(0.9, quality + 0.04));
-            const webpBytes = _estimateDataUrlBytes(webp);
-            if (webpBytes > 0 && webpBytes < after) {
-                optimized = webp;
-                after = webpBytes;
-            }
-        } catch (_) {}
-    }
-
-    const gain = before - after;
-    if (!force && gain < minGainBytes) {
-        return { changed: false, dataUrl, before, after: before };
-    }
-    return { changed: true, dataUrl: optimized, before, after };
-}
+// Fonctions media pipeline (_isDataImageUrl, _estimateDataUrlBytes, _summarizeAssetUrls,
+// _computeMediaSignature, _optimizeDataImageUrl) extraites dans editor-export-media.js
 
 async function optimizePresentationMedia(options = {}) {
     if (!editor?.data?.slides) return { changed: false, scanned: 0, optimized: 0, bytesSaved: 0 };
@@ -433,7 +315,7 @@ function getWidgetMountScript(usedWidgets, basePath) {
                 slot.dataset.mounted = '1';
             } catch(e) {
                 slot.textContent = 'Erreur widget: ' + (e.message || String(e));
-                console.error('Widget mount error:', wid, e);
+                console.error('[OEI] Widget mount error:', wid, e);
             }
         }
     };
@@ -597,7 +479,7 @@ async function exportPDF() {
         pdf.save(`${(data.metadata?.title || 'presentation').replace(/[^a-zA-Z0-9àéèùêîôâ _-]/g, '')}.pdf`);
         notify(`PDF exporté (${data.slides.length} slides)`, 'success');
     } catch (e) {
-        console.error('PDF export error:', e);
+        console.error('[OEI] PDF export error:', e);
         notify('Erreur export PDF: ' + e.message, 'error');
         // Fallback to print-based export
         _exportPDFPrint();
@@ -729,6 +611,24 @@ ${slidesWithNotes.map(s => `
 
 window.printSpeakerNotes = printSpeakerNotes;
 
+/* ── Export Speaker Notes as Markdown ─────────────────── */
+
+function exportNotesMarkdown() {
+    const data = editor.data;
+    if (!data) return;
+    const md = _buildCoursePackNotesMarkdown(data);
+    const slug = String(data?.metadata?.title || 'notes').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${slug}_notes.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    notify('Notes exportées en Markdown', 'success');
+}
+
+window.exportNotesMarkdown = exportNotesMarkdown;
+
 /* ── Special elements mount script (shared by online & offline export) ── */
 const _MOUNT_SPECIAL_SCRIPT = `
 (function(){
@@ -744,7 +644,7 @@ async function mountSpecial(container){
   var mmEls=container.querySelectorAll('.sl-mermaid-pending');
   if(mmEls.length){
     if(!window._slMermaidLoaded){window._slMermaidLoaded=true;
-      await new Promise(function(ok,ko){var s=document.createElement('script');s.src='../vendor/mermaid/10.9.1/mermaid.min.js';s.onload=function(){mermaid.initialize({startOnLoad:false,theme:'dark',securityLevel:'loose'});ok();};s.onerror=ko;document.head.appendChild(s);});}
+      await new Promise(function(ok,ko){var s=document.createElement('script');s.src='../vendor/mermaid/10.9.1/mermaid.min.js';s.onload=function(){var _bg=(getComputedStyle(document.documentElement).getPropertyValue('--sl-slide-bg')||getComputedStyle(document.documentElement).getPropertyValue('--sl-bg')||'').trim();var _mm=_bg.match(/^#?([0-9a-f]{6})$/i);var _mt='default';if(_mm){var _h=_mm[1];if((0.2126*parseInt(_h.slice(0,2),16)+0.7152*parseInt(_h.slice(2,4),16)+0.0722*parseInt(_h.slice(4,6),16))/255<0.5)_mt='dark';}mermaid.initialize({startOnLoad:false,theme:_mt,securityLevel:'loose'});ok();};s.onerror=ko;document.head.appendChild(s);});}
     if(window.mermaid){for(var i=0;i<mmEls.length;i++){var el=mmEls[i],tgt=el.querySelector('.sl-mermaid-render'),src=el.querySelector('pre');if(!tgt||!src||tgt.dataset.rendered)continue;try{var id='sl-mm-'+Math.random().toString(36).slice(2,9);var r=await mermaid.render(id,src.textContent);tgt.innerHTML=r.svg;var svg=tgt.querySelector('svg');if(svg){svg.style.maxWidth='100%';svg.style.maxHeight='100%';svg.style.height='auto';}tgt.dataset.rendered='1';}catch(e){tgt.innerHTML='<pre style="color:#f87171;font-size:12px">'+esc(e.message||'Erreur Mermaid')+'</pre>';}}}}
   container.querySelectorAll('.sl-timer-content').forEach(function(el){if(el.dataset.timerBound)return;el.dataset.timerBound='1';var dur=parseInt(el.dataset.duration)||300;var remaining=dur,iv=null,running=false;var disp=el.querySelector('.sl-timer-display'),bs=el.querySelector('.sl-timer-start'),bp=el.querySelector('.sl-timer-pause'),br=el.querySelector('.sl-timer-reset');if(!disp||!bs)return;var fmt=function(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};var tick=function(){remaining=Math.max(0,remaining-1);disp.textContent=fmt(remaining);if(remaining<=0){clearInterval(iv);running=false;bs.style.display='';bp.style.display='none';disp.classList.add('sl-timer-ended');}};bs.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();if(!running&&remaining>0){running=true;disp.classList.remove('sl-timer-ended');iv=setInterval(tick,1000);bs.style.display='none';bp.style.display='';}});bp.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();clearInterval(iv);running=false;bs.style.display='';bp.style.display='none';});br.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();clearInterval(iv);running=false;remaining=dur;disp.textContent=fmt(dur);disp.classList.remove('sl-timer-ended');bs.style.display='';bp.style.display='none';});});
   container.querySelectorAll('.sl-quiz-options[data-answer]').forEach(function(optEl){if(optEl.dataset.quizBound)return;optEl.dataset.quizBound='1';var ci=optEl.dataset.answer;if(ci==='')return;var opts=optEl.querySelectorAll('.sl-quiz-option');opts.forEach(function(o){o.addEventListener('click',function(e){e.stopPropagation();if(optEl.dataset.quizAnswered)return;optEl.dataset.quizAnswered='1';opts.forEach(function(x){if(x.dataset.idx===ci)x.classList.add('sl-quiz-correct');else x.classList.add('sl-quiz-wrong');});var sec=optEl.closest('section');if(sec){var expl=sec.querySelector('.sl-quiz-explanation');if(expl){expl.style.display='';expl.classList.add('visible');expl.style.opacity='1';}}});});});
@@ -812,9 +712,11 @@ if (!window.ExerciseRunnerPage) window.ExerciseRunnerPage = window.ConceptPage;<
                 if (resp.ok) {
                     const code = await resp.text();
                     inlineWidgetScripts += `<script>/* widget: ${scriptPath} */\n${code}\n<\/script>\n`;
+                } else {
+                    console.warn('[OEI] Widget script non disponible (HTTP ' + resp.status + '):', scriptPath);
                 }
             } catch(e) {
-                console.warn('Could not inline widget script:', scriptPath, e);
+                console.warn('[OEI] Could not inline widget script:', scriptPath, e);
             }
         }
         const regJSON = JSON.stringify(registry);
@@ -1481,7 +1383,7 @@ async function exportHTMLOffline() {
         _downloadBlob(blob, offlineDoc.fileName);
         notify('HTML offline exporté (Reveal.js intégré)', 'success');
     } catch (err) {
-        console.error('Offline export error:', err);
+        console.error('[OEI] Offline export error:', err);
         notify('Erreur export offline : ' + err.message, 'error');
     }
 }
@@ -1569,7 +1471,7 @@ async function exportPNGBatch() {
         URL.revokeObjectURL(a.href);
         notify(`${total} PNGs exportés en ZIP`, 'success');
     } catch (e) {
-        console.error('Batch PNG export error:', e);
+        console.error('[OEI] Batch PNG export error:', e);
         notify('Erreur export PNG batch : ' + e.message, 'error');
     }
 }
@@ -2040,7 +1942,7 @@ async function exportCoursePack() {
             const offlineDoc = await _buildOfflineExportDocument(data);
             offlineHtml = offlineDoc.html;
         } catch (offlineErr) {
-            console.warn('Course pack: offline HTML skipped', offlineErr);
+            console.warn('[OEI] Course pack: offline HTML skipped', offlineErr);
         }
         const files = [
             'manifest.json',
@@ -2081,7 +1983,7 @@ async function exportCoursePack() {
         URL.revokeObjectURL(a.href);
         notify('Pack cours exporté', 'success');
     } catch (err) {
-        console.error('Course pack export error:', err);
+        console.error('[OEI] Course pack export error:', err);
         notify('Erreur export pack cours: ' + (err?.message || 'inconnue'), 'error');
     }
 }

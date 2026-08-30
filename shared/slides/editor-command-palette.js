@@ -26,6 +26,7 @@ const COMMANDS = [
     { id: 'add-chapter', label: 'Ajouter slide : Chapitre', iconKey: 'bookmark', action: () => editor.addSlide('chapter', editor.selectedIndex) },
     { id: 'dup', label: 'Dupliquer le slide actuel', iconKey: 'copy', action: () => editor.duplicateSlide(editor.selectedIndex) },
     { id: 'del', label: 'Supprimer le slide actuel', iconKey: 'trash', action: async () => { if(await OEIDialog.confirm('Supprimer le slide actuel ?', { danger: true })) editor.removeSlide(editor.selectedIndex); } },
+    { id: 'copy-to-slide', label: 'Copier la sélection vers un autre slide (Ctrl+Shift+V)', iconKey: 'copy', action: () => openCopyToSlideDialog() },
     { id: 'undo', label: 'Annuler', iconKey: 'undo', action: () => editor.undo() },
     { id: 'redo', label: 'Rétablir', iconKey: 'redo', action: () => editor.redo() },
     { id: 'export-json', label: 'Exporter en JSON', iconKey: 'save', action: () => { editor.exportJson(); notify('Fichier téléchargé', 'success'); } },
@@ -37,16 +38,18 @@ const COMMANDS = [
 ];
 
 function openCommandPalette() {
-    document.getElementById('cmd-overlay').style.display = '';
-    document.getElementById('command-palette').style.display = '';
+    // cmd-overlay has display:none in CSS class — needs inline override
+    document.getElementById('cmd-overlay').style.display = 'block';
+    // command-palette has class is-hidden { display:none } — must remove the class
+    document.getElementById('command-palette').classList.remove('is-hidden');
     const input = document.getElementById('cmd-input');
     input.value = '';
     input.focus();
     renderCommandResults('');
 }
 function closeCommandPalette() {
-    document.getElementById('cmd-overlay').style.display = 'none';
-    document.getElementById('command-palette').style.display = 'none';
+    document.getElementById('cmd-overlay').style.display = '';
+    document.getElementById('command-palette').classList.add('is-hidden');
 }
 function renderCommandResults(query) {
     const container = document.getElementById('cmd-results');

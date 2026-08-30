@@ -186,7 +186,8 @@ export function bindPresenterToolbarButtons(context = {}) {
     const _subtitleOverlay = documentRef.getElementById('pv-subtitle-overlay');
     const _subtitleText = documentRef.getElementById('pv-subtitle-text');
     let _subtitleRecog = null;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const _win = (typeof window !== 'undefined') ? window : {};
+    const SpeechRecognition = _win.SpeechRecognition || _win.webkitSpeechRecognition;
     if (_subtitleBtn) {
         if (!SpeechRecognition) {
             _subtitleBtn.disabled = true;

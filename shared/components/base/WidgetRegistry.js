@@ -715,6 +715,19 @@ const OEI_WIDGET_REGISTRY = {
         defaultConfig: {},
         staticFallback: _sf('🛡️', 'Règles de protection'),
     },
+
+    // ── Slides intégrés ──────────────────────────────────────────────────────
+    'slides-embed': {
+        global: 'SlidesEmbed',
+        script: 'base/SlidesEmbed.js',
+        label: 'Présentation intégrée',
+        category: 'Slides',
+        description: 'Viewer de slides inline — intègre une présentation JSON directement dans la page',
+        level: '',
+        tags: ['slides', 'présentation', 'embed', 'iframe', 'cours'],
+        defaultConfig: { file: 'data/slides/exemple.json', height: 480 },
+        staticFallback: _sf('📽️', 'Présentation intégrée'),
+    },
 };
 
 // Expose globally

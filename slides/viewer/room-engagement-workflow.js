@@ -64,8 +64,9 @@ export function buildPollStartPayload(state) {
 }
 
 /**
- * @param {{ pollId: string } | null | undefined} state
- * @returns {{ pollId: string }}
+ * @param {{ pollId?: string, type?: string, prompt?: string, options?: string[], multi?: boolean } | null | undefined} state
+ * @param {{ counts?: number[], total?: number, totalSelections?: number } | null | undefined} [snap] décompte final diffusé à la clôture
+ * @returns {{ pollId: string, pollType: string, prompt: string, options: string[], multi: boolean, counts: number[], total: number, totalSelections: number }}
  */
 export function buildPollEndPayload(state, snap) {
     return {

@@ -72,7 +72,7 @@ async function exportPPTX() {
         await pptx.writeFile({ fileName: `${filename}.pptx` });
         notify(`PowerPoint exporté (${data.slides.length} slides)`, 'success');
     } catch (e) {
-        console.error('PPTX export error:', e);
+        console.error('[OEI] PPTX export error:', e);
         notify('Erreur export PPTX : ' + e.message, 'error');
     }
 }

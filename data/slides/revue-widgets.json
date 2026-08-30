@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "title": "Revue 2026-08 — deck widgets & éléments spéciaux",
+    "author": "Revue de code PresentaForge",
+    "created": "2026-08-30",
+    "modified": "2026-08-30"
+  },
+  "theme": "academic",
+  "designTokens": {
+    "colors": { "primary": "#b91c1c", "accent": "#f59e0b" },
+    "fonts": { "heading": "Georgia, serif" }
+  },
+  "showSlideNumber": true,
+  "footerText": "Revue PresentaForge — fixture widgets",
+  "autoNumberChapters": true,
+  "slides": [
+    {
+      "type": "title",
+      "title": "Fixture : widgets & éléments spéciaux",
+      "subtitle": "Sert à comparer viewer / présentateur / audience / élève / éditeur / exports",
+      "notes": "Cette slide teste le rendu **gras** des notes et un <script>alert(1)</script> qui doit apparaître échappé."
+    },
+    {
+      "type": "chapter",
+      "title": "Widgets OEI (mount)"
+    },
+    {
+      "type": "canvas",
+      "notes": "Widget tri à bulles monté via SlidesRenderer.mountWidgets — doit avoir un staticFallback dans les exports raster.",
+      "elements": [
+        { "id": "w1h", "type": "heading", "x": 80, "y": 48, "w": 1120, "h": 90, "data": { "text": "Widget canvas — sorting-bubble" } },
+        { "id": "w1", "type": "widget", "x": 120, "y": 150, "w": 1040, "h": 520, "data": { "widget": "sorting-bubble", "config": { "array": [5, 2, 8, 1, 9, 3] } } }
+      ]
+    },
+    {
+      "type": "simulation",
+      "title": "Slide simulation — search-binary",
+      "widget": "search-binary",
+      "config": { "array": [1, 3, 5, 7, 9, 11, 13, 15], "target": 11 },
+      "notes": "Chemin `type:simulation` (différent du widget canvas)."
+    },
+    {
+      "type": "chapter",
+      "title": "Éléments spéciaux"
+    },
+    {
+      "type": "canvas",
+      "notes": "quiz-live : doit être interactif en viewer/présentateur, diffusé en salle élève, et rendu statique en export.",
+      "elements": [
+        { "id": "q1", "type": "quiz-live", "x": 140, "y": 60, "w": 1000, "h": 600, "data": { "question": "Quelle structure suit le principe LIFO ?", "duration": 20, "answer": 0, "options": ["Pile", "File", "Arbre", "Graphe"] } }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Code coloré (highlight) + formule LaTeX. LaTeX ne doit PAS rester en texte brut dans l'éditeur / PNG simple.",
+      "elements": [
+        { "id": "c1", "type": "highlight", "x": 60, "y": 90, "w": 640, "h": 560, "data": { "language": "python", "code": "def bsearch(a, x):\n    lo, hi = 0, len(a) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if a[mid] == x:\n            return mid\n        if a[mid] < x:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1" } },
+        { "id": "l1", "type": "latex", "x": 740, "y": 200, "w": 440, "h": 200, "data": { "expression": "O(\\log n) \\quad T(n) = T(n/2) + O(1)" } }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Mermaid + timer. Mermaid ne doit pas être forcé en thème sombre sur un thème clair.",
+      "elements": [
+        { "id": "m1", "type": "mermaid", "x": 60, "y": 110, "w": 700, "h": 560, "data": { "code": "graph TD\n  A[Début] --> B{Trouvé ?}\n  B -- Oui --> C[Retour index]\n  B -- Non --> D[Réduire l'intervalle]\n  D --> B" } },
+        { "id": "t1", "type": "timer", "x": 820, "y": 260, "w": 240, "h": 120, "data": { "duration": 120, "label": "Exercice" } }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "code-live exécutable (JS). Réimplémenté dans 4 contextes — vérifier la cohérence.",
+      "elements": [
+        { "id": "cl1", "type": "code-live", "x": 100, "y": 90, "w": 1080, "h": 560, "data": { "language": "javascript", "code": "const a = [5,2,8,1];\nconsole.log(a.sort((x,y)=>x-y));" } }
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Slide masquée juste après",
+      "bullets": ["Cette slide est visible", "La suivante a hidden:true"]
+    },
+    {
+      "type": "bullets",
+      "hidden": true,
+      "title": "SLIDE MASQUÉE (hidden:true)",
+      "bullets": ["Ne doit apparaître NULLE PART", "Sauf bug du viewer normal (divergence 1)"]
+    },
+    {
+      "type": "bullets",
+      "title": "Après la slide masquée",
+      "bullets": ["Le numéro de slide et de chapitre doit rester cohérent", "Référence croisée : {{ref:Figure 1}}"]
+    }
+  ]
+}

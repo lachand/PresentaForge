@@ -1,4 +1,35 @@
 /**
+ * Load legacy classic scripts in groups: scripts within a group are injected in parallel
+ * (network-fetched simultaneously, executed in DOM insertion order), groups are sequential.
+ * @param {readonly (readonly string[])[]} groups - Array of groups; each group is an array of script URLs.
+ * @param {{ parent?: HTMLElement | null, onProgress?: (source: string) => void }} [options]
+ * @returns {Promise<void>}
+ */
+export async function loadClassicScriptGroups(groups, options = {}) {
+    const parent = options.parent || document.body || document.head;
+    if (!parent) {
+        throw new Error('Impossible de charger les scripts: document indisponible');
+    }
+    // Pre-fetch all scripts across all groups via <link rel="preload">
+    for (const group of groups) {
+        for (const src of group) {
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'script';
+            link.href = src;
+            document.head.appendChild(link);
+        }
+    }
+    // Load each group: scripts within a group are injected simultaneously, groups load sequentially.
+    for (const group of groups) {
+        await Promise.all(group.map(src => _loadClassicScript(parent, src)));
+        if (typeof options.onProgress === 'function') {
+            for (const src of group) options.onProgress(src);
+        }
+    }
+}
+
+/**
  * Load legacy classic scripts sequentially to preserve execution order.
  * @param {readonly string[]} sources
  * @param {{ parent?: HTMLElement | null, onProgress?: (source: string) => void }} [options]

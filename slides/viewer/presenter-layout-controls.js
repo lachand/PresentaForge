@@ -320,3 +320,26 @@ export function initPresenterLayoutControls(context = {}) {
         getFontSizes: () => FONT_SIZES.slice(),
     };
 }
+
+/**
+ * Initialize mobile tab bar (Context / Notes toggle) for presenter view on small screens.
+ * @param {{ documentRef?: Document }} context
+ */
+export function initMobilePresenterTabs(context = {}) {
+    const documentRef = context.documentRef || document;
+    const tabCtx = documentRef.getElementById('pv-mobile-tab-ctx');
+    const tabNotes = documentRef.getElementById('pv-mobile-tab-notes');
+    const pvLayout = documentRef.getElementById('pv-layout');
+    if (!tabCtx || !tabNotes || !pvLayout) return;
+
+    const setActive = (showNotes) => {
+        tabCtx.classList.toggle('active', !showNotes);
+        tabCtx.setAttribute('aria-selected', String(!showNotes));
+        tabNotes.classList.toggle('active', showNotes);
+        tabNotes.setAttribute('aria-selected', String(showNotes));
+        pvLayout.classList.toggle('pv-notes-active', showNotes);
+    };
+
+    tabCtx.addEventListener('click', () => setActive(false));
+    tabNotes.addEventListener('click', () => setActive(true));
+}

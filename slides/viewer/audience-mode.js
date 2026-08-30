@@ -36,9 +36,14 @@ export async function initAudienceMode(ctx) {
     const hint = document.getElementById('sl-keyboard-hint');
     if (hint) hint.style.display = 'none';
 
-    const themeData = typeof data.theme === 'string'
-        ? (SlidesThemes.BUILT_IN[data.theme] || SlidesThemes.BUILT_IN.dark)
-        : (data.theme || SlidesThemes.BUILT_IN.dark);
+    // Même résolution que le viewer normal / présentateur : les designTokens
+    // par-deck (couleurs, polices, layout) doivent s'appliquer aussi sur l'écran
+    // projeté à l'audience.
+    const themeData = window.OEIDesignTokens?.resolvePresentationTheme
+        ? window.OEIDesignTokens.resolvePresentationTheme(data)
+        : (typeof data.theme === 'string'
+            ? (SlidesThemes.BUILT_IN[data.theme] || SlidesThemes.BUILT_IN.dark)
+            : (data.theme || SlidesThemes.BUILT_IN.dark));
     document.getElementById('sl-theme-css').textContent = SlidesThemes.generateCSS(themeData);
     SlidesThemes.apply(themeData);
 

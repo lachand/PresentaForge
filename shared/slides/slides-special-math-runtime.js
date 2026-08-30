@@ -10,8 +10,33 @@
      * @param {Element} container
      * @param {{ SlidesRenderer, isAudienceReadOnly, emitAudienceElementState, subscribeAudienceElementState }} ctx
      */
+    const _esc = str => String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    /** Choisit le thème Mermaid ('dark' / 'default') selon la luminance du fond de slide résolu. */
+    function _mermaidThemeForSlide() {
+        try {
+            const cs = getComputedStyle(document.documentElement);
+            const raw = (cs.getPropertyValue('--sl-slide-bg') || cs.getPropertyValue('--sl-bg') || '').trim();
+            const m = raw.match(/^#?([0-9a-f]{6})$/i) || raw.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+            let r, g, b;
+            if (m && m[1] && m[1].length === 6) { r = parseInt(m[1].slice(0, 2), 16); g = parseInt(m[1].slice(2, 4), 16); b = parseInt(m[1].slice(4, 6), 16); }
+            else if (m && m[3] !== undefined) { r = +m[1]; g = +m[2]; b = +m[3]; }
+            if (r === undefined) return 'default';
+            const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+            return lum < 0.5 ? 'dark' : 'default';
+        } catch (_) { return 'default'; }
+    }
+    const _renderError = (label, detail, source) => `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+            padding:12px 16px;border-radius:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);
+            color:#f87171;font-size:0.78rem;font-family:var(--mono,monospace);text-align:left;max-width:100%;">
+            <div style="font-weight:700;letter-spacing:.02em;">⚠ ${_esc(label)}</div>
+            ${detail ? `<div style="opacity:.8;word-break:break-word;">${_esc(detail)}</div>` : ''}
+            ${source ? `<pre style="margin:4px 0 0;padding:6px 8px;border-radius:4px;background:rgba(0,0,0,.25);
+                white-space:pre-wrap;word-break:break-all;font-size:0.72rem;max-height:80px;overflow:auto;">${_esc(source)}</pre>` : ''}
+        </div>`;
+
     async function mountMathElements(container, ctx) {
-        const SlidesRenderer = ctx?.SlidesRenderer;
         const isAudienceReadOnly = !!ctx?.isAudienceReadOnly;
         const emitAudienceElementState = ctx?.emitAudienceElementState || (() => false);
         const subscribeAudienceElementState = ctx?.subscribeAudienceElementState || (() => () => {});
@@ -25,26 +50,29 @@
                 link.rel = 'stylesheet';
                 link.href = '../vendor/katex/0.16.11/katex.min.css';
                 document.head.appendChild(link);
-                await new Promise((resolve, reject) => {
+                await new Promise((resolve) => {
                     const s = document.createElement('script');
                     s.src = '../vendor/katex/0.16.11/katex.min.js';
-                    s.onload = resolve; s.onerror = reject;
+                    s.onload = resolve;
+                    s.onerror = () => { global._slKatexFailed = true; resolve(); };
                     document.head.appendChild(s);
                 });
             }
-            if (global.katex) {
-                latexEls.forEach(el => {
-                    const target = el.querySelector('.sl-latex-render');
-                    if (!target || target.dataset.rendered) return;
-                    const expr = el.dataset.latex || '';
-                    try {
-                        target.innerHTML = global.katex.renderToString(expr, { displayMode: true, throwOnError: false });
-                        target.dataset.rendered = '1';
-                    } catch (e) {
-                        target.innerHTML = `<span style="color:#f87171">${SlidesRenderer.esc(expr)}</span>`;
-                    }
-                });
-            }
+            latexEls.forEach(el => {
+                const target = el.querySelector('.sl-latex-render');
+                if (!target || target.dataset.rendered) return;
+                const expr = el.dataset.latex || '';
+                if (global._slKatexFailed || !global.katex) {
+                    target.innerHTML = _renderError('KaTeX introuvable', 'Impossible de charger le moteur LaTeX', expr);
+                    return;
+                }
+                try {
+                    target.innerHTML = global.katex.renderToString(expr, { displayMode: true, throwOnError: true });
+                    target.dataset.rendered = '1';
+                } catch (e) {
+                    target.innerHTML = _renderError('Erreur LaTeX', e.message, expr);
+                }
+            });
         }
 
         // ── Mermaid ──
@@ -52,37 +80,38 @@
         if (mermaidEls.length) {
             if (!global._slMermaidLoaded) {
                 global._slMermaidLoaded = true;
-                await new Promise((resolve, reject) => {
+                await new Promise((resolve) => {
                     const s = document.createElement('script');
                     s.src = '../vendor/mermaid/10.9.1/mermaid.min.js';
                     s.onload = () => {
-                        global.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+                        global.mermaid.initialize({ startOnLoad: false, theme: _mermaidThemeForSlide(), securityLevel: 'loose' });
                         resolve();
                     };
-                    s.onerror = reject;
+                    s.onerror = () => { global._slMermaidFailed = true; resolve(); };
                     document.head.appendChild(s);
                 });
             }
-            if (global.mermaid) {
-                for (const el of mermaidEls) {
-                    const target = el.querySelector('.sl-mermaid-render');
-                    const src = el.querySelector('pre');
-                    if (!target || !src || target.dataset.rendered) continue;
-                    try {
-                        const id = 'sl-mm-' + Math.random().toString(36).slice(2, 9);
-                        const { svg } = await global.mermaid.render(id, src.textContent);
-                        target.innerHTML = svg;
-                        // Scale SVG to fit container
-                        const svgEl = target.querySelector('svg');
-                        if (svgEl) {
-                            svgEl.style.maxWidth = '100%';
-                            svgEl.style.maxHeight = '100%';
-                            svgEl.style.height = 'auto';
-                        }
-                        target.dataset.rendered = '1';
-                    } catch (e) {
-                        target.innerHTML = `<pre style="color:#f87171;font-size:12px;">${SlidesRenderer.esc(e.message || 'Erreur Mermaid')}</pre>`;
+            for (const el of mermaidEls) {
+                const target = el.querySelector('.sl-mermaid-render');
+                const src = el.querySelector('pre');
+                if (!target || !src || target.dataset.rendered) continue;
+                if (global._slMermaidFailed || !global.mermaid) {
+                    target.innerHTML = _renderError('Mermaid introuvable', 'Impossible de charger le moteur de diagrammes', src.textContent.trim().slice(0, 80));
+                    continue;
+                }
+                try {
+                    const id = 'sl-mm-' + Math.random().toString(36).slice(2, 9);
+                    const { svg } = await global.mermaid.render(id, src.textContent);
+                    target.innerHTML = svg;
+                    const svgEl = target.querySelector('svg');
+                    if (svgEl) {
+                        svgEl.style.maxWidth = '100%';
+                        svgEl.style.maxHeight = '100%';
+                        svgEl.style.height = 'auto';
                     }
+                    target.dataset.rendered = '1';
+                } catch (e) {
+                    target.innerHTML = _renderError('Erreur Mermaid', e.message, src.textContent.trim().slice(0, 120));
                 }
             }
         }

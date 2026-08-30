@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "title": "Quiz rapide",
+    "author": "",
+    "created": "2026-01-01",
+    "modified": "2026-01-01"
+  },
+  "theme": "dark",
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Quiz interactif",
+      "title": "Quiz : Titre du sujet",
+      "subtitle": "5 questions · 30 secondes chacune",
+      "author": "Prénom Nom",
+      "date": "2026"
+    },
+    {
+      "type": "quiz-live",
+      "question": "Question 1 — Tapez votre question ici",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "quiz-live",
+      "question": "Question 2 — Tapez votre question ici",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": 1,
+      "duration": 30
+    },
+    {
+      "type": "quiz-live",
+      "question": "Question 3 — Tapez votre question ici",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": 2,
+      "duration": 30
+    },
+    {
+      "type": "quiz-live",
+      "question": "Question 4 — Tapez votre question ici",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": 0,
+      "duration": 30
+    },
+    {
+      "type": "quiz-live",
+      "question": "Question 5 — Tapez votre question ici",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": 3,
+      "duration": 30
+    },
+    {
+      "type": "blank",
+      "title": "Résultats",
+      "content": "<p>Merci d'avoir participé ! Consultez le leaderboard dans la vue présentateur.</p>"
+    }
+  ]
+}

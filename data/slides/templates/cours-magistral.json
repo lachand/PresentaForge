@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "title": "Cours magistral",
+    "author": "",
+    "created": "2026-01-01",
+    "modified": "2026-01-01"
+  },
+  "theme": "icom",
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Matière · Semestre",
+      "title": "Titre du cours",
+      "subtitle": "Sous-titre ou contexte",
+      "author": "Prénom Nom",
+      "date": "2026",
+      "notes": "Présenter le plan du cours et les objectifs pédagogiques."
+    },
+    {
+      "type": "chapter",
+      "number": "1",
+      "title": "Première partie",
+      "subtitle": "Introduction au sujet"
+    },
+    {
+      "type": "bullets",
+      "title": "Points clés",
+      "items": [
+        "Premier point important",
+        "Deuxième point avec <b>mise en valeur</b>",
+        "Troisième point à retenir",
+        "Quatrième point avec <code>exemple de code</code>"
+      ],
+      "notes": "Développer chaque point avec des exemples concrets."
+    },
+    {
+      "type": "code",
+      "title": "Exemple de code",
+      "language": "python",
+      "code": "def hello(name: str) -> str:\n    return f\"Bonjour, {name} !\"\n\nprint(hello(\"étudiant\"))"
+    },
+    {
+      "type": "quiz-live",
+      "question": "Quelle est la complexité de cette fonction ?",
+      "options": ["O(1)", "O(n)", "O(n²)", "O(log n)"],
+      "answer": 0,
+      "duration": 30,
+      "notes": "Quiz de vérification rapide — 30 secondes."
+    },
+    {
+      "type": "chapter",
+      "number": "2",
+      "title": "Deuxième partie",
+      "subtitle": "Approfondissement"
+    },
+    {
+      "type": "bullets",
+      "title": "Points avancés",
+      "items": [
+        "Concept avancé n°1",
+        "Concept avancé n°2",
+        "Application pratique"
+      ]
+    },
+    {
+      "type": "blank",
+      "title": "Conclusion",
+      "content": "<p>Résumé des points essentiels abordés.</p><ul><li>Point 1</li><li>Point 2</li><li>Point 3</li></ul>"
+    }
+  ]
+}

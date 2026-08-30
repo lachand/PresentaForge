@@ -8,8 +8,8 @@
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=1">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=2">
     <style>
         /* ── Editorial Precision — warm neutrals (light-only) ─── */
         :root {
@@ -80,6 +80,35 @@
         .join-btn:hover { opacity: 0.9; }
         .join-btn:disabled { background: var(--dis-bg); color: var(--dis-text); cursor: default; opacity: 1; }
         .status-msg { font-size: 0.82rem; min-height: 18px; line-height: 1.4; }
+
+        /* Room ID input row (shown when no ?room= param) */
+        #room-input-row { display: none; position: relative; margin-bottom: 12px; }
+        #room-input-row.visible { display: flex; align-items: center; gap: 8px; }
+        #room-id-input { flex: 1; padding: 13px 16px; border-radius: var(--radius-lg, 1rem);
+            border: none; background: var(--input-bg); color: var(--text);
+            font-size: 1rem; font-family: inherit; outline: none;
+            transition: outline 0.12s, background 0.12s;
+        }
+        #room-id-input:focus {
+            outline: 2px solid rgba(0, 80, 141, 0.35);
+            background: var(--surface-container-lowest, #ffffff);
+        }
+        #btn-scan-qr {
+            width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--radius-lg, 1rem);
+            border: none; background: var(--input-bg); color: var(--dim); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.12s, color 0.12s;
+        }
+        #btn-scan-qr:hover { background: var(--primary-fixed, #d2e4ff); color: var(--primary, #00508d); }
+        #btn-scan-qr svg { width: 20px; height: 20px; }
+        /* QR camera overlay */
+        #qr-scan-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            z-index: 9999; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+        }
+        #qr-scan-overlay.active { display: flex; }
+        #qr-scan-video { width: min(360px, 90vw); height: min(360px, 90vw); object-fit: cover; border-radius: 16px; }
+        #qr-scan-close { padding: 10px 24px; border: none; border-radius: 999px; background: rgba(255,255,255,0.15); color: #fff; cursor: pointer; font-size: 0.88rem; }
         .status-msg.error { color: var(--danger, #c62828); }
         .status-msg.info { color: var(--primary, #00508d); }
         .status-msg.success { color: var(--success, #2e7d32); }
@@ -239,15 +268,31 @@
         #score-pts { color: var(--primary, #00508d); font-weight: 700; font-size: 0.88rem; font-family: 'Manrope', sans-serif; }
         #score-pseudo { color: var(--dim); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #score-sep { color: var(--border); }
+        /* Score flash animation (+pts earned) */
+        @keyframes scoreFlash {
+            0%   { transform: scale(1); }
+            20%  { transform: scale(1.35); color: #16a34a; }
+            60%  { transform: scale(1.15); color: #16a34a; }
+            100% { transform: scale(1); color: var(--primary, #00508d); }
+        }
+        #score-pts.flash { animation: scoreFlash 0.55s ease; }
+        .score-delta {
+            position: absolute; font-size: 0.7rem; font-weight: 700; color: #16a34a;
+            animation: scoreDeltaFly 1.2s ease forwards; pointer-events: none;
+        }
+        @keyframes scoreDeltaFly {
+            0%   { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-28px); }
+        }
 
         /* Reaction bar */
         #reaction-bar {
-            display: flex; align-items: center; gap: 8px; padding: 5px 14px;
+            display: flex; align-items: center; gap: 10px; padding: 6px 14px;
             background: var(--surface-container, #f3edea); flex-shrink: 0;
         }
         .reaction-btn {
-            flex: 1; padding: 7px 4px; border-radius: var(--radius-md, 0.75rem); border: none;
-            background: var(--surface-container-highest, #e7e1de); font-size: 1.3rem; cursor: pointer;
+            flex: 1; padding: 8px 4px; min-height: 44px; border-radius: var(--radius-md, 0.75rem); border: none;
+            background: var(--surface-container-highest, #e7e1de); font-size: 1.4rem; cursor: pointer;
             transition: background 0.12s, transform 0.1s; line-height: 1; text-align: center;
         }
         .reaction-btn:hover { background: var(--primary-fixed, #d2e4ff); }
@@ -1196,10 +1241,22 @@
             <div class="join-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg></div>
             <h1>Rejoindre</h1>
             <p>Entrez votre prénom pour rejoindre la présentation en cours</p>
+            <div id="room-input-row">
+                <input id="room-id-input" type="text" placeholder="ID de la salle (peerId)" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+                <button id="btn-scan-qr" title="Scanner le QR code" aria-label="Scanner le QR code">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h1"/><path d="M19 14h1"/><path d="M14 19h1"/><path d="M19 19h1"/><path d="M14 17h3v2"/></svg>
+                </button>
+            </div>
             <input id="pseudo-input" class="join-input ui-input" type="text" placeholder="Votre prénom" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
             <button id="join-btn" class="join-btn ui-btn ui-btn--primary"><span>Rejoindre</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button>
             <div id="join-status" class="status-msg"></div>
         </div>
+    </div>
+
+    <!-- QR scan overlay -->
+    <div id="qr-scan-overlay" aria-modal="true" role="dialog" aria-label="Scanner un QR code">
+        <video id="qr-scan-video" autoplay playsinline muted></video>
+        <button id="qr-scan-close">Annuler</button>
     </div>
 
     <!-- Main view (hidden until connected) -->

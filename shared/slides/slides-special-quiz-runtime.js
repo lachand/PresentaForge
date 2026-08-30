@@ -37,6 +37,18 @@
             if (!btnStart) return;
 
             let peer = null, connections = [], responses = {}, timerInterval = null, remaining = duration, quizActive = false;
+
+            // Timer display with color feedback (vert → orange → rouge)
+            const _updateTimerDisplay = (rem) => {
+                if (!timerEl) return;
+                timerEl.textContent = rem + 's';
+                const pct = rem / duration;
+                const color = pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
+                timerEl.style.color = color;
+                timerEl.style.fontWeight = rem <= 5 ? '700' : '600';
+                timerEl.style.fontSize = rem <= 10 ? 'calc(var(--sl-note-size,1rem) * 1.3)' : 'var(--sl-note-size,1rem)';
+            };
+
             const optLabels = Array.from(optionsEls).map(o => o.textContent.trim().slice(1).trim());
             const nOpts = optionsEls.length;
             const questionText = el.querySelector('.sl-quizlive-question')?.textContent || '';
@@ -84,7 +96,7 @@
                     const resolvedCorrect = revealCorrect && Number.isFinite(Number(sync.correctAnswer))
                         ? Number(sync.correctAnswer)
                         : null;
-                    if (timerEl) timerEl.textContent = `${currentRemaining}s`;
+                    if (timerEl) _updateTimerDisplay(currentRemaining);
                     if (statusEl) {
                         const toTrimmed = (value, maxLen = 120) => {
                             if (typeof value !== 'string') return '';
@@ -179,7 +191,7 @@
                     resultsEl.style.display = '';
                     updateResults({ ended: false });
                     remaining = duration;
-                    timerEl.textContent = remaining + 's';
+                    _updateTimerDisplay(remaining);
                     statusEl.textContent = `0 réponse(s) — ${remaining}s restantes`;
                     btnStart.textContent = '⏹ Arrêter';
                     btnStart.disabled = false;
@@ -187,7 +199,7 @@
 
                     timerInterval = setInterval(() => {
                         remaining--;
-                        timerEl.textContent = remaining + 's';
+                        _updateTimerDisplay(remaining);
                         statusEl.textContent = `${Object.keys(responses).length} réponse(s) — ${remaining}s restantes`;
                         publishQuizState();
                         if (remaining <= 0) endQuiz();

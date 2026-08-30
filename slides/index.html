@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../shared/slides/ui-primitives.css">
+    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=2">
     <style>
         * { box-sizing: border-box; }
 
@@ -19,7 +19,7 @@
             color: var(--on-surface);
             background: var(--surface);
             line-height: 1.5;
-            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         /* ── Top Navigation ──────────────────────────────────── */
@@ -75,6 +75,29 @@
         .tn-action-btn:hover { background: var(--surface-container-high); }
         .tn-action-btn svg { width: 16px; height: 16px; }
 
+        #btn-sidebar-toggle {
+            display: none;
+            width: 36px; height: 36px;
+            border-radius: var(--radius-md);
+            background: none; border: none;
+            cursor: pointer;
+            color: var(--on-surface-variant);
+            align-items: center; justify-content: center;
+            transition: background 0.12s;
+            flex-shrink: 0;
+        }
+        #btn-sidebar-toggle:hover { background: var(--surface-container-high); }
+        #btn-sidebar-toggle svg { width: 18px; height: 18px; }
+
+        /* Sidebar overlay backdrop (mobile only) */
+        #sidebar-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 98;
+        }
+        #sidebar-backdrop.visible { display: block; }
+
         .tn-avatar {
             width: 32px; height: 32px;
             border-radius: 50%;
@@ -89,7 +112,7 @@
         /* ── App Layout ──────────────────────────────────────── */
         .dashboard-app {
             display: flex;
-            height: 100vh;
+            height: 100dvh;
             padding-top: 56px;
         }
 
@@ -561,16 +584,71 @@
             font-size: 0.875rem;
         }
 
+        /* ── Templates ────────────────────────────────────── */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        .template-card {
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: var(--surface-container-lowest);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: box-shadow 0.15s, transform 0.15s;
+            border: 2px solid transparent;
+            text-align: left;
+        }
+        .template-card:hover {
+            box-shadow: var(--shadow-ambient);
+            transform: translateY(-2px);
+            border-color: rgba(0,80,141,0.2);
+        }
+        .template-card-cover {
+            height: 72px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem;
+            position: relative; overflow: hidden;
+        }
+        .template-card-cover::after {
+            content: '';
+            position: absolute; right: -20px; top: -20px;
+            width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            pointer-events: none;
+        }
+        .template-card-body { padding: 10px 12px 12px; }
+        .template-card-name {
+            font-family: var(--font-editorial);
+            font-size: 0.8125rem; font-weight: 700;
+            color: var(--on-surface); margin-bottom: 3px;
+        }
+        .template-card-desc {
+            font-size: 0.7rem; color: var(--on-surface-muted); line-height: 1.4;
+        }
+
         @media (max-width: 960px) {
             #side-nav { width: 220px; }
             .dashboard-main { padding: 28px 28px; }
+        }
+        @media (max-width: 860px) {
+            #btn-sidebar-toggle { display: inline-flex; }
+            #side-nav {
+                position: fixed;
+                left: 0; top: 56px; bottom: 0;
+                z-index: 99;
+                transform: translateX(-100%);
+                transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+                box-shadow: var(--shadow-ambient);
+            }
+            #side-nav.open { transform: translateX(0); }
         }
         @media (max-width: 760px) {
             .db-bento { grid-template-columns: 1fr; }
             .local-tools { grid-template-columns: 1fr; }
         }
         @media (max-width: 640px) {
-            #side-nav { display: none; }
             .dashboard-main { padding: 20px 16px; }
         }
     </style>
@@ -580,6 +658,9 @@
 <!-- Top Navigation -->
 <header id="top-nav">
     <div class="tn-left">
+        <button id="btn-sidebar-toggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="side-nav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <a href="index.html" class="tn-brand">
             <img src="assets/brand/presentaforge_text_light.png" alt="presentaForge">
         </a>
@@ -591,6 +672,7 @@
         <div class="tn-avatar" title="Utilisateur">P</div>
     </div>
 </header>
+<div id="sidebar-backdrop" aria-hidden="true"></div>
 
 <!-- App layout -->
 <div class="dashboard-app">
@@ -689,6 +771,17 @@
             <div id="firebase-grid"></div>
         </section>
 
+        <!-- Templates -->
+        <section class="db-section" aria-labelledby="templates-title">
+            <div class="db-section-head">
+                <h2 id="templates-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    Démarrer depuis un modèle
+                </h2>
+            </div>
+            <div class="template-grid" id="templates-grid"></div>
+        </section>
+
         <!-- Examples -->
         <section class="db-section" aria-labelledby="examples-title">
             <div class="db-section-head">
@@ -738,7 +831,7 @@
 <script src="../shared/slides/slides-special-live-runtime.js?v=1"></script>
 <script src="../shared/slides/slides-special-runtime.js?v=1"></script>
 <script src="../shared/slides/slides-typography.js?v=1"></script>
-<script src="../shared/slides/slides-core.js?v=30"></script>
+<script src="../shared/slides/slides-core.js?v=31"></script>
 <script src="../shared/slides/slides-themes.js?v=1"></script>
 <script src="../shared/slides/slides-diagram-renderer.js?v=1"></script>
 <script src="../shared/slides/slides-renderer-canvas.js?v=1"></script>
@@ -1133,6 +1226,27 @@
         `).join('');
     }
 
+    const TEMPLATES = [
+        { file: '../data/slides/templates/cours-magistral.json', name: 'Cours magistral', desc: 'Titre, chapitres, bullets, code + quiz', emoji: '📖', color: '#00508d' },
+        { file: '../data/slides/templates/tp-guide.json',        name: 'TP guidé',        desc: 'Étapes numérotées, code, quiz', emoji: '🔬', color: '#1a7a40' },
+        { file: '../data/slides/templates/projet.json',          name: 'Présentation projet', desc: 'Intro, plan, architecture, bilan', emoji: '🚀', color: '#5c35a8' },
+        { file: '../data/slides/templates/quiz-rapide.json',     name: 'Quiz rapide',     desc: '5 questions live en 5 slides', emoji: '❓', color: '#c0680a' },
+    ];
+
+    function renderTemplates() {
+        const grid = document.getElementById('templates-grid');
+        if (!grid) return;
+        grid.innerHTML = TEMPLATES.map((t, idx) => `
+            <button type="button" class="template-card" data-action="open-template" data-template-index="${idx}" aria-label="Démarrer avec le modèle : ${t.name}">
+                <div class="template-card-cover" style="background:${t.color};">${t.emoji}</div>
+                <div class="template-card-body">
+                    <div class="template-card-name">${t.name}</div>
+                    <div class="template-card-desc">${t.desc}</div>
+                </div>
+            </button>
+        `).join('');
+    }
+
     function renderDraftNotice() {
         const raw = storageGetRaw(DRAFT_KEY);
         const host = document.getElementById('draft-notice');
@@ -1271,11 +1385,16 @@
         if (!target) return;
         const action = target.dataset.action;
         const exampleIdx = Number(target.dataset.exampleIndex);
+        const templateIdx = Number(target.dataset.templateIndex);
         const localId = String(target.dataset.localId || '');
         const localIdx = localId
             ? _localDecks.findIndex(deck => `${deck.source}:${deck.sourceIndex}` === localId)
             : Number(target.dataset.localIndex);
 
+        if (action === 'open-template' && Number.isFinite(templateIdx) && TEMPLATES[templateIdx]) {
+            openEditorFile(TEMPLATES[templateIdx].file);
+            return;
+        }
         if (action === 'present-example' && Number.isFinite(exampleIdx) && EXAMPLES[exampleIdx]) {
             openViewerFile(EXAMPLES[exampleIdx].file);
             return;
@@ -1305,10 +1424,36 @@
         }
     });
 
+    renderTemplates();
     renderExamples();
     renderDraftNotice();
     _localDecks = loadLocalDecks();
     renderLocalDecks();
+
+    // ── Badge "En présentation" via BroadcastChannel ──────────────────────────
+    (function() {
+        try {
+            const channel = new BroadcastChannel('oei-slides-presenter-sync');
+            let _liveTimer = null;
+            const _showLiveBanner = () => {
+                let banner = document.getElementById('live-banner');
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'live-banner';
+                    banner.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#16a34a;color:#fff;border-radius:8px;padding:8px 16px;font-size:0.8rem;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,0.18);z-index:9999;transition:opacity 0.4s;';
+                    banner.innerHTML = '<span style="width:8px;height:8px;background:#fff;border-radius:50%;animation:livePulse 1.2s ease-in-out infinite;"></span> Présentation en cours dans un autre onglet';
+                    document.body.appendChild(banner);
+                    const style = document.createElement('style');
+                    style.textContent = '@keyframes livePulse{0%,100%{opacity:1}50%{opacity:0.3}}';
+                    document.head.appendChild(style);
+                }
+                banner.style.opacity = '1';
+                clearTimeout(_liveTimer);
+                _liveTimer = setTimeout(() => { if (banner) banner.style.opacity = '0'; }, 8000);
+            };
+            channel.onmessage = () => _showLiveBanner();
+        } catch (_) {}
+    })();
 
     // ── Firebase section ──────────────────────────────────────────────────────
 
@@ -1542,6 +1687,57 @@
         _updateFirebaseBentoState();
         _updateFirebaseSectionHeader();
         if (ok) await loadFirebaseDecks();
+    })();
+
+    // ── Hamburger sidebar toggle (mobile ≤ 860px) ────────────────
+    (function() {
+        const btn = document.getElementById('btn-sidebar-toggle');
+        const nav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        if (!btn || !nav) return;
+
+        function openSidebar() {
+            nav.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            if (backdrop) backdrop.classList.add('visible');
+        }
+        function closeSidebar() {
+            nav.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+            if (backdrop) backdrop.classList.remove('visible');
+        }
+
+        btn.addEventListener('click', () => {
+            nav.classList.contains('open') ? closeSidebar() : openSidebar();
+        });
+        if (backdrop) backdrop.addEventListener('click', closeSidebar);
+        nav.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('click', () => {
+                if (window.matchMedia('(max-width: 860px)').matches) closeSidebar();
+            });
+        });
+    })();
+
+    // ── BroadcastChannel: badge "Présentation en cours" ──────────
+    (function() {
+        try {
+            const channel = new BroadcastChannel('oei-slides-presenter-sync');
+            let _liveTimer = null;
+            const _showLiveBanner = () => {
+                let banner = document.getElementById('live-banner');
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'live-banner';
+                    banner.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#16a34a;color:#fff;border-radius:8px;padding:10px 18px;font-size:0.8125rem;font-weight:600;display:flex;align-items:center;gap:8px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);transition:opacity 0.4s;';
+                    banner.innerHTML = '<svg style="width:15px;height:15px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M2 12S5 5 12 5s10 7 10 7-3 7-10 7S2 12 2 12z"/></svg> Présentation en cours dans un autre onglet';
+                    document.body.appendChild(banner);
+                }
+                banner.style.opacity = '1';
+                clearTimeout(_liveTimer);
+                _liveTimer = setTimeout(() => { if (banner) banner.style.opacity = '0'; }, 8000);
+            };
+            channel.onmessage = () => _showLiveBanner();
+        } catch (_) {}
     })();
 </script>
 </body>

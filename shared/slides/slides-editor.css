@@ -458,7 +458,20 @@ html, body {
 .tb-btn.primary:hover {
     background: linear-gradient(135deg, #004070, #1a57a0); color: #fff;
 }
-.tb-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.tb-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+/* Bouton en cours de chargement (export, import long) */
+@keyframes tb-spin { to { transform: rotate(360deg); } }
+.tb-btn.btn-loading {
+    opacity: 0.7; cursor: wait; pointer-events: none;
+}
+.tb-btn.btn-loading::after {
+    content: '';
+    display: inline-block; width: 11px; height: 11px; margin-left: 5px;
+    border: 2px solid currentColor; border-top-color: transparent;
+    border-radius: 50%;
+    animation: tb-spin 0.7s linear infinite;
+}
 .tb-btn.danger {
     background: var(--danger-light); color: var(--danger);
 }
@@ -756,11 +769,20 @@ html, body {
 .sl-thumb-wrap.drag-over-top { border-top: 3px solid var(--primary); }
 .sl-thumb-wrap.drag-over-bottom { border-bottom: 3px solid var(--primary); }
 .sl-thumb-wrap.dragging { opacity: 0.3; }
-.sl-thumb-wrap.hidden-slide .sl-thumb-outer { opacity: 0.35; }
-.sl-thumb-wrap.hidden-slide .sl-thumb-info { opacity: 0.5; }
-.sl-thumb-wrap.hidden-slide .sl-thumb-num::after {
-    content: ' 👁'; font-size: 0.6rem;
+.sl-thumb-wrap.hidden-slide .sl-thumb-outer { opacity: 0.38; position: relative; }
+.sl-thumb-wrap.hidden-slide .sl-thumb-info { opacity: 0.55; }
+.sl-thumb-wrap.hidden-slide .sl-thumb-num::after { content: ' 👁'; font-size: 0.6rem; }
+/* Badge "Masqué" sur la vignette */
+.sl-thumb-wrap.hidden-slide .sl-thumb-outer::after {
+    content: 'Masqué';
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.65); color: #fff;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: .04em;
+    padding: 2px 6px; border-radius: 3px; pointer-events: none; white-space: nowrap;
 }
+/* Bordure pointillée pour différencier visuellement les slides masquées */
+.sl-thumb-wrap.hidden-slide { outline: 2px dashed var(--outline-variant); outline-offset: -2px; }
+.sl-thumb-wrap.hidden-slide.active { outline-color: var(--primary); }
 
 /* Add slide panel */
 #add-slide-panel {
@@ -1418,6 +1440,16 @@ html, body {
 .notif-item.error .notif-icon { color: var(--danger); }
 .notif-item.warning { border-color: var(--warning); }
 .notif-item.warning .notif-icon { color: var(--warning); }
+/* Toast undo */
+.notif-undo-item { gap: 10px; }
+.notif-undo-msg { flex: 1; }
+.notif-undo-btn {
+    flex-shrink: 0; padding: 2px 10px; border-radius: 4px;
+    border: 1px solid var(--warning); background: transparent;
+    color: var(--warning); font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; transition: background var(--transition-fast);
+}
+.notif-undo-btn:hover { background: var(--warning); color: #fff; }
 
 /* ================================================================
    ANIMATIONS
@@ -4299,3 +4331,21 @@ body.is-loading #preview-frame {
     opacity: 0.6;
 }
 .resize-handle-v:hover { opacity: 1; background: var(--primary); }
+
+/* ── Tablet responsive — hide ribbon button labels at ≤ 1024px ── */
+@media (max-width: 1024px) {
+    .tb-btn-lg .tb-label,
+    .split-btn-main .tb-label { display: none; }
+    .tb-btn-lg { min-width: 44px; padding: 6px 8px; height: 44px; }
+    .split-btn { height: 44px; }
+    .split-btn-main { min-width: 36px; padding: 6px 8px; }
+}
+
+/* ── Touch devices — 44px minimum hit targets (WCAG 2.5.5) ── */
+@media (pointer: coarse) {
+    .tb-btn { min-height: 44px; padding: 0 12px; }
+    .tb-btn-lg { min-height: 44px; min-width: 44px; }
+    .split-btn { height: 44px; }
+    .split-btn-main { min-height: 44px; }
+    .ribbon-tab { height: 48px; padding: 0 16px; }
+}

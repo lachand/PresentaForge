@@ -154,17 +154,13 @@ function renderSlideList() {
                     if (target.length > 1 && typeof activeEditor.duplicateSlides === 'function') activeEditor.duplicateSlides(target);
                     else activeEditor.duplicateSlide(i);
                     break;
-                case 'del':
-                    if (await OEIDialog.confirm(
-                        target.length > 1
-                            ? `Supprimer ${target.length} slides sélectionnés ?`
-                            : 'Supprimer ce slide ?',
-                        { danger: true },
-                    )) {
-                        if (target.length > 1 && typeof activeEditor.removeSlides === 'function') activeEditor.removeSlides(target);
-                        else activeEditor.removeSlide(i);
-                    }
+                case 'del': {
+                    const label = target.length > 1 ? `${target.length} slides supprimés` : 'Slide supprimé';
+                    if (target.length > 1 && typeof activeEditor.removeSlides === 'function') activeEditor.removeSlides(target);
+                    else activeEditor.removeSlide(i);
+                    notifyUndo(label, () => activeEditor.undo());
                     break;
+                }
             }
         });
     });
@@ -333,6 +329,8 @@ function renderPreview() {
     if (notesArea && document.activeElement !== notesArea) notesArea.value = slide.notes || '';
     const kpArea = document.getElementById('keypoints-textarea');
     if (kpArea && document.activeElement !== kpArea) kpArea.value = Array.isArray(slide.keypoints) ? slide.keypoints.join('\n') : '';
+    const durInput = document.getElementById('slide-duration-input');
+    if (durInput && document.activeElement !== durInput) durInput.value = slide.duration && Number(slide.duration) > 0 ? slide.duration : '';
     if (slide.type === 'canvas') {
         mountCanvasEditor(slide);
     } else {

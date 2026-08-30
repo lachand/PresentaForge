@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "title": "TP guidé",
+    "author": "",
+    "created": "2026-01-01",
+    "modified": "2026-01-01"
+  },
+  "theme": "dark",
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Travaux Pratiques",
+      "title": "Titre du TP",
+      "subtitle": "Objectifs et prérequis",
+      "author": "Prénom Nom",
+      "date": "2026"
+    },
+    {
+      "type": "bullets",
+      "title": "Objectifs du TP",
+      "items": [
+        "Objectif 1 : …",
+        "Objectif 2 : …",
+        "Durée estimée : 2h",
+        "Prérequis : …"
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "1",
+      "title": "Étape 1 — Mise en place",
+      "subtitle": "Préparer l'environnement de travail"
+    },
+    {
+      "type": "code",
+      "title": "Commandes d'initialisation",
+      "language": "bash",
+      "code": "# Cloner le dépôt\ngit clone https://github.com/org/tp-exemple.git\ncd tp-exemple\n\n# Installer les dépendances\npip install -r requirements.txt\n\n# Lancer les tests\npython -m pytest tests/"
+    },
+    {
+      "type": "chapter",
+      "number": "2",
+      "title": "Étape 2 — Exercice principal",
+      "subtitle": "Implémenter la solution"
+    },
+    {
+      "type": "split",
+      "title": "Consigne",
+      "left": {
+        "label": "Ce que vous devez faire",
+        "type": "bullets",
+        "items": [
+          "Compléter la fonction <code>foo()</code>",
+          "Passer tous les tests unitaires",
+          "Documenter votre code"
+        ]
+      },
+      "right": {
+        "label": "Code fourni",
+        "type": "code",
+        "language": "python",
+        "code": "def foo(x: int) -> int:\n    # TODO: implémenter\n    pass"
+      }
+    },
+    {
+      "type": "quiz-live",
+      "question": "Quel est le résultat attendu de foo(5) ?",
+      "options": ["10", "25", "5", "Erreur"],
+      "answer": 1,
+      "duration": 20
+    },
+    {
+      "type": "blank",
+      "title": "Bilan & rendu",
+      "content": "<p>Déposer votre solution sur le dépôt Git avant <b>23h59</b>.</p><p>Critères d'évaluation : correction, clarté, tests.</p>"
+    }
+  ]
+}

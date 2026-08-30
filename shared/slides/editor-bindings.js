@@ -353,50 +353,60 @@ function bindToolbar() {
         saveToRecent();
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
-    const _runExportWithMediaOptimization = async (fn, reason) => {
-        if (typeof window.optimizeMediaForExport === 'function') {
-            try {
-                await window.optimizeMediaForExport({ reason, silent: true });
-            } catch (err) {
-                console.warn('Media optimization skipped:', err);
+    const _runExportWithMediaOptimization = async (fn, reason, btn = null) => {
+        if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); }
+        try {
+            if (typeof window.optimizeMediaForExport === 'function') {
+                try {
+                    await window.optimizeMediaForExport({ reason, silent: true });
+                } catch (err) {
+                    console.warn('[OEI] Media optimization skipped:', err);
+                }
             }
+            await Promise.resolve(fn());
+        } finally {
+            if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
         }
-        await Promise.resolve(fn());
     };
-    document.getElementById('btn-export-pdf').addEventListener('click', async () => {
-        await _runExportWithMediaOptimization(() => exportPDF(), 'pdf');
+    document.getElementById('btn-export-pdf').addEventListener('click', async (e) => {
+        await _runExportWithMediaOptimization(() => exportPDF(), 'pdf', e.currentTarget);
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
-    document.getElementById('btn-export-html').addEventListener('click', async () => {
-        await _runExportWithMediaOptimization(() => exportHTML(), 'html');
+    document.getElementById('btn-export-html').addEventListener('click', async (e) => {
+        await _runExportWithMediaOptimization(() => exportHTML(), 'html', e.currentTarget);
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
-    document.getElementById('btn-export-html-offline')?.addEventListener('click', async () => {
-        await _runExportWithMediaOptimization(() => exportHTMLOffline(), 'html-offline');
+    document.getElementById('btn-export-html-offline')?.addEventListener('click', async (e) => {
+        await _runExportWithMediaOptimization(() => exportHTMLOffline(), 'html-offline', e.currentTarget);
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
-    document.getElementById('btn-export-png')?.addEventListener('click', async () => {
-        await _runExportWithMediaOptimization(() => exportPNG(), 'png');
+    document.getElementById('btn-export-png')?.addEventListener('click', async (e) => {
+        await _runExportWithMediaOptimization(() => exportPNG(), 'png', e.currentTarget);
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
-    document.getElementById('btn-export-png-batch')?.addEventListener('click', async () => {
-        await _runExportWithMediaOptimization(() => exportPNGBatch(), 'png-batch');
+    document.getElementById('btn-export-png-batch')?.addEventListener('click', async (e) => {
+        await _runExportWithMediaOptimization(() => exportPNGBatch(), 'png-batch', e.currentTarget);
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
-    document.getElementById('btn-export-pptx')?.addEventListener('click', async () => {
-        await _runExportWithMediaOptimization(() => exportPPTX(), 'pptx');
+    document.getElementById('btn-export-pptx')?.addEventListener('click', async (e) => {
+        await _runExportWithMediaOptimization(() => exportPPTX(), 'pptx', e.currentTarget);
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
     document.getElementById('btn-export-md')?.addEventListener('click', () => { exportMarkdown(); document.getElementById('split-export-menu')?.classList.add('hidden'); });
     document.getElementById('btn-print-notes')?.addEventListener('click', () => { printSpeakerNotes(); document.getElementById('split-export-menu')?.classList.add('hidden'); });
+    document.getElementById('btn-export-notes-md')?.addEventListener('click', () => { exportNotesMarkdown(); document.getElementById('split-export-menu')?.classList.add('hidden'); });
     document.getElementById('btn-qr-slide')?.addEventListener('click', () => { insertQRCodeSlide(); document.getElementById('split-export-menu')?.classList.add('hidden'); });
-    document.getElementById('btn-export-student')?.addEventListener('click', async () => {
-        await _runExportWithMediaOptimization(() => exportStudentHTML(), 'student-html');
+    document.getElementById('btn-export-student')?.addEventListener('click', async (e) => {
+        await _runExportWithMediaOptimization(() => exportStudentHTML(), 'student-html', e.currentTarget);
         document.getElementById('split-export-menu')?.classList.add('hidden');
     });
-    document.getElementById('btn-export-course-pack')?.addEventListener('click', async () => {
-        await _runExportWithMediaOptimization(() => exportCoursePack(), 'course-pack');
+    document.getElementById('btn-export-course-pack')?.addEventListener('click', async (e) => {
+        await _runExportWithMediaOptimization(() => exportCoursePack(), 'course-pack', e.currentTarget);
         document.getElementById('split-export-menu')?.classList.add('hidden');
+    });
+    // Firebase init failure → mise à jour du badge cloud
+    document.addEventListener('oei:firebase-init-failed', () => {
+        window.updateFirebaseCloudBadge?.('error');
     });
     document.getElementById('btn-optimize-media')?.addEventListener('click', async () => {
         await window.optimizePresentationMedia?.({ force: true, reason: 'manual-action' });
@@ -505,9 +515,24 @@ function bindRibbon() {
     const getCanvasEditor = () => _bindingsCanvasEditor();
     if (!getEditor()) return;
 
-    // Tab switching
-    document.querySelectorAll('.ribbon-tab').forEach(tab => {
+    // Tab switching (clic + navigation clavier fléchée, motif ARIA tablist)
+    const _ribbonTabs = Array.from(document.querySelectorAll('.ribbon-tab'));
+    _ribbonTabs.forEach(tab => {
         tab.addEventListener('click', () => switchRibbonTab(tab.dataset.ribbon));
+        tab.addEventListener('keydown', (e) => {
+            const visible = _ribbonTabs.filter(t => t.offsetParent !== null);
+            const idx = visible.indexOf(tab);
+            let next = null;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = visible[(idx + 1) % visible.length];
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = visible[(idx - 1 + visible.length) % visible.length];
+            else if (e.key === 'Home') next = visible[0];
+            else if (e.key === 'End') next = visible[visible.length - 1];
+            if (next) {
+                e.preventDefault();
+                switchRibbonTab(next.dataset.ribbon);
+                next.focus();
+            }
+        });
     });
 
     // Accueil tab: slide management
@@ -522,22 +547,14 @@ function bindRibbon() {
         }
         runtimeEditor.duplicateSlide(runtimeEditor.selectedIndex);
     });
-    document.getElementById('btn-del-slide').addEventListener('click', async () => {
+    document.getElementById('btn-del-slide').addEventListener('click', () => {
         const runtimeEditor = getEditor();
         if (!runtimeEditor) return;
         const selected = _selectedSlideIndicesForOps();
-        const ok = await OEIDialog.confirm(
-            selected.length > 1
-                ? `Supprimer ${selected.length} slides sélectionnés ?`
-                : 'Supprimer ce slide ?',
-            { danger: true },
-        );
-        if (!ok) return;
-        if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') {
-            runtimeEditor.removeSlides(selected);
-            return;
-        }
-        runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
+        const label = selected.length > 1 ? `${selected.length} slides supprimés` : 'Slide supprimé';
+        if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
+        else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
+        notifyUndo(label, () => runtimeEditor.undo());
     });
 
     // A5: Slide move up/down
@@ -683,6 +700,9 @@ function bindRibbon() {
 
     // Layout presets
     document.getElementById('btn-layout-preset')?.addEventListener('click', openLayoutPicker);
+
+    // Command palette button
+    document.getElementById('btn-command-palette')?.addEventListener('click', openCommandPalette);
 
     // Revision history
     document.getElementById('btn-revision-history')?.addEventListener('click', openRevisionHistory);
@@ -936,8 +956,18 @@ function initInsertionGroupFilter() {
 
 function updateToolbarState() {
     const activeEditor = _bindingsEditor();
-    document.getElementById('btn-undo').disabled = !activeEditor?.canUndo;
-    document.getElementById('btn-redo').disabled = !activeEditor?.canRedo;
+    const undoBtn = document.getElementById('btn-undo');
+    const redoBtn = document.getElementById('btn-redo');
+    if (undoBtn) {
+        undoBtn.disabled = !activeEditor?.canUndo;
+        const n = activeEditor?.undoCount ?? 0;
+        undoBtn.title = n > 0 ? `Annuler (${n} étape${n > 1 ? 's' : ''})` : 'Aucune action à annuler';
+    }
+    if (redoBtn) {
+        redoBtn.disabled = !activeEditor?.canRedo;
+        const n = activeEditor?.redoCount ?? 0;
+        redoBtn.title = n > 0 ? `Rétablir (${n} étape${n > 1 ? 's' : ''})` : 'Aucune action à rétablir';
+    }
 }
 
 function bindKeyboard() {
@@ -971,7 +1001,10 @@ function bindKeyboard() {
                 if (inSlideList) _copySelectedSlidesToClipboard();
                 else clipboardCopy();
             }
-            if (e.key === 'v') {
+            if (e.key === 'v' && e.shiftKey) {
+                e.preventDefault();
+                openCopyToSlideDialog();
+            } else if (e.key === 'v') {
                 e.preventDefault();
                 if (inSlideList) _pasteSlidesFromClipboard();
                 else clipboardPaste();
@@ -999,31 +1032,19 @@ function bindKeyboard() {
         }
         if (e.key === 'Delete' && e.shiftKey) {
             const selected = _selectedSlideIndicesForOps();
-            OEIDialog.confirm(
-                selected.length > 1
-                    ? `Supprimer ${selected.length} slides sélectionnés ?`
-                    : 'Supprimer ce slide ?',
-                { danger: true },
-            ).then(ok => {
-                if (!ok) return;
-                if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
-                else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
-            });
+            const label = selected.length > 1 ? `${selected.length} slides supprimés` : 'Slide supprimé';
+            if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
+            else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
+            notifyUndo(label, () => runtimeEditor.undo());
         }
         if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?.selectedIds?.size > 0) runtimeCanvas.removeSelected();
         if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?._selectedConnectorId) runtimeCanvas.removeSelected();
         if (e.key === 'Delete' && !e.shiftKey && inSlideList && !(runtimeCanvas?.selectedIds?.size > 0) && !runtimeCanvas?._selectedConnectorId) {
             const selected = _selectedSlideIndicesForOps();
-            OEIDialog.confirm(
-                selected.length > 1
-                    ? `Supprimer ${selected.length} slides sélectionnés ?`
-                    : 'Supprimer ce slide ?',
-                { danger: true },
-            ).then(ok => {
-                if (!ok) return;
-                if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
-                else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
-            });
+            const label = selected.length > 1 ? `${selected.length} slides supprimés` : 'Slide supprimé';
+            if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
+            else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
+            notifyUndo(label, () => runtimeEditor.undo());
         }
         if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();

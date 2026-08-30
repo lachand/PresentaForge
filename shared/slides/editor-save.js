@@ -48,7 +48,7 @@ async function saveToFile() {
         saveRevision('save');
     } catch (err) {
         if (err.name === 'AbortError') return; // User cancelled picker
-        console.error('Save error:', err);
+        console.error('[OEI] Save error:', err);
         notify('Erreur de sauvegarde : ' + err.message, 'error');
     }
 }
@@ -337,7 +337,7 @@ async function saveRevision(reason = 'auto') {
         });
         db.close();
     } catch (e) {
-        console.warn('Revision save failed:', e);
+        console.warn('[OEI] Revision save failed:', e);
     }
 }
 
@@ -364,7 +364,7 @@ async function getRevisions() {
             req.onerror = () => { reject(req.error); db.close(); };
         });
     } catch (e) {
-        console.warn('Revision load failed:', e);
+        console.warn('[OEI] Revision load failed:', e);
         return [];
     }
 }

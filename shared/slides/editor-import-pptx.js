@@ -93,7 +93,7 @@ async function importPowerPoint() {
                 notify(`Importé : ${data.slides.length} slides depuis ${file.name}`, 'success');
                 resolve(true);
             } catch (err) {
-                console.error('PPTX import error:', err);
+                console.error('[OEI] PPTX import error:', err);
                 notify('Erreur import PPTX : ' + err.message, 'error');
                 resolve(false);
             }
