@@ -414,6 +414,8 @@ body { background: var(--sl-bg); }
 .sl-split-rich-body > * { max-width: 100%; }
 .sl-split-rich-body .sl-mermaid-render svg,
 .sl-split-rich-body img { max-height: 100%; }
+/* image / vidéo : l'atome est déjà contenu (object-fit / iframe) → aucune barre de défilement */
+.sl-split-col--media, .sl-split-rich-body--media { overflow: hidden; }
 .sl-split-label { font-size: var(--sl-label-size, 0.7em); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sl-primary); margin-bottom: 0.25rem; line-height: 1.35; }
 
 /* Definition */

@@ -561,6 +561,8 @@ class SlidesRenderer {
             const label = col.label ? `<div class="sl-split-label">${SlidesRenderer.esc(col.label)}</div>` : '';
             let content = '';
             let rich = false;
+            // image / video : atome auto-contenu (object-fit / iframe) → pas de scroll sur la colonne.
+            const isMedia = col.type === 'image' || col.type === 'video';
             const canvasRenderer = window.OEISlidesRendererCanvas;
             if (col.type === 'code') {
                 const lang = SlidesRenderer.esc(col.language || 'text');
@@ -577,7 +579,7 @@ class SlidesRenderer {
                     index,
                     opts,
                 );
-                content = `<div class="sl-split-rich-body">${atom}</div>`;
+                content = `<div class="sl-split-rich-body${isMedia ? ' sl-split-rich-body--media' : ''}">${atom}</div>`;
             } else if (col.type === 'bullets' || (col.type !== 'code' && col.type !== 'text' && Array.isArray(col.items))) {
                 const revealItems = (col.revealItems != null) ? !!col.revealItems : !!s.revealItems;
                 const liCls = revealItems ? ' class="fragment"' : '';
@@ -586,7 +588,8 @@ class SlidesRenderer {
             } else {
                 content = renderText(col);
             }
-            const colCls = rich ? 'sl-split-col sl-split-col--rich' : 'sl-split-col';
+            let colCls = 'sl-split-col';
+            if (rich) colCls += isMedia ? ' sl-split-col--rich sl-split-col--media' : ' sl-split-col--rich';
             return `<div class="${colCls}">${label}${content}</div>`;
         };
         const title = s.title ? `<h2>${SlidesRenderer.esc(s.title)}</h2>` : '';
