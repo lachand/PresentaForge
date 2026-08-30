@@ -206,6 +206,7 @@ function _buildAIAdaptiveBalanceRules(tuning) {
 
 function _buildAISensitiveComponentRules() {
     return [
+        '- `split`: `left`/`right` avec `type` ∈ {bullets, text, code} (champs à plat) OU un type riche {image, video, latex, mermaid, table, highlight, card, definition, callout-box, quote, smartart, timeline-vertical, swot-grid, qrcode} avec les données dans `data`.',
         '- `smartart`: utiliser `data.variant` + `data.items` (éviter `data.type`).',
         '- `algo-stepper`: `data.steps` doit être un tableau d’objets `{title, detail, code}` (>= 3 étapes).',
         '- `quiz-live`: `data.question`, `data.options` (2-5), `data.answer` (index), `data.duration` (secondes).',

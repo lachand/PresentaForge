@@ -653,6 +653,44 @@
         return out;
     };
 
+    /* Types de colonne « split » à contenu riche — miroir de SPLIT_RICH_COLUMN_TYPES
+       de slides-core.js (chantier 12). Leur rendu passe par
+       OEISlidesRendererCanvas.renderElementContent({ type, data, style }). */
+    const RICH_SPLIT_COLUMN_TYPES = new Set([
+        'image', 'video', 'latex', 'mermaid', 'table', 'highlight', 'card', 'definition',
+        'smartart', 'diagramme', 'callout-box', 'quote', 'timeline-vertical', 'swot-grid', 'qrcode',
+    ]);
+    /* Champs « plats » que les générateurs IA posent parfois directement sur la colonne
+       au lieu de `col.data` — on les rapatrie dans `col.data`. `label` reste au niveau
+       colonne (badge `.sl-split-label`), distinct de `data.label`. */
+    const RICH_SPLIT_DATA_FIELDS = [
+        'src', 'alt', 'embedUrl', 'caption', 'expression', 'code', 'language', 'highlights',
+        'title', 'term', 'definition', 'example', 'text', 'author', 'value', 'variant',
+        'items', 'rows', 'steps', 'strength', 'weakness', 'opportunity', 'threat', 'nodes', 'blockLabel',
+    ];
+
+    const normalizeSplitColumn = (col, report, colPath) => {
+        if (!col || typeof col !== 'object') return col;
+        const t = String(col.type || '').trim();
+        if (!RICH_SPLIT_COLUMN_TYPES.has(t)) return col; // bullets / code / text : inchangé
+        const data = (col.data && typeof col.data === 'object') ? deepClone(col.data) : {};
+        let hoisted = false;
+        for (const key of RICH_SPLIT_DATA_FIELDS) {
+            if (col[key] !== undefined && data[key] === undefined) {
+                data[key] = deepClone(col[key]);
+                hoisted = true;
+            }
+        }
+        const next = { type: t, data };
+        if (typeof col.label === 'string' && col.label.trim()) next.label = col.label;
+        if (col.style && typeof col.style === 'object') next.style = deepClone(col.style);
+        if (typeof col.revealItems === 'boolean') next.revealItems = col.revealItems;
+        if (hoisted && report && colPath) {
+            pushFix(report, colPath, `Colonne split "${t}" : champs plats regroupés sous data.`);
+        }
+        return next;
+    };
+
     const convertLegacySplitDataToCanvas = (slide, index, report) => {
         const data = (slide.data && typeof slide.data === 'object') ? slide.data : {};
         const contentHtml = toStr(data.content, '');
@@ -766,6 +804,8 @@
                 out.right = { label: 'Illustration', type: 'text', text: rightText };
                 pushFix(report, path, 'split.left/right (texte) normalisés en colonnes structurées.');
             }
+            out.left = normalizeSplitColumn(out.left, report, `${path}.left`);
+            out.right = normalizeSplitColumn(out.right, report, `${path}.right`);
         }
 
         if (type === 'comparison') {

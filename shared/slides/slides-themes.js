@@ -403,8 +403,17 @@ body { background: var(--sl-bg); }
 
 /* Split */
 .sl-split { text-align: left; }
-.sl-split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; flex: 1; align-items: start; }
-.sl-split-col { display: flex; flex-direction: column; gap: 0.75rem; }
+.sl-split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; flex: 1; align-items: start; min-height: 0; }
+.sl-split-col { display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; overflow: auto; }
+/* Colonne à contenu riche (image, latex, mermaid, table…) : renderElementContent suppose
+   une boîte de rendu de taille définie (contexte canvas). En flow, on lui donne une hauteur
+   bornée pour que les hauteurs en pourcentage des atomes (SVG Mermaid, image…) résolvent.
+   Voir chantier 12. La slide Reveal fait 720px : ~440px sous le titre est confortable. */
+.sl-split-col--rich { align-self: stretch; }
+.sl-split-rich-body { flex: 0 1 auto; width: 100%; min-height: 0; height: var(--sl-split-rich-height, 440px); max-height: 100%; overflow: auto; position: relative; }
+.sl-split-rich-body > * { max-width: 100%; }
+.sl-split-rich-body .sl-mermaid-render svg,
+.sl-split-rich-body img { max-height: 100%; }
 .sl-split-label { font-size: var(--sl-label-size, 0.7em); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sl-primary); margin-bottom: 0.25rem; line-height: 1.35; }
 
 /* Definition */

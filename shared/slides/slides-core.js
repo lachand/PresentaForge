@@ -292,6 +292,15 @@ window.SlidesShared = SlidesShared;
    RENDERER
    ========================================================= */
 
+/* Types de colonne « split » à contenu riche : délégués à
+   OEISlidesRendererCanvas.renderElementContent (source unique du rendu d'atome,
+   extraite au chantier 3 étape 1). bullets / code / text gardent leurs branches
+   historiques. Voir docs/developer/PRESENTAFORGE_PLAN_EXECUTION_2026-08 — chantier 12. */
+const SPLIT_RICH_COLUMN_TYPES = new Set([
+    'image', 'video', 'latex', 'mermaid', 'table', 'highlight', 'card', 'definition',
+    'smartart', 'diagramme', 'callout-box', 'quote', 'timeline-vertical', 'swot-grid', 'qrcode',
+]);
+
 class SlidesRenderer {
 
     static esc(str) {
@@ -455,7 +464,7 @@ class SlidesRenderer {
             case 'chapter':    inner = SlidesRenderer._chapter(slide, opts, index); break;
             case 'bullets':    inner = SlidesRenderer._bullets(slide); break;
             case 'code':       inner = SlidesRenderer._code(slide); break;
-            case 'split':      inner = SlidesRenderer._split(slide); break;
+            case 'split':      inner = SlidesRenderer._split(slide, index, opts); break;
             case 'simulation': inner = SlidesRenderer._simulation(slide); break;
             case 'definition': inner = SlidesRenderer._definition(slide); break;
             case 'comparison': inner = SlidesRenderer._comparison(slide); break;
@@ -541,25 +550,44 @@ class SlidesRenderer {
         return `${title}${layout}`;
     }
 
-    static _split(s) {
+    static _split(s, index = 0, opts = {}) {
+        const renderText = (col) => {
+            // text type: accept col.text (string) or col.items (array, join as paragraphs)
+            const txt = col.text || (Array.isArray(col.items) ? col.items.map((v) => SlidesShared.formatInlineRichText(v)).join('</p><p>') : '');
+            return txt ? `<p>${txt}</p>` : '';
+        };
         const renderCol = (col) => {
             if (!col) return '';
             const label = col.label ? `<div class="sl-split-label">${SlidesRenderer.esc(col.label)}</div>` : '';
             let content = '';
+            let rich = false;
+            const canvasRenderer = window.OEISlidesRendererCanvas;
             if (col.type === 'code') {
                 const lang = SlidesRenderer.esc(col.language || 'text');
                 content = `<pre><code class="language-${lang}" data-trim data-noescape>${SlidesRenderer.esc(col.code || '')}</code></pre>`;
+            } else if (col.type === 'text') {
+                content = renderText(col);
+            } else if (SPLIT_RICH_COLUMN_TYPES.has(col.type) && canvasRenderer && typeof canvasRenderer.renderElementContent === 'function') {
+                // Contenu riche : réutilise le rendu d'atome canvas, dans une boîte flow de
+                // hauteur bornée (`.sl-split-rich-body`) — renderElementContent suppose un
+                // parent de taille définie (contexte canvas positionné). Voir chantier 12.
+                rich = true;
+                const atom = canvasRenderer.renderElementContent(
+                    { type: col.type, data: col.data || {}, style: col.style || {}, id: col.id },
+                    index,
+                    opts,
+                );
+                content = `<div class="sl-split-rich-body">${atom}</div>`;
             } else if (col.type === 'bullets' || (col.type !== 'code' && col.type !== 'text' && Array.isArray(col.items))) {
                 const revealItems = (col.revealItems != null) ? !!col.revealItems : !!s.revealItems;
                 const liCls = revealItems ? ' class="fragment"' : '';
                 const items = (col.items || []).map(i => `<li${liCls}>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
                 content = `<ul>${items}</ul>`;
             } else {
-                // text type: accept col.text (string) or col.items (array, join as paragraphs)
-                const txt = col.text || (Array.isArray(col.items) ? col.items.map((v) => SlidesShared.formatInlineRichText(v)).join('</p><p>') : '');
-                content = txt ? `<p>${txt}</p>` : '';
+                content = renderText(col);
             }
-            return `<div class="sl-split-col">${label}${content}</div>`;
+            const colCls = rich ? 'sl-split-col sl-split-col--rich' : 'sl-split-col';
+            return `<div class="${colCls}">${label}${content}</div>`;
         };
         const title = s.title ? `<h2>${SlidesRenderer.esc(s.title)}</h2>` : '';
         return `${title}<div class="sl-split-layout">${renderCol(s.left)}${renderCol(s.right)}</div>`;

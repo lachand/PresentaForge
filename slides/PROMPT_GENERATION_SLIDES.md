@@ -143,7 +143,7 @@ Les items apparaissent un par un (fragments Reveal.js).
   "title": "Comparaison",
   "left": {
     "label": "Avant",
-    "type": "bullets",     // "bullets", "code" ou "text"
+    "type": "bullets",     // voir la liste des types de colonne ci-dessous
     "items": ["A", "B"]   // pour type "bullets"
   },
   "right": {
@@ -153,7 +153,35 @@ Les items apparaissent un par un (fragments Reveal.js).
     "code": "print('done')"  // pour type "code"
   }
 }
-Pour type "text" : utiliser "text": "<p>Mon contenu HTML</p>" (une seule chaîne HTML).
+
+Types de colonne (`left.type` / `right.type`) :
+  • Historiques (champs à plat sur la colonne) :
+    - "bullets" → "items": ["…", "…"]
+    - "text"    → "text": "<p>HTML</p>"  (ou "items" joints en paragraphes)
+    - "code"    → "language" + "code"
+  • Riches (données dans "data", "style" optionnel) — même rendu que les éléments canvas :
+    - "image"            → data: { src, alt }
+    - "video"            → data: { src }            (URL YouTube / Vimeo)
+    - "latex"            → data: { expression }     (formule KaTeX)
+    - "mermaid"          → data: { code }           (graphe Mermaid)
+    - "table"            → data: { rows: [["A","B"], ["1","2"]] }
+    - "highlight"        → data: { code, language }
+    - "card"             → data: { title, items: ["…"] }
+    - "definition"       → data: { term, definition, example }
+    - "callout-box"      → data: { label, text }
+    - "quote"            → data: { text, author }
+    - "smartart"         → data: { variant: "process|cycle|pyramid|matrix", items: ["…"] }
+    - "timeline-vertical"→ data: { title, steps: ["…"] }
+    - "swot-grid"        → data: { strength: [], weakness: [], opportunity: [], threat: [] }
+    - "qrcode"           → data: { value, label }
+Exemple riche :
+{
+  "type": "split",
+  "title": "Formule & schéma",
+  "left":  { "label": "Formule", "type": "latex", "data": { "expression": "e^{i\\pi} + 1 = 0" } },
+  "right": { "label": "Schéma",  "type": "image", "data": { "src": "../images/euler.svg", "alt": "Cercle unité" } }
+}
+Les colonnes riches conservent la mise en page flow à 2 colonnes (pas besoin de « Convertir en canvas »).
 
 ▸ type: "definition" — Encadré définition
 {

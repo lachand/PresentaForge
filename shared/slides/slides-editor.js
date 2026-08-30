@@ -837,6 +837,89 @@ class SlidesEditor {
     // ── Helpers for editor forms ──────────────────────────
 
     /**
+     * Types acceptés pour une colonne de slide « split ».
+     * `bullets`/`text`/`code` : branches historiques de SlidesRenderer._split.
+     * Les autres délèguent à OEISlidesRendererCanvas.renderElementContent
+     * (voir chantier 12). Doit rester un sous-ensemble de SPLIT_RICH_COLUMN_TYPES
+     * de slides-core.js.
+     */
+    static get SPLIT_COLUMN_TYPES() {
+        return [
+            'bullets', 'text', 'code',
+            'image', 'video', 'latex', 'mermaid', 'table', 'highlight', 'card',
+            'definition', 'callout-box', 'quote', 'smartart', 'timeline-vertical',
+            'swot-grid', 'qrcode',
+        ];
+    }
+
+    /**
+     * Champs conditionnels d'une colonne « split » pour un côté donné (`left` | `right`).
+     * Les sous-champs riches ciblent `${side}.data.*` pour rester compatibles avec
+     * renderElementContent ({ type, data, style }).
+     * @param {'left'|'right'} side
+     * @param {string} sideLabel
+     * @returns {Array<object>}
+     */
+    static _splitColumnFields(side, sideLabel) {
+        const isType = (...types) => (s) => types.includes(s?.[side]?.type);
+        const isLegacy = (s) => {
+            const t = s?.[side]?.type;
+            return t == null || t === 'bullets' || t === 'text';
+        };
+        const CODE_LANGS = ['python', 'javascript', 'yaml', 'bash', 'java', 'go', 'rust', 'sql', 'html', 'css', 'text'];
+        return [
+            { key: `${side}.label`, label: `Label ${sideLabel}`, type: 'text' },
+            { key: `${side}.type`, label: `Type ${sideLabel}`, type: 'select', options: SlidesEditor.SPLIT_COLUMN_TYPES },
+            // Legacy : bullets / text (édités via l'éditeur de points, joints en paragraphes pour "text")
+            { key: `${side}.items`, label: 'Points', type: 'items', showIf: isLegacy },
+            // Legacy : code
+            { key: `${side}.code`, label: 'Code', type: 'code', showIf: isType('code') },
+            { key: `${side}.language`, label: 'Langage', type: 'select', options: CODE_LANGS, showIf: isType('code') },
+            // image
+            { key: `${side}.data.src`, label: 'URL image', type: 'text', placeholder: '../images/…', showIf: isType('image') },
+            { key: `${side}.data.alt`, label: 'Texte alt', type: 'text', showIf: isType('image') },
+            // video
+            { key: `${side}.data.src`, label: 'URL vidéo', type: 'text', placeholder: 'YouTube / Vimeo', showIf: isType('video') },
+            // latex
+            { key: `${side}.data.expression`, label: 'Expression LaTeX', type: 'textarea', placeholder: '\\int_0^1 x^2\\,dx', showIf: isType('latex') },
+            // mermaid
+            { key: `${side}.data.code`, label: 'Code Mermaid', type: 'code', placeholder: 'graph TD; A-->B', showIf: isType('mermaid') },
+            // table
+            { key: `${side}.data.rows`, label: 'Lignes (une par ligne, cellules séparées par |)', type: 'matrix', showIf: isType('table') },
+            // highlight (code annoté)
+            { key: `${side}.data.code`, label: 'Code', type: 'code', showIf: isType('highlight') },
+            { key: `${side}.data.language`, label: 'Langage', type: 'select', options: CODE_LANGS, showIf: isType('highlight') },
+            // card
+            { key: `${side}.data.title`, label: 'Titre carte', type: 'text', showIf: isType('card') },
+            { key: `${side}.data.items`, label: 'Points carte', type: 'items', showIf: isType('card') },
+            // definition
+            { key: `${side}.data.term`, label: 'Terme', type: 'text', showIf: isType('definition') },
+            { key: `${side}.data.definition`, label: 'Définition', type: 'textarea', showIf: isType('definition') },
+            { key: `${side}.data.example`, label: 'Exemple', type: 'textarea', showIf: isType('definition') },
+            // callout-box
+            { key: `${side}.data.label`, label: 'Label encadré', type: 'text', showIf: isType('callout-box') },
+            { key: `${side}.data.text`, label: 'Texte', type: 'textarea', showIf: isType('callout-box') },
+            // quote
+            { key: `${side}.data.text`, label: 'Citation', type: 'textarea', showIf: isType('quote') },
+            { key: `${side}.data.author`, label: 'Auteur', type: 'text', showIf: isType('quote') },
+            // smartart
+            { key: `${side}.data.variant`, label: 'Variante', type: 'select', options: ['process', 'cycle', 'pyramid', 'matrix'], showIf: isType('smartart') },
+            { key: `${side}.data.items`, label: 'Éléments', type: 'items', showIf: isType('smartart') },
+            // timeline-vertical
+            { key: `${side}.data.title`, label: 'Titre timeline', type: 'text', showIf: isType('timeline-vertical') },
+            { key: `${side}.data.steps`, label: 'Étapes', type: 'items', showIf: isType('timeline-vertical') },
+            // swot-grid
+            { key: `${side}.data.strength`, label: 'Forces', type: 'items', showIf: isType('swot-grid') },
+            { key: `${side}.data.weakness`, label: 'Faiblesses', type: 'items', showIf: isType('swot-grid') },
+            { key: `${side}.data.opportunity`, label: 'Opportunités', type: 'items', showIf: isType('swot-grid') },
+            { key: `${side}.data.threat`, label: 'Menaces', type: 'items', showIf: isType('swot-grid') },
+            // qrcode
+            { key: `${side}.data.value`, label: 'Valeur / URL', type: 'text', showIf: isType('qrcode') },
+            { key: `${side}.data.label`, label: 'Légende', type: 'text', showIf: isType('qrcode') },
+        ];
+    }
+
+    /**
      * Returns form field definitions for a given slide type.
      * Used by editor.html to build the properties panel.
      */
@@ -912,16 +995,8 @@ class SlidesEditor {
             ];
             case 'split': return [
                 { key: 'title',         label: 'Titre',               type: 'text' },
-                { key: 'left.label',    label: 'Label gauche',        type: 'text' },
-                { key: 'left.type',     label: 'Type gauche',         type: 'select', options: ['bullets','code','text'] },
-                { key: 'left.items',    label: 'Points gauche',       type: 'items',  showIf: (s) => s.left?.type !== 'code' },
-                { key: 'left.code',     label: 'Code gauche',         type: 'code',   showIf: (s) => s.left?.type === 'code' },
-                { key: 'left.language', label: 'Langage gauche',      type: 'select', options: ['python','javascript','yaml','bash','text'], showIf: (s) => s.left?.type === 'code' },
-                { key: 'right.label',   label: 'Label droite',        type: 'text' },
-                { key: 'right.type',    label: 'Type droite',         type: 'select', options: ['bullets','code','text'] },
-                { key: 'right.items',   label: 'Points droite',       type: 'items',  showIf: (s) => s.right?.type !== 'code' },
-                { key: 'right.code',    label: 'Code droite',         type: 'code',   showIf: (s) => s.right?.type === 'code' },
-                { key: 'right.language',label: 'Langage droite',      type: 'select', options: ['python','javascript','yaml','bash','text'], showIf: (s) => s.right?.type === 'code' },
+                ...SlidesEditor._splitColumnFields('left', 'gauche'),
+                ...SlidesEditor._splitColumnFields('right', 'droite'),
                 { key: 'keypoints',     label: 'Points clés étudiants', type: 'items', placeholder: 'Résumé visible par les étudiants...' },
                 { key: 'notes',         label: 'Notes orateur',       type: 'textarea' },
             ];

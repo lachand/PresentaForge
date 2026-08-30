@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "title": "Fixture — split à contenu riche",
+    "author": "Non-régression chantier 12",
+    "created": "2026-08-30",
+    "modified": "2026-08-30"
+  },
+  "theme": "dark",
+  "slides": [
+    {
+      "type": "split",
+      "title": "Split legacy (inchangé) — bullets + code",
+      "left": {
+        "label": "Avant",
+        "type": "bullets",
+        "items": ["Point <b>A</b>", "Point B"]
+      },
+      "right": {
+        "label": "Après",
+        "type": "code",
+        "language": "python",
+        "code": "def f(x):\n    return x * 2"
+      }
+    },
+    {
+      "type": "split",
+      "title": "Split legacy (inchangé) — texte libre",
+      "left": {
+        "label": "Contexte",
+        "type": "text",
+        "text": "<p>Un paragraphe HTML libre.</p>"
+      },
+      "right": {
+        "label": "Notes",
+        "type": "text",
+        "items": ["Ligne une", "Ligne deux"]
+      }
+    },
+    {
+      "type": "split",
+      "title": "Split riche — LaTeX + image",
+      "left": {
+        "label": "Formule",
+        "type": "latex",
+        "data": { "expression": "e^{i\\pi} + 1 = 0" }
+      },
+      "right": {
+        "label": "Schéma",
+        "type": "image",
+        "data": { "src": "../images/architecture.svg", "alt": "Schéma d'architecture" }
+      }
+    },
+    {
+      "type": "split",
+      "title": "Split riche — Mermaid + carte",
+      "left": {
+        "label": "Flux",
+        "type": "mermaid",
+        "data": { "code": "graph TD; A[Requete] --> B[Traitement] --> C[Reponse]" }
+      },
+      "right": {
+        "label": "À retenir",
+        "type": "card",
+        "data": { "title": "Points clés", "items": ["Idempotence", "Cache HTTP"] }
+      }
+    },
+    {
+      "type": "split",
+      "title": "Split riche — tableau + définition",
+      "left": {
+        "label": "Comparatif",
+        "type": "table",
+        "data": {
+          "rows": [
+            ["Méthode", "Idempotente"],
+            ["GET", "Oui"],
+            ["POST", "Non"]
+          ]
+        }
+      },
+      "right": {
+        "label": "Vocabulaire",
+        "type": "definition",
+        "data": {
+          "term": "Idempotence",
+          "definition": "Une opération répétée produit le même effet qu'une seule exécution.",
+          "example": "PUT /users/1"
+        }
+      }
+    }
+  ]
+}

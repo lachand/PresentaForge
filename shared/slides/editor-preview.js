@@ -337,6 +337,13 @@ function renderPreview() {
         unmountCanvasEditor();
         frame.innerHTML = SlidesRenderer.renderSlide(slide, activeEditor.selectedIndex, _slideRenderOpts());
         SlidesRenderer.mountRuntimeElements(frame, null, { includeSpecial: false, includeWidgets: true });
+        // Contenu riche non-interactif d'une colonne « split » (LaTeX / Mermaid) : monté
+        // via le runtime math (KaTeX + Mermaid sont passifs — pas de P2P ni Pyodide).
+        if (window.OEISlidesSpecialMathRuntime && frame.querySelector('.sl-latex-pending, .sl-mermaid-pending')) {
+            try {
+                window.OEISlidesSpecialMathRuntime.mountMathElements(frame, { SlidesRenderer });
+            } catch (_) { /* best-effort preview */ }
+        }
         if (window.hljs) {
             frame.querySelectorAll('code[class*=language-]').forEach(block => {
                 try { hljs.highlightElement(block); } catch(e) {}
@@ -405,6 +412,28 @@ function openCanvasPopover(element, event) {
     }
 }
 
+/**
+ * Applique la valeur d'un champ du popover en préservant les frères sous une clé
+ * de premier niveau (ex. `left.data.src` ne doit pas écraser `left.type`/`left.label`).
+ * `Object.assign` de updateSlide est peu profond : on reconstruit donc la branche
+ * `left`/`right` complète à partir de l'état courant.
+ */
+function applyFieldPatch(activeEditor, slide, key, value) {
+    const idx = activeEditor.selectedIndex;
+    const parts = String(key).split('.');
+    if (parts.length === 1) {
+        activeEditor.updateSlide(idx, { [key]: value });
+        return;
+    }
+    const topKey = parts[0];
+    const current = slide[topKey];
+    const branch = (current && typeof current === 'object' && !Array.isArray(current))
+        ? JSON.parse(JSON.stringify(current))
+        : {};
+    SlidesEditor.setDeep(branch, parts.slice(1).join('.'), value);
+    activeEditor.updateSlide(idx, { [topKey]: branch });
+}
+
 function openTemplatePopover(slide, refEvent) {
     const activeEditor = _previewCtx().editor;
     if (!slide || slide.type === 'canvas' || !activeEditor) return;
@@ -453,6 +482,10 @@ function openTemplatePopover(slide, refEvent) {
                 }).join('')}
                 <button class="add-item-btn" data-add-items>+ Ajouter un point</button>
             </div>`;
+        } else if (field.type === 'matrix') {
+            const rows = Array.isArray(val) ? val : [];
+            const txt = rows.map(r => (Array.isArray(r) ? r.join(' | ') : String(r ?? ''))).join('\n');
+            html += `<textarea class="code-field" data-field-matrix="${field.key}" placeholder="Cellule A | Cellule B | Cellule C" style="font-family:var(--mono)">${esc(txt)}</textarea>`;
         }
         html += `</div>`;
     }
@@ -497,9 +530,12 @@ function openTemplatePopover(slide, refEvent) {
         const key = input.dataset.field;
         const ev = input.tagName === 'SELECT' ? 'change' : 'input';
         input.addEventListener(ev, () => {
-            const patch = {};
-            SlidesEditor.setDeep(patch, key, input.value);
-            activeEditor.updateSlide(activeEditor.selectedIndex, patch);
+            applyFieldPatch(activeEditor, slide, key, input.value);
+            // Le type de colonne « split » pilote les sous-champs conditionnels :
+            // on rafraîchit le popover pour les faire apparaître/disparaître.
+            if (key === 'left.type' || key === 'right.type') {
+                openTemplatePopover(activeEditor.currentSlide, null);
+            }
         });
     });
 
@@ -534,23 +570,30 @@ function openTemplatePopover(slide, refEvent) {
         const getItems = () => Array.from(itemsEl.querySelectorAll('[data-item-idx]')).map(i => i.value);
         itemsEl.querySelectorAll('[data-item-idx]').forEach(input => {
             input.addEventListener('input', () => {
-                const patch = {};
-                SlidesEditor.setDeep(patch, key, getItems());
-                activeEditor.updateSlide(activeEditor.selectedIndex, patch);
+                applyFieldPatch(activeEditor, slide, key, getItems());
             });
         });
         itemsEl.querySelectorAll('[data-del-item]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = +btn.dataset.delItem;
                 const items = getItems(); items.splice(idx, 1);
-                const patch = {}; SlidesEditor.setDeep(patch, key, items);
-                activeEditor.updateSlide(activeEditor.selectedIndex, patch);
+                applyFieldPatch(activeEditor, slide, key, items);
             });
         });
         itemsEl.querySelector('[data-add-items]')?.addEventListener('click', () => {
             const items = getItems(); items.push('');
-            const patch = {}; SlidesEditor.setDeep(patch, key, items);
-            activeEditor.updateSlide(activeEditor.selectedIndex, patch);
+            applyFieldPatch(activeEditor, slide, key, items);
+        });
+    });
+
+    // Bind matrix editors (tableau : lignes texte, cellules séparées par « | »)
+    popover.querySelectorAll('[data-field-matrix]').forEach(ta => {
+        const key = ta.dataset.fieldMatrix;
+        ta.addEventListener('input', () => {
+            const rows = ta.value.split('\n')
+                .map(line => line.split('|').map(c => c.trim()))
+                .filter(row => row.some(c => c !== ''));
+            applyFieldPatch(activeEditor, slide, key, rows);
         });
     });
 
