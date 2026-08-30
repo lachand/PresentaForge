@@ -147,6 +147,21 @@
         const elStyle = el.style || {};
         const fillBg = el.type !== 'shape' && elStyle.fill ? `background-color:${elStyle.fill};` : '';
         const css = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;z-index:${el.z||1};overflow:${needsOverflow ? 'visible' : 'hidden'};box-sizing:border-box;${rot}${fillBg}`;
+        const content = _canvasElementContent(el, slideIndex, opts);
+        const captionHtml = SlidesShared.renderCaptionHtml(el, 'sl');
+        const elementIdAttr = el?.id ? ` data-element-id="${esc(String(el.id))}"` : '';
+        return `<div${cls}${fragmentAttr}${elementIdAttr} style="${css}">${content}${captionHtml}</div>`;
+    }
+
+    /**
+     * Rendu du CONTENU interne d'un élément canvas (sans le wrapper positionné).
+     * Source unique partagée entre le viewer (`_canvasElement`) et l'éditeur
+     * (`OEISlidesCanvasContentRuntime`) — voir PRESENTAFORGE_PLAN_EXECUTION_2026-08 chantier 3.
+     * @param {any} el @param {number} slideIndex @param {any} opts
+     * @returns {string}
+     */
+    function _canvasElementContent(el, slideIndex = 0, opts = {}) {
+        const SlidesShared = global.SlidesShared;
         let content = '';
         switch (el.type) {
             case 'heading':
@@ -910,9 +925,7 @@
                 break;
             }
         }
-        const captionHtml = SlidesShared.renderCaptionHtml(el, 'sl');
-        const elementIdAttr = el?.id ? ` data-element-id="${esc(String(el.id))}"` : '';
-        return `<div${cls}${fragmentAttr}${elementIdAttr} style="${css}">${content}${captionHtml}</div>`;
+        return content;
     }
 
     global.OEISlidesRendererCanvas = Object.freeze({
@@ -921,5 +934,7 @@
         _renderConnectors,
         _canvasSection,
         _canvasElement,
+        _canvasElementContent,
+        renderElementContent: _canvasElementContent,
     });
 })(window);

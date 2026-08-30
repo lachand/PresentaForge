@@ -582,7 +582,8 @@ class CanvasEditor {
 .cel-code-scroll { flex: 1; overflow: auto; display: flex; min-height: 0; }
 .cel-code-gutter {
     padding: 0.65rem 0.6rem 0.65rem 0.85rem;
-    color: #3d4451;
+    /* Aligné sur .sl-code-gutter (viewer) — WYSIWYG : les numéros de ligne doivent être lisibles */
+    color: #94a3b8;
     font-size: var(--cel-code-gutter-size, 13px);
     line-height: var(--cel-code-line-height, 1.58);
     user-select: none; text-align: right;
