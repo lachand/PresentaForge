@@ -876,7 +876,7 @@ class SlidesEditor {
             { key: `${side}.code`, label: 'Code', type: 'code', showIf: isType('code') },
             { key: `${side}.language`, label: 'Langage', type: 'select', options: CODE_LANGS, showIf: isType('code') },
             // image
-            { key: `${side}.data.src`, label: 'URL image', type: 'text', placeholder: '../images/…', showIf: isType('image') },
+            { key: `${side}.data.src`, label: 'Image', type: 'image-src', placeholder: 'URL, ../images/… ou fichier local', showIf: isType('image') },
             { key: `${side}.data.alt`, label: 'Texte alt', type: 'text', showIf: isType('image') },
             // video
             { key: `${side}.data.src`, label: 'URL vidéo', type: 'text', placeholder: 'YouTube / Vimeo', showIf: isType('video') },
@@ -982,7 +982,7 @@ class SlidesEditor {
             ];
             case 'image': return [
                 { key: 'title',     label: 'Titre',                   type: 'text' },
-                { key: 'src',       label: 'URL image',               type: 'text',     placeholder: '../images/...' },
+                { key: 'src',       label: 'Image',                   type: 'image-src', placeholder: 'URL, ../images/... ou fichier local' },
                 { key: 'caption',   label: 'Légende',                 type: 'text' },
                 { key: 'keypoints', label: 'Points clés étudiants',   type: 'items',    placeholder: 'Résumé visible par les étudiants...' },
                 { key: 'notes',     label: 'Notes orateur',           type: 'textarea' },

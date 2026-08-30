@@ -412,6 +412,48 @@ function openCanvasPopover(element, event) {
     }
 }
 
+/** Taille approximative (Ko/Mo) d'une data URI, pour l'affichage dans le popover. */
+function _fmtDataUriSize(dataUri) {
+    const comma = String(dataUri || '').indexOf(',');
+    const b64 = comma >= 0 ? dataUri.slice(comma + 1) : '';
+    const bytes = Math.floor((b64.length * 3) / 4);
+    if (bytes < 1024) return `${bytes} o`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
+
+/**
+ * Ouvre un sélecteur de fichier image, lit le fichier en data URI (base64), l'optimise
+ * si le pipeline média de l'éditeur est chargé, puis applique la valeur au champ `key`.
+ * Utilisé par le type de champ `image-src` (colonnes split image, slide image).
+ */
+function pickLocalImageForField(activeEditor, slide, key) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+            let src = String(reader.result || '');
+            const optimize = window.optimizeDataImageUrl;
+            if (src.startsWith('data:image/') && typeof optimize === 'function') {
+                try {
+                    const res = await optimize(src, { maxBytes: 260000, reason: 'image-src-pick' });
+                    if (res && res.changed && res.dataUrl) src = res.dataUrl;
+                } catch (_) { /* garde l'original */ }
+            }
+            applyFieldPatch(activeEditor, slide, key, src);
+            _previewNotify(`Image « ${file.name} » intégrée (${_fmtDataUriSize(src)})`, 'success');
+            openTemplatePopover(activeEditor.currentSlide, null);
+        };
+        reader.onerror = () => _previewNotify('Lecture du fichier impossible', 'error');
+        reader.readAsDataURL(file);
+    });
+    input.click();
+}
+
 /**
  * Applique la valeur d'un champ du popover en préservant les frères sous une clé
  * de premier niveau (ex. `left.data.src` ne doit pas écraser `left.type`/`left.label`).
@@ -486,6 +528,16 @@ function openTemplatePopover(slide, refEvent) {
             const rows = Array.isArray(val) ? val : [];
             const txt = rows.map(r => (Array.isArray(r) ? r.join(' | ') : String(r ?? ''))).join('\n');
             html += `<textarea class="code-field" data-field-matrix="${field.key}" placeholder="Cellule A | Cellule B | Cellule C" style="font-family:var(--mono)">${esc(txt)}</textarea>`;
+        } else if (field.type === 'image-src') {
+            const cur = String(val || '');
+            const isData = /^data:image\//i.test(cur);
+            html += `<div class="img-src-row">
+                <input type="text" value="${escAttr(cur)}" placeholder="${escAttr(field.placeholder || 'URL ou fichier local')}" data-field="${field.key}">
+                <button type="button" class="img-src-pick" data-img-pick="${field.key}">Fichier local…</button>
+            </div>`;
+            if (cur) {
+                html += `<div class="img-src-preview"><img src="${escAttr(cur)}" alt="">${isData ? `<span class="img-src-note">image intégrée · ${_fmtDataUriSize(cur)}</span>` : ''}</div>`;
+            }
         }
         html += `</div>`;
     }
@@ -595,6 +647,11 @@ function openTemplatePopover(slide, refEvent) {
                 .filter(row => row.some(c => c !== ''));
             applyFieldPatch(activeEditor, slide, key, rows);
         });
+    });
+
+    // Bind « Fichier local… » des champs image (data URI base64)
+    popover.querySelectorAll('[data-img-pick]').forEach(btn => {
+        btn.addEventListener('click', () => pickLocalImageForField(activeEditor, slide, btn.dataset.imgPick));
     });
 
     // Focus first content input
