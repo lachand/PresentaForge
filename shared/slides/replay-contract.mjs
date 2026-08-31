@@ -19,6 +19,9 @@ function toStringSafe(value, fallback = '') {
     return fallback;
 }
 
+// Conserve TOUS les types d'événements (pas de liste blanche) : `goTo`, `fragment`, `black`,
+// `timer`, `caption` mais aussi `laser` / `zoom` / `whiteboard:frame` (interactions
+// présentateur rejouées par les builders replay — chantier 13). Ne pas filtrer par type ici.
 function cloneEventList(events) {
     if (!Array.isArray(events)) return [];
     return events

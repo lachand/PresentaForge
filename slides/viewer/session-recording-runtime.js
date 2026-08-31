@@ -311,6 +311,23 @@ export function createSessionRecordingRuntime(params = {}) {
         });
     };
 
+    let laserRecordLastAt = -Infinity;
+    /**
+     * Le pointeur laser suit `mousemove` : sans throttle la session explose. On limite les
+     * positions actives à ~25/s mais on laisse toujours passer la désactivation pour ne pas
+     * figer le point rouge dans le replay. Coords normalisées 0..1 (fraction de la slide).
+     * @param {number} x
+     * @param {number} y
+     * @param {boolean} active
+     */
+    const recordLaser = (x, y, active) => {
+        const on = !!active;
+        const at = now();
+        if (on && (at - laserRecordLastAt) < 40) return;
+        laserRecordLastAt = at;
+        recordEvent('laser', { active: on, x: Number(x) || 0, y: Number(y) || 0 });
+    };
+
     const setLiveCaption = (text = '', ts = 0) => {
         const live = recLiveEl();
         if (!live) return;
@@ -785,6 +802,7 @@ export function createSessionRecordingRuntime(params = {}) {
         setLiveCaption,
         updateUi,
         recordEvent,
+        recordLaser,
         pauseSessionRecording,
         resumeSessionRecording,
         startSessionRecording,

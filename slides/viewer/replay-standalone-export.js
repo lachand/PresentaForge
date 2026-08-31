@@ -82,10 +82,12 @@ body.rp-light{
 .rp-meta{font-size:.76rem;color:var(--rp-muted)}
 .rp-stage-wrap{position:relative;width:100%;height:100%;min-height:0;background:var(--rp-stage-bg);border:1px solid var(--rp-border);border-radius:12px;overflow:hidden;box-shadow:0 12px 32px rgba(2,6,23,.20)}
 .rp-reveal{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:top left}
-.rp-reveal .slides{position:relative;width:100%;height:100%}
+.rp-reveal .slides{position:relative;width:100%;height:100%;transition:transform .12s ease}
 .rp-reveal .slides > section{position:absolute;inset:0}
 .rp-black{position:absolute;inset:0;background:var(--rp-black);opacity:0;pointer-events:none;transition:opacity .16s}
 .rp-black.active{opacity:1}
+.rp-whiteboard{position:absolute;left:0;top:0;width:1280px;height:720px;object-fit:contain;pointer-events:none;z-index:6}
+.rp-laser-dot{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(220,38,38,.9);box-shadow:0 0 8px 3px rgba(220,38,38,.5);pointer-events:none;transform:translate(-50%,-50%);z-index:8}
 .rp-controls{display:grid;grid-template-columns:auto auto auto auto auto minmax(140px,1fr) auto auto;gap:8px;align-items:center}
 .rp-btn,.rp-select{height:32px;border-radius:8px;border:1px solid var(--rp-border);background:var(--rp-surface);color:var(--rp-text);padding:0 10px;font-size:.76rem;cursor:pointer}
 .rp-btn:hover,.rp-select:hover{background:var(--rp-surface-hover)}
@@ -128,6 +130,8 @@ body.rp-light{
         <div class="rp-stage-wrap" id="rp-stage-wrap">
 <div class="reveal rp-reveal" id="rp-reveal">
     <div class="slides" id="rp-slide-root"></div>
+    <img class="rp-whiteboard" id="rp-whiteboard" alt="" style="display:none">
+    <div class="rp-laser-dot" id="rp-laser-dot" style="display:none"></div>
 </div>
 <div class="rp-black" id="rp-black"></div>
         </div>
@@ -180,6 +184,8 @@ body.rp-light{
     var reveal = document.getElementById('rp-reveal');
     var slideRoot = document.getElementById('rp-slide-root');
     var blackEl = document.getElementById('rp-black');
+    var laserDotEl = document.getElementById('rp-laser-dot');
+    var whiteboardEl = document.getElementById('rp-whiteboard');
     var playBtn = document.getElementById('rp-play');
     var prevBtn = document.getElementById('rp-prev');
     var nextBtn = document.getElementById('rp-next');
@@ -293,7 +299,7 @@ return 0;
         });
     }
     function computeStateAt(ms) {
-        var state = { index: 0, fragmentIndex: -1, black: false };
+        var state = { index: 0, fragmentIndex: -1, black: false, laser: null, zoom: null, whiteboard: null };
         for (var i = 0; i < events.length; i++) {
 var entry = events[i];
 var t = Math.max(0, Number(entry && entry.t || 0));
@@ -306,6 +312,7 @@ if (type === 'record:start') {
     var rFrag = toInt(payload.fragmentIndex);
     state.fragmentIndex = rFrag !== null ? rFrag : -1;
     state.black = false;
+    state.laser = null; state.zoom = null; state.whiteboard = null;
     continue;
 }
 if (type === 'goTo') {
@@ -314,6 +321,7 @@ if (type === 'goTo') {
         state.index = nextIdx;
         state.fragmentIndex = -1;
         state.black = false;
+        state.laser = null; state.zoom = null; state.whiteboard = null;
     }
     continue;
 }
@@ -326,12 +334,53 @@ if (type === 'fragment') {
     else state.fragmentIndex = Math.max(state.fragmentIndex, frag);
     continue;
 }
+if (type === 'laser') {
+    state.laser = (payload && payload.active)
+        ? { x: Number(payload.x) || 0, y: Number(payload.y) || 0 }
+        : null;
+    continue;
+}
+if (type === 'zoom') {
+    state.zoom = (payload && payload.active)
+        ? { x: Number(payload.x) || 0, y: Number(payload.y) || 0, scale: Number(payload.scale) || 1 }
+        : null;
+    continue;
+}
+if (type === 'whiteboard:frame') {
+    state.whiteboard = (payload && payload.active && payload.imageDataUrl)
+        ? { imageDataUrl: String(payload.imageDataUrl) }
+        : null;
+    continue;
+}
 if (type === 'black') {
     state.black = !!payload.on;
 }
         }
         state.index = clamp(state.index, 0, Math.max(0, totalSlides - 1));
         return state;
+    }
+    function applyLaserState(laser) {
+        if (!laserDotEl) return;
+        if (!laser) { laserDotEl.style.display = 'none'; return; }
+        laserDotEl.style.left = (clamp(Number(laser.x) || 0, 0, 1) * 100).toFixed(3) + '%';
+        laserDotEl.style.top = (clamp(Number(laser.y) || 0, 0, 1) * 100).toFixed(3) + '%';
+        laserDotEl.style.display = 'block';
+    }
+    function applyZoomState(zoom) {
+        var s = (zoom && zoom.scale > 1) ? zoom.scale : 1;
+        if (!zoom || s <= 1) {
+            slideRoot.style.transform = '';
+            slideRoot.style.transformOrigin = '';
+            return;
+        }
+        slideRoot.style.transformOrigin = (clamp(Number(zoom.x) || 0, 0, 1) * 100).toFixed(3) + '% ' + (clamp(Number(zoom.y) || 0, 0, 1) * 100).toFixed(3) + '%';
+        slideRoot.style.transform = 'scale(' + s + ')';
+    }
+    function applyWhiteboardState(wb) {
+        if (!whiteboardEl) return;
+        if (!wb || !wb.imageDataUrl) { whiteboardEl.style.display = 'none'; whiteboardEl.removeAttribute('src'); return; }
+        if (whiteboardEl.getAttribute('src') !== wb.imageDataUrl) whiteboardEl.setAttribute('src', wb.imageDataUrl);
+        whiteboardEl.style.display = 'block';
     }
     function renderState(state) {
         if (!state || !totalSlides) return;
@@ -349,6 +398,9 @@ lastRenderedSlide = state.index;
 frags[i].classList.toggle('visible', i <= state.fragmentIndex);
         }
         blackEl.classList.toggle('active', !!state.black);
+        applyLaserState(state.laser);
+        applyZoomState(state.zoom);
+        applyWhiteboardState(state.whiteboard);
         countEl.textContent = 'Slide ' + (state.index + 1) + ' / ' + totalSlides;
         prevBtn.disabled = state.index <= 0;
         nextBtn.disabled = state.index >= (totalSlides - 1);
