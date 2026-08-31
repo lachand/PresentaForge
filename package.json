@@ -6,7 +6,9 @@
     "docs:api": "typedoc --options typedoc.json",
     "docs:api:check": "typedoc --options typedoc.json --emit none",
     "qa:slides:metrics": "node tools/slides/refactor-metrics.mjs --check",
-    "qa:slides": "bash tools/ui-inline-audit.sh . && node tools/security/inline-expression-audit.mjs && node tools/security/innerhtml-audit.mjs && node tools/slides/refactor-guard.mjs && npm run qa:slides:metrics && node --test tests/slides/*.test.mjs && npm run docs:api:check",
+    "qa:slides": "bash tools/ui-inline-audit.sh . && node tools/security/inline-expression-audit.mjs && node tools/security/innerhtml-audit.mjs && node tools/slides/deck-schema-validate.mjs && node tools/slides/refactor-guard.mjs && npm run qa:slides:metrics && node --test tests/slides/*.test.mjs && npm run docs:api:check",
+    "qa:slides:visual": "MODE=compare bash tools/slides/capture-render-matrix.sh",
+    "qa:slides:visual:baseline": "MODE=baseline bash tools/slides/capture-render-matrix.sh",
     "relay:server": "node tools/slides/relay-server.mjs",
     "relay:kit": "bash tools/slides/start-with-relay.sh",
     "replay:build": "node tools/slides/replay-standalone.mjs",
@@ -17,6 +19,8 @@
     "ws": "^8.19.0"
   },
   "devDependencies": {
+    "pixelmatch": "^6.0.0",
+    "pngjs": "^7.0.0",
     "typedoc": "^0.27.9"
   }
 }
