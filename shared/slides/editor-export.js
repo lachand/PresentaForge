@@ -629,34 +629,57 @@ function exportNotesMarkdown() {
 
 window.exportNotesMarkdown = exportNotesMarkdown;
 
-/* ── Special elements mount script (shared by online & offline export) ── */
-const _MOUNT_SPECIAL_SCRIPT = `
-(function(){
-var esc=function(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-async function mountSpecial(container){
-  if(!container)return;
-  var latexEls=container.querySelectorAll('.sl-latex-pending');
-  if(latexEls.length){
-    if(!window._slKatexLoaded){window._slKatexLoaded=true;
-      var lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='../vendor/katex/0.16.11/katex.min.css';document.head.appendChild(lnk);
-      await new Promise(function(ok,ko){var s=document.createElement('script');s.src='../vendor/katex/0.16.11/katex.min.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s);});}
-    if(window.katex){latexEls.forEach(function(el){var t=el.querySelector('.sl-latex-render');if(!t||t.dataset.rendered)return;var expr=el.dataset.latex||'';try{t.innerHTML=katex.renderToString(expr,{displayMode:true,throwOnError:false});t.dataset.rendered='1';}catch(e){t.innerHTML='<span style="color:#f87171">'+esc(expr)+'</span>';}});}}
-  var mmEls=container.querySelectorAll('.sl-mermaid-pending');
-  if(mmEls.length){
-    if(!window._slMermaidLoaded){window._slMermaidLoaded=true;
-      await new Promise(function(ok,ko){var s=document.createElement('script');s.src='../vendor/mermaid/10.9.1/mermaid.min.js';s.onload=function(){var _bg=(getComputedStyle(document.documentElement).getPropertyValue('--sl-slide-bg')||getComputedStyle(document.documentElement).getPropertyValue('--sl-bg')||'').trim();var _mm=_bg.match(/^#?([0-9a-f]{6})$/i);var _mt='default';if(_mm){var _h=_mm[1];if((0.2126*parseInt(_h.slice(0,2),16)+0.7152*parseInt(_h.slice(2,4),16)+0.0722*parseInt(_h.slice(4,6),16))/255<0.5)_mt='dark';}mermaid.initialize({startOnLoad:false,theme:_mt,securityLevel:'loose'});ok();};s.onerror=ko;document.head.appendChild(s);});}
-    if(window.mermaid){for(var i=0;i<mmEls.length;i++){var el=mmEls[i],tgt=el.querySelector('.sl-mermaid-render'),src=el.querySelector('pre');if(!tgt||!src||tgt.dataset.rendered)continue;try{var id='sl-mm-'+Math.random().toString(36).slice(2,9);var r=await mermaid.render(id,src.textContent);tgt.innerHTML=r.svg;var svg=tgt.querySelector('svg');if(svg){svg.style.maxWidth='100%';svg.style.maxHeight='100%';svg.style.height='auto';}tgt.dataset.rendered='1';}catch(e){tgt.innerHTML='<pre style="color:#f87171;font-size:12px">'+esc(e.message||'Erreur Mermaid')+'</pre>';}}}}
-  container.querySelectorAll('.sl-timer-content').forEach(function(el){if(el.dataset.timerBound)return;el.dataset.timerBound='1';var dur=parseInt(el.dataset.duration)||300;var remaining=dur,iv=null,running=false;var disp=el.querySelector('.sl-timer-display'),bs=el.querySelector('.sl-timer-start'),bp=el.querySelector('.sl-timer-pause'),br=el.querySelector('.sl-timer-reset');if(!disp||!bs)return;var fmt=function(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};var tick=function(){remaining=Math.max(0,remaining-1);disp.textContent=fmt(remaining);if(remaining<=0){clearInterval(iv);running=false;bs.style.display='';bp.style.display='none';disp.classList.add('sl-timer-ended');}};bs.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();if(!running&&remaining>0){running=true;disp.classList.remove('sl-timer-ended');iv=setInterval(tick,1000);bs.style.display='none';bp.style.display='';}});bp.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();clearInterval(iv);running=false;bs.style.display='';bp.style.display='none';});br.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();clearInterval(iv);running=false;remaining=dur;disp.textContent=fmt(dur);disp.classList.remove('sl-timer-ended');bs.style.display='';bp.style.display='none';});});
-  container.querySelectorAll('.sl-quiz-options[data-answer]').forEach(function(optEl){if(optEl.dataset.quizBound)return;optEl.dataset.quizBound='1';var ci=optEl.dataset.answer;if(ci==='')return;var opts=optEl.querySelectorAll('.sl-quiz-option');opts.forEach(function(o){o.addEventListener('click',function(e){e.stopPropagation();if(optEl.dataset.quizAnswered)return;optEl.dataset.quizAnswered='1';opts.forEach(function(x){if(x.dataset.idx===ci)x.classList.add('sl-quiz-correct');else x.classList.add('sl-quiz-wrong');});var sec=optEl.closest('section');if(sec){var expl=sec.querySelector('.sl-quiz-explanation');if(expl){expl.style.display='';expl.classList.add('visible');expl.style.opacity='1';}}});});});
-  container.querySelectorAll('.sl-codelive-pending').forEach(function(el){if(el.dataset.codeliveBound)return;el.dataset.codeliveBound='1';var lang=el.dataset.language||'python';var ta=el.querySelector('.sl-codelive-code'),con=el.querySelector('.sl-codelive-console'),br2=el.querySelector('.sl-codelive-run'),bc=el.querySelector('.sl-codelive-clear');if(!ta||!con||!br2)return;ta.addEventListener('keydown',function(e){if(e.key==='Tab'){e.preventDefault();var s=ta.selectionStart,end=ta.selectionEnd;ta.value=ta.value.substring(0,s)+'    '+ta.value.substring(end);ta.selectionStart=ta.selectionEnd=s+4;}});var app=function(t,c){var sp=document.createElement('span');sp.style.color=c||'inherit';sp.textContent=t;con.appendChild(sp);con.scrollTop=con.scrollHeight;};br2.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();var code=ta.value;if(lang==='javascript'||lang==='js'){con.textContent='';var ol=console.log,oe=console.error;var logs=[];console.log=function(){logs.push({t:[].slice.call(arguments).join(' ')+'\\n',c:'inherit'});};console.error=function(){logs.push({t:[].slice.call(arguments).join(' ')+'\\n',c:'#f87171'});};try{var r=new Function(code)();logs.forEach(function(l){app(l.t,l.c);});if(r!==undefined)app('→ '+String(r)+'\\n','#a5b4fc');}catch(err){logs.forEach(function(l){app(l.t,l.c);});app('❌ '+err.message+'\\n','#f87171');}finally{console.log=ol;console.error=oe;}}else{(async function(){con.textContent='';app('⏳ Python…\\n','#64748b');if(!window._slPyodideLoaded){window._slPyodideLoaded=true;try{await new Promise(function(ok,ko){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s);});window._slPyodide=await loadPyodide();}catch(e2){app('❌ '+e2.message+'\\n','#f87171');return;}}while(!window._slPyodide&&window._slPyodideLoaded)await new Promise(function(r2){setTimeout(r2,200);});if(!window._slPyodide)return;con.textContent='';try{window._slPyodide.setStdout({batched:function(t){app(t+'\\n','inherit');}});window._slPyodide.setStderr({batched:function(t){app(t+'\\n','#f87171');}});var r3=await window._slPyodide.runPythonAsync(code);if(r3!==undefined&&r3!==null)app('→ '+String(r3)+'\\n','#a5b4fc');}catch(err2){app('❌ '+(err2.message||String(err2))+'\\n','#f87171');}})();}});if(bc)bc.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();con.textContent='';});if(el.dataset.autorun==='1')setTimeout(function(){br2.click();},500);});
-  container.querySelectorAll('.sl-quizlive-pending').forEach(function(el){if(el.dataset.quizliveBound)return;el.dataset.quizliveBound='1';var rmId=el.dataset.room,ca=parseInt(el.dataset.answer)||0,dur2=parseInt(el.dataset.duration)||30;var bs2=el.querySelector('.sl-quizlive-start'),te2=el.querySelector('.sl-quizlive-timer'),se2=el.querySelector('.sl-quizlive-status'),re2=el.querySelector('.sl-quizlive-results'),qr2=el.querySelector('.sl-quizlive-qr'),opts2=el.querySelectorAll('.sl-quizlive-option');if(!bs2)return;var nO=opts2.length,pr=null,cn=[],rsp={},iv2=null,rem2=dur2,act=false;var upd=function(){var cts=Array(nO).fill(0),tot=Object.keys(rsp).length;Object.values(rsp).forEach(function(r){if(r>=0&&r<nO)cts[r]++;});var h='<div style="font-size:0.75rem;color:#64748b;margin-bottom:8px">'+tot+' rép.</div><div style="display:flex;flex-direction:column;gap:6px">';cts.forEach(function(c,i){var p=tot>0?Math.round(c/tot*100):0;var cl=i===ca?'#34d399':'#818cf8';h+='<div style="display:flex;align-items:center;gap:8px"><span style="min-width:24px;font-weight:700;font-size:0.85rem;color:'+(i===ca?'#34d399':'#cbd5e1')+'">'+String.fromCharCode(65+i)+'</span><div style="flex:1;height:28px;background:rgba(30,33,48,0.8);border-radius:6px;overflow:hidden;position:relative"><div style="height:100%;width:'+p+'%;background:'+cl+';border-radius:6px;opacity:0.8"></div><span style="position:absolute;inset:0;display:flex;align-items:center;padding-left:8px;font-size:0.75rem;color:#fff;font-weight:600">'+p+'% ('+c+')</span></div></div>';});h+='</div>';re2.innerHTML=h;};bs2.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();if(act)return;act=true;bs2.disabled=true;bs2.textContent='⏳';se2.textContent='Connexion P2P…';(async function(){if(!window._slPeerLoaded){window._slPeerLoaded=true;await new Promise(function(ok,ko){var s=document.createElement('script');s.src='../vendor/peerjs/1.5.5/peerjs.min.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s);});}try{pr=new Peer(rmId,{debug:0});await new Promise(function(ok,ko){pr.on('open',ok);pr.on('error',function(e3){if(e3.type==='unavailable-id'){var ai=rmId+'-'+Date.now().toString(36).slice(-4);pr=new Peer(ai,{debug:0});pr.on('open',ok);pr.on('error',ko);}else ko(e3);});setTimeout(function(){ko(new Error('Timeout'));},10000);});}catch(ex){se2.textContent='❌ '+ex.message;bs2.textContent='Réessayer';bs2.disabled=false;act=false;return;}var url=location.origin+location.pathname.replace(/[^\\/]*$/,'')+'quiz-student.html?room='+encodeURIComponent(pr.id);qr2.style.display='';qr2.innerHTML='<img src=\"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(url)+'\" style=\"width:100%;height:100%;object-fit:contain;border-radius:4px\">';pr.on('connection',function(conn){cn.push(conn);conn.on('data',function(d){if(d&&d.type==='answer'&&act){rsp[conn.peer]=d.value;upd();se2.textContent=Object.keys(rsp).length+' rép. — '+rem2+'s';}});conn.on('open',function(){var q=el.querySelector('.sl-quizlive-question');conn.send({type:'quiz',question:q?q.textContent:'',options:Array.from(opts2).map(function(o){return o.textContent.trim().slice(1).trim();}),duration:rem2,roomId:pr.id});});});re2.style.display='';upd();rem2=dur2;te2.textContent=rem2+'s';bs2.textContent='⏹ Stop';bs2.disabled=false;iv2=setInterval(function(){rem2--;te2.textContent=rem2+'s';se2.textContent=Object.keys(rsp).length+' rép. — '+rem2+'s';if(rem2<=0){clearInterval(iv2);act=false;cn.forEach(function(c){try{c.send({type:'end'});}catch(x){}});opts2.forEach(function(o,i){if(i===ca){o.style.borderColor='#34d399';o.style.background='rgba(52,211,153,0.15)';}});se2.textContent='Terminé — '+Object.keys(rsp).length+' rép.';bs2.textContent='🔄 Relancer';upd();}},1000);})();});});
+/* ── Runtime des éléments spéciaux inliné dans les exports HTML ─────────────
+ * Les exports HTML autonomes embarquent les VRAIS runtimes (slides-typography +
+ * slides-core + les 4 sous-runtimes + l'orchestrateur), au lieu d'une copie inline
+ * qui divergeait. Même technique que tools/slides/replay-standalone.mjs.
+ */
+const _SPECIAL_RUNTIME_SOURCES = Object.freeze([
+    '../shared/slides/slides-typography.js',
+    '../shared/slides/slides-core.js',
+    '../shared/slides/slides-special-math-runtime.js',
+    '../shared/slides/slides-special-code-runtime.js',
+    '../shared/slides/slides-special-quiz-runtime.js',
+    '../shared/slides/slides-special-live-runtime.js',
+    '../shared/slides/slides-special-runtime.js',
+]);
+
+let _specialRuntimeInlineCache = null;
+
+/** Récupère et concatène les runtimes d'éléments spéciaux en blocs <script> autonomes. */
+async function _buildSpecialRuntimeInline() {
+    if (_specialRuntimeInlineCache != null) return _specialRuntimeInlineCache;
+    const blocks = [];
+    for (const src of _SPECIAL_RUNTIME_SOURCES) {
+        try {
+            const resp = await fetch(src);
+            if (!resp.ok) {
+                console.warn('[OEI] runtime special non inline (HTTP ' + resp.status + '):', src);
+                continue;
+            }
+            const code = (await resp.text()).replace(/<\/script/gi, '<\\/script');
+            blocks.push('<script>/* ' + src.split('/').pop() + ' */\n' + code + '\n<\/script>');
+        } catch (e) {
+            console.warn('[OEI] runtime special non inline:', src, e);
+        }
+    }
+    _specialRuntimeInlineCache = blocks.join('\n');
+    return _specialRuntimeInlineCache;
 }
-  container.querySelectorAll('.sl-quizlive-qr').forEach(function(q){if(q.style.display!=='none'&&!q.dataset.qrInteractive)_slMakeQrDR(q);});
-}
-function _slMakeQrDR(qr){if(qr.dataset.qrInteractive)return;qr.dataset.qrInteractive='1';qr.style.cursor='grab';qr.style.zIndex='20';qr.style.boxShadow='0 4px 20px rgba(0,0,0,0.4)';qr.style.pointerEvents='auto';var h=qr.querySelector('.sl-qr-resize-handle');if(!h){h=document.createElement('div');h.className='sl-qr-resize-handle';h.textContent='\u21f2';h.style.position='absolute';h.style.right='-2px';h.style.bottom='-2px';h.style.width='16px';h.style.height='16px';h.style.cursor='nwse-resize';h.style.background='#818cf8';h.style.borderRadius='3px';h.style.display='flex';h.style.alignItems='center';h.style.justifyContent='center';h.style.fontSize='10px';h.style.color='#fff';h.style.opacity='0';h.style.transition='opacity 0.2s';h.style.pointerEvents='auto';h.style.zIndex='5';qr.appendChild(h);}qr.addEventListener('mouseenter',function(){h.style.opacity='0.8';});qr.addEventListener('mouseleave',function(){if(!dr)h.style.opacity='0';});var dr=false,rs=false,sx,sy,sl,st,sw,sh;var gs=function(){var s=qr.closest('.slides')||document.querySelector('.reveal .slides');if(s){var r=s.getBoundingClientRect();return r.width/(s.offsetWidth||1280);}return 1;};var elp=function(){if(qr.style.right&&qr.style.right!=='auto'){var p=qr.offsetParent||qr.parentElement;if(p){var pw=p.clientWidth||p.offsetWidth;qr.style.left=(pw-qr.offsetWidth-(parseInt(qr.style.right)||0))+'px';qr.style.right='auto';}}};h.addEventListener('pointerdown',function(e){e.stopPropagation();e.preventDefault();elp();rs=true;sx=e.clientX;sy=e.clientY;sw=qr.offsetWidth;sh=qr.offsetHeight;h.setPointerCapture(e.pointerId);});h.addEventListener('pointermove',function(e){if(!rs)return;var sc=gs(),d=Math.max((e.clientX-sx)/sc,(e.clientY-sy)/sc),ns=Math.max(80,sw+d);qr.style.width=ns+'px';qr.style.height=ns+'px';});h.addEventListener('pointerup',function(){rs=false;});h.addEventListener('pointercancel',function(){rs=false;});qr.addEventListener('pointerdown',function(e){if(rs||e.target===h)return;e.stopPropagation();e.preventDefault();elp();dr=true;sx=e.clientX;sy=e.clientY;sl=qr.offsetLeft;st=qr.offsetTop;qr.style.cursor='grabbing';qr.setPointerCapture(e.pointerId);});qr.addEventListener('pointermove',function(e){if(!dr||rs)return;var sc=gs();qr.style.left=(sl+(e.clientX-sx)/sc)+'px';qr.style.top=(st+(e.clientY-sy)/sc)+'px';qr.style.right='auto';});qr.addEventListener('pointerup',function(){if(dr){dr=false;qr.style.cursor='grab';}});qr.addEventListener('pointercancel',function(){if(dr){dr=false;qr.style.cursor='grab';}});}
-window._mountSpecial=function(){mountSpecial(document.getElementById('reveal-root'));mountSpecial(document.getElementById('presenter-view'));};
-window._mountSpecial();
-if(typeof Reveal!=='undefined')Reveal.addEventListener('slidechanged',function(){window._mountSpecial();});
+
+/* Bootstrap : monte les éléments spéciaux (LaTeX, Mermaid, timer, quiz statique,
+ * code-live, quiz-live…) via le runtime unifié. Rejoué à chaque changement de slide. */
+const _SPECIAL_MOUNT_BOOTSTRAP = `(function(){
+  function mountAll(){
+    ['reveal-root','presenter-view'].forEach(function(id){
+      var root=document.getElementById(id);
+      if(!root||!window.SlidesRenderer||typeof window.SlidesRenderer.mountSpecialElements!=='function')return;
+      try{window.SlidesRenderer.mountSpecialElements(root);}catch(e){console.error('[OEI] mountSpecialElements',e);}
+    });
+  }
+  window._mountSpecial=mountAll;
+  mountAll();
+  if(typeof Reveal!=='undefined'&&Reveal.addEventListener)Reveal.addEventListener('slidechanged',mountAll);
 })();`;
 
 /* ── Export HTML ────────────────────────────────────────── */
@@ -751,9 +774,9 @@ if (!window.ExerciseRunnerPage) window.ExerciseRunnerPage = window.ConceptPage;<
         ? `\nReveal.addEventListener('slidechanged', function(){ window._mountOEIWidgets(); });\nwindow._mountOEIWidgets();`
         : '';
 
-    // Mount special elements (LaTeX, Mermaid, Timer, Quiz interactivity)
-    // Reuse the shared standalone script template to avoid drift between exports.
-    const mountSpecialCall = _MOUNT_SPECIAL_SCRIPT;
+    // Éléments spéciaux (LaTeX, Mermaid, timer, quiz statique, code-live, quiz-live) :
+    // on inline les VRAIS runtimes + un bootstrap, pas de copie divergente.
+    const specialRuntimeInline = await _buildSpecialRuntimeInline();
 
     // Check whether any slide has notes
     const hasNotes = visibleSlides.some(s => s.notes);
@@ -906,8 +929,9 @@ ${mountScript}
 // Embedded slide metadata for presenter mode
 var _pvSlidesData = ${presenterSlidesData};
 <\/script>
+${specialRuntimeInline}
 <script>
-${mountSpecialCall}
+${_SPECIAL_MOUNT_BOOTSTRAP}
 <\/script>
 <script type="module">
 import Reveal from 'https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.esm.js';
@@ -1295,6 +1319,7 @@ async function _buildOfflineExportDocument(data) {
     if (!data) throw new Error('Aucune présentation à exporter');
     const resources = await _fetchOfflineResources();
     const fontCSS = await _fetchGoogleFontsCssForOffline();
+    const specialRuntimeInline = await _buildSpecialRuntimeInline();
 
     const themeData = _resolveExportTheme(data);
     const _stripRootBody = css => css.replace(/:root\s*\{[^}]*\}/g, '').replace(/body\s*\{[^}]*\}/g, '');
@@ -1359,8 +1384,9 @@ var deck = new Reveal(document.getElementById('reveal-root'), {
 });
 deck.initialize();
 <\/script>
+${specialRuntimeInline}
 <script>
-${_MOUNT_SPECIAL_SCRIPT}
+${_SPECIAL_MOUNT_BOOTSTRAP}
 <\/script>
 </body></html>`;
 

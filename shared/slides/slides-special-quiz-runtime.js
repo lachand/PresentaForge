@@ -8,9 +8,10 @@
     /**
      * Monte les éléments quiz interactifs dans le container.
      * @param {Element} container
-     * @param {{ SlidesRenderer, isAudienceReadOnly, emitAudienceElementState, subscribeAudienceElementState, disableInteractiveControls }} ctx
+     * @param {{ prefix?: 'sl'|'cel', SlidesRenderer, isAudienceReadOnly, emitAudienceElementState, subscribeAudienceElementState, disableInteractiveControls }} ctx
      */
     async function mountQuizElements(container, ctx) {
+        const P = (ctx && ctx.prefix) || 'sl';
         const SlidesRenderer = ctx?.SlidesRenderer;
         const isAudienceReadOnly = !!ctx?.isAudienceReadOnly;
         const emitAudienceElementState = ctx?.emitAudienceElementState || (() => false);
@@ -22,18 +23,18 @@
         };
 
         // ── Quiz Live (interactive P2P quiz with PeerJS) ──
-        container.querySelectorAll('.sl-quizlive-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-quizlive-pending`).forEach(el => {
             if (el.dataset.quizliveBound) return;
             el.dataset.quizliveBound = '1';
             const roomId = el.dataset.room || 'ql-' + Math.random().toString(36).slice(2, 9);
             const correctAnswer = parseInt(el.dataset.answer) || 0;
             const duration = parseInt(el.dataset.duration) || 30;
-            const btnStart = el.querySelector('.sl-quizlive-start');
-            const timerEl = el.querySelector('.sl-quizlive-timer');
-            const statusEl = el.querySelector('.sl-quizlive-status');
-            const resultsEl = el.querySelector('.sl-quizlive-results');
-            const qrEl = el.querySelector('.sl-quizlive-qr');
-            const optionsEls = el.querySelectorAll('.sl-quizlive-option');
+            const btnStart = el.querySelector(`.${P}-quizlive-start`);
+            const timerEl = el.querySelector(`.${P}-quizlive-timer`);
+            const statusEl = el.querySelector(`.${P}-quizlive-status`);
+            const resultsEl = el.querySelector(`.${P}-quizlive-results`);
+            const qrEl = el.querySelector(`.${P}-quizlive-qr`);
+            const optionsEls = el.querySelectorAll(`.${P}-quizlive-option`);
             if (!btnStart) return;
 
             let peer = null, connections = [], responses = {}, timerInterval = null, remaining = duration, quizActive = false;
@@ -51,7 +52,7 @@
 
             const optLabels = Array.from(optionsEls).map(o => o.textContent.trim().slice(1).trim());
             const nOpts = optionsEls.length;
-            const questionText = el.querySelector('.sl-quizlive-question')?.textContent || '';
+            const questionText = el.querySelector(`.${P}-quizlive-question`)?.textContent || '';
             const computeCounts = () => {
                 const counts = Array(nOpts).fill(0);
                 const total = Object.keys(responses).length;
@@ -254,6 +255,7 @@
 
                 // Show QR code
                 qrEl.style.display = '';
+                // `sl-qr-resize-handle` reste littéral : consommé par SlidesRenderer._makeQrInteractive.
                 qrEl.innerHTML = `<img src="${SlidesRenderer._buildQrSrc(quizUrl, 200)}" style="width:100%;height:100%;object-fit:contain;border-radius:4px;"><div class="sl-qr-resize-handle">⇲</div>`;
                 SlidesRenderer._makeQrInteractive(qrEl);
 
@@ -269,7 +271,7 @@
                         }
                     });
                     conn.on('open', () => {
-                        conn.send({ type: 'quiz', question: el.querySelector('.sl-quizlive-question')?.textContent || '', options: optLabels, duration: remaining, roomId: peer.id });
+                        conn.send({ type: 'quiz', question: el.querySelector(`.${P}-quizlive-question`)?.textContent || '', options: optLabels, duration: remaining, roomId: peer.id });
                     });
                 });
 
@@ -346,14 +348,14 @@
         });
 
         // ── Cloze ──
-        container.querySelectorAll('.sl-cloze-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-cloze-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const sentence = String(el.dataset.sentence || '');
             const safeSentence = SlidesRenderer.esc(sentence);
             const blanks = parseDataJson(el.dataset.blanks, []);
-            const body = el.querySelector('.sl-cloze-body');
-            const btn = el.querySelector('.sl-cloze-toggle');
+            const body = el.querySelector(`.${P}-cloze-body`);
+            const btn = el.querySelector(`.${P}-cloze-toggle`);
             if (!body || !btn) return;
             let shown = false;
             const publishClozeState = (extraState = {}) => emitAudienceElementState(el, 'cloze', Object.assign({
@@ -396,19 +398,19 @@
         });
 
         // ── Drag-drop ──
-        container.querySelectorAll('.sl-dnd-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-dnd-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const items = parseDataJson(el.dataset.items, []);
             const targets = parseDataJson(el.dataset.targets, []);
-            const itemsHost = el.querySelector('.sl-dnd-items');
-            const targetsHost = el.querySelector('.sl-dnd-targets');
+            const itemsHost = el.querySelector(`.${P}-dnd-items`);
+            const targetsHost = el.querySelector(`.${P}-dnd-targets`);
             if (!itemsHost || !targetsHost) return;
             const cards = Array.isArray(items) ? items : [];
             const cols = (Array.isArray(targets) && targets.length ? targets : ['Zone A', 'Zone B']).slice(0, 4);
 
-            itemsHost.innerHTML = cards.map((label, i) => `<button class="sl-dnd-item" data-i="${i}" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);color:var(--sl-text,#e2e8f0);font-size:0.75rem;cursor:grab;" draggable="true">${SlidesRenderer.esc(label)}</button>`).join('');
-            targetsHost.innerHTML = cols.map((c, i) => `<div class="sl-dnd-target" data-t="${i}" style="flex:1;min-width:0;border:1px dashed var(--sl-border,#2d3347);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;"><div style="font-size:0.68rem;color:var(--sl-muted,#64748b);font-weight:700;">${SlidesRenderer.esc(c)}</div></div>`).join('');
+            itemsHost.innerHTML = cards.map((label, i) => `<button class="${P}-dnd-item" data-i="${i}" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);color:var(--sl-text,#e2e8f0);font-size:0.75rem;cursor:grab;" draggable="true">${SlidesRenderer.esc(label)}</button>`).join('');
+            targetsHost.innerHTML = cols.map((c, i) => `<div class="${P}-dnd-target" data-t="${i}" style="flex:1;min-width:0;border:1px dashed var(--sl-border,#2d3347);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;"><div style="font-size:0.68rem;color:var(--sl-muted,#64748b);font-weight:700;">${SlidesRenderer.esc(c)}</div></div>`).join('');
             const syncDndState = () => emitAudienceElementState(el, 'drag-drop', {
                 itemsHtml: itemsHost.innerHTML,
                 targetsHtml: targetsHost.innerHTML,
@@ -429,13 +431,13 @@
             }
             syncDndState();
             let dragHtml = '';
-            itemsHost.querySelectorAll('.sl-dnd-item').forEach(btn => {
+            itemsHost.querySelectorAll(`.${P}-dnd-item`).forEach(btn => {
                 btn.addEventListener('dragstart', e => {
                     dragHtml = btn.outerHTML;
                     e.dataTransfer?.setData('text/plain', btn.dataset.i || '');
                 });
             });
-            targetsHost.querySelectorAll('.sl-dnd-target').forEach(zone => {
+            targetsHost.querySelectorAll(`.${P}-dnd-target`).forEach(zone => {
                 zone.addEventListener('dragover', e => e.preventDefault());
                 zone.addEventListener('drop', e => {
                     e.preventDefault();
@@ -453,17 +455,17 @@
         });
 
         // ── MCQ Multi ──
-        container.querySelectorAll('.sl-mcqmulti-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-mcqmulti-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const options = parseDataJson(el.dataset.options, []);
             const answers = new Set(parseDataJson(el.dataset.answers, []).map(v => Number(v)));
-            const host = el.querySelector('.sl-mcqmulti-options');
-            const checkBtn = el.querySelector('.sl-mcqmulti-check');
-            const endBtn = el.querySelector('.sl-mcqmulti-end');
-            const result = el.querySelector('.sl-mcqmulti-result');
+            const host = el.querySelector(`.${P}-mcqmulti-options`);
+            const checkBtn = el.querySelector(`.${P}-mcqmulti-check`);
+            const endBtn = el.querySelector(`.${P}-mcqmulti-end`);
+            const result = el.querySelector(`.${P}-mcqmulti-result`);
             if (!host || !checkBtn || !result) return;
-            const questionText = String(el.querySelector('.sl-mcq-question')?.textContent || '').trim();
+            const questionText = String(el.querySelector(`.${P}-mcq-question`)?.textContent || '').trim();
             const publishMcqMultiState = (extraState = {}) => emitAudienceElementState(el, 'mcq-multi', Object.assign({
                 hostHtml: host.innerHTML,
                 resultHtml: result.innerHTML,
@@ -610,17 +612,17 @@
         });
 
         // ── MCQ Single ──
-        container.querySelectorAll('.sl-mcqsingle-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-mcqsingle-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const options = parseDataJson(el.dataset.options, []);
             const answer = Number(el.dataset.answer ?? 0);
-            const host = el.querySelector('.sl-mcqsingle-options');
-            const checkBtn = el.querySelector('.sl-mcqsingle-check');
-            const endBtn = el.querySelector('.sl-mcqsingle-end');
-            const result = el.querySelector('.sl-mcqsingle-result');
+            const host = el.querySelector(`.${P}-mcqsingle-options`);
+            const checkBtn = el.querySelector(`.${P}-mcqsingle-check`);
+            const endBtn = el.querySelector(`.${P}-mcqsingle-end`);
+            const result = el.querySelector(`.${P}-mcqsingle-result`);
             if (!host || !checkBtn || !result) return;
-            const questionText = String(el.querySelector('.sl-mcq-question')?.textContent || '').trim();
+            const questionText = String(el.querySelector(`.${P}-mcq-question`)?.textContent || '').trim();
             const publishMcqSingleState = (extraState = {}) => emitAudienceElementState(el, 'mcq-single', Object.assign({
                 hostHtml: host.innerHTML,
                 resultHtml: result.innerHTML,

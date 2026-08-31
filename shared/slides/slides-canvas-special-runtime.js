@@ -6,23 +6,11 @@
     const root = typeof globalThis !== 'undefined' ? globalThis : global;
     if (root.OEISlidesCanvasSpecialRuntime) return;
 
-    const MERMAID_SRC = '../vendor/mermaid/10.9.1/mermaid.min.js';
-    const KATEX_CSS = '../vendor/katex/0.16.11/katex.min.css';
-    const KATEX_SRC = '../vendor/katex/0.16.11/katex.min.js';
     const QRCODE_SRC = '../vendor/qrcode-generator/1.4.4/qrcode.min.js';
 
-    /** Thème Mermaid ('dark'/'default') selon la luminance du fond de slide résolu. */
-    function mermaidThemeForSlide(windowRef) {
-        try {
-            const cs = (windowRef || root).getComputedStyle((windowRef || root).document.documentElement);
-            const raw = (cs.getPropertyValue('--sl-slide-bg') || cs.getPropertyValue('--sl-bg') || '').trim();
-            const m = raw.match(/^#?([0-9a-f]{6})$/i);
-            if (!m) return 'default';
-            const h = m[1];
-            const lum = (0.2126 * parseInt(h.slice(0, 2), 16) + 0.7152 * parseInt(h.slice(2, 4), 16) + 0.0722 * parseInt(h.slice(4, 6), 16)) / 255;
-            return lum < 0.5 ? 'dark' : 'default';
-        } catch (_) { return 'default'; }
-    }
+    // Le chargement (et l'unique init) de Mermaid/KaTeX est délégué à
+    // OEISlidesSpecialMathRuntime — une seule implémentation, partagée avec le viewer.
+    const mathRuntime = windowRef => (windowRef && windowRef.OEISlidesSpecialMathRuntime) || root.OEISlidesSpecialMathRuntime || null;
 
     let mermaidLoading = false;
     let katexLoading = false;
@@ -44,15 +32,6 @@
             script.onerror = () => reject(new Error(`Failed to load ${src}`));
             documentRef.head?.appendChild?.(script);
         });
-    };
-
-    const ensureStylesheet = (href, documentRef) => {
-        if (!documentRef) return;
-        if (documentRef.querySelector?.(`link[href="${href}"]`)) return;
-        const link = documentRef.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = href;
-        documentRef.head?.appendChild?.(link);
     };
 
     const doRenderMermaid = async (els, context = {}) => {
@@ -77,10 +56,6 @@
         const container = context.container;
         if (!container) return;
         const windowRef = context.windowRef || root;
-        const documentRef = context.documentRef || root.document;
-        const loadScript = typeof context.loadScript === 'function'
-            ? context.loadScript
-            : (src => defaultLoadScript(src, documentRef));
         const els = Array.from(container.querySelectorAll?.('.cel-mermaid-content') || []);
         if (!els.length) return;
         if (windowRef.mermaid) {
@@ -88,15 +63,13 @@
             return;
         }
         if (mermaidLoading) return;
+        const math = mathRuntime(windowRef);
+        if (!math || typeof math.ensureMermaidLoaded !== 'function') return;
         mermaidLoading = true;
-        loadScript(MERMAID_SRC).then(() => {
-            if (windowRef.mermaid?.initialize) {
-                windowRef.mermaid.initialize({ startOnLoad: false, theme: mermaidThemeForSlide(windowRef), securityLevel: 'loose' });
-            }
-            return doRenderMermaid(els, context);
-        }).catch(() => {}).finally(() => {
-            mermaidLoading = false;
-        });
+        Promise.resolve(math.ensureMermaidLoaded())
+            .then(() => doRenderMermaid(els, context))
+            .catch(() => {})
+            .finally(() => { mermaidLoading = false; });
     };
 
     const doRenderLatex = (els, context = {}) => {
@@ -119,10 +92,6 @@
         const container = context.container;
         if (!container) return;
         const windowRef = context.windowRef || root;
-        const documentRef = context.documentRef || root.document;
-        const loadScript = typeof context.loadScript === 'function'
-            ? context.loadScript
-            : (src => defaultLoadScript(src, documentRef));
         const els = Array.from(container.querySelectorAll?.('.cel-latex-content') || []);
         if (!els.length) return;
         if (windowRef.katex) {
@@ -130,13 +99,13 @@
             return;
         }
         if (katexLoading) return;
+        const math = mathRuntime(windowRef);
+        if (!math || typeof math.ensureKatexLoaded !== 'function') return;
         katexLoading = true;
-        ensureStylesheet(KATEX_CSS, documentRef);
-        loadScript(KATEX_SRC).then(() => {
-            doRenderLatex(els, context);
-        }).catch(() => {}).finally(() => {
-            katexLoading = false;
-        });
+        Promise.resolve(math.ensureKatexLoaded())
+            .then(() => doRenderLatex(els, context))
+            .catch(() => {})
+            .finally(() => { katexLoading = false; });
     };
 
     const doRenderQR = (containers, context = {}) => {

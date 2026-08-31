@@ -10,9 +10,10 @@
     /**
      * Monte les éléments live/interactifs dans le container.
      * @param {Element} container
-     * @param {{ SlidesRenderer, isAudienceReadOnly, emitAudienceElementState, subscribeAudienceElementState, disableInteractiveControls }} ctx
+     * @param {{ prefix?: 'sl'|'cel', SlidesRenderer, isAudienceReadOnly, emitAudienceElementState, subscribeAudienceElementState, disableInteractiveControls }} ctx
      */
     async function mountLiveElements(container, ctx) {
+        const P = (ctx && ctx.prefix) || 'sl';
         const SlidesRenderer = ctx?.SlidesRenderer;
         const isAudienceReadOnly = !!ctx?.isAudienceReadOnly;
         const emitAudienceElementState = ctx?.emitAudienceElementState || (() => false);
@@ -24,14 +25,14 @@
         };
 
         // ── Poll Live ──
-        container.querySelectorAll('.sl-polllive-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-polllive-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const pollType = el.dataset.pollType === 'thumbs' ? 'thumbs' : 'scale5';
             const prompt = String(el.dataset.prompt || '').trim();
-            const startBtn = el.querySelector('.sl-polllive-start');
-            const endBtn = el.querySelector('.sl-polllive-end');
-            const resultsEl = el.querySelector('.sl-polllive-results');
+            const startBtn = el.querySelector(`.${P}-polllive-start`);
+            const endBtn = el.querySelector(`.${P}-polllive-end`);
+            const resultsEl = el.querySelector(`.${P}-polllive-results`);
             if (!startBtn || !endBtn || !resultsEl) return;
             const publishPollState = (extraState = {}) => emitAudienceElementState(el, 'poll-live', Object.assign({
                 pollType,
@@ -121,7 +122,7 @@
         });
 
         // ── Exit Ticket ──
-        container.querySelectorAll('.sl-exitticket-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-exitticket-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const title = String(el.dataset.title || '').trim() || 'Exit ticket';
@@ -131,10 +132,10 @@
                 .filter(Boolean)
                 .slice(0, 4);
             const safePrompts = prompts.length ? prompts : ['Ce que je retiens', 'Ce qui reste flou', 'Question finale'];
-            const promptsEl = el.querySelector('.sl-exitticket-prompts');
-            const resultsEl = el.querySelector('.sl-exitticket-results');
-            const startBtn = el.querySelector('.sl-exitticket-start');
-            const endBtn = el.querySelector('.sl-exitticket-end');
+            const promptsEl = el.querySelector(`.${P}-exitticket-prompts`);
+            const resultsEl = el.querySelector(`.${P}-exitticket-results`);
+            const startBtn = el.querySelector(`.${P}-exitticket-start`);
+            const endBtn = el.querySelector(`.${P}-exitticket-end`);
             if (!promptsEl || !resultsEl || !startBtn || !endBtn) return;
             const publishExitTicketState = (extraState = {}) => emitAudienceElementState(el, 'exit-ticket', Object.assign({
                 promptsHtml: promptsEl.innerHTML,
@@ -246,13 +247,13 @@
         });
 
         // ── Postit Wall ──
-        container.querySelectorAll('.sl-postitlive-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-postitlive-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const prompt = String(el.dataset.prompt || '').trim();
-            const grid = el.querySelector('.sl-postitlive-grid');
-            const startBtn = el.querySelector('.sl-postitlive-start');
-            const endBtn = el.querySelector('.sl-postitlive-end');
+            const grid = el.querySelector(`.${P}-postitlive-grid`);
+            const startBtn = el.querySelector(`.${P}-postitlive-start`);
+            const endBtn = el.querySelector(`.${P}-postitlive-end`);
             if (!grid || !startBtn || !endBtn) return;
             const publishPostitState = (extraState = {}) => emitAudienceElementState(el, 'postit-wall', Object.assign({
                 gridHtml: grid.innerHTML,
@@ -327,11 +328,11 @@
         });
 
         // ── Audience Roulette ──
-        container.querySelectorAll('.sl-roulette-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-roulette-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
-            const pickBtn = el.querySelector('.sl-roulette-pick');
-            const pickedEl = el.querySelector('.sl-roulette-picked');
+            const pickBtn = el.querySelector(`.${P}-roulette-pick`);
+            const pickedEl = el.querySelector(`.${P}-roulette-picked`);
             if (!pickBtn || !pickedEl) return;
             const publishRouletteState = (extraState = {}) => emitAudienceElementState(el, 'roulette', Object.assign({
                 pickedHtml: pickedEl.innerHTML,
@@ -379,12 +380,12 @@
         });
 
         // ── Room Stats ──
-        container.querySelectorAll('.sl-roomstats-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-roomstats-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const metrics = parseDataJson(el.dataset.metrics, ['students', 'hands', 'questions', 'feedback']);
-            const grid = el.querySelector('.sl-roomstats-grid');
-            const foot = el.querySelector('.sl-roomstats-foot');
+            const grid = el.querySelector(`.${P}-roomstats-grid`);
+            const foot = el.querySelector(`.${P}-roomstats-foot`);
             if (!grid) return;
             if (isAudienceReadOnly) {
                 grid.innerHTML = `<div style="grid-column:1/-1;font-size:0.74rem;color:var(--sl-muted,#64748b);">Widget réservé au présentateur</div>`;
@@ -434,11 +435,11 @@
         });
 
         // ── Leaderboard Live ──
-        container.querySelectorAll('.sl-leaderboard-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-leaderboard-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
-            const listEl = el.querySelector('.sl-leaderboard-list');
-            const foot = el.querySelector('.sl-leaderboard-foot');
+            const listEl = el.querySelector(`.${P}-leaderboard-list`);
+            const foot = el.querySelector(`.${P}-leaderboard-foot`);
             const limit = Math.max(1, Math.min(20, Number(el.dataset.limit || 5)));
             if (!listEl) return;
             if (isAudienceReadOnly) {
@@ -483,10 +484,10 @@
         });
 
         // ── Decision Tree ──
-        container.querySelectorAll('.sl-decisiontree-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-decisiontree-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
-            const host = el.querySelector('.sl-dt-branches');
+            const host = el.querySelector(`.${P}-dt-branches`);
             const branches = parseDataJson(el.dataset.branches, []);
             if (!host) return;
             host.innerHTML = (Array.isArray(branches) ? branches : []).slice(0, 8).map(b => `
@@ -498,19 +499,19 @@
         });
 
         // ── Code Compare ──
-        container.querySelectorAll('.sl-codecompare-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-codecompare-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
-            const host = el.querySelector('.sl-codecompare-view');
-            const slider = el.querySelector('.sl-codecompare-range');
+            const host = el.querySelector(`.${P}-codecompare-view`);
+            const slider = el.querySelector(`.${P}-codecompare-range`);
             const before = String(el.dataset.before || '');
             const after = String(el.dataset.after || '');
             if (!host || !slider) return;
             host.innerHTML = `<pre style="position:absolute;inset:0;margin:0;padding:10px;overflow:auto;font-size:0.72rem;font-family:var(--sl-font-mono,monospace);color:#cbd5e1;background:#0b1020;">${before}</pre>
-                <div class="sl-codecompare-after-wrap" style="position:absolute;inset:0;overflow:hidden;width:50%;border-right:2px solid rgba(167,139,250,0.9);">
+                <div class="${P}-codecompare-after-wrap" style="position:absolute;inset:0;overflow:hidden;width:50%;border-right:2px solid rgba(167,139,250,0.9);">
                     <pre style="margin:0;padding:10px;overflow:auto;font-size:0.72rem;font-family:var(--sl-font-mono,monospace);color:#e2e8f0;background:#0f172a;">${after}</pre>
                 </div>`;
-            const afterWrap = host.querySelector('.sl-codecompare-after-wrap');
+            const afterWrap = host.querySelector(`.${P}-codecompare-after-wrap`);
             const publishCodeCompareState = (extraState = {}) => emitAudienceElementState(el, 'code-compare', Object.assign({
                 value: Number(slider.value) || 50,
             }, (extraState && typeof extraState === 'object') ? extraState : {}));
@@ -535,15 +536,15 @@
         });
 
         // ── Algo Stepper ──
-        container.querySelectorAll('.sl-algostepper-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-algostepper-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const steps = parseDataJson(el.dataset.steps, []);
-            const ttl = el.querySelector('.sl-algostepper-step-title');
-            const det = el.querySelector('.sl-algostepper-step-detail');
-            const code = el.querySelector('.sl-algostepper-code');
-            const prev = el.querySelector('.sl-algostepper-prev');
-            const next = el.querySelector('.sl-algostepper-next');
+            const ttl = el.querySelector(`.${P}-algostepper-step-title`);
+            const det = el.querySelector(`.${P}-algostepper-step-detail`);
+            const code = el.querySelector(`.${P}-algostepper-code`);
+            const prev = el.querySelector(`.${P}-algostepper-prev`);
+            const next = el.querySelector(`.${P}-algostepper-next`);
             if (!ttl || !det || !code || !prev || !next) return;
             let idx = 0;
             const render = () => {
@@ -591,14 +592,14 @@
         });
 
         // ── Gallery Annotable ──
-        container.querySelectorAll('.sl-galleryanno-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-galleryanno-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const src = String(el.dataset.src || '');
             const alt = String(el.dataset.alt || 'Image annotée');
             const notes = parseDataJson(el.dataset.notes, []);
-            const stage = el.querySelector('.sl-galleryanno-stage');
-            const caption = el.querySelector('.sl-galleryanno-caption');
+            const stage = el.querySelector(`.${P}-galleryanno-stage`);
+            const caption = el.querySelector(`.${P}-galleryanno-caption`);
             if (!stage || !caption) return;
             stage.innerHTML = src ? `<img src="${src}" alt="${SlidesRenderer.esc(alt)}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--sl-muted,#64748b);font-size:0.74rem;">Image non définie</div>`;
             let activeIndex = 0;
@@ -631,15 +632,15 @@
         });
 
         // ── Kanban Mini ──
-        container.querySelectorAll('.sl-kanban-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-kanban-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const cols = parseDataJson(el.dataset.columns, []);
-            const host = el.querySelector('.sl-kanban-cols');
+            const host = el.querySelector(`.${P}-kanban-cols`);
             if (!host) return;
-            host.innerHTML = (Array.isArray(cols) ? cols : []).slice(0, 4).map(col => `<div class="sl-kb-col" style="flex:1;min-width:0;border:1px solid var(--sl-border,#2d3347);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;">
+            host.innerHTML = (Array.isArray(cols) ? cols : []).slice(0, 4).map(col => `<div class="${P}-kb-col" style="flex:1;min-width:0;border:1px solid var(--sl-border,#2d3347);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;">
                 <div style="font-size:0.68rem;color:var(--sl-muted,#64748b);font-weight:700;text-transform:uppercase;">${SlidesRenderer.esc(col?.name || '')}</div>
-                ${(Array.isArray(col?.cards) ? col.cards : []).slice(0, 6).map((c, i) => `<div class="sl-kb-card" draggable="true" data-card="${i}" style="pointer-events:auto;padding:5px;border:1px solid var(--sl-border,#2d3347);border-radius:6px;font-size:0.68rem;cursor:grab;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);">${SlidesRenderer.esc(c)}</div>`).join('')}
+                ${(Array.isArray(col?.cards) ? col.cards : []).slice(0, 6).map((c, i) => `<div class="${P}-kb-card" draggable="true" data-card="${i}" style="pointer-events:auto;padding:5px;border:1px solid var(--sl-border,#2d3347);border-radius:6px;font-size:0.68rem;cursor:grab;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);">${SlidesRenderer.esc(c)}</div>`).join('')}
             </div>`).join('');
             const publishKanbanState = (extraState = {}) => emitAudienceElementState(el, 'kanban-mini', Object.assign({
                 hostHtml: host.innerHTML,
@@ -656,10 +657,10 @@
                 return;
             }
             let dragged = null;
-            host.querySelectorAll('.sl-kb-card').forEach(card => {
+            host.querySelectorAll(`.${P}-kb-card`).forEach(card => {
                 card.addEventListener('dragstart', () => { dragged = card; });
             });
-            host.querySelectorAll('.sl-kb-col').forEach(col => {
+            host.querySelectorAll(`.${P}-kb-col`).forEach(col => {
                 col.addEventListener('dragover', e => e.preventDefault());
                 col.addEventListener('drop', e => {
                     e.preventDefault();
@@ -673,15 +674,15 @@
         });
 
         // ── Rank Order ──
-        container.querySelectorAll('.sl-rankorder-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-rankorder-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const title = String(el.dataset.title || '').trim() || 'Classement';
             const initialItems = parseDataJson(el.dataset.items, []);
-            const host = el.querySelector('.sl-rankorder-list');
-            const resultsEl = el.querySelector('.sl-rankorder-results');
-            const startBtn = el.querySelector('.sl-rankorder-start');
-            const endBtn = el.querySelector('.sl-rankorder-end');
+            const host = el.querySelector(`.${P}-rankorder-list`);
+            const resultsEl = el.querySelector(`.${P}-rankorder-results`);
+            const startBtn = el.querySelector(`.${P}-rankorder-start`);
+            const endBtn = el.querySelector(`.${P}-rankorder-end`);
             if (!host || !resultsEl || !startBtn || !endBtn) return;
             const items = (Array.isArray(initialItems) ? initialItems : [])
                 .map(v => String(v || '').trim())
@@ -701,12 +702,12 @@
                         <span style="font-family:var(--sl-font-mono,monospace);font-size:0.72rem;color:var(--sl-muted,#64748b);">${i + 1}.</span>
                         <span style="font-size:0.76rem;color:var(--sl-text,#e2e8f0);">${SlidesRenderer.esc(item)}</span>
                         <span style="display:flex;gap:4px;">
-                            <button type="button" class="sl-rank-up" data-idx="${i}" style="pointer-events:auto;padding:2px 6px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.68rem;cursor:pointer;">↑</button>
-                            <button type="button" class="sl-rank-down" data-idx="${i}" style="pointer-events:auto;padding:2px 6px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.68rem;cursor:pointer;">↓</button>
+                            <button type="button" class="${P}-rank-up" data-idx="${i}" style="pointer-events:auto;padding:2px 6px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.68rem;cursor:pointer;">↑</button>
+                            <button type="button" class="${P}-rank-down" data-idx="${i}" style="pointer-events:auto;padding:2px 6px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.68rem;cursor:pointer;">↓</button>
                         </span>
                     </div>
                 `).join('');
-                host.querySelectorAll('.sl-rank-up').forEach(btn => {
+                host.querySelectorAll(`.${P}-rank-up`).forEach(btn => {
                     btn.addEventListener('click', () => {
                         const i = Number(btn.dataset.idx);
                         if (i <= 0) return;
@@ -714,7 +715,7 @@
                         renderEditable();
                     });
                 });
-                host.querySelectorAll('.sl-rank-down').forEach(btn => {
+                host.querySelectorAll(`.${P}-rank-down`).forEach(btn => {
                     btn.addEventListener('click', () => {
                         const i = Number(btn.dataset.idx);
                         if (i >= safeItems.length - 1) return;
@@ -840,10 +841,10 @@
         });
 
         // ── Myth Reality ──
-        container.querySelectorAll('.sl-myth-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-myth-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
-            const card = el.querySelector('.sl-flip-card');
+            const card = el.querySelector(`.${P}-flip-card`);
             if (!card) return;
             let flipped = false;
             const applyFlip = nextState => {
@@ -867,15 +868,15 @@
         });
 
         // ── Flashcards Auto ──
-        container.querySelectorAll('.sl-flashcards-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-flashcards-pending`).forEach(el => {
             if (el.dataset.bound === '1') return;
             el.dataset.bound = '1';
             const cards = parseDataJson(el.dataset.cards, []);
-            const card = el.querySelector('.sl-flashcards-card');
-            const front = el.querySelector('.sl-flashcards-front');
-            const back = el.querySelector('.sl-flashcards-back');
-            const prev = el.querySelector('.sl-flashcards-prev');
-            const next = el.querySelector('.sl-flashcards-next');
+            const card = el.querySelector(`.${P}-flashcards-card`);
+            const front = el.querySelector(`.${P}-flashcards-front`);
+            const back = el.querySelector(`.${P}-flashcards-back`);
+            const prev = el.querySelector(`.${P}-flashcards-prev`);
+            const next = el.querySelector(`.${P}-flashcards-next`);
             if (!card || !front || !back || !prev || !next || !cards.length) return;
             let idx = 0;
             let flipped = false;

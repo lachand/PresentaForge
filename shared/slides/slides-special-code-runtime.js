@@ -8,22 +8,23 @@
     /**
      * Monte les éléments code-live dans le container.
      * @param {Element} container
-     * @param {{ isAudienceReadOnly }} ctx
+     * @param {{ prefix?: 'sl'|'cel', isAudienceReadOnly }} ctx
      */
     async function mountCodeElements(container, ctx) {
+        const P = (ctx && ctx.prefix) || 'sl';
         const isAudienceReadOnly = !!ctx?.isAudienceReadOnly;
         const emitFn = typeof ctx?.emitAudienceElementState === 'function' ? ctx.emitAudienceElementState : null;
         const subscribeFn = typeof ctx?.subscribeAudienceElementState === 'function' ? ctx.subscribeAudienceElementState : null;
 
         // ── Code Live (in-browser code execution) ──
-        container.querySelectorAll('.sl-codelive-pending').forEach(el => {
+        container.querySelectorAll(`.${P}-codelive-pending`).forEach(el => {
             if (el.dataset.codeliveBound) return;
             el.dataset.codeliveBound = '1';
             const lang = el.dataset.language || 'python';
-            const codeArea = el.querySelector('.sl-codelive-code');
-            const consoleEl = el.querySelector('.sl-codelive-console');
-            const btnRun = el.querySelector('.sl-codelive-run');
-            const btnClear = el.querySelector('.sl-codelive-clear');
+            const codeArea = el.querySelector(`.${P}-codelive-code`);
+            const consoleEl = el.querySelector(`.${P}-codelive-console`);
+            const btnRun = el.querySelector(`.${P}-codelive-run`);
+            const btnClear = el.querySelector(`.${P}-codelive-clear`);
             if (!codeArea || !consoleEl || !btnRun) return;
             if (isAudienceReadOnly) {
                 codeArea.readOnly = true;

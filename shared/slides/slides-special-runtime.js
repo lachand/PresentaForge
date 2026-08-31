@@ -19,7 +19,16 @@
 
     /**
      * Mount special interactive elements (latex, mermaid, timers, quiz/live widgets, etc).
-     * @param {{ container: Element|HTMLElement, SlidesRenderer?: any }} context
+     * @param {{
+     *   container: Element|HTMLElement,
+     *   SlidesRenderer?: any,
+     *   prefix?: 'sl'|'cel',
+     *   passive?: boolean,
+     * }} context
+     *   - `prefix` : préfixe des hooks de classe ('sl' viewer, 'cel' éditeur canvas). Défaut 'sl'.
+     *   - `passive` : ne monte que les éléments non-interactifs (LaTeX, Mermaid, timer, quiz
+     *     statique) — pas de code-live, quiz-live ni éléments live P2P. Utilisé par la preview
+     *     de l'éditeur.
      */
     async function mountSpecialElements(context = {}) {
         const container = context?.container;
@@ -28,6 +37,8 @@
         if (!SlidesRenderer) {
             throw new Error('SlidesRenderer is required for OEISlidesSpecialRuntime.mountSpecialElements');
         }
+        const prefix = context?.prefix === 'cel' ? 'cel' : 'sl';
+        const passive = !!context?.passive;
         const mode = (() => {
             try { return new URLSearchParams(window.location.search || '').get('mode') || ''; }
             catch (_) { return ''; }
@@ -140,6 +151,8 @@
 
         // Build shared context object passed to all sub-runtimes
         const ctx = {
+            prefix,
+            passive,
             SlidesRenderer,
             isAudienceReadOnly,
             audiencePolicy,
@@ -150,7 +163,10 @@
             disableInteractiveControls,
         };
 
+        // LaTeX / Mermaid / timer / quiz statique — toujours montés (passifs).
         await global.OEISlidesSpecialMathRuntime.mountMathElements(container, ctx);
+        // code-live / quiz-live / éléments live P2P — sautés en mode `passive` (preview éditeur).
+        if (passive) return;
         await global.OEISlidesSpecialCodeRuntime.mountCodeElements(container, ctx);
         await global.OEISlidesSpecialQuizRuntime.mountQuizElements(container, ctx);
         await global.OEISlidesSpecialLiveRuntime.mountLiveElements(container, ctx);

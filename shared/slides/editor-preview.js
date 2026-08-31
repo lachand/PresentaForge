@@ -336,14 +336,10 @@ function renderPreview() {
     } else {
         unmountCanvasEditor();
         frame.innerHTML = SlidesRenderer.renderSlide(slide, activeEditor.selectedIndex, _slideRenderOpts());
-        SlidesRenderer.mountRuntimeElements(frame, null, { includeSpecial: false, includeWidgets: true });
-        // Contenu riche non-interactif d'une colonne « split » (LaTeX / Mermaid) : monté
-        // via le runtime math (KaTeX + Mermaid sont passifs — pas de P2P ni Pyodide).
-        if (window.OEISlidesSpecialMathRuntime && frame.querySelector('.sl-latex-pending, .sl-mermaid-pending')) {
-            try {
-                window.OEISlidesSpecialMathRuntime.mountMathElements(frame, { SlidesRenderer });
-            } catch (_) { /* best-effort preview */ }
-        }
+        // Preview éditeur : montage runtime « passif » — LaTeX / Mermaid / timer / quiz
+        // statique sont montés (KaTeX + Mermaid sont passifs), mais pas quiz-live ni
+        // code-live (pas de P2P ni Pyodide en édition).
+        SlidesRenderer.mountRuntimeElements(frame, null, { includeSpecial: 'passive', includeWidgets: true });
         if (window.hljs) {
             frame.querySelectorAll('code[class*=language-]').forEach(block => {
                 try { hljs.highlightElement(block); } catch(e) {}
