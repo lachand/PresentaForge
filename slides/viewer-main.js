@@ -2770,8 +2770,20 @@ import {
             document.getElementById('sl-keyboard-hint').style.display = 'none';
 
             const slides = (data.slides || []).filter(s => !s.hidden);
-            const opts = { isViewer: true, isPresenterMode: false };
+            const opts = SlidesShared.buildRenderOptions({ ...data, slides }, { isViewer: true, isPresenterMode: false });
             const _esc = t => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Theme + typography CSS, scoped to the review stages (cf. initPresenterMode / generateThumbnailCSS)
+            const themeData = window.OEIDesignTokens?.resolvePresentationTheme
+                ? window.OEIDesignTokens.resolvePresentationTheme(data)
+                : (typeof data.theme === 'string'
+                    ? (SlidesThemes.BUILT_IN[data.theme] || SlidesThemes.BUILT_IN.dark)
+                    : (data.theme || SlidesThemes.BUILT_IN.dark));
+            const _themeCSS = SlidesThemes.generateCSS(themeData);
+            const _stripRoot = css => css.replace(/:root\s*\{[^}]*\}\s*/g, '').replace(/body\s*\{[^}]*\}\s*/g, '');
+            const _rvScoped = _stripRoot(_themeCSS.replace(/\.reveal/g, '.rv-stage-inner'));
+            document.getElementById('sl-theme-css').textContent = _themeCSS + '\n' + _rvScoped;
+            SlidesThemes.apply(themeData);
 
             const root = document.createElement('div');
             root.id = 'rv-root';
@@ -2802,8 +2814,17 @@ import {
             // Mount math, mermaid, etc.
             if (typeof SlidesRenderer?.mountSpecialElements === 'function') SlidesRenderer.mountSpecialElements(container);
 
-            // Apply theme
-            if (data.metadata?.theme) SlidesThemes?.apply?.(data.metadata.theme);
+            // Scale each 1280×720 stage down to its rendered width (like the editor thumbnails)
+            const fitStages = () => {
+                root.querySelectorAll('.rv-stage').forEach(stage => {
+                    const inner = stage.querySelector('.rv-stage-inner');
+                    if (!inner) return;
+                    const w = stage.clientWidth;
+                    if (w > 0) inner.style.transform = `scale(${w / 1280})`;
+                });
+            };
+            fitStages();
+            window.addEventListener('resize', fitStages);
 
             // Keyboard navigation
             const cards = Array.from(container.querySelectorAll('.rv-card'));
