@@ -153,6 +153,10 @@
         return Object.keys(v).length <= 200;
     }
 
+    // room:init `deck` payload — the presentation JSON the student renders locally
+    // (SlidesRenderer). `slidesHtml` stays accepted as a 1-version fallback.
+    const isDeckPayload = v => isObject(v) && Array.isArray(v.slides) && v.slides.length <= 5000;
+
     const SYNC_VALIDATORS = Object.freeze({
         [SYNC_MSG.GO_TO]: msg => isNonNegInt(msg.index),
         [SYNC_MSG.FRAGMENT_STEP]: msg => isNonNegInt(msg.slideIndex) && isInt(msg.fragmentIndex),
@@ -201,7 +205,8 @@
             && (msg.currentFragmentIndex == null || isInt(msg.currentFragmentIndex))
             && (msg.title == null || isString(msg.title, 300))
             && (msg.themeCSS == null || isString(msg.themeCSS, 250000))
-            && (msg.slidesHtml == null || isStringArray(msg.slidesHtml, 2000, 500000)),
+            && (msg.slidesHtml == null || isStringArray(msg.slidesHtml, 2000, 500000))
+            && (msg.deck == null || isDeckPayload(msg.deck)),
         [ROOM_MSG.WELCOME]: msg => (msg.title == null || isString(msg.title, 240)) && (msg.peerId == null || isString(msg.peerId, 180)),
         [ROOM_MSG.HAND_LOWER]: () => true,
         [ROOM_MSG.REMOTE_HELLO]: msg => isString(msg.clientNonce || '', 200) && (msg.device == null || isString(msg.device, 120)),

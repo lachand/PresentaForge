@@ -578,6 +578,29 @@ import {
             return n === null ? -1 : n;
         }
 
+        function _roomBuildDeckPayload(slides) {
+            const src = _presentationData || {};
+            // Notes présentateur : jamais transmises aux étudiants (parité includeNotes:false).
+            const publicSlides = slides.map(slide => {
+                if (!slide || typeof slide !== 'object' || slide.notes == null) return slide;
+                const { notes, ...rest } = slide;
+                void notes;
+                return rest;
+            });
+            return {
+                slides: publicSlides,
+                theme: src.theme ?? null,
+                designTokens: src.designTokens ?? null,
+                typography: src.typography ?? null,
+                metadata: (src.metadata && typeof src.metadata === 'object') ? src.metadata : {},
+                autoNumberChapters: !!src.autoNumberChapters,
+                footerConfig: src.footerConfig ?? null,
+                footerText: src.footerText ?? null,
+                showSlideNumber: !!src.showSlideNumber,
+                schemaVersion: src.schemaVersion ?? null,
+            };
+        }
+
         function _roomBuildInitMessage() {
             if (!_presentationData) return null;
             const slides = (_presentationData.slides || []).filter(s => !s.hidden);
@@ -595,6 +618,10 @@ import {
                 currentIndex: _roomCurrentSlideIndex(),
                 currentFragmentOrder: _roomCurrentFragmentIndex(),
                 themeCSS: document.getElementById('sl-theme-css')?.textContent || '',
+                // Lot 20 : le JSON du deck — l'élève rend localement (SlidesRenderer + runtimes
+                // spéciaux : Mermaid / timers / LaTeX / quiz cloze). `slidesHtml` reste envoyé
+                // en repli 1 version pour les clients étudiants non mis à jour.
+                deck: _roomBuildDeckPayload(slides),
                 slidesHtml: slides.map((slide, i) => SlidesRenderer.renderSlide(slide, i, opts)),
                 whiteboard: _captureWhiteboardSyncState(),
             };
