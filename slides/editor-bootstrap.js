@@ -58,7 +58,12 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-ribbon.js?v=1'],
     ['../shared/slides/editor-ai-settings.js?v=1'],
     ['../shared/slides/editor-runtime-state.js?v=1'],
+    // Pipeline IA éditeur — cœur partagé puis modules (ordre strict : client → quiz → passes → review-ui).
     ['../shared/slides/editor-ai-pipeline.js?v=1'],
+    ['../shared/slides/editor-ai-client.js?v=1'],
+    ['../shared/slides/editor-ai-quiz.js?v=1'],
+    ['../shared/slides/editor-ai-passes.js?v=1'],
+    ['../shared/slides/editor-ai-review-ui.js?v=1'],
     ['../shared/slides/editor-ui.js?v=23'],
     ['../shared/slides/editor-clipboard.js?v=8'],
     ['../shared/slides/editor-search.js?v=8'],
