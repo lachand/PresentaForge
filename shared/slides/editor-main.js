@@ -149,6 +149,9 @@ function init() {
     }
 
     // Command palette input events
+    // Chantier 8 — l'overlay fermait via onclick="closeCommandPalette()" inline (bloqué
+    // par la CSP script-src sans 'unsafe-inline') → binding explicite.
+    document.getElementById('cmd-overlay')?.addEventListener('click', () => closeCommandPalette());
     document.getElementById('cmd-input')?.addEventListener('input', e => renderCommandResults(e.target.value));
     document.getElementById('cmd-input')?.addEventListener('keydown', e => {
         if (e.key === 'Escape') { closeCommandPalette(); return; }

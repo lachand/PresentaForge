@@ -52,6 +52,21 @@ class SlidesShared {
         return sanitizer ? sanitizer.sanitize(promoted, 'inline') : promoted;
     }
 
+    /**
+     * Assainit un fragment HTML LIBRE injecté brut au rendu (blank `slide.html`,
+     * `heading`/`text` `element.data.html`) — liste blanche 'slide-rich' (chantier 8).
+     * Couvre les decks non passés par l'import (locaux `data/slides/*.json`, reçus en
+     * salle temps réel, partagés via Firebase). Repli : HTML brut si le sanitiseur n'est
+     * pas chargé (contexte dégradé — comportement historique, golden-render inchangé).
+     */
+    static sanitizeSlideHtml(html) {
+        const raw = String(html == null ? '' : html);
+        if (!raw) return '';
+        const sanitizer = (typeof window !== 'undefined' && window.OEIHtmlSanitizer)
+            || (typeof globalThis !== 'undefined' && globalThis.OEIHtmlSanitizer);
+        return sanitizer ? sanitizer.sanitize(raw, 'slide-rich') : raw;
+    }
+
     /* ── Typography system — délégué à slides-typography.js (Lot 17B) ── */
 
     static get DEFAULT_TYPOGRAPHY() { return window.OEISlidesTypography.DEFAULT_TYPOGRAPHY; }
@@ -481,7 +496,7 @@ class SlidesRenderer {
             case 'image':      inner = SlidesRenderer._image(slide); break;
             case 'quote':      inner = SlidesRenderer._quote(slide); break;
             case 'quiz':       inner = SlidesRenderer._quiz(slide); break;
-            case 'blank':      inner = slide.html || ''; break;
+            case 'blank':      inner = SlidesShared.sanitizeSlideHtml(slide.html); break;
             case 'canvas':     return SlidesRenderer._canvasSection(slide, index, notes, opts);
             default:           inner = `<p>Type inconnu : ${SlidesRenderer.esc(type)}</p>`;
         }

@@ -1,0 +1,25 @@
+# En-têtes HTTP pour hébergement statique compatible (Netlify, Cloudflare Pages).
+# GitHub Pages ignore ce fichier → la CSP y est portée par <meta http-equiv> dans les
+# pages slides/*.html (chantier 8). Ce fichier ajoute ce qu'un <meta> ne peut pas faire :
+# frame-ancestors, nosniff, Referrer-Policy, et un point de collecte des rapports CSP.
+# Voir docs/developer/SECURITY_MODEL.md.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cross-Origin-Opener-Policy: same-origin
+
+/slides/viewer.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' blob: https://*.firebaseapp.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+
+/slides/student.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+
+/slides/editor.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' blob: https://*.firebaseapp.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+
+/slides/remote.html
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+
+/slides/index.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' blob: https://*.firebaseapp.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'

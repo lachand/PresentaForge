@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chantier 8 (sécurité) — CSP stricte (enforce). Un CSP `Report-Only` via <meta>
+         est ignoré par les navigateurs : politique appliquée directement, après
+         extraction des scripts inline (plus aucun bloc JS dans le HTML). Voir docs/developer/SECURITY_MODEL.md. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' blob: https://*.firebaseapp.com; base-uri 'self'; form-action 'self'; object-src 'none'">
     <title>presentaForge — Éditeur</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
@@ -18,21 +22,7 @@
 <body class="is-loading">
 <!-- ── Loading progress bar (removed when bootstrap completes) ── -->
 <div id="sl-boot-wrap"><div id="sl-boot-bar"></div></div>
-<script>(function(){
-    var loaded=0, TOTAL=76;
-    window.addEventListener('oei:editor-bootstrap-progress',function(){
-        loaded++;
-        var b=document.getElementById('sl-boot-bar');
-        if(b) b.style.width=Math.min(Math.round(loaded/TOTAL*100),99)+'%';
-    });
-    window.addEventListener('oei:editor-bootstrap-ready',function(){
-        var b=document.getElementById('sl-boot-bar');
-        if(b) b.style.width='100%';
-        var w=document.getElementById('sl-boot-wrap');
-        if(w){w.style.opacity='0';setTimeout(function(){w.remove();},350);}
-        document.body.classList.remove('is-loading');
-    });
-})();</script>
+<script src="editor-boot-progress.js?v=1"></script>
 <div id="app">
     <!-- ═══════ RIBBON ═══════ -->
     <div id="ribbon">
@@ -785,7 +775,7 @@
 </div>
 
 <!-- ═══════ COMMAND PALETTE (Ctrl+K) ═══════ -->
-<div id="cmd-overlay" class="cmd-overlay" onclick="closeCommandPalette()"></div>
+<div id="cmd-overlay" class="cmd-overlay"></div>
 
 <!-- Context Menu -->
 <div class="ctx-menu" id="ctx-menu">

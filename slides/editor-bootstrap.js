@@ -29,10 +29,10 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     // Orchestrator (depends on all 4 sub-runtimes above)
     ['../shared/slides/slides-special-runtime.js?v=1'],
     ['../shared/slides/slides-typography.js?v=1'],
-    ['../shared/slides/slides-core.js?v=32'],
+    ['../shared/slides/slides-core.js?v=33'],
     ['../shared/slides/slides-themes.js?v=1'],
     ['../shared/slides/slides-diagram-renderer.js?v=1'],
-    ['../shared/slides/slides-renderer-canvas.js?v=2'],
+    ['../shared/slides/slides-renderer-canvas.js?v=3'],
     ['../shared/slides/slides-editor.js?v=14'],
     ['../shared/slides/import-pipeline-bundle.js?v=2'],
     ['../shared/slides/import-pipeline.js?v=6'],
@@ -106,11 +106,11 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-timeline.js?v=8'],
     ['../shared/slides/editor-quick-insert.js?v=12'],
     ['../shared/slides/editor-masters.js?v=10'],
-    ['../shared/slides/editor-enhancements.js?v=3'],
+    ['../shared/slides/editor-enhancements.js?v=4'],
     ['../shared/slides/editor-resize.js?v=10'],
     ['../shared/slides/editor-checker.js?v=12'],
     ['../shared/slides/editor-bindings.js?v=22'],
-    ['../shared/slides/editor-main.js?v=2'],
+    ['../shared/slides/editor-main.js?v=3'],
 ]);
 
 loadClassicScriptGroups(EDITOR_BOOTSTRAP_GROUPS, {

@@ -242,9 +242,9 @@ function openAssetsManager() {
                 </tr>
             </thead>
             <tbody>
-                ${rows.map(a => `<tr data-asset-id="${a.id}">
-                    <td style="padding:8px;border-bottom:1px solid var(--border-subtle)">#${a.slideIndex + 1}</td>
-                    <td style="padding:8px;border-bottom:1px solid var(--border-subtle)">${a.kind}</td>
+                ${rows.map(a => `<tr data-asset-id="${_enhEscAttr(a.id)}">
+                    <td style="padding:8px;border-bottom:1px solid var(--border-subtle)">#${Number(a.slideIndex) + 1}</td>
+                    <td style="padding:8px;border-bottom:1px solid var(--border-subtle)">${_enhEsc(a.kind)}</td>
                     <td style="padding:8px;border-bottom:1px solid var(--border-subtle);white-space:nowrap">${_eeFormatBytes(_eeEstimateAssetBytes(a.url))}</td>
                     <td style="padding:8px;border-bottom:1px solid var(--border-subtle);max-width:460px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${_enhEscAttr(a.url)}">${_enhEsc(a.url)}</td>
                     <td style="padding:8px;border-bottom:1px solid var(--border-subtle);display:flex;gap:6px;flex-wrap:wrap">

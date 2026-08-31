@@ -180,7 +180,11 @@
                     s.opacity != null ? `opacity:${s.opacity};`            : '',
                     s.background    ? `background:${s.background};`        : '',
                 ].join('');
-                let body = el.data?.html || SlidesShared.autoFormatText(el.data?.text || '');
+                // Chantier 8 — `data.html` (HTML libre) assaini par liste blanche au rendu
+                // (couvre les decks non passés par l'import : locaux / salle / Firebase).
+                let body = el.data?.html
+                    ? SlidesShared.sanitizeSlideHtml(el.data.html)
+                    : SlidesShared.autoFormatText(el.data?.text || '');
                 // Replace template variables
                 body = body.replace(/\{\{slideNumber\}\}/g, String(slideIndex + 1));
                 // Resolve cross-references
