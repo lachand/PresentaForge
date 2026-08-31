@@ -162,6 +162,7 @@
      */
     function _canvasElementContent(el, slideIndex = 0, opts = {}) {
         const SlidesShared = global.SlidesShared;
+        const P = opts && opts.prefix === 'cel' ? 'cel' : 'sl';
         let content = '';
         switch (el.type) {
             case 'heading':
@@ -198,7 +199,7 @@
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
                     <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${esc(label)}</div>
-                    <div style="flex:1;min-height:0;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'sl')}</div>
+                    <div style="flex:1;min-height:0;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', P)}</div>
                 </div>`;
                 break;
             }
@@ -224,7 +225,7 @@
             }
             case 'widget': {
                 const cfg = JSON.stringify(el.data?.config || {}).replace(/"/g, '&quot;');
-                content = `<div class="sl-sim-container" data-widget="${esc(el.data?.widget||'')}" data-config="${cfg}" style="width:100%;height:100%;"></div>`;
+                content = `<div class="${P}-sim-container" data-widget="${esc(el.data?.widget||'')}" data-config="${cfg}" style="width:100%;height:100%;"></div>`;
                 break;
             }
             case 'definition': {
@@ -380,7 +381,7 @@
                 const lang = el.data?.language || 'python';
                 const code = el.data?.code || '';
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
-                let widget = `<div style="height:100%;--sl-code-font-size:${Math.round(base * 0.82)}px;--sl-code-gutter-size:${Math.round(base * 0.82)}px;--sl-code-lang-size:${Math.round(base * 0.64)}px;--sl-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(code, lang, 'sl')}</div>`;
+                let widget = `<div style="height:100%;--sl-code-font-size:${Math.round(base * 0.82)}px;--sl-code-gutter-size:${Math.round(base * 0.82)}px;--sl-code-lang-size:${Math.round(base * 0.64)}px;--sl-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(code, lang, P)}</div>`;
                 if (mode === 'live') {
                     widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
                         <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);background:color-mix(in srgb,var(--sl-code-bg,#0d1117) 60%,#000);font-size:${Math.round(base * 0.66)}px;">
@@ -422,7 +423,7 @@
                 const script = String(el.data?.script || '').replace(/\r\n/g, '\n');
                 content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
                     <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${esc(labelRaw)}</div>
-                    <div style="flex:1;min-height:0;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(script, el.data?.language || 'bash', 'sl')}</div>
+                    <div style="flex:1;min-height:0;--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(script, el.data?.language || 'bash', P)}</div>
                 </div>`;
                 break;
             }
@@ -496,13 +497,13 @@
             }
             case 'mermaid': {
                 const code = el.data?.code || '';
-                content = `<div class="sl-mermaid-pending" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><pre style="display:none">${esc(code)}</pre><div class="sl-mermaid-render" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"></div></div>`;
+                content = `<div class="${P}-mermaid-pending" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><pre style="display:none">${esc(code)}</pre><div class="${P}-mermaid-render" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"></div></div>`;
                 break;
             }
             case 'diagramme': {
                 const s = el.style || {};
                 content = SlidesShared.renderDiagrammeBlock(el.data || {}, s, opts.typography, {
-                    prefix: 'sl',
+                    prefix: P,
                     fallbackFontSize: 16,
                 });
                 break;
@@ -511,7 +512,7 @@
                 const s = el.style || {};
                 const expr = el.data?.expression || '';
                 const base = SlidesShared.resolveElementFontSize('latex', s, opts.typography, 32);
-                content = `<div class="sl-latex-pending" data-latex="${esc(expr)}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${base}px;color:${s.color||'var(--sl-text)'};"><span class="sl-latex-render">${esc(expr)}</span></div>`;
+                content = `<div class="${P}-latex-pending" data-latex="${esc(expr)}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${base}px;color:${s.color||'var(--sl-text)'};"><span class="${P}-latex-render">${esc(expr)}</span></div>`;
                 break;
             }
             case 'timer': {
@@ -522,13 +523,13 @@
                 const mins = Math.floor(dur / 60);
                 const secs = dur % 60;
                 const display = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-                content = `<div class="sl-timer-content" data-duration="${dur}" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;">
+                content = `<div class="${P}-timer-content" data-duration="${dur}" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;">
                     ${label ? `<div style="font-size:${Math.round(base * 0.4)}px;color:var(--sl-muted);font-weight:600;text-transform:uppercase;">${esc(label)}</div>` : ''}
-                    <div class="sl-timer-display" style="font-size:${base}px;color:${s.color||'var(--sl-heading)'};font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--sl-font-mono,monospace);">${display}</div>
+                    <div class="${P}-timer-display" style="font-size:${base}px;color:${s.color||'var(--sl-heading)'};font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--sl-font-mono,monospace);">${display}</div>
                     <div style="display:flex;gap:0.5rem;margin-top:0.3rem;">
-                        <button class="sl-timer-btn sl-timer-start" title="Démarrer" style="pointer-events:auto;">▶</button>
-                        <button class="sl-timer-btn sl-timer-pause" title="Pause" style="display:none;pointer-events:auto;">⏸</button>
-                        <button class="sl-timer-btn sl-timer-reset" title="Réinitialiser" style="pointer-events:auto;">↺</button>
+                        <button class="${P}-timer-btn ${P}-timer-start" title="Démarrer" style="pointer-events:auto;">▶</button>
+                        <button class="${P}-timer-btn ${P}-timer-pause" title="Pause" style="display:none;pointer-events:auto;">⏸</button>
+                        <button class="${P}-timer-btn ${P}-timer-reset" title="Réinitialiser" style="pointer-events:auto;">↺</button>
                     </div>
                 </div>`;
                 break;
@@ -552,11 +553,11 @@
                 const label = esc(labelRaw);
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
                 const highlights = (el.data?.highlights || []).map(h => h.lines).join('|');
-                // Use Reveal.js native <pre><code> (no sl-code-terminal wrapper)
+                // Use Reveal.js native <pre><code> (no code-terminal wrapper)
                 // to avoid flex layout conflicts with Reveal's fragment cloning.
-                // Wrap in .sl-highlight-block to apply terminal-like styling.
-                content = `<div class="sl-highlight-block" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};">
-                    <div class="sl-code-tbar"><div class="sl-code-dot sl-code-dot-r"></div><div class="sl-code-dot sl-code-dot-y"></div><div class="sl-code-dot sl-code-dot-g"></div><span class="sl-code-tbar-lang">${lang}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${label}</span></div>
+                // Wrap in .{P}-highlight-block to apply terminal-like styling.
+                content = `<div class="${P}-highlight-block" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};">
+                    <div class="${P}-code-tbar"><div class="${P}-code-dot ${P}-code-dot-r"></div><div class="${P}-code-dot ${P}-code-dot-y"></div><div class="${P}-code-dot ${P}-code-dot-g"></div><span class="${P}-code-tbar-lang">${lang}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${label}</span></div>
                     <pre><code class="language-${lang}" data-line-numbers="${highlights}">${code}</code></pre>
                 </div>`;
                 break;
@@ -611,18 +612,18 @@
                 const lang = esc(el.data?.language || 'python');
                 const code = esc(el.data?.code || '');
                 const autoRun = el.data?.autoRun ? 'data-autorun="1"' : '';
-                content = `<div class="sl-codelive-pending" data-language="${lang}" ${autoRun} style="width:100%;height:100%;display:flex;flex-direction:column;border-radius:10px;overflow:hidden;border:1px solid var(--sl-border,#2d3347);">
-                    <div class="sl-codelive-toolbar" style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:color-mix(in srgb,var(--sl-surface,#1e2130) 90%,#000);border-bottom:1px solid var(--sl-border,#2d3347);">
+                content = `<div class="${P}-codelive-pending" data-language="${lang}" ${autoRun} style="width:100%;height:100%;display:flex;flex-direction:column;border-radius:10px;overflow:hidden;border:1px solid var(--sl-border,#2d3347);">
+                    <div class="${P}-codelive-toolbar" style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:color-mix(in srgb,var(--sl-surface,#1e2130) 90%,#000);border-bottom:1px solid var(--sl-border,#2d3347);">
                         <span style="font-size:0.75rem;color:var(--sl-muted,#64748b);font-family:var(--sl-font-mono,monospace);text-transform:uppercase;">${lang}</span>
                         <span style="flex:1"></span>
-                        <button class="sl-codelive-run" style="pointer-events:auto;padding:4px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;">▶ Exécuter</button>
-                        <button class="sl-codelive-clear" style="pointer-events:auto;padding:4px 10px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-muted,#64748b);font-size:0.7rem;cursor:pointer;">Effacer</button>
+                        <button class="${P}-codelive-run" style="pointer-events:auto;padding:4px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;">▶ Exécuter</button>
+                        <button class="${P}-codelive-clear" style="pointer-events:auto;padding:4px 10px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-muted,#64748b);font-size:0.7rem;cursor:pointer;">Effacer</button>
                     </div>
                     <div style="display:flex;flex:1;min-height:0;">
-                        <div class="sl-codelive-editor" style="flex:1;min-width:0;position:relative;overflow:hidden;"><textarea class="sl-codelive-code" style="width:100%;height:100%;background:var(--sl-slide-bg,#141620);color:var(--sl-text,#cbd5e1);border:none;padding:12px;font-family:var(--sl-font-mono,monospace);font-size:14px;resize:none;outline:none;box-sizing:border-box;tab-size:4;">${code}</textarea></div>
-                        <div class="sl-codelive-output" style="flex:0 0 40%;border-left:1px solid var(--sl-border,#2d3347);background:color-mix(in srgb,var(--sl-slide-bg,#141620) 80%,#000);display:flex;flex-direction:column;">
+                        <div class="${P}-codelive-editor" style="flex:1;min-width:0;position:relative;overflow:hidden;"><textarea class="${P}-codelive-code" style="width:100%;height:100%;background:var(--sl-slide-bg,#141620);color:var(--sl-text,#cbd5e1);border:none;padding:12px;font-family:var(--sl-font-mono,monospace);font-size:14px;resize:none;outline:none;box-sizing:border-box;tab-size:4;">${code}</textarea></div>
+                        <div class="${P}-codelive-output" style="flex:0 0 40%;border-left:1px solid var(--sl-border,#2d3347);background:color-mix(in srgb,var(--sl-slide-bg,#141620) 80%,#000);display:flex;flex-direction:column;">
                             <div style="padding:4px 10px;font-size:0.65rem;color:var(--sl-muted,#64748b);text-transform:uppercase;border-bottom:1px solid var(--sl-border,#2d3347);">Sortie</div>
-                            <pre class="sl-codelive-console" style="flex:1;margin:0;padding:10px;font-size:13px;color:var(--sl-text,#cbd5e1);font-family:var(--sl-font-mono,monospace);overflow:auto;white-space:pre-wrap;"></pre>
+                            <pre class="${P}-codelive-console" style="flex:1;margin:0;padding:10px;font-size:13px;color:var(--sl-text,#cbd5e1);font-family:var(--sl-font-mono,monospace);overflow:auto;white-space:pre-wrap;"></pre>
                         </div>
                     </div>
                 </div>`;
@@ -636,34 +637,34 @@
                 const label = esc(String(el.data?.label ?? 'Quiz').trim() || 'Quiz');
                 const roomId = 'ql-' + (el.id || Math.random().toString(36).slice(2, 9));
                 const optsHtml = quizOpts.map((o, i) =>
-                    `<div class="sl-quizlive-option" data-idx="${i}" style="padding:10px 16px;border:2px solid var(--sl-border,#2d3347);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s;pointer-events:auto;">
+                    `<div class="${P}-quizlive-option" data-idx="${i}" style="padding:10px 16px;border:2px solid var(--sl-border,#2d3347);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s;pointer-events:auto;">
                         <span style="width:calc(var(--sl-quiz-marker-size,2rem) * 0.9);height:calc(var(--sl-quiz-marker-size,2rem) * 0.9);border-radius:50%;background:color-mix(in srgb,var(--sl-primary,#818cf8) 15%,var(--sl-slide-bg,#141620));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(var(--sl-quiz-option-size,1rem) * 0.62);color:var(--sl-primary,#818cf8);">${String.fromCharCode(65 + i)}</span>
                         <span style="color:var(--sl-text,#cbd5e1);font-size:var(--sl-quiz-option-size,1rem);line-height:1.4;">${esc(o)}</span>
                     </div>`
                 ).join('');
-                content = `<div class="sl-quizlive-pending" data-room="${esc(roomId)}" data-answer="${answer}" data-duration="${duration}" style="width:100%;height:100%;display:flex;flex-direction:column;padding:16px;box-sizing:border-box;gap:12px;">
+                content = `<div class="${P}-quizlive-pending" data-room="${esc(roomId)}" data-answer="${answer}" data-duration="${duration}" style="width:100%;height:100%;display:flex;flex-direction:column;padding:16px;box-sizing:border-box;gap:12px;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span style="display:inline-flex;width:18px;height:18px;color:var(--sl-primary,#818cf8);" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg></span>
                         <span style="font-size:var(--sl-label-size,0.8rem);font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.05em;line-height:1.3;">${label}</span>
                         <span style="flex:1"></span>
-                        <span class="sl-quizlive-timer" style="font-family:var(--sl-font-mono,monospace);font-size:var(--sl-note-size,1rem);color:var(--sl-muted,#64748b);">${duration}s</span>
-                        <button class="sl-quizlive-start" style="pointer-events:auto;padding:5px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:var(--sl-label-size,0.75rem);font-weight:600;cursor:pointer;">Lancer</button>
+                        <span class="${P}-quizlive-timer" style="font-family:var(--sl-font-mono,monospace);font-size:var(--sl-note-size,1rem);color:var(--sl-muted,#64748b);">${duration}s</span>
+                        <button class="${P}-quizlive-start" style="pointer-events:auto;padding:5px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:var(--sl-label-size,0.75rem);font-weight:600;cursor:pointer;">Lancer</button>
                     </div>
-                    <div class="sl-quizlive-question" style="font-size:calc(var(--sl-text-size,22px) * 1.02);font-weight:600;color:var(--sl-heading,#f1f5f9);line-height:1.4;">${question}</div>
-                    <div class="sl-quizlive-options" style="display:flex;flex-direction:column;gap:8px;flex:1;">${optsHtml}</div>
-                    <div class="sl-quizlive-results" style="display:none;flex:1;"></div>
-                    <div class="sl-quizlive-qr" style="display:none;position:absolute;top:12px;right:12px;width:140px;height:140px;background:#fff;border-radius:8px;padding:6px;cursor:grab;z-index:20;box-shadow:0 4px 20px rgba(0,0,0,0.4);pointer-events:auto;"><div class="sl-qr-resize-handle">⇲</div></div>
-                    <div class="sl-quizlive-status" style="font-size:var(--sl-quiz-meta-size,0.75rem);color:var(--sl-muted,#64748b);text-align:center;line-height:1.4;">Cliquez sur « Lancer » pour démarrer le quiz</div>
+                    <div class="${P}-quizlive-question" style="font-size:calc(var(--sl-text-size,22px) * 1.02);font-weight:600;color:var(--sl-heading,#f1f5f9);line-height:1.4;">${question}</div>
+                    <div class="${P}-quizlive-options" style="display:flex;flex-direction:column;gap:8px;flex:1;">${optsHtml}</div>
+                    <div class="${P}-quizlive-results" style="display:none;flex:1;"></div>
+                    <div class="${P}-quizlive-qr" style="display:none;position:absolute;top:12px;right:12px;width:140px;height:140px;background:#fff;border-radius:8px;padding:6px;cursor:grab;z-index:20;box-shadow:0 4px 20px rgba(0,0,0,0.4);pointer-events:auto;"><div class="${P}-qr-resize-handle">⇲</div></div>
+                    <div class="${P}-quizlive-status" style="font-size:var(--sl-quiz-meta-size,0.75rem);color:var(--sl-muted,#64748b);text-align:center;line-height:1.4;">Cliquez sur « Lancer » pour démarrer le quiz</div>
                 </div>`;
                 break;
             }
             case 'cloze': {
                 const sentence = esc(el.data?.sentence || '');
                 const blanks = JSON.stringify(el.data?.blanks || []).replace(/"/g, '&quot;');
-                content = `<div class="sl-cloze-pending" data-sentence="${sentence}" data-blanks="${blanks}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:10px;padding:14px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;background:color-mix(in srgb,var(--sl-primary,#818cf8) 6%,var(--sl-slide-bg,#1a1d27));">
+                content = `<div class="${P}-cloze-pending" data-sentence="${sentence}" data-blanks="${blanks}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:10px;padding:14px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;background:color-mix(in srgb,var(--sl-primary,#818cf8) 6%,var(--sl-slide-bg,#1a1d27));">
                     <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--sl-primary,#818cf8);">Texte à trous</div>
-                    <div class="sl-cloze-body" style="font-size:1rem;line-height:1.5;color:var(--sl-text,#e2e8f0);"></div>
-                    <button class="sl-cloze-toggle" style="margin-top:auto;pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.75rem;cursor:pointer;align-self:flex-start;">Afficher les réponses</button>
+                    <div class="${P}-cloze-body" style="font-size:1rem;line-height:1.5;color:var(--sl-text,#e2e8f0);"></div>
+                    <button class="${P}-cloze-toggle" style="margin-top:auto;pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.75rem;cursor:pointer;align-self:flex-start;">Afficher les réponses</button>
                 </div>`;
                 break;
             }
@@ -672,14 +673,14 @@
                 const mcqOpts = JSON.stringify(el.data?.options || []).replace(/"/g, '&quot;');
                 const answer = Number(el.data?.answer ?? 0);
                 const label = esc(String(el.data?.label ?? 'QCM simple').trim() || 'QCM simple');
-                content = `<div class="sl-mcqsingle-pending" data-options="${mcqOpts}" data-answer="${answer}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-mcqsingle-pending" data-options="${mcqOpts}" data-answer="${answer}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:var(--sl-label-size,0.75rem);font-weight:700;color:#8b5cf6;text-transform:uppercase;line-height:1.3;">${label}</div>
-                    <div class="sl-mcq-question" style="font-size:var(--sl-note-size,0.9rem);color:var(--sl-heading,#f1f5f9);line-height:1.4;">${q}</div>
-                    <div class="sl-mcqsingle-options" style="display:flex;flex-direction:column;gap:6px;overflow:auto;"></div>
+                    <div class="${P}-mcq-question" style="font-size:var(--sl-note-size,0.9rem);color:var(--sl-heading,#f1f5f9);line-height:1.4;">${q}</div>
+                    <div class="${P}-mcqsingle-options" style="display:flex;flex-direction:column;gap:6px;overflow:auto;"></div>
                     <div style="display:flex;gap:8px;margin-top:auto;">
-                        <button class="sl-mcqsingle-check" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:var(--sl-primary,#818cf8);color:#fff;font-size:var(--sl-label-size,0.75rem);cursor:pointer;">Valider</button>
-                        <button class="sl-mcqsingle-end" style="display:none;pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.75rem);cursor:pointer;">Terminer live</button>
-                        <div class="sl-mcqsingle-result" style="font-size:var(--sl-quiz-meta-size,0.75rem);color:var(--sl-muted,#64748b);align-self:center;"></div>
+                        <button class="${P}-mcqsingle-check" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:var(--sl-primary,#818cf8);color:#fff;font-size:var(--sl-label-size,0.75rem);cursor:pointer;">Valider</button>
+                        <button class="${P}-mcqsingle-end" style="display:none;pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.75rem);cursor:pointer;">Terminer live</button>
+                        <div class="${P}-mcqsingle-result" style="font-size:var(--sl-quiz-meta-size,0.75rem);color:var(--sl-muted,#64748b);align-self:center;"></div>
                     </div>
                 </div>`;
                 break;
@@ -688,10 +689,10 @@
                 const items = JSON.stringify(el.data?.items || []).replace(/"/g, '&quot;');
                 const targets = JSON.stringify(el.data?.targets || []).replace(/"/g, '&quot;');
                 const title = esc(el.data?.title || 'Classez les éléments');
-                content = `<div class="sl-dnd-pending" data-items="${items}" data-targets="${targets}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-dnd-pending" data-items="${items}" data-targets="${targets}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.85rem;font-weight:700;color:var(--sl-heading,#f1f5f9);">${title}</div>
-                    <div class="sl-dnd-items" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-                    <div class="sl-dnd-targets" style="display:flex;gap:6px;flex:1;min-height:0;"></div>
+                    <div class="${P}-dnd-items" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                    <div class="${P}-dnd-targets" style="display:flex;gap:6px;flex:1;min-height:0;"></div>
                 </div>`;
                 break;
             }
@@ -700,40 +701,40 @@
                 const mcqOpts = JSON.stringify(el.data?.options || []).replace(/"/g, '&quot;');
                 const answers = JSON.stringify(el.data?.answers || []).replace(/"/g, '&quot;');
                 const label = esc(String(el.data?.label ?? 'QCM multi').trim() || 'QCM multi');
-                content = `<div class="sl-mcqmulti-pending" data-options="${mcqOpts}" data-answers="${answers}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-mcqmulti-pending" data-options="${mcqOpts}" data-answers="${answers}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:var(--sl-label-size,0.75rem);font-weight:700;color:#8b5cf6;text-transform:uppercase;line-height:1.3;">${label}</div>
-                    <div class="sl-mcq-question" style="font-size:var(--sl-note-size,0.9rem);color:var(--sl-heading,#f1f5f9);line-height:1.4;">${q}</div>
-                    <div class="sl-mcqmulti-options" style="display:flex;flex-direction:column;gap:6px;overflow:auto;"></div>
+                    <div class="${P}-mcq-question" style="font-size:var(--sl-note-size,0.9rem);color:var(--sl-heading,#f1f5f9);line-height:1.4;">${q}</div>
+                    <div class="${P}-mcqmulti-options" style="display:flex;flex-direction:column;gap:6px;overflow:auto;"></div>
                     <div style="display:flex;gap:8px;margin-top:auto;">
-                        <button class="sl-mcqmulti-check" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:var(--sl-primary,#818cf8);color:#fff;font-size:var(--sl-label-size,0.75rem);cursor:pointer;">Valider</button>
-                        <button class="sl-mcqmulti-end" style="display:none;pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.75rem);cursor:pointer;">Terminer live</button>
-                        <div class="sl-mcqmulti-result" style="font-size:var(--sl-quiz-meta-size,0.75rem);color:var(--sl-muted,#64748b);align-self:center;"></div>
+                        <button class="${P}-mcqmulti-check" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:var(--sl-primary,#818cf8);color:#fff;font-size:var(--sl-label-size,0.75rem);cursor:pointer;">Valider</button>
+                        <button class="${P}-mcqmulti-end" style="display:none;pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.75rem);cursor:pointer;">Terminer live</button>
+                        <div class="${P}-mcqmulti-result" style="font-size:var(--sl-quiz-meta-size,0.75rem);color:var(--sl-muted,#64748b);align-self:center;"></div>
                     </div>
                 </div>`;
                 break;
             }
             case 'poll-likert': {
                 const prompt = esc(el.data?.prompt || 'Votre niveau de confiance (1 à 5) ?');
-                content = `<div class="sl-polllive-pending" data-poll-type="scale5" data-prompt="${prompt}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;background:color-mix(in srgb,#8b5cf6 10%,var(--sl-slide-bg,#1a1d27));">
+                content = `<div class="${P}-polllive-pending" data-poll-type="scale5" data-prompt="${prompt}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;background:color-mix(in srgb,#8b5cf6 10%,var(--sl-slide-bg,#1a1d27));">
                     <div style="font-size:var(--sl-label-size,0.75rem);font-weight:700;text-transform:uppercase;color:#8b5cf6;line-height:1.3;">Likert live</div>
-                    <div class="sl-polllive-prompt" style="font-size:var(--sl-note-size,0.9rem);color:var(--sl-heading,#f1f5f9);line-height:1.4;">${prompt}</div>
-                    <div class="sl-polllive-results" style="display:flex;flex-direction:column;gap:6px;flex:1;"></div>
+                    <div class="${P}-polllive-prompt" style="font-size:var(--sl-note-size,0.9rem);color:var(--sl-heading,#f1f5f9);line-height:1.4;">${prompt}</div>
+                    <div class="${P}-polllive-results" style="display:flex;flex-direction:column;gap:6px;flex:1;"></div>
                     <div style="display:flex;gap:8px;">
-                        <button class="sl-polllive-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#8b5cf6;color:#fff;font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Lancer</button>
-                        <button class="sl-polllive-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Terminer</button>
+                        <button class="${P}-polllive-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#8b5cf6;color:#fff;font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Lancer</button>
+                        <button class="${P}-polllive-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Terminer</button>
                     </div>
                 </div>`;
                 break;
             }
             case 'debate-mode': {
                 const prompt = esc(el.data?.prompt || 'Pour ou contre ?');
-                content = `<div class="sl-polllive-pending" data-poll-type="thumbs" data-prompt="${prompt}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;background:color-mix(in srgb,#8b5cf6 10%,var(--sl-slide-bg,#1a1d27));">
+                content = `<div class="${P}-polllive-pending" data-poll-type="thumbs" data-prompt="${prompt}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;background:color-mix(in srgb,#8b5cf6 10%,var(--sl-slide-bg,#1a1d27));">
                     <div style="font-size:var(--sl-label-size,0.75rem);font-weight:700;text-transform:uppercase;color:#8b5cf6;line-height:1.3;">Débat live</div>
-                    <div class="sl-polllive-prompt" style="font-size:var(--sl-note-size,0.9rem);color:var(--sl-heading,#f1f5f9);line-height:1.4;">${prompt}</div>
-                    <div class="sl-polllive-results" style="display:flex;flex-direction:column;gap:6px;flex:1;"></div>
+                    <div class="${P}-polllive-prompt" style="font-size:var(--sl-note-size,0.9rem);color:var(--sl-heading,#f1f5f9);line-height:1.4;">${prompt}</div>
+                    <div class="${P}-polllive-results" style="display:flex;flex-direction:column;gap:6px;flex:1;"></div>
                     <div style="display:flex;gap:8px;">
-                        <button class="sl-polllive-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#8b5cf6;color:#fff;font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Lancer</button>
-                        <button class="sl-polllive-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Terminer</button>
+                        <button class="${P}-polllive-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#8b5cf6;color:#fff;font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Lancer</button>
+                        <button class="${P}-polllive-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Terminer</button>
                     </div>
                 </div>`;
                 break;
@@ -742,63 +743,63 @@
                 const title = esc(el.data?.title || 'Exit ticket');
                 const prompts = Array.isArray(el.data?.prompts) ? el.data.prompts : [];
                 const promptsJson = JSON.stringify(prompts).replace(/"/g, '&quot;');
-                content = `<div class="sl-exitticket-pending" data-title="${title}" data-prompts="${promptsJson}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-exitticket-pending" data-title="${title}" data-prompts="${promptsJson}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:var(--sl-label-size,0.75rem);font-weight:700;text-transform:uppercase;color:#8b5cf6;line-height:1.3;">${title}</div>
-                    <div class="sl-exitticket-prompts" style="display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0;"></div>
-                    <div class="sl-exitticket-results" style="font-size:var(--sl-quiz-meta-size,0.72rem);color:var(--sl-muted,#64748b);min-height:1.2em;line-height:1.35;"></div>
+                    <div class="${P}-exitticket-prompts" style="display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0;"></div>
+                    <div class="${P}-exitticket-results" style="font-size:var(--sl-quiz-meta-size,0.72rem);color:var(--sl-muted,#64748b);min-height:1.2em;line-height:1.35;"></div>
                     <div style="display:flex;gap:8px;margin-top:auto;">
-                        <button class="sl-exitticket-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#8b5cf6;color:#fff;font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Lancer</button>
-                        <button class="sl-exitticket-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Terminer</button>
+                        <button class="${P}-exitticket-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#8b5cf6;color:#fff;font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Lancer</button>
+                        <button class="${P}-exitticket-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:var(--sl-label-size,0.74rem);cursor:pointer;">Terminer</button>
                     </div>
                 </div>`;
                 break;
             }
             case 'postit-wall': {
                 const prompt = esc(el.data?.prompt || 'Partagez une idée clé');
-                content = `<div class="sl-postitlive-pending" data-prompt="${prompt}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-postitlive-pending" data-prompt="${prompt}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#14b8a6;">Mur Post-it live</div>
-                    <div class="sl-postitlive-prompt" style="font-size:0.9rem;color:var(--sl-heading,#f1f5f9);">${prompt}</div>
-                    <div class="sl-postitlive-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1;min-height:0;overflow:auto;"></div>
+                    <div class="${P}-postitlive-prompt" style="font-size:0.9rem;color:var(--sl-heading,#f1f5f9);">${prompt}</div>
+                    <div class="${P}-postitlive-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1;min-height:0;overflow:auto;"></div>
                     <div style="display:flex;gap:8px;">
-                        <button class="sl-postitlive-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#14b8a6;color:#052e2b;font-size:0.74rem;font-weight:700;cursor:pointer;">Lancer</button>
-                        <button class="sl-postitlive-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.74rem;cursor:pointer;">Terminer</button>
+                        <button class="${P}-postitlive-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#14b8a6;color:#052e2b;font-size:0.74rem;font-weight:700;cursor:pointer;">Lancer</button>
+                        <button class="${P}-postitlive-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.74rem;cursor:pointer;">Terminer</button>
                     </div>
                 </div>`;
                 break;
             }
             case 'audience-roulette': {
                 const title = esc(el.data?.title || 'Roulette participants');
-                content = `<div class="sl-roulette-pending" data-title="${title}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;align-items:center;justify-content:center;">
+                content = `<div class="${P}-roulette-pending" data-title="${title}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;align-items:center;justify-content:center;">
                     <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#14b8a6;">Roulette</div>
                     <div style="font-size:0.95rem;color:var(--sl-heading,#f1f5f9);text-align:center;">${title}</div>
-                    <div class="sl-roulette-picked" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;min-height:1.4em;"></div>
-                    <button class="sl-roulette-pick" style="pointer-events:auto;padding:6px 12px;border-radius:8px;border:none;background:#14b8a6;color:#052e2b;font-size:0.75rem;font-weight:700;cursor:pointer;">Tirer au sort</button>
+                    <div class="${P}-roulette-picked" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;min-height:1.4em;"></div>
+                    <button class="${P}-roulette-pick" style="pointer-events:auto;padding:6px 12px;border-radius:8px;border:none;background:#14b8a6;color:#052e2b;font-size:0.75rem;font-weight:700;cursor:pointer;">Tirer au sort</button>
                 </div>`;
                 break;
             }
             case 'room-stats': {
                 const title = esc(el.data?.title || 'Stats live');
                 const metrics = JSON.stringify(Array.isArray(el.data?.metrics) ? el.data.metrics : ['students', 'hands', 'questions', 'feedback']).replace(/"/g, '&quot;');
-                content = `<div class="sl-roomstats-pending" data-title="${title}" data-metrics="${metrics}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-roomstats-pending" data-title="${title}" data-metrics="${metrics}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#14b8a6;">${title}</div>
-                    <div class="sl-roomstats-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1;min-height:0;"></div>
-                    <div class="sl-roomstats-foot" style="font-size:0.7rem;color:var(--sl-muted,#64748b);">Mode présentateur requis</div>
+                    <div class="${P}-roomstats-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1;min-height:0;"></div>
+                    <div class="${P}-roomstats-foot" style="font-size:0.7rem;color:var(--sl-muted,#64748b);">Mode présentateur requis</div>
                 </div>`;
                 break;
             }
             case 'leaderboard-live': {
                 const title = esc(el.data?.title || 'Leaderboard live');
                 const limit = Math.max(3, Math.min(12, Number(el.data?.limit || 5)));
-                content = `<div class="sl-leaderboard-pending" data-title="${title}" data-limit="${limit}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-leaderboard-pending" data-title="${title}" data-limit="${limit}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#14b8a6;">${title}</div>
-                    <div class="sl-leaderboard-list" style="display:flex;flex-direction:column;gap:6px;overflow:auto;flex:1;min-height:0;"></div>
-                    <div class="sl-leaderboard-foot" style="font-size:0.7rem;color:var(--sl-muted,#64748b);">Classement live indisponible</div>
+                    <div class="${P}-leaderboard-list" style="display:flex;flex-direction:column;gap:6px;overflow:auto;flex:1;min-height:0;"></div>
+                    <div class="${P}-leaderboard-foot" style="font-size:0.7rem;color:var(--sl-muted,#64748b);">Classement live indisponible</div>
                 </div>`;
                 break;
             }
             case 'swot-grid': {
                 const toList = arr => (Array.isArray(arr) ? arr : []).slice(0, 3).map(v => `<li>${esc(v)}</li>`).join('');
-                content = `<div class="sl-swot-pending" style="width:100%;height:100%;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;">
+                content = `<div class="${P}-swot-pending" style="width:100%;height:100%;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;">
                     <div style="padding:7px;border-radius:8px;border:1px solid rgba(52,211,153,0.4);background:rgba(52,211,153,0.09);font-size:0.69rem;"><strong>Forces</strong><ul style="margin:6px 0 0 16px;padding:0;line-height:1.35;">${toList(el.data?.strength)}</ul></div>
                     <div style="padding:7px;border-radius:8px;border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.09);font-size:0.69rem;"><strong>Faiblesses</strong><ul style="margin:6px 0 0 16px;padding:0;line-height:1.35;">${toList(el.data?.weakness)}</ul></div>
                     <div style="padding:7px;border-radius:8px;border:1px solid rgba(14,165,233,0.4);background:rgba(14,165,233,0.09);font-size:0.69rem;"><strong>Opportunités</strong><ul style="margin:6px 0 0 16px;padding:0;line-height:1.35;">${toList(el.data?.opportunity)}</ul></div>
@@ -809,10 +810,10 @@
             case 'decision-tree': {
                 const root = esc(el.data?.root || '');
                 const branches = JSON.stringify(el.data?.branches || []).replace(/"/g, '&quot;');
-                content = `<div class="sl-decisiontree-pending" data-root="${root}" data-branches="${branches}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-decisiontree-pending" data-root="${root}" data-branches="${branches}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#ec4899;">Arbre de décision</div>
-                    <div class="sl-dt-root" style="padding:8px;border:1px solid rgba(236,72,153,0.45);border-radius:8px;text-align:center;">${root}</div>
-                    <div class="sl-dt-branches" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;overflow:auto;"></div>
+                    <div class="${P}-dt-root" style="padding:8px;border:1px solid rgba(236,72,153,0.45);border-radius:8px;text-align:center;">${root}</div>
+                    <div class="${P}-dt-branches" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;overflow:auto;"></div>
                 </div>`;
                 break;
             }
@@ -829,24 +830,24 @@
                 const lang = esc(el.data?.language || 'text');
                 const before = esc(el.data?.before || '');
                 const after = esc(el.data?.after || '');
-                content = `<div class="sl-codecompare-pending" data-language="${lang}" data-before="${before}" data-after="${after}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:6px;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-codecompare-pending" data-language="${lang}" data-before="${before}" data-after="${after}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:6px;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.72rem;color:#22c55e;text-transform:uppercase;font-weight:700;">Comparateur de code (${lang})</div>
-                    <div class="sl-codecompare-view" style="position:relative;flex:1;min-height:0;border:1px solid var(--sl-border,#2d3347);border-radius:8px;overflow:hidden;"></div>
-                    <input class="sl-codecompare-range" type="range" min="0" max="100" value="50" style="pointer-events:auto;">
+                    <div class="${P}-codecompare-view" style="position:relative;flex:1;min-height:0;border:1px solid var(--sl-border,#2d3347);border-radius:8px;overflow:hidden;"></div>
+                    <input class="${P}-codecompare-range" type="range" min="0" max="100" value="50" style="pointer-events:auto;">
                 </div>`;
                 break;
             }
             case 'algo-stepper': {
                 const title = esc(el.data?.title || 'Algo stepper');
                 const steps = JSON.stringify(el.data?.steps || []).replace(/"/g, '&quot;');
-                content = `<div class="sl-algostepper-pending" data-steps="${steps}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-algostepper-pending" data-steps="${steps}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#22c55e;">${title}</div>
-                    <div class="sl-algostepper-step-title" style="font-size:0.9rem;color:var(--sl-heading,#f1f5f9);"></div>
-                    <div class="sl-algostepper-step-detail" style="font-size:0.78rem;color:var(--sl-muted,#64748b);"></div>
-                    <pre class="sl-algostepper-code" style="margin:0;flex:1;min-height:0;padding:8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);font-size:0.7rem;font-family:var(--sl-font-mono,monospace);overflow:auto;"></pre>
+                    <div class="${P}-algostepper-step-title" style="font-size:0.9rem;color:var(--sl-heading,#f1f5f9);"></div>
+                    <div class="${P}-algostepper-step-detail" style="font-size:0.78rem;color:var(--sl-muted,#64748b);"></div>
+                    <pre class="${P}-algostepper-code" style="margin:0;flex:1;min-height:0;padding:8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);font-size:0.7rem;font-family:var(--sl-font-mono,monospace);overflow:auto;"></pre>
                     <div style="display:flex;gap:8px;">
-                        <button class="sl-algostepper-prev" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.72rem;cursor:pointer;">Précédent</button>
-                        <button class="sl-algostepper-next" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:none;background:#22c55e;color:#052e16;font-size:0.72rem;font-weight:700;cursor:pointer;">Suivant</button>
+                        <button class="${P}-algostepper-prev" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.72rem;cursor:pointer;">Précédent</button>
+                        <button class="${P}-algostepper-next" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:none;background:#22c55e;color:#052e16;font-size:0.72rem;font-weight:700;cursor:pointer;">Suivant</button>
                     </div>
                 </div>`;
                 break;
@@ -855,23 +856,23 @@
                 const src = esc(el.data?.src || '');
                 const alt = esc(el.data?.alt || el.data?.caption || 'Image annotée');
                 const notes = JSON.stringify(el.data?.notes || []).replace(/"/g, '&quot;');
-                content = `<div class="sl-galleryanno-pending" data-src="${src}" data-alt="${alt}" data-notes="${notes}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:6px;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-galleryanno-pending" data-src="${src}" data-alt="${alt}" data-notes="${notes}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:6px;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.72rem;color:#f43f5e;text-transform:uppercase;font-weight:700;">Gallery annotable</div>
-                    <div class="sl-galleryanno-stage" style="position:relative;flex:1;min-height:0;border:1px solid var(--sl-border,#2d3347);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);"></div>
-                    <div class="sl-galleryanno-caption" style="font-size:0.72rem;color:var(--sl-muted,#64748b);min-height:1.2em;"></div>
+                    <div class="${P}-galleryanno-stage" style="position:relative;flex:1;min-height:0;border:1px solid var(--sl-border,#2d3347);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);"></div>
+                    <div class="${P}-galleryanno-caption" style="font-size:0.72rem;color:var(--sl-muted,#64748b);min-height:1.2em;"></div>
                 </div>`;
                 break;
             }
             case 'rank-order': {
                 const title = esc(el.data?.title || 'Classement');
                 const items = JSON.stringify(el.data?.items || []).replace(/"/g, '&quot;');
-                content = `<div class="sl-rankorder-pending" data-title="${title}" data-items="${items}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-rankorder-pending" data-title="${title}" data-items="${items}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.72rem;color:#0ea5e9;text-transform:uppercase;font-weight:700;">${title}</div>
-                    <div class="sl-rankorder-list" style="display:flex;flex-direction:column;gap:6px;overflow:auto;"></div>
-                    <div class="sl-rankorder-results" style="font-size:0.7rem;color:var(--sl-muted,#64748b);min-height:1.2em;"></div>
+                    <div class="${P}-rankorder-list" style="display:flex;flex-direction:column;gap:6px;overflow:auto;"></div>
+                    <div class="${P}-rankorder-results" style="font-size:0.7rem;color:var(--sl-muted,#64748b);min-height:1.2em;"></div>
                     <div style="display:flex;gap:8px;margin-top:auto;">
-                        <button class="sl-rankorder-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#0ea5e9;color:#082f49;font-size:0.74rem;font-weight:700;cursor:pointer;">Lancer</button>
-                        <button class="sl-rankorder-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.74rem;cursor:pointer;">Terminer</button>
+                        <button class="${P}-rankorder-start" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:none;background:#0ea5e9;color:#082f49;font-size:0.74rem;font-weight:700;cursor:pointer;">Lancer</button>
+                        <button class="${P}-rankorder-end" style="pointer-events:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.74rem;cursor:pointer;">Terminer</button>
                     </div>
                 </div>`;
                 break;
@@ -879,47 +880,47 @@
             case 'kanban-mini': {
                 const title = esc(el.data?.title || 'Kanban mini');
                 const cols = JSON.stringify(el.data?.columns || []).replace(/"/g, '&quot;');
-                content = `<div class="sl-kanban-pending" data-columns="${cols}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                content = `<div class="${P}-kanban-pending" data-columns="${cols}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
                     <div style="font-size:0.72rem;color:#0ea5e9;text-transform:uppercase;font-weight:700;">${title}</div>
-                    <div class="sl-kanban-cols" style="display:flex;gap:6px;flex:1;min-height:0;"></div>
+                    <div class="${P}-kanban-cols" style="display:flex;gap:6px;flex:1;min-height:0;"></div>
                 </div>`;
                 break;
             }
             case 'myth-reality': {
                 const myth = esc(el.data?.myth || '');
                 const reality = esc(el.data?.reality || '');
-                content = `<div class="sl-myth-pending" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
-                    <div class="sl-flip-card sl-myth-card" style="width:86%;height:148px;pointer-events:auto;">
-                        <div class="sl-flip-card-inner">
-                            <div class="sl-flip-face sl-flip-front">
-                                <div class="sl-flip-face-label sl-flip-face-label-myth">Mythe</div>
+                content = `<div class="${P}-myth-pending" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;">
+                    <div class="${P}-flip-card ${P}-myth-card" style="width:86%;height:148px;pointer-events:auto;">
+                        <div class="${P}-flip-card-inner">
+                            <div class="${P}-flip-face ${P}-flip-front">
+                                <div class="${P}-flip-face-label ${P}-flip-face-label-myth">Mythe</div>
                                 ${myth}
                             </div>
-                            <div class="sl-flip-face sl-flip-back">
-                                <div class="sl-flip-face-label sl-flip-face-label-reality">Réalité</div>
+                            <div class="${P}-flip-face ${P}-flip-back">
+                                <div class="${P}-flip-face-label ${P}-flip-face-label-reality">Réalité</div>
                                 ${reality}
                             </div>
                         </div>
                     </div>
-                    <div class="sl-flip-hint">Cliquer pour retourner la carte</div>
+                    <div class="${P}-flip-hint">Cliquer pour retourner la carte</div>
                 </div>`;
                 break;
             }
             case 'flashcards-auto': {
                 const title = esc(el.data?.title || 'Flashcards');
                 const cards = JSON.stringify(el.data?.cards || []).replace(/"/g, '&quot;');
-                content = `<div class="sl-flashcards-pending" data-cards="${cards}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;align-items:center;">
+                content = `<div class="${P}-flashcards-pending" data-cards="${cards}" style="width:100%;height:100%;display:flex;flex-direction:column;gap:8px;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;align-items:center;">
                     <div style="font-size:0.72rem;color:#0ea5e9;text-transform:uppercase;font-weight:700;">${title}</div>
-                    <div class="sl-flip-card sl-flashcards-card" style="width:88%;height:148px;pointer-events:auto;">
-                        <div class="sl-flip-card-inner">
-                            <div class="sl-flip-face sl-flip-front sl-flashcards-front"></div>
-                            <div class="sl-flip-face sl-flip-back sl-flashcards-back"></div>
+                    <div class="${P}-flip-card ${P}-flashcards-card" style="width:88%;height:148px;pointer-events:auto;">
+                        <div class="${P}-flip-card-inner">
+                            <div class="${P}-flip-face ${P}-flip-front ${P}-flashcards-front"></div>
+                            <div class="${P}-flip-face ${P}-flip-back ${P}-flashcards-back"></div>
                         </div>
                     </div>
-                    <div class="sl-flip-hint">Cliquer pour voir le verso</div>
+                    <div class="${P}-flip-hint">Cliquer pour voir le verso</div>
                     <div style="display:flex;gap:8px;">
-                        <button class="sl-flashcards-prev" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.72rem;cursor:pointer;">Précédent</button>
-                        <button class="sl-flashcards-next" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:none;background:#0ea5e9;color:#082f49;font-size:0.72rem;font-weight:700;cursor:pointer;">Suivant</button>
+                        <button class="${P}-flashcards-prev" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.72rem;cursor:pointer;">Précédent</button>
+                        <button class="${P}-flashcards-next" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:none;background:#0ea5e9;color:#082f49;font-size:0.72rem;font-weight:700;cursor:pointer;">Suivant</button>
                     </div>
                 </div>`;
                 break;

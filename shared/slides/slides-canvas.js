@@ -539,7 +539,15 @@ class CanvasEditor {
     font-size: 0.9em;
 }
 
-/* ── Element content types ── */
+/* ── Contenu d'élément ──────────────────────────────────────────────────────
+   Le rendu d'atome canvas délègue à OEISlidesRendererCanvas.renderElementContent
+   (prefix cel) — voir PRESENTAFORGE_PLAN_EXECUTION_2026-08 chantier 3.
+   Les classes .cel-* de contenu (code, highlight, timer, mermaid, latex, def,
+   codelive, quizlive…) sont désormais un alias de .sl-* généré par
+   SlidesThemes.generateCSS (injecté dans #sl-preview-theme par editor-main.js).
+   Ne restent ici que : le chrome d'édition, les affordances contenteditable
+   et les types encore spécifiques à l'éditeur (image, shape, widget,
+   code-example, smartart, qrcode). */
 .cel-text-content {
     width: 100%; height: 100%;
     padding: 8px 10px;
@@ -548,61 +556,16 @@ class CanvasEditor {
     white-space: pre-wrap;
     word-break: break-word;
 }
-/* ── Terminal code block ── */
-.cel-code-terminal {
-    width: 100%; height: 100%;
-    background: #0d1117;
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #21262d;
-}
-.cel-code-tbar {
-    background: #161b22;
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    height: 34px;
-    gap: 6px;
-    flex-shrink: 0;
-    border-bottom: 1px solid #21262d;
-}
-.cel-code-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
-.cel-code-dot-r { background: #ff5f57; }
-.cel-code-dot-y { background: #febc2e; }
-.cel-code-dot-g { background: #28c840; }
-.cel-code-tbar-lang {
-    margin-left: auto;
-    font-size: var(--cel-code-lang-size, 10px);
-    color: #6e7681;
-    font-family: var(--sl-font-mono, monospace);
-    letter-spacing: 0.04em;
-}
-.cel-code-scroll { flex: 1; overflow: auto; display: flex; min-height: 0; }
-.cel-code-gutter {
-    padding: 0.65rem 0.6rem 0.65rem 0.85rem;
-    /* Aligné sur .sl-code-gutter (viewer) — WYSIWYG : les numéros de ligne doivent être lisibles */
-    color: #94a3b8;
-    font-size: var(--cel-code-gutter-size, 13px);
-    line-height: var(--cel-code-line-height, 1.58);
-    user-select: none; text-align: right;
-    font-family: var(--sl-font-mono, monospace);
-    white-space: pre; border-right: 1px solid #21262d;
-    min-width: 2.2em; flex-shrink: 0;
-}
-.cel-code-scroll > pre {
-    flex: 1; margin: 0; padding: 0.65rem 1rem;
-    background: transparent !important;
-    overflow: visible; min-width: 0; border: none !important;
-}
-.cel-code-scroll > pre code {
-    font-family: var(--sl-font-mono, monospace);
-    font-size: var(--cel-code-font-size, 13px);
-    line-height: var(--cel-code-line-height, 1.58);
-    color: #e6edf3;
-    background: transparent !important; white-space: pre; display: block; padding: 0 !important;
-}
+/* Éléments dont le contenu peut déborder de la boîte (parité avec le wrapper
+   needsOverflow du viewer — _canvasElement). */
+.cel[data-type="latex"] .cel-inner,
+.cel[data-type="timer"] .cel-inner,
+.cel[data-type="code-live"] .cel-inner,
+.cel[data-type="quiz-live"] .cel-inner { overflow: visible; }
+/* Highlight délégué : le gutter de lignes est monté par slides-canvas-code-runtime
+   (table .hljs-ln) — la coloration hljs a besoin de white-space:pre sur la cellule. */
+.cel-highlight-block .hljs-ln-code { white-space: pre; }
+.cel-latex-render .katex { font-size: inherit; }
 .cel-list-content { width:100%; height:100%; padding: 6px 0 6px 1.5em; overflow: auto; }
 .cel-list-content li { margin-bottom: 0.4em; }
 .cel-list-content li::marker { color: var(--sl-primary, #818cf8); }
@@ -692,21 +655,21 @@ class CanvasEditor {
     background: color-mix(in srgb, var(--sl-slide-bg, #1a1d27) 82%, #000);
 }
 .cel-code-example-widget .cel-code-terminal {
-    --cel-code-font-size: var(--ce-code-font-size, 13px);
-    --cel-code-gutter-size: var(--ce-code-gutter-size, 13px);
-    --cel-code-lang-size: var(--ce-code-lang-size, 10px);
+    --sl-code-font-size: var(--ce-code-font-size, 13px);
+    --sl-code-gutter-size: var(--ce-code-gutter-size, 13px);
+    --sl-code-lang-size: var(--ce-code-lang-size, 10px);
     height: 100%;
     border: none;
     border-radius: 0;
 }
 .cel-code-example-widget .cel-code-gutter {
-    font-size: var(--ce-code-gutter-size, var(--cel-code-gutter-size, 13px));
+    font-size: var(--ce-code-gutter-size, var(--sl-code-gutter-size, 13px));
 }
 .cel-code-example-widget .cel-code-tbar-lang {
-    font-size: var(--ce-code-lang-size, var(--cel-code-lang-size, 10px));
+    font-size: var(--ce-code-lang-size, var(--sl-code-lang-size, 10px));
 }
 .cel-code-example-widget .cel-code-scroll > pre code {
-    font-size: var(--ce-code-font-size, var(--cel-code-font-size, 13px));
+    font-size: var(--ce-code-font-size, var(--sl-code-font-size, 13px));
 }
 .cel-codeexample-live,
 .cel-codeexample-stepper {
@@ -742,7 +705,7 @@ class CanvasEditor {
     margin: 0;
     padding: 8px 10px;
     font-size: 0.72rem;
-    line-height: var(--ce-code-line-height, var(--cel-code-line-height, 1.58));
+    line-height: var(--ce-code-line-height, var(--sl-code-line-height, 1.58));
     font-family: var(--sl-font-mono, monospace);
     color: var(--sl-text, #e2e8f0);
     white-space: pre;
@@ -782,7 +745,7 @@ class CanvasEditor {
     border-radius: 7px;
     background: color-mix(in srgb, var(--sl-slide-bg, #1a1d27) 80%, #000);
     font-size: 0.66rem;
-    line-height: var(--ce-code-line-height, var(--cel-code-line-height, 1.58));
+    line-height: var(--ce-code-line-height, var(--sl-code-line-height, 1.58));
     font-family: var(--sl-font-mono, monospace);
     color: var(--sl-text, #e2e8f0);
     white-space: pre;
@@ -812,25 +775,10 @@ class CanvasEditor {
     outline:2px solid var(--sl-primary,#818cf8); outline-offset:-2px;
     background:color-mix(in srgb, var(--sl-primary,#818cf8) 12%, transparent);
 }
-/* ── Mermaid element ── */
-.cel-mermaid-content { width:100%; height:100%; overflow:auto; display:flex; align-items:center; justify-content:center; background:var(--sl-slide-bg,#1a1d27); border-radius:8px; }
-.cel-mermaid-render { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
-.cel-mermaid-render svg { max-width:100%; max-height:100%; }
-.cel-mermaid-src { font-size:11px; color:var(--sl-muted); }
-/* ── LaTeX element ── */
-.cel-latex-content { overflow:hidden; }
-.cel-latex-render .katex { font-size:inherit; }
-/* ── Timer element ── */
-.cel-timer-btn { width:32px; height:32px; border-radius:50%; border:1px solid var(--sl-border,#2d3347); background:var(--sl-surface,#1e2133); color:var(--sl-text,#e2e8f0); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
-.cel-timer-btn:hover { background:var(--sl-primary,#818cf8); color:#fff; }
-/* ── Highlight code element ── */
-.cel-highlight-content { width:100%; height:100%; display:flex; flex-direction:column; gap:6px; }
-.cel-highlight-content .cel-code-terminal { flex:1; min-height:0; }
-.cel-hl-wrap { display:inline; }
-.cel-hl-line { background:rgba(129,140,248,0.18); display:inline; border-left:3px solid #818cf8; margin-left:-1rem; padding-left:calc(1rem - 3px); }
-.cel-hl-legend { display:flex; gap:8px; flex-wrap:wrap; padding:2px 4px; }
-.cel-hl-legend-item { font-size:11px; color:var(--sl-muted,#64748b); background:rgba(129,140,248,0.1); padding:2px 8px; border-radius:4px; border:1px solid rgba(129,140,248,0.2); cursor:default; }
-/* ── QR code element ── */
+/* Mermaid / LaTeX / timer / highlight / code-live / quiz-live : rendus délégués
+   (markup .cel-*-pending / .cel-highlight-block / .cel-timer-* = alias de .sl-*
+   via #sl-preview-theme). Montage runtime : CanvasEditor._mountSpecialCel + slides-canvas-code-runtime. */
+/* ── QR code element (spécifique éditeur) ── */
 .cel-qrcode-content { box-sizing:border-box; }
 .cel-qr-render svg { display:block; }
 /* ── SmartArt elements ── */
@@ -845,27 +793,6 @@ class CanvasEditor {
 .cel-sa-pyrow { padding:10px; border-radius:6px; text-align:center; color:var(--sl-text,#e2e8f0); font-size:14px; margin:0 auto; }
 .cel-sa-matrix { display:grid !important; grid-template-columns:repeat(var(--sa-cols,2),1fr); gap:8px; }
 .cel-sa-cell { padding:12px; border:2px solid; border-radius:8px; text-align:center; color:var(--sl-text,#e2e8f0); font-size:14px; background:color-mix(in srgb,var(--sa-color,#818cf8) 8%,var(--sl-slide-bg,#1a1d27)); display:flex; align-items:center; justify-content:center; }
-/* ── Code Live element ── */
-.cel-codelive-content { width:100%; height:100%; display:flex; flex-direction:column; border-radius:8px; overflow:hidden; border:1px solid var(--sl-border,#2d3347); box-sizing:border-box; }
-.cel-codelive-header { display:flex; align-items:center; gap:8px; padding:6px 12px; background:color-mix(in srgb,var(--sl-surface,#1e2130) 90%,#000); border-bottom:1px solid var(--sl-border,#2d3347); }
-.cel-codelive-lang { font-size:0.7rem; color:var(--sl-muted,#64748b); font-family:var(--sl-font-mono,monospace); text-transform:uppercase; }
-.cel-codelive-label { margin-left:auto; font-size:0.7rem; font-weight:600; color:var(--sl-primary,#818cf8); }
-.cel-codelive-body { display:flex; flex:1; min-height:0; }
-.cel-codelive-editor { flex:1; overflow:auto; background:var(--sl-slide-bg,#1a1d27); }
-.cel-codelive-editor pre { margin:0; padding:10px; font-size:12px; font-family:var(--sl-font-mono,monospace); color:var(--sl-text,#e2e8f0); }
-.cel-codelive-output { flex:0 0 35%; border-left:1px solid var(--sl-border,#2d3347); background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000); display:flex; flex-direction:column; }
-.cel-codelive-output-label { display:block; padding:4px 10px; font-size:0.6rem; color:var(--sl-muted,#64748b); text-transform:uppercase; border-bottom:1px solid var(--sl-border,#2d3347); }
-.cel-codelive-console { flex:1; margin:0; padding:8px; font-size:11px; color:var(--sl-muted,#64748b); font-family:var(--sl-font-mono,monospace); overflow:auto; }
-/* ── Quiz Live element ── */
-.cel-quizlive-content { width:100%; height:100%; display:flex; flex-direction:column; padding:12px; box-sizing:border-box; gap:8px; }
-.cel-quizlive-header { display:flex; align-items:center; gap:8px; }
-.cel-quizlive-icon { width: 16px; height: 16px; display:inline-flex; color: var(--sl-primary,#818cf8); }
-.cel-quizlive-timer { margin-left:auto; font-family:var(--sl-font-mono,monospace); font-size:0.85rem; color:var(--sl-muted,#64748b); }
-.cel-quizlive-question { font-size:0.9rem; font-weight:600; color:var(--sl-heading,#f1f5f9); line-height:1.3; }
-.cel-quizlive-options { display:flex; flex-direction:column; gap:5px; flex:1; overflow:auto; }
-.cel-quizlive-option { display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--sl-border,#2d3347); border-radius:6px; font-size:0.75rem; color:var(--sl-text,#e2e8f0); }
-.cel-quizlive-letter { width:22px; height:22px; border-radius:50%; background:color-mix(in srgb,var(--sl-primary,#818cf8) 15%,var(--sl-slide-bg,#1a1d27)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.7rem; color:var(--sl-primary,#818cf8); flex-shrink:0; }
-.cel-quizlive-footer { font-size:0.6rem; color:var(--sl-muted,#64748b); text-align:center; margin-top:auto; }
         `;
         document.head.appendChild(s);
     }
@@ -1279,10 +1206,16 @@ class CanvasEditor {
     }
 
     _postRenderElement(el) {
-        if (el.type === 'mermaid') this._renderMermaidElements();
-        if (el.type === 'latex')   this._renderLatexElements();
+        // LaTeX / Mermaid / timer : runtime unifié partagé avec le viewer (chantier 3).
+        // Les hooks `.cel-*-pending` / `.cel-timer-content` sont montés passivement.
+        if (el.type === 'mermaid' || el.type === 'latex' || el.type === 'timer') this._mountSpecialCel();
         if (el.type === 'qrcode')  this._renderQRElements();
-        if (el.type === 'timer')   this._initTimerElements();
+    }
+
+    _mountSpecialCel() {
+        const renderer = window.SlidesRenderer;
+        if (!renderer || typeof renderer.mountSpecialElements !== 'function') return;
+        Promise.resolve(renderer.mountSpecialElements(this.container, { prefix: 'cel', passive: true })).catch(() => {});
     }
 
     _shouldCheckOverflow(el) {
@@ -1464,27 +1397,7 @@ class CanvasEditor {
             .replace(/\n+$/g, '');
     }
 
-    /* ── Mermaid / KaTeX / QR lazy rendering ──────────────── */
-
-    _renderMermaidElements() {
-        CanvasSpecialRuntime.renderMermaidElements({
-            container: this.container,
-            windowRef: window,
-            documentRef: document,
-            loadScript: src => this._loadScript(src),
-            escapeHtml: escHtml,
-        });
-    }
-
-    _renderLatexElements() {
-        CanvasSpecialRuntime.renderLatexElements({
-            container: this.container,
-            windowRef: window,
-            documentRef: document,
-            loadScript: src => this._loadScript(src),
-            escapeHtml: escHtml,
-        });
-    }
+    /* ── QR lazy rendering (spécifique éditeur — hors-ligne) ──────────────── */
 
     _renderQRElements() {
         CanvasSpecialRuntime.renderQRElements({
@@ -1492,12 +1405,6 @@ class CanvasEditor {
             windowRef: window,
             documentRef: document,
             loadScript: src => this._loadScript(src),
-        });
-    }
-
-    _initTimerElements() {
-        CanvasSpecialRuntime.initTimerElements({
-            container: this.container,
         });
     }
 

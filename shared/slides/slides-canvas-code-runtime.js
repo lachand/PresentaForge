@@ -30,27 +30,51 @@
 
         const isHighlight = div.dataset?.type === 'highlight';
         const codeEls = isHighlight
-            ? [div?.querySelector?.('.cel-code-scroll code')].filter(Boolean)
+            ? [div?.querySelector?.('.cel-highlight-block pre code')].filter(Boolean)
             : Array.from(div?.querySelectorAll?.('.cel-code-scroll code, .cel-codeexample-live-code code, .cel-codeexample-stepper-code code') || []);
         if (!codeEls.length || codeEls.every(node => node.dataset?.highlighted)) return;
+
+        /** Expand a Reveal-style data-line-numbers string into a Set of 1-based line numbers.
+         *  Reveal treats "|" as fragment steps and highlights the first segment at rest —
+         *  the editor mirrors that initial state (WYSIWYG, no fragment stepping in the canvas). */
+        const parseHighlightedLines = spec => {
+            const out = new Set();
+            const firstSegment = String(spec || '').split('|')[0] || '';
+            firstSegment.split(',').forEach(part => {
+                const m = part.trim().match(/^(\d+)(?:-(\d+))?$/);
+                if (!m) return;
+                const from = parseInt(m[1], 10);
+                const to = m[2] ? parseInt(m[2], 10) : from;
+                for (let n = Math.min(from, to); n <= Math.max(from, to); n++) out.add(n);
+            });
+            return out;
+        };
 
         const apply = () => {
             if (!windowRef.hljs) return;
             if (isHighlight) {
                 const codeEl = codeEls[0];
-                if (!codeEl) return;
+                if (!codeEl || codeEl.dataset?.highlighted) return;
                 const lang = String(codeEl.className || '').replace('language-', '').trim();
-                codeEl.querySelectorAll?.('.cel-hl-wrap')?.forEach(span => {
-                    const raw = String(span.textContent || '').replace(/\n$/, '');
-                    try {
-                        const result = lang && lang !== 'text'
-                            ? windowRef.hljs.highlight(raw, { language: lang, ignoreIllegals: true })
-                            : windowRef.hljs.highlightAuto(raw);
-                        span.innerHTML = `${result.value}\n`;
-                    } catch (_) {
-                        // Keep original content on highlighting failures.
-                    }
-                });
+                const rawCode = String(codeEl.textContent || '').replace(/\n$/, '');
+                let highlightedHtml;
+                try {
+                    const result = lang && lang !== 'text'
+                        ? windowRef.hljs.highlight(rawCode, { language: lang, ignoreIllegals: true })
+                        : windowRef.hljs.highlightAuto(rawCode);
+                    highlightedHtml = result.value;
+                } catch (_) {
+                    highlightedHtml = null;
+                }
+                const codeLines = (highlightedHtml != null ? highlightedHtml : rawCode.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]))).split('\n');
+                const hlLines = parseHighlightedLines(codeEl.getAttribute('data-line-numbers'));
+                const hasHighlights = hlLines.size > 0;
+                const rows = codeLines.map((lineHtml, i) => {
+                    const ln = i + 1;
+                    const trCls = hasHighlights && hlLines.has(ln) ? ' class="highlight-line"' : '';
+                    return `<tr${trCls}><td class="hljs-ln-numbers">${ln}</td><td class="hljs-ln-code">${lineHtml || ' '}</td></tr>`;
+                }).join('');
+                codeEl.innerHTML = `<table class="hljs-ln${hasHighlights ? ' has-highlights' : ''}"><tbody>${rows}</tbody></table>`;
                 codeEl.dataset.highlighted = '1';
                 return;
             }

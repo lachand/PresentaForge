@@ -1,5 +1,12 @@
 // @ts-check
-/* slides-canvas-special-runtime.js — runtime Mermaid/KaTeX/QR/Timers pour CanvasEditor */
+/* slides-canvas-special-runtime.js — runtime QR pour CanvasEditor.
+ *
+ * LaTeX / Mermaid / timer sont désormais montés par le runtime unifié partagé avec le
+ * viewer (`OEISlidesSpecialRuntime.mountSpecialElements({ prefix: 'cel', passive: true })`,
+ * appelé depuis `CanvasEditor._mountSpecialCel`) — voir PRESENTAFORGE_PLAN_EXECUTION_2026-08
+ * chantier 3. Seul le rendu QR reste spécifique à l'éditeur (chargement paresseux hors-ligne
+ * de qrcode-generator, non géré par le runtime unifié).
+ */
 (function initSlidesCanvasSpecialRuntime(global) {
     'use strict';
 
@@ -8,19 +15,7 @@
 
     const QRCODE_SRC = '../vendor/qrcode-generator/1.4.4/qrcode.min.js';
 
-    // Le chargement (et l'unique init) de Mermaid/KaTeX est délégué à
-    // OEISlidesSpecialMathRuntime — une seule implémentation, partagée avec le viewer.
-    const mathRuntime = windowRef => (windowRef && windowRef.OEISlidesSpecialMathRuntime) || root.OEISlidesSpecialMathRuntime || null;
-
-    let mermaidLoading = false;
-    let katexLoading = false;
     let qrcodeLoading = false;
-
-    const escapeHtml = value => String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
 
     const defaultLoadScript = (src, documentRef) => {
         if (!documentRef) return Promise.reject(new Error('Document indisponible'));
@@ -32,80 +27,6 @@
             script.onerror = () => reject(new Error(`Failed to load ${src}`));
             documentRef.head?.appendChild?.(script);
         });
-    };
-
-    const doRenderMermaid = async (els, context = {}) => {
-        const windowRef = context.windowRef || root;
-        const esc = typeof context.escapeHtml === 'function' ? context.escapeHtml : escapeHtml;
-        for (const el of els) {
-            const src = el.querySelector?.('.cel-mermaid-src');
-            const target = el.querySelector?.('.cel-mermaid-render');
-            if (!src || !target || target.dataset?.rendered) continue;
-            try {
-                const id = el.dataset?.mermaidId || `mermaid-${Math.random().toString(36).slice(2)}`;
-                const result = await windowRef.mermaid.render(`${id}-svg`, src.textContent);
-                target.innerHTML = result.svg;
-                target.dataset.rendered = '1';
-            } catch (error) {
-                target.innerHTML = `<pre style="color:#f87171;font-size:12px;">${esc(error?.message || 'Erreur Mermaid')}</pre>`;
-            }
-        }
-    };
-
-    const renderMermaidElements = context => {
-        const container = context.container;
-        if (!container) return;
-        const windowRef = context.windowRef || root;
-        const els = Array.from(container.querySelectorAll?.('.cel-mermaid-content') || []);
-        if (!els.length) return;
-        if (windowRef.mermaid) {
-            doRenderMermaid(els, context);
-            return;
-        }
-        if (mermaidLoading) return;
-        const math = mathRuntime(windowRef);
-        if (!math || typeof math.ensureMermaidLoaded !== 'function') return;
-        mermaidLoading = true;
-        Promise.resolve(math.ensureMermaidLoaded())
-            .then(() => doRenderMermaid(els, context))
-            .catch(() => {})
-            .finally(() => { mermaidLoading = false; });
-    };
-
-    const doRenderLatex = (els, context = {}) => {
-        const windowRef = context.windowRef || root;
-        const esc = typeof context.escapeHtml === 'function' ? context.escapeHtml : escapeHtml;
-        els.forEach(el => {
-            const target = el.querySelector?.('.cel-latex-render');
-            if (!target || target.dataset?.rendered) return;
-            const expr = el.dataset?.latex || '';
-            try {
-                target.innerHTML = windowRef.katex.renderToString(expr, { displayMode: true, throwOnError: false });
-                target.dataset.rendered = '1';
-            } catch (_) {
-                target.innerHTML = `<span style="color:#f87171">${esc(expr)}</span>`;
-            }
-        });
-    };
-
-    const renderLatexElements = context => {
-        const container = context.container;
-        if (!container) return;
-        const windowRef = context.windowRef || root;
-        const els = Array.from(container.querySelectorAll?.('.cel-latex-content') || []);
-        if (!els.length) return;
-        if (windowRef.katex) {
-            doRenderLatex(els, context);
-            return;
-        }
-        if (katexLoading) return;
-        const math = mathRuntime(windowRef);
-        if (!math || typeof math.ensureKatexLoaded !== 'function') return;
-        katexLoading = true;
-        Promise.resolve(math.ensureKatexLoaded())
-            .then(() => doRenderLatex(els, context))
-            .catch(() => {})
-            .finally(() => { katexLoading = false; });
     };
 
     const doRenderQR = (containers, context = {}) => {
@@ -158,71 +79,10 @@
         });
     };
 
-    const initTimerElements = context => {
-        const container = context.container;
-        if (!container) return;
-        container.querySelectorAll?.('.cel-timer-content')?.forEach(el => {
-            if (el.dataset?.timerBound) return;
-            el.dataset.timerBound = '1';
-            const dur = parseInt(el.dataset?.duration, 10) || 300;
-            let remaining = dur;
-            let interval = null;
-            let running = false;
-            const display = el.querySelector?.('.cel-timer-display');
-            const btnStart = el.querySelector?.('.cel-timer-start');
-            const btnPause = el.querySelector?.('.cel-timer-pause');
-            const btnReset = el.querySelector?.('.cel-timer-reset');
-            const fmt = secs => `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`;
-            const tick = () => {
-                remaining = Math.max(0, remaining - 1);
-                if (display) display.textContent = fmt(remaining);
-                if (remaining <= 0) {
-                    clearInterval(interval);
-                    running = false;
-                    if (btnStart?.style) btnStart.style.display = '';
-                    if (btnPause?.style) btnPause.style.display = 'none';
-                    if (display?.style) display.style.color = '#f87171';
-                }
-            };
-            btnStart?.addEventListener?.('click', event => {
-                event.stopPropagation?.();
-                if (running) return;
-                running = true;
-                interval = setInterval(tick, 1000);
-                if (btnStart.style) btnStart.style.display = 'none';
-                if (btnPause?.style) btnPause.style.display = '';
-            });
-            btnPause?.addEventListener?.('click', event => {
-                event.stopPropagation?.();
-                clearInterval(interval);
-                running = false;
-                if (btnStart?.style) btnStart.style.display = '';
-                if (btnPause?.style) btnPause.style.display = 'none';
-            });
-            btnReset?.addEventListener?.('click', event => {
-                event.stopPropagation?.();
-                clearInterval(interval);
-                running = false;
-                remaining = dur;
-                if (display) display.textContent = fmt(dur);
-                if (display?.style) display.style.color = '';
-                if (btnStart?.style) btnStart.style.display = '';
-                if (btnPause?.style) btnPause.style.display = 'none';
-            });
-        });
-    };
-
     root.OEISlidesCanvasSpecialRuntime = Object.freeze({
-        renderMermaidElements,
-        renderLatexElements,
         renderQRElements,
-        initTimerElements,
         testUtils: Object.freeze({
-            doRenderMermaid,
-            doRenderLatex,
             doRenderQR,
-            initTimerElements,
-            escapeHtml,
         }),
     });
 })(window);

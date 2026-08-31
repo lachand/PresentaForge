@@ -260,7 +260,13 @@ function onUpdate(reason) {
             ? (SlidesThemes.BUILT_IN[editor.data.theme] || SlidesThemes.BUILT_IN.dark)
             : (editor.data.theme || SlidesThemes.BUILT_IN.dark));
     const _css = SlidesThemes.generateCSS(themeData);
-    document.getElementById('sl-preview-theme').textContent = _css + '\n' + _css.replace(/\.reveal/g, '#preview-frame');
+    // Alias `.cel-*` (préfixe de l'éditeur canvas) = scope de `.sl-*` (viewer) sous #preview-frame.
+    // Le rendu d'atome canvas délègue à OEISlidesRendererCanvas.renderElementContent(prefix:'cel')
+    // — voir PRESENTAFORGE_PLAN_EXECUTION_2026-08 chantier 3. Les `--sl-*` (tokens de thème)
+    // ne sont pas réécrits : l'alias `.cel-*` référence toujours `var(--sl-*)`.
+    const _celAlias = _css.replace(/\.reveal/g, '#preview-frame').replace(/\.sl-/g, '.cel-');
+    document.getElementById('sl-preview-theme').textContent =
+        _css + '\n' + _css.replace(/\.reveal/g, '#preview-frame') + '\n' + _celAlias;
     SlidesThemes.apply(themeData);
     if (!_thumbCssInjected) {
         document.getElementById('sl-thumb-css').textContent = SlidesThemes.generateThumbnailCSS();

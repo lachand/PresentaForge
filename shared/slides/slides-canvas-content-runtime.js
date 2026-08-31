@@ -5,7 +5,8 @@
  * Extraction du pipeline de rendu contenu éléments canvas :
  *   - renderContent(el, ctx)        — rebuild caption + inner HTML + caption HTML
  *   - updateCaptionEntry(el, ctx)   — recalcule _captionEntry et _captionRegistry
- *   - renderContentInner(el, ctx)   — switch type → HTML (ex-_renderContentInner)
+ *   - renderContentInner(el, ctx)   — délègue à OEISlidesRendererCanvas.renderElementContent
+ *                                     (prefix 'cel') sauf pour les types spécifiques à l'édition
  *
  * ctx = { typography, slideIndex, captionRegistry, elements }
  *
@@ -45,53 +46,47 @@
     }
 
     /**
-     * Render the inner HTML for an element (the large switch over el.type).
+     * Types dont le rendu canvas reste spécifique à l'édition (placeholder, texte riche
+     * éditable, montage de widget, légende interactive…). Tous les autres délèguent à
+     * `OEISlidesRendererCanvas.renderElementContent` — source unique partagée avec le viewer
+     * (voir PRESENTAFORGE_PLAN_EXECUTION_2026-08 — chantier 3).
+     */
+    const EDITOR_SPECIFIC_TYPES = new Set([
+        'image',        // placeholder « URL de l'image » quand pas de src
+        'shape',        // texte riche éditable (escapeText:false)
+        'widget',       // placeholder de chargement — montage réel via _mountWidget
+        'code-example', // sélecteur de widget + _renderCodeExampleWidget
+        'smartart',     // _renderSmartArt (layouts cycle absolus)
+        'qrcode',       // rendu paresseux hors-ligne via _renderQRElements
+        // Widgets « live » : leur markup viewer (`.sl-*-pending`) a des conteneurs vides
+        // peuplés par mountQuizElements/mountLiveElements — non montés en preview éditeur
+        // (passif). L'éditeur garde donc une maquette statique peuplée (WYSIWYG).
+        'cloze', 'mcq-single', 'mcq-multi', 'drag-drop', 'poll-likert', 'debate-mode',
+        'exit-ticket', 'postit-wall', 'audience-roulette', 'room-stats', 'leaderboard-live',
+        'decision-tree', 'code-compare', 'algo-stepper', 'gallery-annotable', 'rank-order',
+        'kanban-mini', 'flashcards-auto',
+    ]);
+
+    /**
+     * Render the inner HTML for an element.
+     * Délègue à `OEISlidesRendererCanvas.renderElementContent(el, slideIndex, { prefix: 'cel' })`
+     * sauf pour les types listés dans EDITOR_SPECIFIC_TYPES, rendus ci-dessous.
      * @param {object} el
      * @param {{ typography: object|null, slideIndex: number, captionRegistry: object|null }} ctx
      * @returns {string}
      */
     function renderContentInner(el, ctx) {
+        if (!EDITOR_SPECIFIC_TYPES.has(el.type)) {
+            const canvasRenderer = (typeof window !== 'undefined' && window.OEISlidesRendererCanvas) || global.OEISlidesRendererCanvas;
+            if (canvasRenderer && typeof canvasRenderer.renderElementContent === 'function') {
+                return canvasRenderer.renderElementContent(el, ctx.slideIndex || 0, {
+                    typography: ctx.typography,
+                    captionRegistry: ctx.captionRegistry,
+                    prefix: 'cel',
+                });
+            }
+        }
         switch (el.type) {
-            case 'heading':
-            case 'text': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize(el.type, s, ctx.typography, 22);
-                const vAlign = s.verticalAlign || 'top';
-                const vAlignCSS = vAlign === 'middle' ? 'display:flex;flex-direction:column;justify-content:center;'
-                    : vAlign === 'bottom' ? 'display:flex;flex-direction:column;justify-content:flex-end;'
-                    : '';
-                const extras = [
-                    s.fontStyle     ? `font-style:${s.fontStyle};`         : '',
-                    s.textTransform ? `text-transform:${s.textTransform};` : '',
-                    s.letterSpacing ? `letter-spacing:${s.letterSpacing};` : '',
-                    s.opacity != null ? `opacity:${s.opacity};`            : '',
-                    s.background    ? `background:${s.background};`        : '',
-                ].join('');
-                let body = el.data?.html || SlidesShared.autoFormatText(el.data?.text || '');
-                body = body.replace(/\{\{slideNumber\}\}/g, String((ctx.slideIndex || 0) + 1));
-                if (ctx.captionRegistry) body = SlidesShared.resolveRefs(body, ctx.captionRegistry);
-                return `<div class="cel-text-content" style="font-size:${base}px;font-weight:${s.fontWeight||400};color:${s.color||'var(--sl-text)'};text-align:${s.textAlign||'left'};font-family:${s.fontFamily||'var(--sl-font-body)'};line-height:${s.lineHeight||1.35};width:100%;height:100%;box-sizing:border-box;${vAlignCSS}${extras}">${body}</div>`;
-            }
-            case 'code': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('code', s, ctx.typography, 16);
-                const codeSize = Math.round(base * 0.82);
-                const langSize = Math.round(base * 0.64);
-                const codeLineHeight = SlidesShared.resolveCodeLineHeight(codeSize);
-                const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
-                const label = labelRaw;
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
-                return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
-                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</div>
-                    <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;--cel-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(el.data?.code || '', el.data?.language || 'text', 'cel')}</div>
-                </div>`;
-            }
-            case 'list': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('list', s, ctx.typography, 22);
-                const items = (el.data?.items || []).map(i => `<li>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
-                return `<ul class="cel-list-content" style="font-size:${base}px;color:${s.color||'var(--sl-text)'};">${items}</ul>`;
-            }
             case 'image': {
                 if (el.data?.src) {
                     return `<img src="${escHtml(el.data.src)}" alt="${escHtml(el.data?.alt||'')}" style="width:100%;height:100%;object-fit:contain;">`;
@@ -108,143 +103,6 @@
             }
             case 'widget': {
                 return `<div class="cel-widget-loading"><span style="font-size:0.75rem;font-weight:700">WIDGET</span><span>Chargement…</span></div>`;
-            }
-            case 'definition': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('definition', s, ctx.typography, 16);
-                const blockLabelRaw = String(el.data?.label ?? el.data?.blockLabel ?? 'Definition').trim() || 'Definition';
-                const blockLabel = blockLabelRaw;
-                const exampleLabel = String(el.data?.exampleLabel ?? 'Exemple').trim() || 'Exemple';
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, blockLabelRaw);
-                const termSize = Math.round(base * 1.06);
-                const bodySize = Math.round(base);
-                const exampleSize = Math.round(base * 0.78);
-                return `<div class="cel-def-content" style="background:${tone.strongBg};border-left-color:${tone.accent};border-color:${tone.border};">
-                    <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${escHtml(blockLabel)}</div>
-                    <div class="cel-def-term" style="font-size:${termSize}px;color:${tone.accent};">${escHtml(el.data?.term||'')}</div>
-                    <div class="cel-def-body" style="font-size:${bodySize}px;">${el.data?.definition||''}</div>
-                    ${el.data?.example ? `<div class="cel-def-example" style="font-size:${exampleSize}px;">${escHtml(exampleLabel)} : ${escHtml(el.data.example)}</div>` : ''}
-                </div>`;
-            }
-            case 'callout-box': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('callout-box', s, ctx.typography, 18);
-                const labelRaw = String(el.data?.label || 'Info').trim() || 'Info';
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
-                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:5px solid ${tone.accent};border-radius:8px;padding:0.9rem 1rem;box-sizing:border-box;overflow:auto;">
-                    <div style="font-size:${Math.round(base * 0.78)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.45rem;">${escHtml(labelRaw)}</div>
-                    <div style="font-size:${base}px;line-height:1.5;color:${s.color || 'var(--sl-text)'};">${el.data?.text || ''}</div>
-                </div>`;
-            }
-            case 'exercise-block': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('exercise-block', s, ctx.typography, 18);
-                const title = String(el.data?.title || 'Exercice').trim() || 'Exercice';
-                const objective = String(el.data?.objective || '').trim();
-                const instructions = Array.isArray(el.data?.instructions) ? el.data.instructions : [];
-                const hints = Array.isArray(el.data?.hints) ? el.data.hints : [];
-                const correction = String(el.data?.correction || '').trim();
-                const showCorrection = !!el.data?.showCorrection;
-                const liHtml = (items) => items.map((item) => `<li>${escHtml(item)}</li>`).join('');
-                return `<div style="width:100%;height:100%;background:color-mix(in srgb,var(--sl-primary,#818cf8) 7%,var(--sl-slide-bg,#1a1d27));border:1px solid var(--sl-border,#2d3347);border-radius:10px;padding:0.85rem 1rem;box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;gap:0.65rem;">
-                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${escHtml(title)}</div>
-                    ${objective ? `<div style="font-size:${Math.round(base * 0.85)}px;color:var(--sl-text,#cbd5e1);line-height:1.45;"><strong style="color:var(--sl-primary,#818cf8);">Objectif :</strong> ${escHtml(objective)}</div>` : ''}
-                    ${instructions.length ? `<div><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Consignes</div><ul style="margin:0;padding-left:1.25em;font-size:${Math.round(base * 0.85)}px;color:var(--sl-text,#cbd5e1);line-height:1.45;">${liHtml(instructions)}</ul></div>` : ''}
-                    ${hints.length ? `<div><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-info,#38bdf8);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Indices</div><ul style="margin:0;padding-left:1.25em;font-size:${Math.round(base * 0.8)}px;color:var(--sl-muted,#94a3b8);line-height:1.4;">${liHtml(hints)}</ul></div>` : ''}
-                    ${correction ? `<div style="margin-top:auto;border-top:1px dashed var(--sl-border,#2d3347);padding-top:0.5rem;"><div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.2rem;">Correction</div><div style="font-size:${Math.round(base * 0.82)}px;color:${showCorrection ? 'var(--sl-text,#cbd5e1)' : 'var(--sl-muted,#94a3b8)'};line-height:1.4;">${showCorrection ? escHtml(correction) : 'Masquée (activez "Afficher la correction").'}</div></div>` : '' }
-                </div>`;
-            }
-            case 'before-after': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('before-after', s, ctx.typography, 17);
-                const title = String(el.data?.title || 'Avant / Après').trim() || 'Avant / Après';
-                const beforeLabel = String(el.data?.beforeLabel || 'Avant').trim() || 'Avant';
-                const afterLabel = String(el.data?.afterLabel || 'Après').trim() || 'Après';
-                const beforeText = String(el.data?.before || '').trim();
-                const afterText = String(el.data?.after || '').trim();
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
-                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;">
-                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${escHtml(title)}</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
-                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,${tone.accent} 34%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,${tone.accent} 10%,var(--sl-slide-bg,#1a1d27));">
-                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.03em;">${escHtml(beforeLabel)}</div>
-                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;">${escHtml(beforeText)}</div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 36%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
-                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">${escHtml(afterLabel)}</div>
-                            <div style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.82)}px;line-height:1.45;color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;">${escHtml(afterText)}</div>
-                        </div>
-                    </div>
-                </div>`;
-            }
-            case 'mistake-fix': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('mistake-fix', s, ctx.typography, 17);
-                const codeLineHeight = SlidesShared.resolveCodeLineHeight(Math.round(base * 0.78));
-                const title = String(el.data?.title || 'Erreur fréquente vs correction').trim() || 'Erreur fréquente vs correction';
-                const lang = String(el.data?.language || 'python').trim() || 'python';
-                const mistake = String(el.data?.mistake || '').trim();
-                const fix = String(el.data?.fix || '').trim();
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
-                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.5rem;">
-                    <div style="font-size:${Math.round(base * 0.92)}px;font-weight:700;color:var(--sl-heading,#f1f5f9);">${escHtml(title)}</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
-                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-danger,#ef4444) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-danger,#ef4444) 9%,var(--sl-slide-bg,#1a1d27));">
-                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-danger,#ef4444);text-transform:uppercase;letter-spacing:0.03em;">Erreur fréquente</div>
-                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${escHtml(lang)}">${escHtml(mistake)}</code></pre>
-                        </div>
-                        <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--sl-success,#22c55e) 9%,var(--sl-slide-bg,#1a1d27));">
-                            <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">Correction</div>
-                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono,monospace);color:${s.color || 'var(--sl-text,#cbd5e1)'};white-space:pre-wrap;"><code class="language-${escHtml(lang)}">${escHtml(fix)}</code></pre>
-                        </div>
-                    </div>
-                </div>`;
-            }
-            case 'rubric-block':
-            case 'rubrick-block': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('rubric-block', s, ctx.typography, 16);
-                const title = String(el.data?.title || 'Grille d\u2019évaluation').trim() || 'Grille d\u2019évaluation';
-                const levels = (Array.isArray(el.data?.levels) ? el.data.levels : [])
-                    .map((level) => String(level || '').trim())
-                    .filter(Boolean)
-                    .slice(0, 5);
-                const rowsRaw = Array.isArray(el.data?.rows) ? el.data.rows : [];
-                const rows = rowsRaw
-                    .map((row) => {
-                        const criterion = String(row?.criterion || '').trim();
-                        const descriptors = (Array.isArray(row?.descriptors) ? row.descriptors : [])
-                            .map((value) => String(value || '').trim())
-                            .slice(0, levels.length || 3);
-                        return { criterion, descriptors };
-                    })
-                    .filter((row) => row.criterion || row.descriptors.some(Boolean))
-                    .slice(0, 8);
-                const safeLevels = levels.length ? levels : ['Niveau 1', 'Niveau 2', 'Niveau 3'];
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, title);
-                const cellSize = Math.round(base * 0.78);
-                let tableHtml = `<table style="width:100%;border-collapse:collapse;table-layout:fixed;">`;
-                tableHtml += `<tr><th style="padding:6px 8px;text-align:left;border:1px solid ${tone.border};background:color-mix(in srgb,${tone.accent} 20%,transparent);font-size:${cellSize}px;color:var(--sl-heading,#f1f5f9);">Critère</th>`;
-                safeLevels.forEach((level) => {
-                    tableHtml += `<th style="padding:6px 8px;text-align:left;border:1px solid ${tone.border};background:color-mix(in srgb,${tone.accent} 20%,transparent);font-size:${cellSize}px;color:var(--sl-heading,#f1f5f9);">${escHtml(level)}</th>`;
-                });
-                tableHtml += `</tr>`;
-                rows.forEach((row) => {
-                    tableHtml += `<tr><td style="padding:6px 8px;border:1px solid ${tone.border};font-size:${cellSize}px;font-weight:600;color:${s.color || 'var(--sl-text,#cbd5e1)'};background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 86%,#000);">${escHtml(row.criterion)}</td>`;
-                    safeLevels.forEach((_, idx) => {
-                        const value = row.descriptors[idx] || '';
-                        tableHtml += `<td style="padding:6px 8px;border:1px solid ${tone.border};font-size:${cellSize}px;line-height:1.35;color:${s.color || 'var(--sl-text,#cbd5e1)'};background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);">${escHtml(value)}</td>`;
-                    });
-                    tableHtml += `</tr>`;
-                });
-                if (!rows.length) {
-                    tableHtml += `<tr><td colspan="${safeLevels.length + 1}" style="padding:10px;border:1px solid ${tone.border};font-size:${cellSize}px;color:var(--sl-muted,#94a3b8);text-align:center;">Ajoutez des critères dans le panneau de propriétés.</td></tr>`;
-                }
-                tableHtml += `</table>`;
-                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:4px solid ${tone.accent};border-radius:10px;padding:0.75rem 0.85rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.5rem;overflow:hidden;">
-                    <div style="font-size:${Math.round(base * 0.9)}px;font-weight:700;color:${tone.accent};">${escHtml(title)}</div>
-                    <div style="flex:1;min-height:0;overflow:auto;">${tableHtml}</div>
-                </div>`;
             }
             case 'code-example': {
                 const s = el.style || {};
@@ -263,152 +121,6 @@
                     <div class="cel-code-example-widget" style="--ce-code-font-size:${Math.round(base * 0.82)}px;--ce-code-gutter-size:${Math.round(base * 0.82)}px;--ce-code-lang-size:${Math.round(base * 0.64)}px;--ce-code-line-height:${codeLineHeight};">${widgetHtml}</div>
                 </div>`;
             }
-            case 'terminal-session': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('terminal-session', s, ctx.typography, 16);
-                const codeSize = Math.round(base * 0.82);
-                const langSize = Math.round(base * 0.64);
-                const codeLineHeight = SlidesShared.resolveCodeLineHeight(codeSize);
-                const labelRaw = String(el.data?.label ?? 'Session terminal').trim() || 'Session terminal';
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
-                const script = String(el.data?.script || '').replace(/\r\n/g, '\n');
-                return `<div style="width:100%;height:100%;display:flex;flex-direction:column;gap:0.35rem;min-height:0;">
-                    <div style="font-size:${Math.round(base * 0.66)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(labelRaw)}</div>
-                    <div style="flex:1;min-height:0;--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;--cel-code-line-height:${codeLineHeight};">${SlidesShared.codeTerminal(script, el.data?.language || 'bash', 'cel')}</div>
-                </div>`;
-            }
-            case 'quote': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('quote', s, ctx.typography, 26);
-                const markSize = Math.round(base * 1.85);
-                const authorSize = Math.round(base * 0.48);
-                const author = el.data?.author
-                    ? `<div style="margin-top:0.75rem;font-size:${authorSize}px;color:var(--sl-primary,#818cf8);font-weight:600;font-style:normal;">— ${escHtml(el.data.author)}</div>`
-                    : '';
-                return `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1rem 1.5rem;box-sizing:border-box;overflow:hidden;">
-                    <div style="font-size:${markSize}px;color:var(--sl-primary,#818cf8);opacity:0.4;line-height:0.7;margin-bottom:0.2rem;">"</div>
-                    <div style="font-size:${base}px;font-style:italic;color:${s.color||'var(--sl-heading,#f1f5f9)'};line-height:1.5;font-family:var(--sl-font-body,system-ui);">${escHtml(el.data?.text||'')}</div>
-                    ${author}
-                </div>`;
-            }
-            case 'card': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('card', s, ctx.typography, 18);
-                const titleSize = Math.round(base * 0.76);
-                const titleRaw = String(el.data?.title || '').trim();
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, titleRaw);
-                const cardTitle = el.data?.title
-                    ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||tone.accent};border-bottom:1px solid ${tone.border};padding-bottom:0.5rem;margin-bottom:0.75rem;">${escHtml(el.data.title)}</div>`
-                    : '';
-                const items = (el.data?.items || []).map(i => `<li>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
-                return `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:3px solid ${tone.accent};border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
-                    ${cardTitle}
-                    <ul style="margin:0;padding-left:1.4em;font-size:${base}px;color:${s.color||'var(--sl-text,#cbd5e1)'};">${items}</ul>
-                </div>`;
-            }
-            case 'table': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('table', s, ctx.typography, 18);
-                const rows = el.data?.rows || [];
-                let html = `<div class="cel-table-content" style="font-size:${base}px;color:${s.color||'var(--sl-text,#cbd5e1)'};"><table>`;
-                rows.forEach((row, ri) => {
-                    html += '<tr>';
-                    const tag = ri === 0 ? 'th' : 'td';
-                    (row || []).forEach(cell => { html += `<${tag}>${SlidesShared.formatInlineRichText(cell)}</${tag}>`; });
-                    html += '</tr>';
-                });
-                html += '</table></div>';
-                return html;
-            }
-            case 'video': {
-                if (el.data?.embedUrl) {
-                    const videoTitle = escHtml(el.data?.alt || el.data?.caption || 'Vidéo intégrée');
-                    return `<div style="width:100%;height:100%;background:#000;border-radius:8px;overflow:hidden;"><iframe src="${escHtml(el.data.embedUrl)}" title="${videoTitle}" style="width:100%;height:100%;border:none;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>`;
-                }
-                return `<div style="width:100%;height:100%;background:#000;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#666;font-size:0.88rem;"><span>URL vidéo non définie</span></div>`;
-            }
-            case 'mermaid': {
-                const code = el.data?.code || '';
-                const mermaidId = 'mermaid-' + el.id;
-                return `<div class="cel-mermaid-content" data-mermaid-id="${mermaidId}">
-                    <div class="cel-mermaid-render" id="${mermaidId}"></div>
-                    <pre class="cel-mermaid-src" style="display:none">${escHtml(code)}</pre>
-                </div>`;
-            }
-            case 'diagramme': {
-                const s = el.style || {};
-                return SlidesShared.renderDiagrammeBlock(el.data || {}, s, ctx.typography, {
-                    prefix: 'cel',
-                    fallbackFontSize: 16,
-                });
-            }
-            case 'latex': {
-                const s = el.style || {};
-                const expr = el.data?.expression || '';
-                const base = SlidesShared.resolveElementFontSize('latex', s, ctx.typography, 32);
-                return `<div class="cel-latex-content" style="font-size:${base}px;color:${s.color||'var(--sl-text)'};display:flex;align-items:center;justify-content:center;width:100%;height:100%;" data-latex="${escHtml(expr)}">
-                    <span class="cel-latex-render">${escHtml(expr)}</span>
-                </div>`;
-            }
-            case 'timer': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('timer', s, ctx.typography, 48);
-                const dur = el.data?.duration || 300;
-                const label = el.data?.label || '';
-                const mins = Math.floor(dur / 60);
-                const secs = dur % 60;
-                const display = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-                return `<div class="cel-timer-content" data-duration="${dur}" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;">
-                    ${label ? `<div style="font-size:${Math.round(base * 0.4)}px;color:var(--sl-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${escHtml(label)}</div>` : ''}
-                    <div class="cel-timer-display" style="font-size:${base}px;color:${s.color||'var(--sl-heading)'};font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--sl-font-mono,monospace);">${display}</div>
-                    <div style="display:flex;gap:0.5rem;margin-top:0.3rem;">
-                        <button class="cel-timer-btn cel-timer-start" title="Démarrer">▶</button>
-                        <button class="cel-timer-btn cel-timer-pause" title="Pause" style="display:none">⏸</button>
-                        <button class="cel-timer-btn cel-timer-reset" title="Réinitialiser">↺</button>
-                    </div>
-                </div>`;
-            }
-            case 'iframe': {
-                const url = el.data?.url;
-                const title = el.data?.title || 'Contenu embarqué';
-                if (url) {
-                    return `<div style="width:100%;height:100%;border-radius:8px;overflow:hidden;border:1px solid var(--sl-border);display:flex;flex-direction:column;">
-                        <div style="background:var(--sl-surface);padding:4px 10px;font-size:12px;color:var(--sl-muted);display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--sl-border);">⧉ <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(url)}</span></div>
-                        <iframe src="${escHtml(url)}" style="flex:1;border:none;background:#fff;" title="${escHtml(title)}" sandbox="allow-scripts allow-same-origin"></iframe>
-                    </div>`;
-                }
-                return `<div style="width:100%;height:100%;border-radius:8px;border:2px dashed var(--sl-border);display:flex;align-items:center;justify-content:center;color:var(--sl-muted);font-size:1.1rem;flex-direction:column;gap:0.5rem;"><span style="font-size:2rem">⧉</span><span>URL non définie</span></div>`;
-            }
-            case 'highlight': {
-                const s = el.style || {};
-                const base = SlidesShared.resolveElementFontSize('highlight', s, ctx.typography, 16);
-                const codeSize = Math.round(base * 0.82);
-                const langSize = Math.round(base * 0.64);
-                const codeLineHeight = SlidesShared.resolveCodeLineHeight(codeSize);
-                const lang = el.data?.language || 'python';
-                const code = el.data?.code || '';
-                const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
-                const label = labelRaw;
-                const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
-                const highlights = el.data?.highlights || [];
-                const lines = code.split('\n');
-                let html = `<div class="cel-highlight-content"><div class="cel-code-terminal" style="--cel-code-font-size:${codeSize}px;--cel-code-gutter-size:${codeSize}px;--cel-code-lang-size:${langSize}px;--cel-code-line-height:${codeLineHeight};"><div class="cel-code-tbar"><div class="cel-code-dot cel-code-dot-r"></div><div class="cel-code-dot cel-code-dot-y"></div><div class="cel-code-dot cel-code-dot-g"></div><span class="cel-code-tbar-lang">${escHtml(lang)}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${escHtml(label)}</span></div><div class="cel-code-scroll"><pre><code class="language-${escHtml(lang)}">`;
-                lines.forEach((line, i) => {
-                    const ln = i + 1;
-                    const cls = highlights.some(h => window.CanvasEditor._lineInRange(ln, h.lines)) ? ' cel-hl-line' : '';
-                    html += `<span class="cel-hl-wrap${cls}" data-line="${ln}">${escHtml(line)}\n</span>`;
-                });
-                html += `</code></pre></div></div>`;
-                if (highlights.length > 0) {
-                    html += `<div class="cel-hl-legend">`;
-                    highlights.forEach((h, i) => {
-                        html += `<span class="cel-hl-legend-item" data-hl="${i}">L${h.lines} ${h.label ? '— '+escHtml(h.label) : ''}</span>`;
-                    });
-                    html += `</div>`;
-                }
-                html += `</div>`;
-                return html;
-            }
             case 'qrcode': {
                 const val = el.data?.value || '';
                 const label = el.data?.label || '';
@@ -423,37 +135,6 @@
                 const items = el.data?.items || [];
                 const color = el.style?.color || 'var(--sl-primary)';
                 return window.CanvasEditor._renderSmartArt(variant, items, color);
-            }
-            case 'code-live': {
-                const lang = el.data?.language || 'python';
-                const code = el.data?.code || '';
-                return `<div class="cel-codelive-content">
-                    <div class="cel-codelive-header">
-                        <span class="cel-codelive-lang">${escHtml(lang)}</span>
-                        <span class="cel-codelive-label">▶ Code Live</span>
-                    </div>
-                    <div class="cel-codelive-body">
-                        <div class="cel-codelive-editor"><pre><code>${escHtml(code)}</code></pre></div>
-                        <div class="cel-codelive-output"><span class="cel-codelive-output-label">Sortie</span><pre class="cel-codelive-console"></pre></div>
-                    </div>
-                </div>`;
-            }
-            case 'quiz-live': {
-                const q = el.data?.question || '';
-                const opts = el.data?.options || [];
-                const dur = el.data?.duration || 30;
-                const label = String(el.data?.label ?? 'Quiz').trim() || 'Quiz';
-                const optHtml = opts.map((o, i) => `<div class="cel-quizlive-option"><span class="cel-quizlive-letter">${String.fromCharCode(65 + i)}</span>${escHtml(o)}</div>`).join('');
-                return `<div class="cel-quizlive-content">
-                    <div class="cel-quizlive-header">
-                        <span class="cel-quizlive-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg></span>
-                        <span>${escHtml(label)}</span>
-                        <span class="cel-quizlive-timer">${dur}s</span>
-                    </div>
-                    <div class="cel-quizlive-question">${escHtml(q)}</div>
-                    <div class="cel-quizlive-options">${optHtml}</div>
-                    <div class="cel-quizlive-footer">Les étudiants répondent via QR code</div>
-                </div>`;
             }
             case 'cloze': {
                 const sentence = String(el.data?.sentence || '');
@@ -580,15 +261,6 @@
                     <div style="display:flex;flex-direction:column;gap:6px;overflow:auto;">${rows}</div>
                 </div>`;
             }
-            case 'swot-grid': {
-                const toItems = list => (Array.isArray(list) ? list : []).slice(0, 3).map(it => `<li>${escHtml(it)}</li>`).join('');
-                return `<div style="width:100%;height:100%;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;">
-                    <div style="padding:7px;border-radius:8px;border:1px solid rgba(52,211,153,0.4);background:rgba(52,211,153,0.09);font-size:0.68rem;"><strong>Forces</strong><ul style="margin:6px 0 0 16px;padding:0;line-height:1.35;">${toItems(el.data?.strength)}</ul></div>
-                    <div style="padding:7px;border-radius:8px;border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.09);font-size:0.68rem;"><strong>Faiblesses</strong><ul style="margin:6px 0 0 16px;padding:0;line-height:1.35;">${toItems(el.data?.weakness)}</ul></div>
-                    <div style="padding:7px;border-radius:8px;border:1px solid rgba(14,165,233,0.4);background:rgba(14,165,233,0.09);font-size:0.68rem;"><strong>Opportunités</strong><ul style="margin:6px 0 0 16px;padding:0;line-height:1.35;">${toItems(el.data?.opportunity)}</ul></div>
-                    <div style="padding:7px;border-radius:8px;border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.09);font-size:0.68rem;"><strong>Menaces</strong><ul style="margin:6px 0 0 16px;padding:0;line-height:1.35;">${toItems(el.data?.threat)}</ul></div>
-                </div>`;
-            }
             case 'decision-tree': {
                 const root = escHtml(el.data?.root || '');
                 const branches = Array.isArray(el.data?.branches) ? el.data.branches : [];
@@ -597,17 +269,6 @@
                     <div style="font-size:0.74rem;font-weight:700;color:#ec4899;text-transform:uppercase;">Arbre de décision</div>
                     <div style="padding:8px;border:1px solid rgba(236,72,153,0.45);border-radius:8px;text-align:center;font-size:0.84rem;">${root}</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;overflow:auto;">${bHtml}</div>
-                </div>`;
-            }
-            case 'timeline-vertical': {
-                const steps = Array.isArray(el.data?.steps) ? el.data.steps : [];
-                const html = steps.slice(0, 6).map((s, i) => `<div style="display:flex;gap:8px;align-items:flex-start;">
-                        <span style="width:16px;height:16px;border-radius:50%;background:color-mix(in srgb,#ec4899 20%,var(--sl-slide-bg,#1a1d27));border:1px solid #ec4899;display:inline-flex;align-items:center;justify-content:center;font-size:0.62rem;color:#ec4899;">${i+1}</span>
-                        <span style="font-size:0.74rem;color:var(--sl-text,#e2e8f0);">${escHtml(s)}</span>
-                    </div>`).join('');
-                return `<div style="width:100%;height:100%;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;display:flex;flex-direction:column;gap:8px;">
-                    <div style="font-size:0.74rem;font-weight:700;color:#ec4899;text-transform:uppercase;">Timeline verticale</div>
-                    <div style="display:flex;flex-direction:column;gap:7px;overflow:auto;">${html}</div>
                 </div>`;
             }
             case 'code-compare': {
@@ -657,12 +318,6 @@
                 return `<div style="width:100%;height:100%;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;display:flex;flex-direction:column;gap:8px;">
                     <div style="font-size:0.74rem;font-weight:700;color:#0ea5e9;text-transform:uppercase;">Kanban mini</div>
                     <div style="display:flex;gap:6px;flex:1;min-height:0;">${colHtml}</div>
-                </div>`;
-            }
-            case 'myth-reality': {
-                return `<div style="width:100%;height:100%;padding:12px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div style="padding:8px;border:1px solid rgba(251,146,60,0.45);border-radius:8px;background:rgba(251,146,60,0.08);"><div style="font-size:0.65rem;color:#fb923c;text-transform:uppercase;font-weight:700;margin-bottom:4px;">Mythe</div><div style="font-size:0.75rem;">${escHtml(el.data?.myth || '')}</div></div>
-                    <div style="padding:8px;border:1px solid rgba(52,211,153,0.45);border-radius:8px;background:rgba(52,211,153,0.08);"><div style="font-size:0.65rem;color:#34d399;text-transform:uppercase;font-weight:700;margin-bottom:4px;">Réalité</div><div style="font-size:0.75rem;">${escHtml(el.data?.reality || '')}</div></div>
                 </div>`;
             }
             case 'flashcards-auto': {

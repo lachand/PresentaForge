@@ -28,7 +28,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/slides-core.js?v=31'],
     ['../shared/slides/slides-themes.js?v=1'],
     ['../shared/slides/slides-diagram-renderer.js?v=1'],
-    ['../shared/slides/slides-renderer-canvas.js?v=1'],
+    ['../shared/slides/slides-renderer-canvas.js?v=2'],
     ['../shared/slides/slides-editor.js?v=14'],
     ['../shared/slides/import-pipeline-bundle.js?v=2'],
     ['../shared/slides/import-pipeline.js?v=5'],
@@ -36,7 +36,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     // consumed only by slides-canvas.js below. No cross-dependencies between them.
     [
         '../shared/slides/slides-canvas-helpers.js?v=1',
-        '../shared/slides/slides-canvas-code-runtime.js?v=1',
+        '../shared/slides/slides-canvas-code-runtime.js?v=2',
         '../shared/slides/slides-canvas-guides.js?v=1',
         '../shared/slides/slides-canvas-widget-runtime.js?v=1',
         '../shared/slides/slides-canvas-overflow-runtime.js?v=1',
@@ -46,12 +46,12 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
         '../shared/slides/slides-canvas-render-runtime.js?v=1',
         '../shared/slides/slides-canvas-events-runtime.js?v=1',
         '../shared/slides/slides-canvas-transform-runtime.js?v=1',
-        '../shared/slides/slides-canvas-special-runtime.js?v=1',
+        '../shared/slides/slides-canvas-special-runtime.js?v=2',
         '../shared/slides/slides-canvas-inline-edit-runtime.js?v=1',
-        '../shared/slides/slides-canvas-content-runtime.js?v=1',
+        '../shared/slides/slides-canvas-content-runtime.js?v=2',
     ],
     // CanvasEditor class (depends on all sub-runtimes above)
-    ['../shared/slides/slides-canvas.js?v=21'],
+    ['../shared/slides/slides-canvas.js?v=22'],
     // Editor modules (mostly sequential — each may depend on previously registered globals)
     ['../shared/slides/editor-dialog.js'],
     ['../shared/slides/editor-utils.js?v=8'],
@@ -101,7 +101,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-resize.js?v=10'],
     ['../shared/slides/editor-checker.js?v=12'],
     ['../shared/slides/editor-bindings.js?v=22'],
-    ['../shared/slides/editor-main.js?v=1'],
+    ['../shared/slides/editor-main.js?v=2'],
 ]);
 
 loadClassicScriptGroups(EDITOR_BOOTSTRAP_GROUPS, {
