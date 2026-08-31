@@ -636,6 +636,9 @@ window.exportNotesMarkdown = exportNotesMarkdown;
  */
 const _SPECIAL_RUNTIME_SOURCES = Object.freeze([
     '../shared/slides/slides-typography.js',
+    // Chantier 8 — le sanitiseur (moteur portable, profil inline) avant slides-core.js
+    // pour que formatInlineRichText applique la liste blanche dans les exports autonomes.
+    '../shared/slides/html-sanitizer.js',
     '../shared/slides/slides-core.js',
     '../shared/slides/slides-special-math-runtime.js',
     '../shared/slides/slides-special-code-runtime.js',

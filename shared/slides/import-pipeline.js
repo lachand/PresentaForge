@@ -54,11 +54,26 @@
     if (!importLayout) {
         throw new Error('[OEIImportPipeline] Module manquant: charger import-pipeline-layout.js avant import-pipeline.js.');
     }
+    const htmlSanitizer = global.OEIHtmlSanitizer;
+    if (!htmlSanitizer || typeof htmlSanitizer.sanitize !== 'function') {
+        throw new Error('[OEIImportPipeline] Module manquant: charger html-sanitizer.js avant import-pipeline.js.');
+    }
     const toStr = importNormalization.toStr;
     const levelToArray = importNormalization.levelToArray;
     const normalizeListItems = importNormalization.normalizeListItems;
     const stripHtmlToText = importNormalization.stripHtmlToText;
     const parseHtmlList = importNormalization.parseHtmlList;
+
+    /* Chantier 8 — tout HTML libre entrant par l'import est assaini (liste blanche
+       'slide-rich' : balises bloc + inline raisonnables, attributs sûrs, http(s)/
+       mailto/tel/ftp + data:image hors SVG). L'HTML brut n'est conservé que pour les
+       decks locaux `data/slides/*.json` qui ne passent pas par ce pipeline — voir
+       docs/developer/SECURITY_MODEL.md. */
+    const sanitizeRichHtml = value => {
+        const raw = toStr(value, '');
+        if (!raw) return '';
+        return htmlSanitizer.sanitize(raw, 'slide-rich');
+    };
 
     const _readStoredJSON = (key, fallback = null) => {
         if (!key) return fallback;
@@ -431,6 +446,16 @@
             out.data[key] = toStr(raw, '');
             pushFix(report, `${slidePath}.elements[${index}].data.${key}`, 'Valeur objet normalisée en chaîne.');
         });
+
+        // Chantier 8 — `data.html` (heading/text : rendu HTML brut par
+        // slides-renderer-canvas.js) est assaini par liste blanche à l'import.
+        if (typeof out.data.html === 'string' && out.data.html) {
+            const cleanHtml = sanitizeRichHtml(out.data.html);
+            if (cleanHtml !== out.data.html) {
+                pushFix(report, `${slidePath}.elements[${index}].data.html`, 'HTML libre assaini (liste blanche slide-rich).');
+            }
+            out.data.html = cleanHtml;
+        }
 
         if (out.type === 'heading' && !toStr(out.data.text, '').trim()) {
             out.data.text = 'Titre';
@@ -882,6 +907,16 @@
             });
             applyHeadingFlowAdjustments(normalizedElements, path, report);
             out.elements = normalizedElements;
+        }
+
+        // Chantier 8 — slide "blank" : `slide.html` est injecté brut par
+        // SlidesRenderer.renderSlide. Assaini par liste blanche à l'import.
+        if (type === 'blank' && typeof out.html === 'string' && out.html) {
+            const cleanHtml = sanitizeRichHtml(out.html);
+            if (cleanHtml !== out.html) {
+                pushFix(report, `${path}.html`, 'HTML libre de la slide "blank" assaini (liste blanche slide-rich).');
+            }
+            out.html = cleanHtml;
         }
 
         if (!SUPPORTED_SLIDE_TYPES.has(type)) {

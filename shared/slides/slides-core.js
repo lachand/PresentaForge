@@ -25,10 +25,17 @@ class SlidesShared {
     /**
      * Render a tiny safe inline subset for text coming from data fields.
      * Allowed tags (no attributes): b, strong, i, em, u, code, sub, sup, br.
+     *
+     * Chantier 8 (sécurité) — deux étapes :
+     *  1. échappement de TOUT (neutralise `<script>`, attributs, préserve « List<String> »
+     *     en texte littéral) puis promotion du sous-ensemble inline sûr + sucre markdown ;
+     *  2. passage par OEIHtmlSanitizer (DOMPurify vendored si présent, sinon sanitiseur
+     *     portable) qui fait AUTORITÉ sur la liste blanche. No-op sur la sortie de l'étape 1.
+     *  Si le module de sanitisation est absent (contexte de chargement dégradé), l'étape 1
+     *  seule reste sûre (comportement historique).
      */
     static formatInlineRichText(value) {
-        const escaped = SlidesShared.esc(value);
-        return escaped
+        const promoted = SlidesShared.esc(value)
             // Restore HTML named/numeric/hex entities escaped by esc() (e.g. &or; &#8744; &#x2228;)
             .replace(/&amp;([a-zA-Z][a-zA-Z0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, '&$1')
             // Basic markdown support for bold emphasis in list-like fields.
@@ -37,9 +44,12 @@ class SlidesShared {
             // Preserve bold from imported rich text using span+font-weight wrappers.
             .replace(/&lt;span\b[\s\S]*?font-weight\s*:\s*(?:bold|[6-9]00)[\s\S]*?&gt;([\s\S]*?)&lt;\/span\s*&gt;/gi, '<strong>$1</strong>')
             .replace(/&lt;br\s*\/?\s*&gt;/gi, '<br>')
-            // Allow a tiny inline-safe subset and strip any attributes.
+            // Promote a tiny inline-safe subset back to real tags and strip any attributes.
             .replace(/&lt;(\/?)\s*(b|strong|i|em|u|code|sub|sup)\b[\s\S]*?&gt;/gi, '<$1$2>')
             .replace(/\r?\n/g, '<br>');
+        const sanitizer = (typeof window !== 'undefined' && window.OEIHtmlSanitizer)
+            || (typeof globalThis !== 'undefined' && globalThis.OEIHtmlSanitizer);
+        return sanitizer ? sanitizer.sanitize(promoted, 'inline') : promoted;
     }
 
     /* ── Typography system — délégué à slides-typography.js (Lot 17B) ── */

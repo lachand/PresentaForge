@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <!-- Chantier 8 (sécurité) — CSP en mode Report-Only : mesure les violations légitimes
+         (scripts inline, styles inline, data:/blob:, vendors externes) avant durcissement.
+         Directives documentées dans docs/developer/SECURITY_MODEL.md. -->
+    <meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'">
     <title>presentaForge — Mode Étudiant</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">

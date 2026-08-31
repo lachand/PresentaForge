@@ -15,6 +15,10 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/widget-plugins.js?v=2'],
     ['../shared/slides/design-tokens.js?v=2'],
     ['../shared/slides/background-utils.js?v=1'],
+    // Sécurité (chantier 8) — DOMPurify vendored puis wrapper liste blanche, avant
+    // slides-core.js (formatInlineRichText) et import-pipeline.js (assainissement à l'import).
+    ['../vendor/dompurify/3.4.14/purify.min.js'],
+    ['../shared/slides/html-sanitizer.js?v=1'],
     // Group 2: special sub-runtimes — each registers itself independently, no cross-deps
     [
         '../shared/slides/slides-special-math-runtime.js?v=1',
@@ -25,13 +29,13 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     // Orchestrator (depends on all 4 sub-runtimes above)
     ['../shared/slides/slides-special-runtime.js?v=1'],
     ['../shared/slides/slides-typography.js?v=1'],
-    ['../shared/slides/slides-core.js?v=31'],
+    ['../shared/slides/slides-core.js?v=32'],
     ['../shared/slides/slides-themes.js?v=1'],
     ['../shared/slides/slides-diagram-renderer.js?v=1'],
     ['../shared/slides/slides-renderer-canvas.js?v=2'],
     ['../shared/slides/slides-editor.js?v=14'],
     ['../shared/slides/import-pipeline-bundle.js?v=2'],
-    ['../shared/slides/import-pipeline.js?v=5'],
+    ['../shared/slides/import-pipeline.js?v=6'],
     // Group 3: canvas sub-runtimes — each registers itself on window.OEISlidesCanvas*,
     // consumed only by slides-canvas.js below. No cross-dependencies between them.
     [
@@ -93,7 +97,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ],
     // Export pipeline (sequential: media → main → pptx+qr)
     ['../shared/slides/editor-export-media.js?v=1'],
-    ['../shared/slides/editor-export.js?v=15'],
+    ['../shared/slides/editor-export.js?v=16'],
     // Group 5: export siblings — both depend on export.js, not on each other
     [
         '../shared/slides/editor-export-pptx.js?v=1',

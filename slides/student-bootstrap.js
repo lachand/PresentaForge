@@ -9,6 +9,10 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/network-session.js?v=2',
     '../shared/slides/relay-config.js?v=1',
     '../shared/slides/background-utils.js?v=1',
+    // Sécurité (chantier 8) — DOMPurify vendored + wrapper liste blanche, chargés avant
+    // slides-core.js (formatInlineRichText) et le rendu du deck.
+    '../vendor/dompurify/3.4.14/purify.min.js',
+    '../shared/slides/html-sanitizer.js?v=1',
     // Rendering stack — student renders the deck locally (Lot 20) via SlidesRenderer /
     // SlidesThemes / OEISlidesSpecialRuntime instead of receiving pre-rendered HTML.
     '../shared/slides/slides-special-math-runtime.js?v=1',
@@ -17,7 +21,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/slides-special-live-runtime.js?v=1',
     '../shared/slides/slides-special-runtime.js?v=1',
     '../shared/slides/slides-typography.js?v=1',
-    '../shared/slides/slides-core.js?v=31',
+    '../shared/slides/slides-core.js?v=32',
     '../shared/slides/slides-themes.js?v=1',
     '../shared/slides/slides-diagram-renderer.js?v=1',
     '../shared/slides/slides-renderer-canvas.js?v=2',
