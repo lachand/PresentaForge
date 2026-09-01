@@ -2286,6 +2286,20 @@
     .pv-toolbar-btn { min-height: 40px; padding: 4px 12px; }
 }
 
+/* ── Slides titre/chapitre : centrage vertical dans le viewer Reveal ─────
+   Reveal.js pose `display: block` EN INLINE sur la slide `.present`, ce qui
+   bat toute règle de sélecteur non `!important` : le `justify-content:center`
+   du flex de `.reveal section` (thème) est donc inerte dans le viewer. On
+   force le retour au flex uniquement sur la slide présente titre/chapitre —
+   les slides non présentes gardent le `display:none` inline de Reveal, et le
+   mode présentateur/review (DOM sans `.slides > section`) n'est pas touché.
+   Fallback : `align-content:center` du thème centre déjà en block sur les
+   navigateurs 2024+. */
+.reveal .slides > section.sl-title.present,
+.reveal .slides > section.sl-chapter.present {
+    display: flex !important;
+}
+
 /* ── Print mode — one slide per page, no Reveal.js chrome ───────── */
 @media print {
     /* Hide UI elements */
