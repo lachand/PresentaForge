@@ -32,7 +32,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/student-render.js?v=1',
     '../shared/slides/student-revision.js?v=1',
     '../shared/slides/student-quiz.js?v=2',
-    '../shared/slides/student-transport.js?v=1',
+    '../shared/slides/student-transport.js?v=2',
     '../vendor/qrcode-generator/1.4.4/qrcode.min.js',
     '../vendor/peerjs/1.5.5/peerjs.min.js',
     'student-main.js?v=5',

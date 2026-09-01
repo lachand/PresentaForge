@@ -70,6 +70,7 @@
         let _resyncLastReason = '';
         let _telemetryTimer = null;
         let _lastTelemetryAt = 0;
+        let _trailingTelemetryTimer = null;
         let _buildConnPending = false;
         let _reconnectTimer = null;
         let _connOpenTimer = null;
@@ -357,7 +358,20 @@
             const now = Date.now();
             const elapsed = now - _lastTelemetryAt;
             const minDelay = reason === 'heartbeat' ? 12_000 : 2_500;
-            if (!force && elapsed < minDelay) return false;
+            if (!force && elapsed < minDelay) {
+                // Throttlé : la position de l'élève (slide/fragment) a peut-être
+                // bougé et le viewer s'en sert de repli pour taguer réactions et
+                // questions. On planifie un envoi de rattrapage en fin de fenêtre
+                // pour que l'état final soit toujours reporté.
+                if (reason !== 'heartbeat' && !_trailingTelemetryTimer) {
+                    _trailingTelemetryTimer = setTimeout(() => {
+                        _trailingTelemetryTimer = null;
+                        sendStudentTelemetry('position', true);
+                    }, Math.max(0, minDelay - elapsed) + 50);
+                }
+                return false;
+            }
+            if (_trailingTelemetryTimer) { clearTimeout(_trailingTelemetryTimer); _trailingTelemetryTimer = null; }
             _lastTelemetryAt = now;
             return transportSend(_buildTelemetryPayload(reason, now));
         }
@@ -374,6 +388,10 @@
             if (_telemetryTimer) {
                 clearInterval(_telemetryTimer);
                 _telemetryTimer = null;
+            }
+            if (_trailingTelemetryTimer) {
+                clearTimeout(_trailingTelemetryTimer);
+                _trailingTelemetryTimer = null;
             }
         }
 

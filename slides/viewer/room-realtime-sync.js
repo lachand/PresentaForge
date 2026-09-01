@@ -272,17 +272,31 @@ export function applyStudentHandMessage(params) {
 }
 
 /**
- * Résout l'index de slide porté par un message étudiant, avec repli sur la
- * slide courante du présentateur si le client (cache ancien) ne l'envoie pas.
+ * Résout l'index de slide où a eu lieu une interaction étudiante.
+ *
+ * Ordre de résolution :
+ *   1. `msg.slideIndex` — l'élève connaît sa slide et l'envoie (client à jour) ;
+ *   2. les replis fournis, dans l'ordre — typiquement la dernière slide connue de
+ *      l'élève via sa télémétrie (`student:telemetry` porte `slideIndex` même sur
+ *      un client au cache ancien qui n'ajoute pas le champ à la réaction/question),
+ *      puis en dernier recours la slide courante du présentateur ;
+ *   3. `0` si rien de valide.
+ *
+ * Sans le repli télémétrie, une réaction d'un élève qui a quitté le fil du
+ * présentateur serait taguée sur la slide du présentateur, pas la sienne.
+ *
  * @param {any} msg
- * @param {number|(() => number)} [fallback]
+ * @param {...(number | undefined | null | (() => number | undefined | null))} fallbacks
  * @returns {number}
  */
-function resolveSlideIndex(msg, fallback) {
+function resolveSlideIndex(msg, ...fallbacks) {
     const raw = msg && msg.slideIndex;
     if (Number.isInteger(raw) && raw >= 0) return raw;
-    const fb = typeof fallback === 'function' ? fallback() : fallback;
-    return Number.isInteger(fb) && fb >= 0 ? fb : 0;
+    for (const fallback of fallbacks) {
+        const fb = typeof fallback === 'function' ? fallback() : fallback;
+        if (Number.isInteger(fb) && fb >= 0) return fb;
+    }
+    return 0;
 }
 
 /**
@@ -292,6 +306,7 @@ function resolveSlideIndex(msg, fallback) {
  *   roomQuestions: any[],
  *   toTrimmedString?: (value: any, maxLen?: number) => string,
  *   now?: () => number,
+ *   studentSlideIndex?: number | (() => number),
  *   currentSlideIndex?: number | (() => number),
  * }} params
  * @returns {{ ok: boolean, reason?: string }}
@@ -302,7 +317,7 @@ export function applyStudentQuestionMessage(params) {
     const text = trim(params?.msg?.text, 300);
     if (!text) return { ok: false, reason: 'empty-question' };
     const qid = trim(params?.msg?.qid, 80) || `q-${now()}`;
-    const slideIndex = resolveSlideIndex(params?.msg, params?.currentSlideIndex);
+    const slideIndex = resolveSlideIndex(params?.msg, params?.studentSlideIndex, params?.currentSlideIndex);
     const normalized = text.toLowerCase().replace(/\s+/g, ' ').trim();
     const roomQuestions = Array.isArray(params?.roomQuestions) ? params.roomQuestions : [];
     const existing = roomQuestions.find((question) => !question.read && String(question._norm || '') === normalized);
@@ -343,6 +358,7 @@ export function applyStudentQuestionMessage(params) {
  *   toTrimmedString?: (value: any, maxLen?: number) => string,
  *   now?: () => number,
  *   minIntervalMs?: number,
+ *   studentSlideIndex?: number | (() => number),
  *   currentSlideIndex?: number | (() => number),
  * }} params
  * @returns {{ ok: boolean, throttled: boolean, reason?: string }}
@@ -363,10 +379,40 @@ export function applyStudentFeedbackMessage(params) {
         pseudo: params?.studentsByPeer?.[params.peerId]?.pseudo || 'Anonyme',
         kind,
         text: trim(params?.msg?.text, 120),
-        slideIndex: resolveSlideIndex(params?.msg, params?.currentSlideIndex),
+        slideIndex: resolveSlideIndex(params?.msg, params?.studentSlideIndex, params?.currentSlideIndex),
         time: ts,
     });
     return { ok: true, throttled: false };
+}
+
+/**
+ * Journalise une réaction emoji étudiante taguée par slide (rapport de fin de
+ * session). L'affichage flottant et le relais aux autres élèves restent gérés
+ * côté `viewer-main.js` ; on ne s'occupe ici que du journal `_roomReactions`.
+ *
+ * @param {{
+ *   msg: any,
+ *   peerId: string,
+ *   roomReactions: any[],
+ *   toTrimmedString?: (value: any, maxLen?: number) => string,
+ *   now?: () => number,
+ *   maxEntries?: number,
+ *   studentSlideIndex?: number | (() => number),
+ *   currentSlideIndex?: number | (() => number),
+ * }} params
+ * @returns {{ ok: boolean, emoji: string, pseudo: string, slideIndex: number }}
+ */
+export function applyStudentReactionMessage(params) {
+    const trim = typeof params?.toTrimmedString === 'function' ? params.toTrimmedString : defaultTrim;
+    const now = typeof params?.now === 'function' ? params.now : () => Date.now();
+    const emoji = trim(params?.msg?.emoji, 24) || '❓';
+    const pseudo = trim(params?.msg?.pseudo, 40);
+    const slideIndex = Math.max(0, resolveSlideIndex(params?.msg, params?.studentSlideIndex, params?.currentSlideIndex));
+    const reactions = Array.isArray(params?.roomReactions) ? params.roomReactions : [];
+    reactions.push({ emoji, pseudo, slideIndex, time: now() });
+    const cap = Number.isInteger(params?.maxEntries) && params.maxEntries > 0 ? params.maxEntries : 2000;
+    while (reactions.length > cap) reactions.shift();
+    return { ok: true, emoji, pseudo, slideIndex };
 }
 
 export const testUtils = Object.freeze({

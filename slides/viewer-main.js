@@ -109,6 +109,7 @@ import {
     applyStudentFeedbackMessage,
     applyStudentHandMessage,
     applyStudentQuestionMessage,
+    applyStudentReactionMessage,
     applyStudentTelemetryMessage,
     createStudentJoinRecord,
     sendActiveRoomActivities,
@@ -571,6 +572,11 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             if (ViewerRuntime.revealDeck) return ViewerRuntime.revealDeck.getState().indexh || 0;
             return Number(ViewerRuntime.presenterCurrentIndex || 0);
         }
+
+        // Dernière slide connue d'un élève via sa télémétrie (`student:telemetry`
+        // la porte même sur un client au cache ancien) — repli slideIndex pour
+        // réactions/questions/feedback quand le message ne l'embarque pas.
+        const _roomStudentSlideIndex = peerId => _room.students?.[peerId]?.telemetry?.slideIndex;
 
         function _roomCurrentFragmentIndex() {
             if (ViewerRuntime.revealDeck) {
@@ -1489,9 +1495,10 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 case ROOM_MSG.STUDENT_REACTION: {
                     const pseudo = toTrimmedString(msg.pseudo, 40);
                     roomShowReaction(msg.emoji, pseudo);
-                    const rSlide = Number.isInteger(msg.slideIndex) && msg.slideIndex >= 0 ? msg.slideIndex : _roomCurrentSlideIndex();
-                    _roomReactions.push({ emoji: toTrimmedString(msg.emoji, 24) || '❓', pseudo, slideIndex: Math.max(0, rSlide), time: Date.now() });
-                    if (_roomReactions.length > 2000) _roomReactions.shift();
+                    applyStudentReactionMessage({
+                        msg, peerId, roomReactions: _roomReactions, toTrimmedString, now: () => Date.now(),
+                        studentSlideIndex: _roomStudentSlideIndex(peerId), currentSlideIndex: _roomCurrentSlideIndex,
+                    });
                     const relay = { type: ROOM_MSG.REACTION_SHOW, emoji: msg.emoji, pseudo };
                     _room.connections.forEach(c => { if (c !== conn && c.open) { try { c.send(relay); } catch(e) {} } });
                     if (_relayRoom.active) _relaySendBroadcast(relay);
@@ -1510,12 +1517,8 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 }
                 case ROOM_MSG.STUDENT_QUESTION: {
                     const questionRes = applyStudentQuestionMessage({
-                        msg,
-                        peerId,
-                        roomQuestions: _roomQuestions,
-                        toTrimmedString,
-                        now: () => Date.now(),
-                        currentSlideIndex: _roomCurrentSlideIndex,
+                        msg, peerId, roomQuestions: _roomQuestions, toTrimmedString, now: () => Date.now(),
+                        studentSlideIndex: _roomStudentSlideIndex(peerId), currentSlideIndex: _roomCurrentSlideIndex,
                     });
                     if (!questionRes.ok) { ack(false, questionRes.reason || 'question-invalid'); break; }
                     roomUpdatePanel();
@@ -1523,14 +1526,9 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 }
                 case ROOM_MSG.STUDENT_FEEDBACK: {
                     const feedbackRes = applyStudentFeedbackMessage({
-                        msg,
-                        peerId,
-                        roomFeedback: _roomFeedback,
-                        studentsByPeer: _room.students,
-                        toTrimmedString,
-                        now: () => Date.now(),
-                        minIntervalMs: 5000,
-                        currentSlideIndex: _roomCurrentSlideIndex,
+                        msg, peerId, roomFeedback: _roomFeedback, studentsByPeer: _room.students, toTrimmedString,
+                        now: () => Date.now(), minIntervalMs: 5000,
+                        studentSlideIndex: _roomStudentSlideIndex(peerId), currentSlideIndex: _roomCurrentSlideIndex,
                     });
                     if (!feedbackRes.ok) { ack(false, feedbackRes.reason || 'feedback-invalid'); break; }
                     if (feedbackRes.throttled) { ack(true, 'feedback-throttled'); break; }
