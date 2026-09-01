@@ -130,6 +130,90 @@
             return false;
         }
 
+        // ── #nav-sync : contrôle contextuel « suivi / resynchronisation » ──
+        // Fusionne les anciens boutons #nav-follow + #nav-resync (audit P2-1).
+        //   suit + synchro (currentIndex === dernier index présentateur reçu) → pastille discrète
+        //   libre OU désynchronisé → bouton plein « Rejoindre » (SYNC_REQUEST + réactive le suivi)
+        //   menu / appui long → « Naviguer librement » (désactive le suivi volontairement)
+        function navSyncIsSynced() {
+            if (!st.followPresenter) return false;
+            const cur = toSafeInt(st.currentIndex);
+            const pres = toSafeInt(st.presenterIndex);
+            return cur !== null && pres !== null && cur === pres;
+        }
+
+        function updateNavSync() {
+            const el = document.getElementById('nav-sync');
+            if (!el) return;
+            const synced = navSyncIsSynced();
+            el.dataset.state = synced ? 'synced' : 'rejoin';
+            el.setAttribute('aria-pressed', synced ? 'true' : 'false');
+            const label = el.querySelector('.nav-sync-label');
+            if (synced) {
+                if (label) label.textContent = 'Synchro';
+                el.setAttribute('aria-label', 'Vous suivez le présentateur — appui long pour naviguer librement');
+                el.title = 'Vous suivez le présentateur';
+            } else {
+                const presNum = (toSafeInt(st.presenterIndex) ?? 0) + 1;
+                if (label) label.textContent = 'Rejoindre';
+                el.setAttribute('aria-label', `Rejoindre le présentateur (slide ${presNum})`);
+                el.title = `Rejoindre le présentateur (slide ${presNum})`;
+            }
+        }
+
+        function _navSyncOutsideClick(e) {
+            const wrap = document.getElementById('nav-sync-wrap');
+            if (wrap && !wrap.contains(e.target)) navSyncCloseMenu();
+        }
+        function _navSyncKeydown(e) {
+            if (e.key === 'Escape') { navSyncCloseMenu(); document.getElementById('nav-sync')?.focus(); }
+        }
+        function navSyncCloseMenu() {
+            const menu = document.getElementById('nav-sync-menu');
+            if (!menu || menu.hidden) return;
+            menu.hidden = true;
+            document.getElementById('nav-sync')?.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('click', _navSyncOutsideClick, true);
+            document.removeEventListener('keydown', _navSyncKeydown, true);
+        }
+        function navSyncOpenMenu() {
+            const menu = document.getElementById('nav-sync-menu');
+            if (!menu || !menu.hidden) return;
+            menu.hidden = false;
+            document.getElementById('nav-sync')?.setAttribute('aria-expanded', 'true');
+            document.addEventListener('click', _navSyncOutsideClick, true);
+            document.addEventListener('keydown', _navSyncKeydown, true);
+            menu.querySelector('button')?.focus();
+        }
+
+        function navSyncRejoin() {
+            navSyncCloseMenu();
+            st.followPresenter = true;
+            H.syncRuntime({ followPresenter: true });
+            H.revision.onFollowToggle(true);
+            H.transport.requestResync('rejoindre');
+            showSlide(st.presenterIndex);
+            H.revision.updateBookmarkControls();
+            H.revision.updateControls();
+            updateCheckpointStatus();
+            updateNavSync();
+            H.transport.sendTelemetry('follow-toggle', true);
+        }
+
+        function navSyncGoFree() {
+            navSyncCloseMenu();
+            if (!st.followPresenter) { updateNavSync(); return; }
+            st.followPresenter = false;
+            H.syncRuntime({ followPresenter: false });
+            H.revision.onFollowToggle(false);
+            H.revision.updateBookmarkControls();
+            H.revision.updateControls();
+            updateCheckpointStatus();
+            updateNavSync();
+            H.setConnectionDetail('Navigation libre — vous ne suivez plus le présentateur', 'warn');
+            H.transport.sendTelemetry('follow-toggle', true);
+        }
+
         // ── Whiteboard replay ────────────────────────────
         let _whiteboardActive = false;
         let _whiteboardCurrentSlide = 0;
@@ -675,6 +759,7 @@
             H.revision.noteSeen(target);
             H.revision.updateControls();
             updateCheckpointStatus();
+            updateNavSync();
             H.transport.sendTelemetry('slide');
         }
 
@@ -707,6 +792,7 @@
                 const fragOrder = toSafeInt(msg.fragmentOrder ?? msg.fragmentIndex);
                 if (fragOrder !== null) applyFragmentProgress(fragOrder);
             }
+            updateNavSync();
         }
 
         function applyPresenterFragment(msg) {
@@ -758,6 +844,7 @@
             if (msg.whiteboard && typeof msg.whiteboard === 'object') applyWhiteboardSyncMessage(msg.whiteboard);
             else renderStudentWhiteboard();
             H.revision.updateControls();
+            updateNavSync();
         }
 
         // ── Subtitles wiring ─────────────────────────────
@@ -793,8 +880,8 @@
             document.getElementById('nav-prev')?.addEventListener('click', () => {
                 st.followPresenter = false;
                 H.syncRuntime({ followPresenter: false });
-                document.getElementById('nav-follow')?.classList.remove('active');
                 H.revision.showByModeStep(-1);
+                updateNavSync();
             });
             document.getElementById('nav-next')?.addEventListener('click', () => {
                 if (st.currentIndex >= maxPresenterAllowedIndex()) {
@@ -803,24 +890,36 @@
                 }
                 st.followPresenter = false;
                 H.syncRuntime({ followPresenter: false });
-                document.getElementById('nav-follow')?.classList.remove('active');
                 H.revision.showByModeStep(1);
+                updateNavSync();
             });
             document.getElementById('sfn-prev')?.addEventListener('click', () => document.getElementById('nav-prev')?.click());
             document.getElementById('sfn-next')?.addEventListener('click', () => document.getElementById('nav-next')?.click());
 
-            document.getElementById('nav-resync')?.addEventListener('click', () => H.transport.requestResync('manual'));
-            document.getElementById('nav-follow')?.addEventListener('click', () => {
-                st.followPresenter = !st.followPresenter;
-                H.syncRuntime({ followPresenter: st.followPresenter });
-                H.revision.onFollowToggle(st.followPresenter);
-                document.getElementById('nav-follow')?.classList.toggle('active', st.followPresenter);
-                if (st.followPresenter) showSlide(st.presenterIndex);
-                H.revision.updateBookmarkControls();
-                H.revision.updateControls();
-                updateCheckpointStatus();
-                H.transport.sendTelemetry('follow-toggle', true);
-            });
+            // #nav-sync — fusion suivi + resynchronisation (audit P2-1)
+            const navSyncBtn = document.getElementById('nav-sync');
+            if (navSyncBtn) {
+                let _lpTimer = null;
+                let _lpFired = false;
+                const clearLp = () => { if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; } };
+                navSyncBtn.addEventListener('pointerdown', e => {
+                    if (e.pointerType === 'mouse' && e.button !== 0) return;
+                    _lpFired = false;
+                    clearLp();
+                    _lpTimer = setTimeout(() => { _lpFired = true; navSyncOpenMenu(); }, 500);
+                });
+                ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => navSyncBtn.addEventListener(ev, clearLp));
+                navSyncBtn.addEventListener('click', e => {
+                    if (_lpFired) { _lpFired = false; e.preventDefault(); return; }
+                    const menu = document.getElementById('nav-sync-menu');
+                    if (menu && !menu.hidden) { navSyncCloseMenu(); return; }
+                    if (navSyncBtn.dataset.state === 'rejoin') navSyncRejoin();
+                    else navSyncOpenMenu();
+                });
+                navSyncBtn.addEventListener('contextmenu', e => { e.preventDefault(); navSyncOpenMenu(); });
+            }
+            document.getElementById('nav-sync-free')?.addEventListener('click', navSyncGoFree);
+            updateNavSync();
 
             document.addEventListener('keydown', e => {
                 if (document.getElementById('main-view')?.style.display === 'none') return;
@@ -996,6 +1095,7 @@ window.addEventListener('load', function() {
             detectSlides,
             markCheckpointCompleted,
             updateCheckpointStatus,
+            updateNavSync,
             currentSlideCheckpointLocked,
             enforceCheckpointBeforeNext,
             getQuizSlides: () => _quizSlides,

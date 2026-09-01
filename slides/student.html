@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=6">
-    <link rel="stylesheet" href="../shared/slides/slides-student.css?v=6">
+    <link rel="stylesheet" href="../shared/slides/slides-student.css?v=8">
     <!-- Presentation theme injected dynamically -->
     <style id="presentation-theme"></style>
 </head>
@@ -155,14 +155,22 @@
             <button id="nav-prev" class="nav-btn ui-btn" title="Slide précédente" aria-label="Slide précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
             <span id="slide-counter-nav">— / —</span>
             <button id="nav-next" class="nav-btn ui-btn" title="Slide suivante" aria-label="Slide suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
-            <button id="bookmark-btn" class="nav-btn ui-btn bookmark" title="Marquer ce slide" aria-label="Marquer ce slide" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4z"/></svg></button>
-            <button id="bookmark-filter-btn" class="nav-btn ui-btn favs" title="Afficher seulement les favoris" aria-label="Afficher seulement les favoris" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17l-5.9 3 1.2-6.5L2.5 8.9l6.6-.9z"/></svg><span id="bookmark-count">0</span></button>
-            <button id="revision-btn" class="nav-btn ui-btn revision" title="Mode révision" aria-label="Mode révision"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M3 12a9 9 0 1 0 2.64-6.36"/><polyline points="3 3 3 9 9 9"/></svg></button>
-            <button id="nav-resync" class="nav-btn ui-btn resync" title="Demander une resynchronisation" aria-label="Demander une resynchronisation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button>
-            <button id="nav-follow" class="nav-btn ui-btn follow active" title="Suivre le présentateur" aria-label="Suivre le présentateur" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg></button>
-            <span id="checkpoint-status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v4"/><circle cx="12" cy="16" r="1"/><path d="M10.3 3.8 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0z"/></svg>Checkpoint requis</span>
             <button id="hand-btn" class="nav-btn ui-btn" title="Lever la main" aria-label="Lever la main" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 11V6a1 1 0 0 1 2 0v5"/><path d="M10 11V5a1 1 0 0 1 2 0v6"/><path d="M14 11V6a1 1 0 0 1 2 0v5"/><path d="M18 11V8a1 1 0 0 1 2 0v6c0 4-3 7-7 7h-1c-3 0-6-2-7-5l-1-3a1.5 1.5 0 0 1 2.8-1.1L8 13"/></svg></button>
             <button id="question-btn" class="nav-btn ui-btn" title="Poser une question" aria-label="Poser une question"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3v-7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z"/></svg></button>
+            <span id="checkpoint-status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v4"/><circle cx="12" cy="16" r="1"/><path d="M10.3 3.8 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0z"/></svg>Checkpoint requis</span>
+            <div id="nav-sync-wrap" class="nav-sync-wrap">
+                <button id="nav-sync" class="nav-btn ui-btn nav-sync" type="button" data-state="synced" aria-pressed="true" aria-haspopup="menu" aria-expanded="false" aria-label="Vous suivez le présentateur" title="Vous suivez le présentateur">
+                    <span class="nav-sync-dot" aria-hidden="true"></span>
+                    <svg class="nav-sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+                    <span class="nav-sync-label">Synchro</span>
+                </button>
+                <div id="nav-sync-menu" class="nav-sync-menu" role="menu" aria-label="Synchronisation avec le présentateur" hidden>
+                    <button type="button" class="nav-sync-menu-item" id="nav-sync-free" role="menuitem">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="16 8 10 10 8 16 14 14 16 8"/></svg>
+                        Naviguer librement
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div id="score-bar">
@@ -185,6 +193,15 @@
             <button class="feedback-btn ui-btn" data-feedback="pause" data-icon="feedback_pause" data-text="Besoin d'une pause"><span class="feedback-btn-icon"></span><span>Pause</span></button>
             <button class="feedback-btn ui-btn" data-feedback="clear" data-icon="feedback_clear" data-text="Rythme clair"><span class="feedback-btn-icon"></span><span>OK</span></button>
             <span id="feedback-sent"></span>
+        </div>
+        <!-- Favoris & révision — sortis du #nav-bar (audit P2-1) ; visibles sur l'onglet
+             « Révision » du bottom-nav mobile. Côté desktop → section .ssp-favrev-section
+             du #student-side-panel (boutons proxy). -->
+        <div id="student-revtools">
+            <span class="srt-label">Favoris &amp; révision</span>
+            <button id="bookmark-btn" class="nav-btn ui-btn bookmark" title="Marquer ce slide" aria-label="Marquer ce slide" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4z"/></svg><span>Marquer</span></button>
+            <button id="bookmark-filter-btn" class="nav-btn ui-btn favs" title="Afficher seulement les favoris" aria-label="Afficher seulement les favoris" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17l-5.9 3 1.2-6.5L2.5 8.9l6.6-.9z"/></svg><span>Favoris</span><span id="bookmark-count">0</span></button>
+            <button id="revision-btn" class="nav-btn ui-btn revision" title="Mode révision" aria-label="Mode révision" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M3 12a9 9 0 1 0 2.64-6.36"/><polyline points="3 3 3 9 9 9"/></svg><span>Révision</span></button>
         </div>
         <div id="revision-bar">
             <span id="revision-status"></span>
@@ -228,7 +245,7 @@
                 <span class="ms" aria-hidden="true">sentiment_satisfied</span>Réagir
             </button>
             <button class="ui-bottomnav-item" data-mtab="notes" aria-pressed="false">
-                <span class="ms" aria-hidden="true">edit_note</span>Notes
+                <span class="ms" aria-hidden="true">history_edu</span>Révision
             </button>
         </nav>
 
@@ -250,6 +267,25 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3v-7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z"/></svg>
                     Poser une question
                 </button>
+            </div>
+            <!-- Favoris & révision (audit P2-1) — boutons proxy relayant vers #bookmark-btn /
+                 #bookmark-filter-btn / #revision-btn (côté mobile : onglet « Révision »). -->
+            <div class="ssp-favrev-section">
+                <div class="ssp-section-label">Favoris &amp; révision</div>
+                <div class="ssp-favrev-actions">
+                    <button class="ssp-favrev-btn bookmark" id="ssp-bookmark-btn" type="button" title="Marquer ce slide" aria-label="Marquer ce slide" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12v17l-6-4-6 4z"/></svg>
+                        <span>Marquer</span>
+                    </button>
+                    <button class="ssp-favrev-btn" id="ssp-bookmark-filter-btn" type="button" title="Afficher seulement les favoris" aria-label="Afficher seulement les favoris" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M12 2l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17l-5.9 3 1.2-6.5L2.5 8.9l6.6-.9z"/></svg>
+                        <span>Favoris <span class="ssp-bookmark-count" id="ssp-bookmark-count">0</span></span>
+                    </button>
+                    <button class="ssp-favrev-btn" id="ssp-revision-btn" type="button" title="Mode révision" aria-label="Mode révision" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36"/><polyline points="3 3 3 9 9 9"/></svg>
+                        <span>Révision</span>
+                    </button>
+                </div>
             </div>
             <div class="ssp-keynotes-section">
                 <div class="ssp-section-label">Points Clés</div>

@@ -79,18 +79,34 @@
                 .sort((a, b) => a - b);
         }
 
+        // Répercute un état (classe .active + aria-pressed) sur un bouton et son
+        // éventuel proxy desktop (side panel) / mobile (onglet Révision).
+        function _reflect(id, active) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('active', active);
+            el.setAttribute('aria-pressed', active ? 'true' : 'false');
+        }
+
         function updateBookmarkControls() {
             const key = String(st.currentIndex);
-            const markBtn = document.getElementById('bookmark-btn');
-            const filterBtn = document.getElementById('bookmark-filter-btn');
-            const countEl = document.getElementById('bookmark-count');
-            if (markBtn) markBtn.classList.toggle('active', _bookmarks.has(key));
-            if (filterBtn) {
-                filterBtn.classList.toggle('active', _bookmarksOnly);
-                filterBtn.disabled = _bookmarks.size === 0 && !_bookmarksOnly;
-                filterBtn.title = _bookmarksOnly ? 'Quitter le mode favoris' : 'Afficher seulement les favoris';
-            }
-            if (countEl) countEl.textContent = String(_bookmarks.size);
+            const marked = _bookmarks.has(key);
+            const filterDisabled = _bookmarks.size === 0 && !_bookmarksOnly;
+            const filterTitle = _bookmarksOnly ? 'Quitter le mode favoris' : 'Afficher seulement les favoris';
+            _reflect('bookmark-btn', marked);
+            _reflect('ssp-bookmark-btn', marked);
+            _reflect('bookmark-filter-btn', _bookmarksOnly);
+            _reflect('ssp-bookmark-filter-btn', _bookmarksOnly);
+            ['bookmark-filter-btn', 'ssp-bookmark-filter-btn'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.disabled = filterDisabled;
+                el.title = filterTitle;
+            });
+            ['bookmark-count', 'ssp-bookmark-count'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = String(_bookmarks.size);
+            });
             updateRevisionControls();
         }
 
@@ -185,8 +201,8 @@
         }
 
         function updateRevisionControls() {
-            const btn = document.getElementById('revision-btn');
-            if (btn) btn.classList.toggle('active', _revisionEnabled);
+            _reflect('revision-btn', _revisionEnabled);
+            _reflect('ssp-revision-btn', _revisionEnabled);
 
             const bar = document.getElementById('revision-bar');
             if (bar) bar.style.display = _revisionEnabled ? 'flex' : 'none';
@@ -233,12 +249,12 @@
                 st.followPresenter = false;
                 H.syncRuntime({ followPresenter: false });
                 _bookmarksOnly = false;
-                document.getElementById('nav-follow')?.classList.remove('active');
                 const ordered = revisionOrderedDeck();
                 if (ordered.length && !ordered.includes(st.currentIndex)) showSlide(ordered[0]);
             }
             updateBookmarkControls();
             updateRevisionControls();
+            H.render.updateNavSync?.();
         }
 
         function applyRevisionGrade(entry, qualityRaw) {
@@ -410,6 +426,12 @@
         }
 
         function bindControls() {
+            // Proxies favoris/révision (side panel desktop + onglet Révision mobile) →
+            // relaient vers les boutons fonctionnels #bookmark-btn / #bookmark-filter-btn / #revision-btn.
+            document.getElementById('ssp-bookmark-btn')?.addEventListener('click', () => document.getElementById('bookmark-btn')?.click());
+            document.getElementById('ssp-bookmark-filter-btn')?.addEventListener('click', () => document.getElementById('bookmark-filter-btn')?.click());
+            document.getElementById('ssp-revision-btn')?.addEventListener('click', () => document.getElementById('revision-btn')?.click());
+
             document.getElementById('bookmark-btn')?.addEventListener('click', () => {
                 const key = String(st.currentIndex);
                 if (_bookmarks.has(key)) _bookmarks.delete(key);
@@ -428,7 +450,6 @@
                     _bookmarksOnly = true;
                     st.followPresenter = false;
                     H.syncRuntime({ followPresenter: false });
-                    document.getElementById('nav-follow')?.classList.remove('active');
                     if (!_bookmarks.has(String(st.currentIndex))) {
                         const list = bookmarksSorted();
                         if (list.length) showSlide(list[0]);
@@ -437,6 +458,7 @@
                     _bookmarksOnly = false;
                 }
                 updateBookmarkControls();
+                H.render.updateNavSync?.();
             });
             document.getElementById('revision-btn')?.addEventListener('click', () => setRevisionMode(!_revisionEnabled));
             document.getElementById('revision-mark-new')?.addEventListener('click', () => markRevision('new'));
