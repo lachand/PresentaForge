@@ -239,10 +239,15 @@
             && (msg.quizCount == null || isNonNegInt(msg.quizCount))
             && (msg.quizCorrect == null || isNonNegInt(msg.quizCorrect))
             && (msg.pseudo == null || isString(msg.pseudo, 160)),
-        [ROOM_MSG.STUDENT_REACTION]: msg => isString(msg.emoji || '', 24) && (msg.pseudo == null || isString(msg.pseudo, 160)),
+        [ROOM_MSG.STUDENT_REACTION]: msg => isString(msg.emoji || '', 24)
+            && (msg.pseudo == null || isString(msg.pseudo, 160))
+            && (msg.slideIndex == null || isNonNegInt(msg.slideIndex)),
         [ROOM_MSG.STUDENT_HAND]: msg => isBoolean(msg.raised),
-        [ROOM_MSG.STUDENT_QUESTION]: msg => isString(msg.text || '', 1600) && (msg.qid == null || isString(msg.qid, 120)),
-        [ROOM_MSG.STUDENT_FEEDBACK]: msg => isString(msg.feedback || '', 80),
+        [ROOM_MSG.STUDENT_QUESTION]: msg => isString(msg.text || '', 1600)
+            && (msg.qid == null || isString(msg.qid, 120))
+            && (msg.slideIndex == null || isNonNegInt(msg.slideIndex)),
+        [ROOM_MSG.STUDENT_FEEDBACK]: msg => isString(msg.feedback || '', 80)
+            && (msg.slideIndex == null || isNonNegInt(msg.slideIndex)),
         [ROOM_MSG.STUDENT_TELEMETRY]: msg => (msg.pseudo == null || isString(msg.pseudo, 160))
             && (msg.state == null || isString(msg.state, 40))
             && (msg.transport == null || isString(msg.transport, 40))

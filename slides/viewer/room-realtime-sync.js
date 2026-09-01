@@ -272,12 +272,27 @@ export function applyStudentHandMessage(params) {
 }
 
 /**
+ * Résout l'index de slide porté par un message étudiant, avec repli sur la
+ * slide courante du présentateur si le client (cache ancien) ne l'envoie pas.
+ * @param {any} msg
+ * @param {number|(() => number)} [fallback]
+ * @returns {number}
+ */
+function resolveSlideIndex(msg, fallback) {
+    const raw = msg && msg.slideIndex;
+    if (Number.isInteger(raw) && raw >= 0) return raw;
+    const fb = typeof fallback === 'function' ? fallback() : fallback;
+    return Number.isInteger(fb) && fb >= 0 ? fb : 0;
+}
+
+/**
  * @param {{
  *   msg: any,
  *   peerId: string,
  *   roomQuestions: any[],
  *   toTrimmedString?: (value: any, maxLen?: number) => string,
  *   now?: () => number,
+ *   currentSlideIndex?: number | (() => number),
  * }} params
  * @returns {{ ok: boolean, reason?: string }}
  */
@@ -287,6 +302,7 @@ export function applyStudentQuestionMessage(params) {
     const text = trim(params?.msg?.text, 300);
     if (!text) return { ok: false, reason: 'empty-question' };
     const qid = trim(params?.msg?.qid, 80) || `q-${now()}`;
+    const slideIndex = resolveSlideIndex(params?.msg, params?.currentSlideIndex);
     const normalized = text.toLowerCase().replace(/\s+/g, ' ').trim();
     const roomQuestions = Array.isArray(params?.roomQuestions) ? params.roomQuestions : [];
     const existing = roomQuestions.find((question) => !question.read && String(question._norm || '') === normalized);
@@ -305,6 +321,7 @@ export function applyStudentQuestionMessage(params) {
     roomQuestions.unshift({
         qid,
         text,
+        slideIndex,
         time: now(),
         read: false,
         hidden: false,
@@ -326,6 +343,7 @@ export function applyStudentQuestionMessage(params) {
  *   toTrimmedString?: (value: any, maxLen?: number) => string,
  *   now?: () => number,
  *   minIntervalMs?: number,
+ *   currentSlideIndex?: number | (() => number),
  * }} params
  * @returns {{ ok: boolean, throttled: boolean, reason?: string }}
  */
@@ -345,6 +363,7 @@ export function applyStudentFeedbackMessage(params) {
         pseudo: params?.studentsByPeer?.[params.peerId]?.pseudo || 'Anonyme',
         kind,
         text: trim(params?.msg?.text, 120),
+        slideIndex: resolveSlideIndex(params?.msg, params?.currentSlideIndex),
         time: ts,
     });
     return { ok: true, throttled: false };

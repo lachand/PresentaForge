@@ -10,7 +10,7 @@
         import { safePeerSend, broadcastPeers } from './viewer/room-transport.js';
         import { postSyncMessage } from './viewer/audience-sync.js';
         import { initNormalModeToolbar } from './viewer/normal-mode-toolbar.js';
-        import { applyStatusState } from './viewer/room-ui.js';
+        import { applyStatusState, showFloatingReaction } from './viewer/room-ui.js';
 import {
     buildRemoteRoomUrl,
     buildStudentRoomUrl,
@@ -123,6 +123,7 @@ import { buildReplayStandaloneHtml } from './viewer/replay-standalone-export.js'
 import {
     normalizeReplaySessionExport,
 } from '../shared/slides/replay-contract.mjs';
+import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
 
         const params = new URLSearchParams(location.search);
         let file = params.get('file') || '../data/slides/exemple-git.json';
@@ -393,12 +394,14 @@ import {
         ]);
         // ── Nouvelles structures de données salle ──────────────
         const _roomHands = [];       // [{ peerId, pseudo }]
-        const _roomQuestions = [];   // [{ qid, text, time }]
+        const _roomQuestions = [];   // [{ qid, text, slideIndex, time, votes, ... }]
         let _roomQuestionFilter = 'open';
         const _roomFeedback = {
             events: [],
             lastByPeer: new Map(),
         };
+        // Réactions emoji étudiantes taguées par slide, pour le rapport de fin de session. [{ emoji, pseudo, slideIndex, time }]
+        const _roomReactions = [];
         let _roomPresenterMode = 'live';
         let _pvQrVisible = false;
         let _subtitleActive = false;
@@ -1486,6 +1489,9 @@ import {
                 case ROOM_MSG.STUDENT_REACTION: {
                     const pseudo = toTrimmedString(msg.pseudo, 40);
                     roomShowReaction(msg.emoji, pseudo);
+                    const rSlide = Number.isInteger(msg.slideIndex) && msg.slideIndex >= 0 ? msg.slideIndex : _roomCurrentSlideIndex();
+                    _roomReactions.push({ emoji: toTrimmedString(msg.emoji, 24) || '❓', pseudo, slideIndex: Math.max(0, rSlide), time: Date.now() });
+                    if (_roomReactions.length > 2000) _roomReactions.shift();
                     const relay = { type: ROOM_MSG.REACTION_SHOW, emoji: msg.emoji, pseudo };
                     _room.connections.forEach(c => { if (c !== conn && c.open) { try { c.send(relay); } catch(e) {} } });
                     if (_relayRoom.active) _relaySendBroadcast(relay);
@@ -1509,6 +1515,7 @@ import {
                         roomQuestions: _roomQuestions,
                         toTrimmedString,
                         now: () => Date.now(),
+                        currentSlideIndex: _roomCurrentSlideIndex,
                     });
                     if (!questionRes.ok) { ack(false, questionRes.reason || 'question-invalid'); break; }
                     roomUpdatePanel();
@@ -1523,6 +1530,7 @@ import {
                         toTrimmedString,
                         now: () => Date.now(),
                         minIntervalMs: 5000,
+                        currentSlideIndex: _roomCurrentSlideIndex,
                     });
                     if (!feedbackRes.ok) { ack(false, feedbackRes.reason || 'feedback-invalid'); break; }
                     if (feedbackRes.throttled) { ack(true, 'feedback-throttled'); break; }
@@ -1663,6 +1671,7 @@ import {
             _roomQuestionFilter = 'open';
             _roomFeedback.events.length = 0;
             _roomFeedback.lastByPeer.clear();
+            _roomReactions.length = 0;
             if (_activePoll) _postPresenterSync({ type: SYNC_MSG.POLL_END, pollId: _activePoll.pollId });
             _activePoll = null;
             if (_activeWordCloud) _postPresenterSync({ type: SYNC_MSG.WORDCLOUD_END, cloudId: _activeWordCloud.cloudId });
@@ -1695,15 +1704,7 @@ import {
             if (isPresenterMode) switchRoomPresenterMode('technique', true);
         }
 
-        function roomShowReaction(emoji, pseudo) {
-            const safe = ['👍','😕','❓','🎉','👏','🤔','🔥'].includes(emoji) ? emoji : '❓';
-            const el = document.createElement('div');
-            el.className = 'sl-reaction';
-            el.style.left = (10 + Math.random() * 80) + 'vw';
-            el.innerHTML = safe + (pseudo ? `<div class="sl-reaction-label">${_roomEsc(String(pseudo).slice(0,12))}</div>` : '');
-            document.body.appendChild(el);
-            el.addEventListener('animationend', () => el.remove());
-        }
+        const roomShowReaction = (emoji, pseudo) => showFloatingReaction(emoji, pseudo);
 
         const _roomPanelController = createRoomPanelController({
             toTrimmedString,
@@ -1997,6 +1998,15 @@ import {
                 typography: SlidesShared.resolveTypographyDefaults(data.typography),
             };
 
+            const _sessionReport = createSessionReportRuntime({
+                getSlides: () => slides,
+                getDeckTitle: () => title,
+                getQuestions: () => _roomQuestions,
+                getFeedback: () => _roomFeedback.events,
+                getReactions: () => _roomReactions,
+                getStudents: () => Object.values(_room.students || {}),
+            });
+
             // Open audience window
             const channel = new BroadcastChannel(CHANNEL_NAME);
             _presenterSyncChannel = channel;
@@ -2023,6 +2033,9 @@ import {
                 goTo: idx => { PresenterControls.goTo?.(idx); },
                 getSlides: () => slides,
                 getCurrentIndex: () => currentIndex,
+                // Rapport de fin de session (questions/feedback/réactions taguées par slide)
+                getSessionInsights: () => _sessionReport.getInsights(),
+                downloadSessionReport: () => _sessionReport.download(),
             };
             const audienceUrl = new URL(location.href);
             audienceUrl.searchParams.set('mode', 'audience');

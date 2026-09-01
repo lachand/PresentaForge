@@ -271,6 +271,7 @@
                 type: ROOM_MSG.STUDENT_FEEDBACK,
                 kind: String(kind || '').toLowerCase(),
                 text: String(text || '').slice(0, 120),
+                slideIndex: Math.max(0, st.currentIndex | 0),
                 ts: Date.now(),
             }, { maxRetries: 3, retryDelay: 1500 });
             const sent = document.getElementById('feedback-sent');
@@ -612,7 +613,7 @@
                 btn.addEventListener('click', () => {
                     const emoji = btn.dataset.emoji;
                     showLocalReaction(emoji);
-                    H.transport.send({ type: ROOM_MSG.STUDENT_REACTION, emoji, pseudo: st.pseudo });
+                    H.transport.send({ type: ROOM_MSG.STUDENT_REACTION, emoji, pseudo: st.pseudo, slideIndex: Math.max(0, st.currentIndex | 0) });
                     btn.disabled = true;
                     setTimeout(() => { btn.disabled = false; }, 2000);
                 });
@@ -654,7 +655,7 @@
             document.getElementById('question-send')?.addEventListener('click', () => {
                 const text = document.getElementById('question-text').value.trim();
                 if (!text) return;
-                H.transport.sendReliable({ type: ROOM_MSG.STUDENT_QUESTION, text, qid: `q-${Date.now()}` }, { maxRetries: 3, retryDelay: 1400 });
+                H.transport.sendReliable({ type: ROOM_MSG.STUDENT_QUESTION, text, qid: `q-${Date.now()}`, slideIndex: Math.max(0, st.currentIndex | 0) }, { maxRetries: 3, retryDelay: 1400 });
                 dpAddMessage('qa', { text, from: 'Vous', own: true });
                 document.getElementById('question-text').value = '';
                 document.getElementById('question-overlay').style.display = 'none';

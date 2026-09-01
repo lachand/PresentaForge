@@ -263,11 +263,12 @@ body {
 #score-bar {
     padding: 7px 14px; background: var(--surface-container-lowest);
     box-shadow: 0 -1px 0 var(--outline-variant);
-    display: flex; align-items: center; gap: 10px; flex-shrink: 0; font-size: 0.75rem;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    font-size: 0.78rem; color: var(--text);
 }
 #score-pts { color: var(--primary); font-weight: 700; font-size: 0.88rem; font-family: 'Manrope', sans-serif; }
 #score-pseudo { color: var(--dim); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#score-sep { color: var(--border); }
+#score-sep { color: var(--dim); }
 /* Score flash animation (+pts earned) */
 @keyframes scoreFlash {
     0%   { transform: scale(1); }

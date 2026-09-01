@@ -17,6 +17,8 @@
         setInterval(updateClock, 1000);
 
         // ── End Show → Analytics modal (or editor if no room) ─────────
+        var _pvaEsc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+
         var btnEndShow = document.getElementById('pv-btn-end-show');
         if (btnEndShow) {
             btnEndShow.addEventListener('click', function () {
@@ -30,44 +32,116 @@
             });
         }
 
+        function renderPvaLeaderboardHtml(students) {
+            var sorted = students.slice().sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+            var rows = sorted.map(function(s, i) {
+                var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
+                var acc = (s.quizCount || 0) > 0 ? ' · ' + Math.round((s.quizCorrect || 0) / s.quizCount * 100) + '% quiz' : '';
+                return '<div class="pva-row"><span class="pva-rank">' + _pvaEsc(medal) + '</span>'
+                    + '<span class="pva-name">' + _pvaEsc(s.pseudo || 'Anonyme') + '</span>'
+                    + '<span class="pva-score">' + _pvaEsc((s.score || 0).toLocaleString('fr-FR') + ' pts' + acc) + '</span></div>';
+            }).join('');
+            return rows || '<div class="pva-empty">Aucun score enregistré</div>';
+        }
+
+        function renderPvaQuestionsHtml(insights) {
+            var open = (insights && insights.openQuestions) || [];
+            if (!open.length) return '<div class="pva-empty">Aucune question en attente.</div>';
+            var groups = {};
+            var order = [];
+            open.forEach(function(q) {
+                var k = q.slideIndex;
+                if (!groups[k]) { groups[k] = { title: q.slideTitle, items: [] }; order.push(k); }
+                groups[k].items.push(q);
+            });
+            order.sort(function(a, b) { return a - b; });
+            return order.map(function(k) {
+                var g = groups[k];
+                var items = g.items.map(function(q) {
+                    var extra = q.votes > 1 ? ' <span class="pva-q-votes">+' + (q.votes - 1) + '</span>' : '';
+                    return '<li>' + _pvaEsc(q.text) + extra + '</li>';
+                }).join('');
+                return '<div class="pva-q-group"><div class="pva-q-slide"><span class="pva-q-num">S' + (Number(k) + 1) + '</span>'
+                    + _pvaEsc(g.title) + '</div><ul class="pva-q-list">' + items + '</ul></div>';
+            }).join('');
+        }
+
+        function renderPvaHotspotsHtml(insights) {
+            if (!insights) return '';
+            var hs = (insights && insights.hotspots) || {};
+            var block = function(label, rows) {
+                if (!rows || !rows.length) return '';
+                var lis = rows.map(function(r) {
+                    return '<li>' + _pvaEsc(r.title) + ' <span class="pva-hs-c">' + r.count + '</span></li>';
+                }).join('');
+                return '<div class="pva-hs"><h4>' + _pvaEsc(label) + '</h4><ol>' + lis + '</ol></div>';
+            };
+            return block('Le plus de questions', hs.questions)
+                + block('Le plus de « pas clair »', hs.unclear)
+                + block('Le plus de « pas compris »', hs.confused);
+        }
+
         function _openAnalyticsDashboard(students) {
             var modal = document.getElementById('pv-analytics-modal');
             if (!modal) return;
 
-            // Compute stats
+            var bridge = window.OEIPresenterSyncBridge;
+            var insights = null;
+            try { insights = bridge && bridge.getSessionInsights ? bridge.getSessionInsights() : null; } catch (_) { insights = null; }
+
             var n = students.length;
             var withScore = students.filter(function(s) { return (s.quizCount || 0) > 0; });
             var totalCorrect = withScore.reduce(function(acc, s) { return acc + (s.quizCorrect || 0); }, 0);
             var totalQ = withScore.reduce(function(acc, s) { return acc + (s.quizCount || 0); }, 0);
             var avgAccuracy = totalQ > 0 ? Math.round(totalCorrect / totalQ * 100) : null;
-            var sorted = students.slice().sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
-
-            var esc = function(s) { return String(s || '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
-
-            var leaderboardHtml = sorted.map(function(s, i) {
-                var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
-                var acc = s.quizCount > 0 ? ' · ' + Math.round((s.quizCorrect || 0) / s.quizCount * 100) + '% quiz' : '';
-                return '<div class="pva-row">' +
-                    '<span class="pva-rank">' + medal + '</span>' +
-                    '<span class="pva-name">' + esc(s.pseudo) + '</span>' +
-                    '<span class="pva-score">' + (s.score || 0).toLocaleString() + ' pts' + acc + '</span>' +
-                    '</div>';
-            }).join('');
 
             document.getElementById('pva-count').textContent = n + ' étudiant' + (n > 1 ? 's' : '') + ' connecté' + (n > 1 ? 's' : '');
-            document.getElementById('pva-accuracy').textContent = avgAccuracy !== null ? avgAccuracy + '% de bonnes réponses (moyenne)' : 'Aucun quiz lancé';
-            document.getElementById('pva-leaderboard').innerHTML = leaderboardHtml || '<div class="pva-empty">Aucun score enregistré</div>';
+            var accBits = [];
+            if (avgAccuracy !== null) accBits.push(avgAccuracy + '% de bonnes réponses');
+            if (insights && insights.totals) {
+                if (insights.totals.questions) accBits.push(insights.totals.questions + ' question' + (insights.totals.questions > 1 ? 's' : ''));
+                if (insights.totals.reactions) accBits.push(insights.totals.reactions + ' réaction' + (insights.totals.reactions > 1 ? 's' : ''));
+            }
+            document.getElementById('pva-accuracy').textContent = accBits.join(' · ') || 'Aucun quiz lancé';
 
-            modal.style.display = 'flex';
+            var qSection = document.getElementById('pva-questions');
+            var openCount = insights && insights.openQuestions ? insights.openQuestions.length : 0;
+            if (qSection) {
+                qSection.hidden = !insights;
+                if (insights) {
+                    document.getElementById('pva-questions-count').textContent = String(openCount);
+                    document.getElementById('pva-questions-list').innerHTML = renderPvaQuestionsHtml(insights);
+                }
+            }
+
+            var hsSection = document.getElementById('pva-hotspots');
+            var hsHtml = renderPvaHotspotsHtml(insights);
+            if (hsSection) {
+                hsSection.hidden = !hsHtml;
+                document.getElementById('pva-hotspots-list').innerHTML = renderPvaHotspotsHtml(insights);
+            }
+
+            document.getElementById('pva-leaderboard').innerHTML = renderPvaLeaderboardHtml(students);
+
+            modal.classList.add('is-open');
             modal.addEventListener('keydown', function(e) { if (e.key === 'Escape') _closeAnalyticsDashboard(); }, { once: true });
         }
 
         function _closeAnalyticsDashboard() {
             var modal = document.getElementById('pv-analytics-modal');
-            if (modal) modal.style.display = 'none';
+            if (modal) modal.classList.remove('is-open');
         }
 
         document.getElementById('pva-close')?.addEventListener('click', _closeAnalyticsDashboard);
+        document.getElementById('pv-analytics-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) _closeAnalyticsDashboard();
+        });
+        document.getElementById('pva-export-report')?.addEventListener('click', function() {
+            var bridge = window.OEIPresenterSyncBridge;
+            if (bridge && bridge.downloadSessionReport) {
+                try { bridge.downloadSessionReport(); } catch (err) { console.warn('[session-report] export échoué', err); }
+            }
+        });
         document.getElementById('pva-go-editor')?.addEventListener('click', function() {
             _closeAnalyticsDashboard();
             document.getElementById('pv-btn-editor')?.click();
@@ -248,19 +322,14 @@
             var title = (slide.title || '').replace(/<[^>]*>/g, '').trim() || ('Slide ' + (i + 1));
             var isCurrent = (i === currentIdx);
             var card = document.createElement('button');
+            card.type = 'button';
             card.dataset.idx = String(i);
             card.dataset.title = title.toLowerCase();
-            card.style.cssText = [
-                'display:flex;flex-direction:column;align-items:stretch;gap:6px;',
-                'border:none;border-radius:10px;padding:6px;cursor:pointer;',
-                'background:' + (isCurrent ? '#d2e4ff' : '#ffffff') + ';',
-                'box-shadow:' + (isCurrent ? '0 0 0 2px #00508d' : '0 1px 4px rgba(29,27,26,0.08)') + ';',
-                'transition:box-shadow 0.12s,background 0.12s;',
-            ].join('');
+            card.className = 'pv-jump-card' + (isCurrent ? ' is-current' : '');
 
             // Thumbnail frame
             var frame = document.createElement('div');
-            frame.style.cssText = 'position:relative;width:' + THUMB_W + 'px;height:' + THUMB_H + 'px;overflow:hidden;border-radius:6px;background:#f3edea;flex-shrink:0;align-self:stretch;';
+            frame.className = 'pv-jump-card-frame';
 
             // Render slide HTML via SlidesRenderer if available
             var rendered = typeof window.SlidesRenderer?.renderSlide === 'function'
@@ -280,25 +349,19 @@
 
             // Number badge
             var badge = document.createElement('div');
-            badge.style.cssText = 'position:absolute;bottom:4px;left:4px;background:rgba(29,27,26,0.55);color:#fff;border-radius:4px;padding:1px 5px;font-size:0.625rem;font-weight:700;font-family:Manrope,sans-serif;';
+            badge.className = 'pv-jump-card-badge';
             badge.textContent = String(i + 1);
             frame.appendChild(badge);
 
             // Title
             var titleEl = document.createElement('div');
-            titleEl.style.cssText = 'font-family:Manrope,sans-serif;font-size:0.6875rem;font-weight:600;color:' + (isCurrent ? '#00508d' : '#414750') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px 2px;';
+            titleEl.className = 'pv-jump-card-title';
             titleEl.title = title;
             titleEl.textContent = title;
 
             card.appendChild(frame);
             card.appendChild(titleEl);
 
-            card.addEventListener('mouseenter', function () {
-                if (!isCurrent) card.style.background = '#f3edea';
-            });
-            card.addEventListener('mouseleave', function () {
-                if (!isCurrent) card.style.background = '#ffffff';
-            });
             card.addEventListener('click', function () {
                 window.OEIPresenterSyncBridge?.goTo(i);
                 closeSlideJump();
@@ -317,7 +380,7 @@
             slides.forEach(function (slide, i) {
                 jumpGrid.appendChild(_makeThumbCard(slide, i, currentIdx));
             });
-            jumpOverlay.style.display = 'flex';
+            jumpOverlay.classList.add('is-open');
             setTimeout(function () {
                 if (jumpInput) jumpInput.focus();
                 // Scroll current slide into view
@@ -326,7 +389,7 @@
             }, 50);
         }
         function closeSlideJump() {
-            if (jumpOverlay) jumpOverlay.style.display = 'none';
+            if (jumpOverlay) jumpOverlay.classList.remove('is-open');
         }
 
         if (jumpInput) {
@@ -349,7 +412,7 @@
             });
         }
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && jumpOverlay?.style.display === 'flex') closeSlideJump();
+            if (e.key === 'Escape' && jumpOverlay?.classList.contains('is-open')) closeSlideJump();
         });
         if (qaOverview) {
             qaOverview.addEventListener('click', openSlideJump);
