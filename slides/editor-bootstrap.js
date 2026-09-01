@@ -98,7 +98,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ],
     // Export pipeline (sequential: media → main → pptx+qr)
     ['../shared/slides/editor-export-media.js?v=1'],
-    ['../shared/slides/editor-export.js?v=17'],
+    ['../shared/slides/editor-export.js?v=18'],
     // Group 5: export siblings — both depend on export.js, not on each other
     [
         '../shared/slides/editor-export-pptx.js?v=1',

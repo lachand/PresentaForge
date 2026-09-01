@@ -822,7 +822,7 @@ ${pvScopedCSS}
 .pv-layout.active .pv-slides-col{padding-top:40px}
 .pv-current{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;position:relative;height:var(--pv-current-height);min-height:120px;box-sizing:border-box}
 .pv-current-frame{width:100%;flex:1;max-height:100%;border-radius:8px;overflow:hidden;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.1)}
-.pv-current-inner{width:${dims[0]}px;height:${dims[1]}px;transform-origin:top left;pointer-events:none}
+.pv-current-inner{position:absolute;top:0;left:0;width:${dims[0]}px;height:${dims[1]}px;transform-origin:top left;pointer-events:none}
 .pv-slide-counter{margin-top:8px;font-size:.8rem;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;flex-shrink:0}
 .pv-splitter-h{height:5px;cursor:row-resize;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0;position:relative;z-index:10}
 .pv-splitter-h:hover,.pv-splitter-h.dragging{background:rgba(99,102,241,.5)}
@@ -831,7 +831,7 @@ ${pvScopedCSS}
 .pv-next{flex:1;display:flex;flex-direction:column;padding:8px 16px 12px;min-height:80px;box-sizing:border-box}
 .pv-next-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:6px;font-weight:600;flex-shrink:0}
 .pv-next-frame{flex:1;border-radius:6px;overflow:hidden;background:#0f0f23;position:relative;border:1px solid rgba(255,255,255,.06)}
-.pv-next-inner{width:${dims[0]}px;height:${dims[1]}px;transform-origin:top left;pointer-events:none}
+.pv-next-inner{position:absolute;top:0;left:0;width:${dims[0]}px;height:${dims[1]}px;transform-origin:top left;pointer-events:none}
 .pv-next-empty{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:rgba(255,255,255,.2);font-size:.85rem;font-style:italic}
 .pv-splitter-v{width:5px;cursor:col-resize;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;transition:background .15s;position:relative;z-index:10}
 .pv-splitter-v:hover,.pv-splitter-v.dragging{background:rgba(99,102,241,.5)}

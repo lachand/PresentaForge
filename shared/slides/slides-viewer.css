@@ -927,6 +927,7 @@
         }
         .pv-layout.active {
             display: grid;
+            grid-template-columns: minmax(0, 1fr);
             grid-template-rows: 52px minmax(0, 1fr);
             gap: 0;
         }
@@ -1041,6 +1042,7 @@
             min-width: 0;
             min-height: 0;
             display: grid;
+            grid-template-columns: minmax(0, 1fr);
             grid-template-rows: minmax(0, 1fr) minmax(170px, 35%);
             gap: 10px;
             background: var(--surface-container-low);
@@ -1096,6 +1098,9 @@
             box-sizing: border-box;
         }
         .pv-current-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 1280px;
             height: 720px;
             transform-origin: top left;
@@ -1269,6 +1274,7 @@
             position: relative; box-sizing: border-box;
         }
         .pv-thumb-inner {
+            position: absolute; top: 0; left: 0;
             width: 1280px; height: 720px;
             transform-origin: top left; pointer-events: none;
         }
@@ -1297,6 +1303,9 @@
             box-sizing: border-box;
         }
         .pv-next-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 1280px;
             height: 720px;
             transform-origin: top left;
@@ -1632,7 +1641,7 @@
         }
         @media (max-width: 1100px) {
             .pv-main {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
                 grid-template-rows: minmax(0, 1fr) minmax(280px, 42vh);
             }
             .pv-splitter-v { display: none; }
@@ -1677,6 +1686,7 @@
                 /* La slide courante garde toujours la moitié haute ; la zone
                    « Suivante + Contexte » est plafonnée et défile si besoin
                    (sinon `auto` mange toute la hauteur → slide invisible). */
+                grid-template-columns: minmax(0, 1fr);
                 grid-template-rows: minmax(0, 1fr) minmax(150px, 46%);
                 padding: 8px;
             }
