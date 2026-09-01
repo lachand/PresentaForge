@@ -19,76 +19,18 @@ const OEIDialog = (() => {
 
     let _stylesInjected = false;
 
+    /* Le dialog compose désormais la primitive .ui-modal (ui-primitives.css).
+     * Ce bloc ne couvre que les spécificités alert/confirm : élévation z-index
+     * au-dessus des autres modales, corps en texte pré-formaté, repli hors
+     * contexte où ui-primitives.css n'est pas chargé (tests isolés). */
     function _ensureStyles() {
         if (_stylesInjected) return;
         _stylesInjected = true;
         const s = document.createElement('style');
         s.textContent = `
-.oed-overlay {
-    position: fixed; inset: 0; z-index: 99999;
-    display: flex; align-items: center; justify-content: center;
-    padding: 16px;
-    background: var(--ui-overlay, rgba(17,17,26,.45)); backdrop-filter: blur(4px);
-    animation: oedFadeIn .12s ease;
-}
-@keyframes oedFadeIn { from { opacity:0 } to { opacity:1 } }
-.oed-box {
-    background: var(--surface-container-lowest, #fff);
-    color: var(--on-surface, #1d1b21);
-    border: 1px solid var(--outline-variant, #c5c5d3);
-    border-radius: var(--radius-lg, 1rem); padding: 24px;
-    width: min(900px, calc(100vw - 32px));
-    max-height: calc(100vh - 32px);
-    display: flex; flex-direction: column;
-    box-shadow: var(--shadow-overlay, 0 12px 32px rgba(17,17,26,.10));
-    animation: oedSlideUp .15s ease;
-}
-@keyframes oedSlideUp { from { transform:translateY(8px); opacity:0 } to { transform:translateY(0); opacity:1 } }
-.oed-title {
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
-    font-size: 1rem; font-weight: 700;
-    color: var(--on-surface, #1d1b21); margin: 0 0 12px;
-}
-.oed-body {
-    font-size: .88rem; line-height: 1.6;
-    color: var(--on-surface-variant, #444651); white-space: pre-wrap;
-    overflow: auto;
-    overflow-wrap: anywhere;
-    max-height: min(64vh, calc(100vh - 220px));
-}
-.oed-actions {
-    display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
-    flex-wrap: wrap;
-}
-.oed-btn {
-    height: 32px; padding: 0 16px; border-radius: var(--radius-sm, .25rem);
-    border: 1px solid var(--outline-variant, #c5c5d3);
-    background: var(--surface-container-high, #e9e7ef); color: var(--on-surface-variant, #444651);
-    font-size: .82rem; font-weight: 500; cursor: pointer;
-    transition: background .15s, opacity .15s;
-}
-.oed-btn:hover { background: var(--surface-container-highest, #e3e1e9); color: var(--on-surface); }
-.oed-btn:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 1px; }
-.oed-btn.primary,
-.oed-btn.ui-btn--primary {
-    background: var(--primary, #1e3a8a); border-color: var(--primary, #1e3a8a); color: var(--on-primary, #fff);
-}
-.oed-btn.primary:hover,
-.oed-btn.ui-btn--primary:hover { background: var(--primary-hover, #00236f); }
-.oed-btn.danger,
-.oed-btn.ui-btn--danger {
-    background: var(--danger, #c62828); border-color: var(--danger, #c62828); color: #fff;
-}
-@media (max-width: 720px) {
-    .oed-box {
-        width: calc(100vw - 24px);
-        max-height: calc(100vh - 24px);
-        padding: 16px;
-    }
-    .oed-body {
-        max-height: min(70vh, calc(100vh - 180px));
-    }
-}
+.oed-overlay.ui-modal-overlay { z-index: 99999; }
+.oed-overlay .ui-modal { display: flex; flex-direction: column; }
+.oed-body { white-space: pre-wrap; overflow-wrap: anywhere; }
 `;
         document.head.appendChild(s);
     }
@@ -97,16 +39,16 @@ const OEIDialog = (() => {
         _ensureStyles();
         return new Promise(resolve => {
             const overlay = document.createElement('div');
-            overlay.className = 'oed-overlay';
+            overlay.className = 'oed-overlay ui-modal-overlay is-open';
             overlay.setAttribute('role', 'dialog');
             overlay.setAttribute('aria-modal', 'true');
             overlay.innerHTML = `
-                <div class="oed-box">
-                    ${title ? `<div class="oed-title">${title}</div>` : ''}
-                    <div class="oed-body">${body}</div>
-                    <div class="oed-actions">
+                <div class="ui-modal ui-modal--sm">
+                    ${title ? `<div class="ui-modal-header"><h2 class="ui-modal-title">${title}</h2></div>` : ''}
+                    <div class="ui-modal-body oed-body">${body}</div>
+                    <div class="ui-modal-actions">
                         ${buttons.map((b, i) =>
-                            `<button class="oed-btn ui-btn ${b.uiCls || ''} ${b.cls || ''}" data-idx="${i}">${b.label}</button>`
+                            `<button class="ui-btn ${b.uiCls || ''} ${b.cls || ''}" data-idx="${i}">${b.label}</button>`
                         ).join('')}
                     </div>
                 </div>
@@ -118,7 +60,7 @@ const OEIDialog = (() => {
                 resolve(value);
             };
 
-            overlay.querySelector('.oed-actions').addEventListener('click', e => {
+            overlay.querySelector('.ui-modal-actions').addEventListener('click', e => {
                 const btn = e.target.closest('[data-idx]');
                 if (!btn) return;
                 close(buttons[+btn.dataset.idx].value);

@@ -1032,8 +1032,13 @@ function pvRenderSlide(sectionEl, container, frame) {
         if (bg) sec.style.background = bg;
     }
     const fw = frame.clientWidth, fh = frame.clientHeight;
+    if (!(fw > 0) || !(fh > 0)) { container.style.transform = ''; return; }
     const scale = Math.min(fw / DIMS[0], fh / DIMS[1]);
-    container.style.transform = 'scale('+scale+')';
+    // Centrer la slide 1280×720 mise à l'échelle dans le cadre (sinon elle
+    // reste collée en haut-gauche → contenu non centré vs l'aperçu éditeur).
+    const tx = Math.max(0, (fw - DIMS[0] * scale) / 2);
+    const ty = Math.max(0, (fh - DIMS[1] * scale) / 2);
+    container.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
 }
 
 function pvRender() {

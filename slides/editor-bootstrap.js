@@ -57,8 +57,9 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     // CanvasEditor class (depends on all sub-runtimes above)
     ['../shared/slides/slides-canvas.js?v=22'],
     // Editor modules (mostly sequential — each may depend on previously registered globals)
-    ['../shared/slides/editor-dialog.js?v=2'],
-    ['../shared/slides/editor-utils.js?v=8'],
+    ['../shared/slides/editor-dialog.js?v=3'],
+    ['../shared/slides/ui-toast.js?v=1'],
+    ['../shared/slides/editor-utils.js?v=9'],
     ['../shared/slides/editor-ribbon.js?v=1'],
     ['../shared/slides/editor-ai-settings.js?v=1'],
     ['../shared/slides/editor-runtime-state.js?v=1'],
@@ -97,7 +98,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ],
     // Export pipeline (sequential: media → main → pptx+qr)
     ['../shared/slides/editor-export-media.js?v=1'],
-    ['../shared/slides/editor-export.js?v=16'],
+    ['../shared/slides/editor-export.js?v=17'],
     // Group 5: export siblings — both depend on export.js, not on each other
     [
         '../shared/slides/editor-export-pptx.js?v=1',

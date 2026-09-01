@@ -1661,16 +1661,32 @@
             .pv-main {
                 padding: 8px;
                 gap: 8px;
-                grid-template-rows: minmax(0, 1fr) minmax(220px, 56vh);
+                /* 3 rangées explicites : colonne slide (flex) | barre d'onglets
+                   (hauteur naturelle) | colonne notes (repliée en mode Contexte).
+                   Sans ça, la barre d'onglets .pv-mobile-tabs héritait d'une
+                   rangée de 56vh et écrasait la slide. */
+                grid-template-rows: minmax(0, 1fr) auto minmax(0, 0fr);
             }
+            .pv-layout.pv-notes-active .pv-main {
+                grid-template-rows: minmax(110px, 34%) auto minmax(0, 1fr);
+            }
+            .pv-notes-col { margin-top: 0; }
             .pv-current { padding: 10px; }
             .pv-slide-counter { font-size: 0.7rem; }
             .pv-slides-col {
-                grid-template-rows: minmax(0, 1fr) minmax(176px, auto);
+                /* La slide courante garde toujours la moitié haute ; la zone
+                   « Suivante + Contexte » est plafonnée et défile si besoin
+                   (sinon `auto` mange toute la hauteur → slide invisible). */
+                grid-template-rows: minmax(0, 1fr) minmax(150px, 46%);
                 padding: 8px;
             }
             .pv-lower-zone {
                 grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+            /* Onglet « Notes » actif : la slide reprend toute la hauteur */
+            .pv-layout.pv-notes-active .pv-slides-col {
+                grid-template-rows: minmax(0, 1fr);
             }
             .pv-room-status-bar,
             .pv-room-mode-tabs,
@@ -1750,6 +1766,25 @@
         .pv-layout:not(.light) .pv-brand-logo-light { display: none; }
         .pv-layout:not(.light) .pv-brand-logo-dark { display: block; }
         .pv-layout:not(.light) .pv-current-frame { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
+
+        /* ── Mode focus — slide + notes uniquement (#pv-btn-focus) ────────────
+           Masque « Suivante » + panneau contexte, réduit la barre d'outils à
+           une bande fine révélée au survol. */
+        .pv-layout.is-focus .pv-slides-col { grid-template-rows: minmax(0, 1fr) 0; }
+        .pv-layout.is-focus .pv-lower-zone { display: none; }
+        .pv-layout.is-focus .pv-toolbar {
+            min-height: 8px; height: 8px; padding: 0;
+            overflow: hidden; opacity: 0.001;
+            transition: height 0.15s ease, opacity 0.15s ease, min-height 0.15s ease;
+        }
+        .pv-layout.is-focus .pv-toolbar:hover,
+        .pv-layout.is-focus .pv-toolbar:focus-within {
+            min-height: 52px; height: auto; padding: 0 14px; opacity: 1;
+        }
+        #pv-btn-focus.active { background: var(--primary-fixed); color: var(--on-primary-fixed-variant); }
+        @media (prefers-reduced-motion: reduce) {
+            .pv-layout.is-focus .pv-toolbar { transition: none; }
+        }
 
         /* ── Presenter room panel ─── */
         #sl-room-panel { color: var(--on-surface, #1d1b1a); }

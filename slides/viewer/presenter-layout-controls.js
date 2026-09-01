@@ -329,7 +329,8 @@ export function initMobilePresenterTabs(context = {}) {
     const documentRef = context.documentRef || document;
     const tabCtx = documentRef.getElementById('pv-mobile-tab-ctx');
     const tabNotes = documentRef.getElementById('pv-mobile-tab-notes');
-    const pvLayout = documentRef.getElementById('pv-layout');
+    // L'élément porte class="pv-layout" mais id="presenter-view".
+    const pvLayout = documentRef.getElementById('presenter-view') || documentRef.querySelector('.pv-layout');
     if (!tabCtx || !tabNotes || !pvLayout) return;
 
     const setActive = (showNotes) => {

@@ -35,7 +35,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/student-transport.js?v=1',
     '../vendor/qrcode-generator/1.4.4/qrcode.min.js',
     '../vendor/peerjs/1.5.5/peerjs.min.js',
-    'student-main.js?v=4',
+    'student-main.js?v=5',
 ]);
 
 loadClassicScripts(STUDENT_BOOTSTRAP_SCRIPTS, {

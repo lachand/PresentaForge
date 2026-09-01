@@ -145,6 +145,12 @@ export function bindPresenterToolbarButtons(context = {}) {
     documentRef.getElementById('pv-btn-whiteboard')?.addEventListener('click', () => {
         toggleWhiteboard();
     });
+    const focusBtn = documentRef.getElementById('pv-btn-focus');
+    focusBtn?.addEventListener('click', () => {
+        const on = documentRef.getElementById('presenter-view')?.classList.toggle('is-focus');
+        focusBtn.classList.toggle('active', !!on);
+        focusBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
     audienceLockBtn?.addEventListener('click', () => {
         toggleAudienceLock();
     });

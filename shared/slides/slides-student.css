@@ -355,13 +355,25 @@ body {
     flex-shrink: 0;
 }
 .student-reaction-float {
-    position: fixed; bottom: 90px; font-size: 2.2rem;
-    pointer-events: none; z-index: 200; animation: st-rise 2.4s ease forwards;
+    position: fixed; bottom: 96px; font-size: 2.1rem;
+    pointer-events: none; z-index: 200; will-change: transform, opacity;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+    animation: st-rise 2.6s cubic-bezier(0.25, 0.9, 0.35, 1) forwards;
+    --st-drift: 0px;
 }
 @keyframes st-rise {
-    0%   { transform: translateY(0) scale(1); opacity: 1; }
-    80%  { opacity: 0.8; }
-    100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+    0%   { transform: translate(0, 8px) scale(0.4); opacity: 0; }
+    12%  { transform: translate(0, 0) scale(1.25); opacity: 1; }
+    22%  { transform: translate(calc(var(--st-drift) * 0.25), -14px) scale(1); }
+    100% { transform: translate(var(--st-drift), -160px) scale(0.55) rotate(8deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .student-reaction-float { animation-duration: 1s; }
+    @keyframes st-rise {
+        0%   { opacity: 0; transform: scale(0.8); }
+        20%  { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+    }
 }
 
 /* Reconnection banner */
@@ -1288,6 +1300,11 @@ body.dark .reaction-btn.cc-btn.active { color: var(--on-primary); }
     #main-view[data-mtab="notes"] #notes-panel { display: block; }
     #main-view[data-mtab="notes"] #notes-panel .notes-body { display: block; }
 
+    /* Révélation douce du panneau choisi (D4) */
+    #main-view[data-mtab] #discussion-panel,
+    #main-view[data-mtab] #reaction-bar,
+    #main-view[data-mtab] #notes-panel { animation: st-panel-in 0.2s ease; }
+
     /* révision : géré par son propre flux (revision-bar) quand actif */
     #main-view.revision-active[data-mtab="reactions"] #revision-bar,
     #main-view.revision-active #revision-bar { display: flex; }
@@ -1307,3 +1324,11 @@ body.dark .reaction-btn.cc-btn.active { color: var(--on-primary); }
     /* La colonne slide organise ses enfants ; bottom-nav en dernier */
     .st-slide-col { display: flex; flex-direction: column; }
 }
+
+/* ── Transitions douces (D4) — respectent prefers-reduced-motion globalement ── */
+@keyframes st-panel-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.reaction-btn, .ssp-reaction-btn, .feedback-btn, .nav-btn, .sfn-btn { transition: background 0.14s ease, color 0.14s ease, transform 0.1s ease; }
+.reaction-btn:active, .ssp-reaction-btn:active { transform: scale(0.9); }
+.ui-bottomnav-item { transition: background 0.14s ease, color 0.14s ease; }
+#student-side-panel .ui-card,
+.ssp-action-btn { transition: box-shadow 0.16s ease, border-color 0.16s ease, background 0.14s ease; }

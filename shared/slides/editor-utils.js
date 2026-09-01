@@ -15,12 +15,16 @@
 function esc(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
 
+/* Notifications : délèguent au toast unifié (window.OEIToast, ui-toast.js).
+ * Repli sur #notif si le module n'est pas chargé (contexte de test isolé). */
 function notify(msg, type = '') {
-    const icons = { success: '✓', error: '✕', warning: '⚠' };
+    if (typeof window !== 'undefined' && window.OEIToast) {
+        return window.OEIToast.show(msg, { type: type || 'info' });
+    }
     const el = document.createElement('div');
     el.className = `notif-item ${type}`;
-    el.innerHTML = type && icons[type] ? `<span class="notif-icon">${icons[type]}</span>${esc(msg)}` : esc(msg);
-    document.getElementById('notif').appendChild(el);
+    el.textContent = String(msg ?? '');
+    document.getElementById('notif')?.appendChild(el);
     setTimeout(() => el.remove(), 3000);
 }
 
@@ -31,11 +35,18 @@ function notify(msg, type = '') {
  * @param {number} [timeout=5000]
  */
 function notifyUndo(msg, undoFn, timeout = 5000) {
+    if (typeof window !== 'undefined' && window.OEIToast) {
+        return window.OEIToast.show(msg, {
+            type: 'warning',
+            duration: timeout,
+            action: { label: 'Annuler', onClick: undoFn },
+        });
+    }
     const el = document.createElement('div');
     el.className = 'notif-item notif-undo-item warning';
-    el.innerHTML = `<span class="notif-icon">🗑</span><span class="notif-undo-msg">${esc(msg)}</span>`
+    el.innerHTML = `<span class="notif-undo-msg">${esc(msg)}</span>`
         + `<button class="notif-undo-btn">Annuler</button>`;
-    document.getElementById('notif').appendChild(el);
+    document.getElementById('notif')?.appendChild(el);
     let done = false;
     const dismiss = () => { if (!done) { done = true; el.remove(); } };
     const timer = setTimeout(dismiss, timeout);
