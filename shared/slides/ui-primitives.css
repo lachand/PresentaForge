@@ -108,8 +108,10 @@
     --ui-border:       var(--outline-variant);
 }
 
-/* ── Thème sombre (chrome éditeur + élève ; viewer normal reste clair) ──── */
+/* ── Thème sombre — page entière (:root/body.dark) OU sous-arbre scoppé
+   (n'importe quel élément portant data-theme="dark", ex. #presenter-view). ── */
 :root[data-theme="dark"],
+[data-theme="dark"],
 body.dark {
     --surface:                   #131318;
     --surface-bright:            #1c1d24;

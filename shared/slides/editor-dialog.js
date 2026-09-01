@@ -28,64 +28,56 @@ const OEIDialog = (() => {
     position: fixed; inset: 0; z-index: 99999;
     display: flex; align-items: center; justify-content: center;
     padding: 16px;
-    background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+    background: var(--ui-overlay, rgba(17,17,26,.45)); backdrop-filter: blur(4px);
     animation: oedFadeIn .12s ease;
 }
 @keyframes oedFadeIn { from { opacity:0 } to { opacity:1 } }
 .oed-box {
-    background: var(--panel, #fff);
-    color: var(--text, #1d1d1f);
-    border: 1px solid var(--border, #e0e0e5);
-    border-radius: 12px; padding: 24px;
+    background: var(--surface-container-lowest, #fff);
+    color: var(--on-surface, #1d1b21);
+    border: 1px solid var(--outline-variant, #c5c5d3);
+    border-radius: var(--radius-lg, 1rem); padding: 24px;
     width: min(900px, calc(100vw - 32px));
     max-height: calc(100vh - 32px);
     display: flex; flex-direction: column;
-    box-shadow: 0 24px 80px rgba(0,0,0,.25);
+    box-shadow: var(--shadow-overlay, 0 12px 32px rgba(17,17,26,.10));
     animation: oedSlideUp .15s ease;
 }
 @keyframes oedSlideUp { from { transform:translateY(8px); opacity:0 } to { transform:translateY(0); opacity:1 } }
-[data-theme="dark"] .oed-box {
-    background: var(--panel, #1a1d27);
-    color: var(--text, #cbd5e1);
-    border-color: var(--border, #2d3347);
-    box-shadow: 0 24px 80px rgba(0,0,0,.6);
-}
 .oed-title {
-    font-size: .95rem; font-weight: 700;
-    color: var(--heading, #1d1d1f); margin: 0 0 12px;
+    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-size: 1rem; font-weight: 700;
+    color: var(--on-surface, #1d1b21); margin: 0 0 12px;
 }
-[data-theme="dark"] .oed-title { color: var(--heading, #f1f5f9); }
 .oed-body {
     font-size: .88rem; line-height: 1.6;
-    color: var(--text, #374151); white-space: pre-wrap;
+    color: var(--on-surface-variant, #444651); white-space: pre-wrap;
     overflow: auto;
     overflow-wrap: anywhere;
     max-height: min(64vh, calc(100vh - 220px));
 }
-[data-theme="dark"] .oed-body { color: var(--text, #cbd5e1); }
 .oed-actions {
     display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
     flex-wrap: wrap;
 }
 .oed-btn {
-    height: 32px; padding: 0 16px; border-radius: 6px;
-    border: 1px solid var(--border, #e0e0e5);
-    background: var(--card, #f0f0f2); color: var(--text, #1d1d1f);
+    height: 32px; padding: 0 16px; border-radius: var(--radius-sm, .25rem);
+    border: 1px solid var(--outline-variant, #c5c5d3);
+    background: var(--surface-container-high, #e9e7ef); color: var(--on-surface-variant, #444651);
     font-size: .82rem; font-weight: 500; cursor: pointer;
-    transition: opacity .15s;
+    transition: background .15s, opacity .15s;
 }
-.oed-btn:hover { opacity: .8; }
-[data-theme="dark"] .oed-btn {
-    background: var(--card, #222635); color: var(--text, #cbd5e1);
-    border-color: var(--border, #2d3347);
-}
+.oed-btn:hover { background: var(--surface-container-highest, #e3e1e9); color: var(--on-surface); }
+.oed-btn:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 1px; }
 .oed-btn.primary,
 .oed-btn.ui-btn--primary {
-    background: var(--primary, #6366f1); border-color: var(--primary, #6366f1); color: #fff;
+    background: var(--primary, #1e3a8a); border-color: var(--primary, #1e3a8a); color: var(--on-primary, #fff);
 }
+.oed-btn.primary:hover,
+.oed-btn.ui-btn--primary:hover { background: var(--primary-hover, #00236f); }
 .oed-btn.danger,
 .oed-btn.ui-btn--danger {
-    background: var(--danger, #ef4444); border-color: var(--danger, #ef4444); color: #fff;
+    background: var(--danger, #c62828); border-color: var(--danger, #c62828); color: #fff;
 }
 @media (max-width: 720px) {
     .oed-box {

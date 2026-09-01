@@ -22,10 +22,10 @@ class WidgetPickerModal {
         WidgetPickerModal._stylesInjected = true;
         const css = `
 /* ── Modal ────────────────────────────────────────────────────── */
-.wpm-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9998; }
+.wpm-backdrop { position:fixed; inset:0; background:var(--ui-overlay,rgba(17,17,26,.45)); z-index:9998; }
 .wpm-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9999;
   width:min(920px,95vw); max-height:88vh; display:flex; flex-direction:column;
-  background:var(--panel,#1a1d27); border:1px solid var(--border,#2d3347); border-radius:12px;
+  background:var(--panel,#1a1d27); border:1px solid var(--outline-variant,#c5c5d3); border-radius:var(--radius-lg,1rem);
   box-shadow:var(--shadow-overlay,0 20px 60px rgba(0,0,0,0.6)); overflow:hidden;
   color:var(--text,#cbd5e1); font-family:inherit; font-size:14px; }
 .wpm-header { padding:14px 16px 10px; border-bottom:1px solid var(--border,#2d3347);
@@ -48,7 +48,7 @@ class WidgetPickerModal {
   border:1px solid var(--border,#2d3347); background:transparent; color:var(--muted,#64748b);
   cursor:pointer; font-family:inherit; transition:background 0.1s; }
 .wpm-cat:hover { background:var(--card-hover,#2a2e3f); }
-.wpm-cat.active { background:var(--primary,#818cf8); color:#fff; border-color:var(--primary,#818cf8); }
+.wpm-cat.active { background:var(--primary); color:var(--on-primary); border-color:var(--primary); }
 .wpm-count { font-size:0.68rem; color:var(--muted,#64748b); }
 .wpm-list { flex:1; overflow-y:auto; padding:4px 8px 8px; display:flex; flex-direction:column; gap:1px; min-height:0; }
 .wpm-sep { font-size:0.63rem; font-weight:700; color:var(--muted,#64748b);
@@ -78,9 +78,9 @@ class WidgetPickerModal {
 .wpm-preview-ph-ico { font-size:2rem; }
 .wpm-preview-ph-txt { font-size:0.8rem; }
 .wpm-preview-spinner { position:absolute; inset:0; display:flex; align-items:center;
-  justify-content:center; background:rgba(0,0,0,0.35); font-size:0.82rem;
+  justify-content:center; background:color-mix(in srgb, var(--inverse-surface) 30%, transparent); font-size:0.82rem;
   color:var(--muted,#64748b); border-radius:8px; }
-.wpm-preview-err { font-size:0.78rem; color:#f87171; padding:8px; }
+.wpm-preview-err { font-size:0.78rem; color:var(--danger); padding:8px; }
 .wpm-meta { flex-direction:column; gap:4px; }
 .wpm-meta-name { font-size:0.9rem; font-weight:700; }
 .wpm-meta-desc { font-size:0.75rem; color:var(--muted,#64748b); line-height:1.5; }

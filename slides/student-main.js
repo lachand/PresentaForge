@@ -357,6 +357,24 @@
         H.revision.updateBookmarkControls();
         H.revision.updateControls();
 
+        // ── Bottom-nav mobile : sélectionne le panneau secondaire visible ──
+        (function bindBottomNav() {
+            const mv = document.getElementById('main-view');
+            const items = document.querySelectorAll('#student-bottomnav .ui-bottomnav-item');
+            if (!mv || !items.length) return;
+            mv.dataset.mtab = 'slide';
+            const setTab = (tab) => {
+                mv.dataset.mtab = tab;
+                items.forEach(b => {
+                    const on = b.dataset.mtab === tab;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+                if (tab === 'notes') document.getElementById('notes-panel')?.setAttribute('open', '');
+            };
+            items.forEach(b => b.addEventListener('click', () => setTab(b.dataset.mtab)));
+        })();
+
         // ── Join handler ─────────────────────────────────
         document.getElementById('pseudo-input').addEventListener('keydown', e => {
             if (e.key === 'Enter') document.getElementById('join-btn').click();

@@ -314,8 +314,11 @@ body {
 .firebase-manage-btn.primary { background: var(--primary); color: var(--on-primary); }
 .firebase-manage-btn.primary:hover { background: var(--primary-hover); }
 .firebase-empty {
-    text-align: center; padding: 32px 0;
+    text-align: center; padding: 28px 20px;
     color: var(--on-surface-muted); font-size: 0.875rem;
+    background: color-mix(in srgb, var(--surface-container) 45%, transparent);
+    border: 1px dashed var(--outline-variant);
+    border-radius: var(--radius-lg);
 }
 .firebase-course-heading {
     font-family: var(--font-editorial);

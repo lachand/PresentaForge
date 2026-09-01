@@ -977,6 +977,10 @@ body {
 .ssp-keynotes { display: flex; flex-direction: column; gap: 5px; }
 .ssp-keynotes-empty {
     font-size: 0.73rem; color: var(--muted); font-style: italic; line-height: 1.45;
+    padding: 10px 12px;
+    background: var(--surface-container);
+    border: 1px dashed var(--outline-variant);
+    border-radius: var(--radius-md);
 }
 .ssp-keynote-item {
     display: flex; gap: 7px; align-items: flex-start;
@@ -1086,8 +1090,15 @@ body {
 }
 .dp-pane.active { display: flex; }
 .dp-empty {
-    font-size: 0.75rem; color: var(--muted);
-    text-align: center; margin-top: 20px; line-height: 1.5;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-size: 0.8rem; color: var(--muted);
+    text-align: center; padding: 32px 16px; line-height: 1.5;
+}
+.dp-empty::before {
+    content: ""; width: 32px; height: 32px; opacity: 0.55;
+    background: currentColor;
+    -webkit-mask: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a4 4 0 0 1-4 4H7l-4 3v-7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z'/%3E%3C/svg%3E");
+    mask: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a4 4 0 0 1-4 4H7l-4 3v-7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z'/%3E%3C/svg%3E");
 }
 .dp-msg {
     display: flex; gap: 8px; align-items: flex-start;
@@ -1248,3 +1259,51 @@ body.dark .join-brand-logo-dark { display: block; }
 body.dark #student-subtitle-overlay { background: rgba(0, 0, 0, 0.6); }
 body.dark .quiz-opt-letter,
 body.dark .reaction-btn.cc-btn.active { color: var(--on-primary); }
+
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE (<768px) — consolidation « bottom-nav » (audit P2-1 / P3-6)
+   Un seul panneau secondaire visible à la fois, choisi par #student-bottomnav.
+   Tous les éléments/bindings existants sont conservés — on ne fait que gérer
+   leur visibilité via #main-view[data-mtab].
+   ════════════════════════════════════════════════════════════════════ */
+#student-bottomnav { display: none; }
+
+@media (max-width: 767px) {
+    #student-bottomnav {
+        display: flex;
+        order: 99;          /* toujours en bas de .st-slide-col */
+        flex-shrink: 0;
+    }
+
+    /* Panneaux secondaires : masqués par défaut, révélés par l'onglet actif */
+    #discussion-panel,
+    #reaction-bar,
+    #feedback-bar,
+    #revision-bar,
+    #notes-panel { display: none; }
+
+    #main-view[data-mtab="discussion"] #discussion-panel { display: flex; height: auto; flex: 1; min-height: 0; }
+    #main-view[data-mtab="reactions"] #reaction-bar,
+    #main-view[data-mtab="reactions"] #feedback-bar { display: flex; }
+    #main-view[data-mtab="notes"] #notes-panel { display: block; }
+    #main-view[data-mtab="notes"] #notes-panel .notes-body { display: block; }
+
+    /* révision : géré par son propre flux (revision-bar) quand actif */
+    #main-view.revision-active[data-mtab="reactions"] #revision-bar,
+    #main-view.revision-active #revision-bar { display: flex; }
+
+    /* prev/next : la pilule flottante suffit — on masque les doublons du nav-bar */
+    #nav-bar #nav-prev,
+    #nav-bar #nav-next,
+    #nav-bar #slide-counter-nav { display: none; }
+
+    /* Cibles tactiles ≥ 40px */
+    #nav-bar { gap: 6px; padding: 6px 12px; justify-content: space-around; }
+    #nav-bar .nav-btn { min-width: 42px; min-height: 42px; padding: 6px 8px; }
+    .sfn-btn { width: 42px; height: 42px; }
+    .reaction-btn { min-height: 48px; }
+    .ssp-reaction-btn { min-height: 44px; }
+
+    /* La colonne slide organise ses enfants ; bottom-nav en dernier */
+    .st-slide-col { display: flex; flex-direction: column; }
+}
