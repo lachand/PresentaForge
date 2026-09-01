@@ -144,12 +144,13 @@ body.dark {
     --tertiary-container:         #2d3400;
     --on-tertiary-container:      #d8ee49;
 
-    --success:            #7cc47f;
+    /* mi-saturés : tiennent aussi en APLAT avec texte blanc (cf. audit P1-2) */
+    --success:            #4a9c50;
     --success-light:      #1e3a20;
-    --danger:             #ffb4ab;
+    --danger:             #d9524a;
     --danger-light:       #3a1512;
-    --warning:            #ffb877;
-    --error:              #ffb4ab;
+    --warning:            #d98a2b;
+    --error:              #ff5449;
     --error-container:    #93000a;
     --on-error-container: #ffdad6;
 
@@ -909,4 +910,20 @@ body.dark {
 @media (prefers-reduced-motion: reduce) {
     .ui-card--interactive,
     .ui-fab { transition: none; }
+}
+
+/* ── Réduction de mouvement — global (toutes les coques slides) ────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ── Focus clavier générique (secours si une coque n'en définit pas) ──── */
+:where(button, a[href], input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
 }

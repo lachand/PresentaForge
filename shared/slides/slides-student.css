@@ -366,9 +366,10 @@ body {
 
 /* Reconnection banner */
 #reconnect-banner {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
-    background: var(--danger); color: #fff; text-align: center;
+    position: sticky; top: 0; z-index: 60;
+    background: var(--error); color: #fff; text-align: center;
     padding: 7px 16px; font-size: 0.8rem; font-weight: 600; display: none;
+    flex-shrink: 0;
 }
 #reconnect-banner.visible { display: block; }
 #nudge-toast {
@@ -902,14 +903,20 @@ body {
     line-height: 1.35;
     display: block;
 }
-/* Reactions — 2×2 grid for nicer layout */
+/* Reactions — 5 colonnes (4 emoji + sous-titres) */
 .ssp-reactions {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 6px;
+}
+.ssp-reactions .cc-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; border-radius: var(--radius-md); border: none;
+    background: var(--surface-container); color: var(--on-surface-variant); cursor: pointer;
 }
 .ssp-reaction-btn {
     padding: 10px 4px;
+    min-height: 44px;
     border-radius: var(--radius-md, 0.75rem);
     border: none;
     background: var(--surface-container);
@@ -997,7 +1004,10 @@ body {
 }
 #fab-note:hover { opacity: 0.9; transform: translateY(-1px); }
 #fab-note svg { width: 13px; height: 13px; flex-shrink: 0; }
-@media (min-width: 768px) { #fab-note { display: inline-flex; } }
+/* Desktop : la sidebar « Notes & Takeaways » contient déjà le champ de notes —
+   le FAB flottant faisait doublon et chevauchait la zone. Masqué ici ;
+   à re-monter côté mobile avec le chantier bottom-nav (audit P2-1 / P2-5). */
+@media (min-width: 768px) { #fab-note { display: none !important; } }
 
 /* Notes area — fills remaining height */
 .ssp-notes-wrap {

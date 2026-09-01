@@ -4276,9 +4276,11 @@ body.is-loading #preview-frame {
 .fb-cloud-badge.state-error   { color: var(--danger); }
 @keyframes fb-spin { to { transform: rotate(360deg); } }
 
-/* ── ribbon-brand logo: show light version only ── */
-.ribbon-brand-logo-dark { display: none !important; }
-.ribbon-brand-logo-light { display: block !important; }
+/* ── ribbon-brand logo: swap selon le thème du chrome (data-theme) ── */
+.ribbon-brand-logo-dark { display: none; }
+.ribbon-brand-logo-light { display: block; }
+:root[data-theme="dark"] .ribbon-brand-logo-light { display: none; }
+:root[data-theme="dark"] .ribbon-brand-logo-dark { display: block; }
 
 /* ── preview-wrap background ── */
 /* surface-container (#f3edea) crée le contraste warm avec le canvas blanc */
