@@ -1,25 +1,14 @@
         html, body { margin: 0; padding: 0; height: 100%; }
-        body {
-            /* Editorial Precision — warm neutrals (light-only) */
-            --viewer-surface:           var(--surface-container-lowest, #ffffff);
-            --viewer-surface-2:         var(--surface-container, #f3edea);
-            --viewer-border:            var(--outline-variant, rgba(193, 199, 210, 0.20));
-            --viewer-border-soft:       rgba(193, 199, 210, 0.12);
-            --viewer-text:              var(--on-surface, #1d1b1a);
-            --viewer-muted:             var(--on-surface-muted, #8a9099);
-            --viewer-muted-soft:        var(--on-surface-variant, #414750);
-            --viewer-primary:           var(--primary, #00508d);
-            --viewer-success:           var(--success, #2e7d32);
-            --viewer-danger:            var(--danger, #c62828);
-            --viewer-warning:           var(--warning, #e65100);
-            --viewer-modal-overlay:     var(--ui-overlay, rgba(29, 27, 26, 0.45));
-            --viewer-wordcloud-overlay: color-mix(in srgb, var(--surface) 96%, transparent);
-            --viewer-qr-overlay:        rgba(29, 27, 26, 0.78);
-            --viewer-qr-card-bg:        var(--surface-container-lowest);
-            --viewer-qr-url:            var(--on-surface, #1d1b1a);
-        }
-        /* Alias for backwards compat with components referencing viewer-surface-1 */
-        body { --viewer-surface-1: var(--viewer-surface); }
+        /* Audit A3 — la couche d'alias --viewer-* a été retirée. Elle doublait les
+           tokens Forge 1:1 (--viewer-primary → --primary, --viewer-surface →
+           --surface-container-lowest, etc.) mais restait figée en clair car posée
+           sur <body>. Les règles .pv-* / .rm-* consomment maintenant les tokens
+           Forge directement ; le thème sombre présentateur est géré uniquement par
+           la redéfinition des tokens de base sous .pv-layout:not(.light).
+           Seule survivance : --viewer-border-soft, un filet (hairline) des bordures
+           internes du panneau salle, sans équivalent Forge et de valeur franchement
+           différente entre clair et sombre (redéfini sous .pv-layout:not(.light)). */
+        :root { --viewer-border-soft: rgba(193, 199, 210, 0.12); }
         /* Toolbar — hidden by default, shown on hover at top edge or Escape key */
         #sl-toolbar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
@@ -83,37 +72,37 @@
         /* Student room modal */
         #sl-room-modal {
             position: fixed; inset: 0; z-index: 2000;
-            background: var(--viewer-modal-overlay); backdrop-filter: blur(4px);
+            background: var(--ui-overlay); backdrop-filter: blur(4px);
             display: none; align-items: center; justify-content: center;
             font-family: system-ui, sans-serif;
         }
         #sl-room-modal.open { display: flex; }
         #sl-room-panel {
             --ui-font: system-ui, sans-serif;
-            --ui-bg: var(--viewer-surface-2);
-            --ui-panel: var(--viewer-surface);
-            --ui-border: var(--viewer-border);
-            --ui-text: var(--viewer-text);
-            --ui-muted: var(--viewer-muted);
-            --ui-primary: var(--viewer-primary);
-            --ui-primary-hover: color-mix(in srgb, var(--viewer-primary) 78%, #ffffff);
-            --ui-success: var(--viewer-success);
-            --ui-warning: var(--viewer-warning);
-            --ui-danger: var(--viewer-danger);
-            background: var(--viewer-surface); border: 1px solid var(--viewer-border); border-radius: 16px;
-            padding: 20px; width: min(420px, 94vw); max-height: 90vh; overflow-y: auto; color: var(--viewer-text);
+            --ui-bg: var(--surface-container);
+            --ui-panel: var(--surface-container-lowest);
+            --ui-border: var(--outline-variant);
+            --ui-text: var(--on-surface);
+            --ui-muted: var(--on-surface-muted);
+            --ui-primary: var(--primary);
+            --ui-primary-hover: color-mix(in srgb, var(--primary) 78%, #ffffff);
+            --ui-success: var(--success);
+            --ui-warning: var(--warning);
+            --ui-danger: var(--danger);
+            background: var(--surface-container-lowest); border: 1px solid var(--outline-variant); border-radius: 16px;
+            padding: 20px; width: min(420px, 94vw); max-height: 90vh; overflow-y: auto; color: var(--on-surface);
         }
         .rm-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
         .rm-header span { font-size:1rem; font-weight:700; }
-        .rm-close-btn { background:none; border:none; color:var(--viewer-muted); cursor:pointer; font-size:1.1rem; padding:2px 6px; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; }
+        .rm-close-btn { background:none; border:none; color:var(--on-surface-muted); cursor:pointer; font-size:1.1rem; padding:2px 6px; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; }
         .rm-close-btn svg { width:14px; height:14px; }
-        .rm-close-btn:hover { color:var(--viewer-text); background:rgba(255,255,255,0.07); }
+        .rm-close-btn:hover { color:var(--on-surface); background:rgba(255,255,255,0.07); }
         .rm-connect { margin-bottom:10px; }
         .rm-tabs { display:flex; gap:4px; margin:10px 0 8px; }
-        .rm-tab { flex:1; padding:5px 3px; border-radius:6px; border:1px solid var(--viewer-border); background:transparent; color:var(--viewer-muted); font-size:0.68rem; cursor:pointer; transition:all 0.15s; white-space:nowrap; display:inline-flex; align-items:center; justify-content:center; gap:5px; }
+        .rm-tab { flex:1; padding:5px 3px; border-radius:6px; border:1px solid var(--outline-variant); background:transparent; color:var(--on-surface-muted); font-size:0.68rem; cursor:pointer; transition:all 0.15s; white-space:nowrap; display:inline-flex; align-items:center; justify-content:center; gap:5px; }
         .rm-tab svg { width:12px; height:12px; flex-shrink:0; }
         .rm-tab:hover { color:#94a3b8; border-color:#3d4760; }
-        .rm-tab.active { background:color-mix(in srgb, var(--viewer-primary) 15%, transparent); border-color:var(--viewer-primary); color:var(--viewer-primary); }
+        .rm-tab.active { background:color-mix(in srgb, var(--primary) 15%, transparent); border-color:var(--primary); color:var(--primary); }
         .rm-tab .rm-badge { font-weight:700; }
         .pv-room-status-bar {
             display: flex;
@@ -121,9 +110,9 @@
             gap: 6px;
             margin: 8px 0 8px;
             padding: 8px;
-            border: 1px solid var(--viewer-border);
+            border: 1px solid var(--outline-variant);
             border-radius: 10px;
-            background: color-mix(in srgb, var(--viewer-surface-2) 76%, transparent);
+            background: color-mix(in srgb, var(--surface-container) 76%, transparent);
             position: sticky;
             top: 0;
             z-index: 3;
@@ -133,19 +122,19 @@
             align-items: center;
             gap: 5px;
             font-size: 0.68rem;
-            color: var(--viewer-muted);
-            border: 1px solid var(--viewer-border);
+            color: var(--on-surface-muted);
+            border: 1px solid var(--outline-variant);
             border-radius: 999px;
             padding: 2px 8px;
-            background: color-mix(in srgb, var(--viewer-surface) 76%, transparent);
+            background: color-mix(in srgb, var(--surface-container-lowest) 76%, transparent);
         }
         .pv-room-status-pill.ok {
-            color: var(--viewer-success);
-            border-color: color-mix(in srgb, var(--viewer-success) 55%, var(--viewer-border));
+            color: var(--success);
+            border-color: color-mix(in srgb, var(--success) 55%, var(--outline-variant));
         }
         .pv-room-status-pill.warn {
-            color: var(--viewer-warning);
-            border-color: color-mix(in srgb, var(--viewer-warning) 55%, var(--viewer-border));
+            color: var(--warning);
+            border-color: color-mix(in srgb, var(--warning) 55%, var(--outline-variant));
         }
         .pv-room-mode-tabs {
             display: grid;
@@ -155,53 +144,53 @@
             position: sticky;
             top: 52px;
             z-index: 3;
-            background: var(--viewer-surface);
+            background: var(--surface-container-lowest);
             padding-bottom: 6px;
         }
         .pv-room-mode-btn {
-            border: 1px solid var(--viewer-border);
+            border: 1px solid var(--outline-variant);
             border-radius: 8px;
             background: transparent;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.72rem;
             font-weight: 600;
             padding: 6px 8px;
             cursor: pointer;
         }
         .pv-room-mode-btn:hover {
-            border-color: var(--viewer-primary);
+            border-color: var(--primary);
             color: #a5b4fc;
         }
         .pv-room-mode-btn.active {
-            border-color: var(--viewer-primary);
-            color: var(--viewer-primary);
-            background: color-mix(in srgb, var(--viewer-primary) 18%, transparent);
+            border-color: var(--primary);
+            color: var(--primary);
+            background: color-mix(in srgb, var(--primary) 18%, transparent);
         }
-        .rm-panel { font-size:0.78rem; color:var(--viewer-text); min-height:40px; }
-        .rm-tool-section { padding:8px 0; border-bottom:1px solid var(--viewer-border); }
+        .rm-panel { font-size:0.78rem; color:var(--on-surface); min-height:40px; }
+        .rm-tool-section { padding:8px 0; border-bottom:1px solid var(--outline-variant); }
         .rm-tool-section:last-child { border-bottom:none; }
         .rm-tool-title { font-size:0.72rem; font-weight:700; color:#94a3b8; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em; }
-        .rm-action-btn { width:100%; padding:6px; border-radius:6px; border:1px solid var(--viewer-border); background:rgba(255,255,255,0.05); color:var(--viewer-text); cursor:pointer; font-size:0.78rem; margin-top:5px; transition:all 0.15s; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+        .rm-action-btn { width:100%; padding:6px; border-radius:6px; border:1px solid var(--outline-variant); background:rgba(255,255,255,0.05); color:var(--on-surface); cursor:pointer; font-size:0.78rem; margin-top:5px; transition:all 0.15s; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
         .rm-action-btn svg { width:12px; height:12px; flex-shrink:0; }
         .rm-action-btn:hover { background:rgba(255,255,255,0.1); }
         .rm-action-btn.primary,
-        .rm-action-btn.ui-btn--success { border-color:var(--viewer-success); background:color-mix(in srgb, var(--viewer-success) 18%, transparent); color:var(--viewer-success); }
+        .rm-action-btn.ui-btn--success { border-color:var(--success); background:color-mix(in srgb, var(--success) 18%, transparent); color:var(--success); }
         .rm-action-btn.primary:hover,
         .rm-action-btn.ui-btn--success:hover { background:rgba(52,211,153,0.18); }
         .rm-action-btn.danger,
-        .rm-action-btn.ui-btn--danger { border-color:var(--viewer-danger); background:color-mix(in srgb, var(--viewer-danger) 18%, transparent); color:var(--viewer-danger); }
+        .rm-action-btn.ui-btn--danger { border-color:var(--danger); background:color-mix(in srgb, var(--danger) 18%, transparent); color:var(--danger); }
         .rm-action-btn.danger:hover,
         .rm-action-btn.ui-btn--danger:hover { background:rgba(248,113,113,0.18); }
         .rm-hand-row { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid var(--viewer-border-soft); font-size:0.78rem; }
         .rm-hand-row:last-child { border-bottom:none; }
-        .rm-lower-btn { padding:2px 7px; border-radius:4px; border:1px solid var(--viewer-border); background:transparent; color:var(--viewer-muted); cursor:pointer; font-size:0.7rem; margin-left:auto; transition:all 0.15s; }
-        .rm-lower-btn:hover { border-color:var(--viewer-primary); color:var(--viewer-primary); }
+        .rm-lower-btn { padding:2px 7px; border-radius:4px; border:1px solid var(--outline-variant); background:transparent; color:var(--on-surface-muted); cursor:pointer; font-size:0.7rem; margin-left:auto; transition:all 0.15s; }
+        .rm-lower-btn:hover { border-color:var(--primary); color:var(--primary); }
         .rm-question-row { padding:5px 0; border-bottom:1px solid var(--viewer-border-soft); font-size:0.78rem; }
         .rm-question-row:last-child { border-bottom:none; }
-        .rm-question-text { color:var(--viewer-text); line-height:1.4; margin-bottom:3px; }
-        .rm-question-dismiss { padding:1px 6px; border:1px solid var(--viewer-border); background:transparent; color:var(--viewer-muted); border-radius:4px; cursor:pointer; font-size:0.68rem; transition:all 0.15s; }
+        .rm-question-text { color:var(--on-surface); line-height:1.4; margin-bottom:3px; }
+        .rm-question-dismiss { padding:1px 6px; border:1px solid var(--outline-variant); background:transparent; color:var(--on-surface-muted); border-radius:4px; cursor:pointer; font-size:0.68rem; transition:all 0.15s; }
         .rm-question-dismiss:hover { border-color:#34d399; color:#34d399; }
-        .rm-question-time { font-size:0.68rem; color:var(--viewer-muted-soft); }
+        .rm-question-time { font-size:0.68rem; color:var(--on-surface-variant); }
         .rm-question-toolbar {
             display: flex;
             gap: 6px;
@@ -244,21 +233,21 @@
         .rm-question-pill {
             font-size: 0.62rem;
             border-radius: 999px;
-            border: 1px solid var(--viewer-border);
-            color: var(--viewer-muted);
+            border: 1px solid var(--outline-variant);
+            color: var(--on-surface-muted);
             padding: 0 6px;
             line-height: 1.4;
         }
         .rm-question-pill.pinned {
-            border-color: color-mix(in srgb, var(--viewer-warning) 55%, var(--viewer-border));
-            color: var(--viewer-warning);
+            border-color: color-mix(in srgb, var(--warning) 55%, var(--outline-variant));
+            color: var(--warning);
         }
         .rm-question-pill.resolved {
-            border-color: color-mix(in srgb, var(--viewer-success) 55%, var(--viewer-border));
-            color: var(--viewer-success);
+            border-color: color-mix(in srgb, var(--success) 55%, var(--outline-variant));
+            color: var(--success);
         }
         .rm-question-pill.hidden {
-            border-color: color-mix(in srgb, #94a3b8 55%, var(--viewer-border));
+            border-color: color-mix(in srgb, #94a3b8 55%, var(--outline-variant));
             color: #94a3b8;
         }
         .rm-question-actions {
@@ -270,48 +259,48 @@
         .rm-question-mini {
             padding: 2px 7px;
             border-radius: 999px;
-            border: 1px solid var(--viewer-border);
+            border: 1px solid var(--outline-variant);
             background: transparent;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.65rem;
             cursor: pointer;
         }
         .rm-question-mini:hover {
-            color: var(--viewer-primary);
-            border-color: var(--viewer-primary);
+            color: var(--primary);
+            border-color: var(--primary);
         }
         .rm-question-mini:disabled {
             opacity: 0.45;
             cursor: not-allowed;
         }
         .rm-question-mini.active {
-            color: var(--viewer-primary);
-            border-color: var(--viewer-primary);
-            background: color-mix(in srgb, var(--viewer-primary) 13%, transparent);
+            color: var(--primary);
+            border-color: var(--primary);
+            background: color-mix(in srgb, var(--primary) 13%, transparent);
         }
         .rm-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; }
-        .rm-stat-card { background:var(--viewer-surface-2); border:1px solid var(--viewer-border-soft); border-radius:6px; padding:7px; text-align:center; }
-        .rm-stat-val { font-size:1.1rem; font-weight:700; color:var(--viewer-text); }
-        .rm-stat-lbl { font-size:0.62rem; color:var(--viewer-muted); text-transform:uppercase; letter-spacing:0.04em; }
+        .rm-stat-card { background:var(--surface-container); border:1px solid var(--viewer-border-soft); border-radius:6px; padding:7px; text-align:center; }
+        .rm-stat-val { font-size:1.1rem; font-weight:700; color:var(--on-surface); }
+        .rm-stat-lbl { font-size:0.62rem; color:var(--on-surface-muted); text-transform:uppercase; letter-spacing:0.04em; }
         .rm-poll-bar-row { display:flex; align-items:center; gap:5px; margin:3px 0; font-size:0.72rem; }
         .rm-poll-bar-wrap { flex:1; height:10px; border-radius:5px; background:var(--viewer-border-soft); overflow:hidden; }
-        .rm-poll-bar-fill { height:100%; border-radius:5px; background:var(--viewer-primary); transition:width 0.3s ease; }
-        .rm-input { width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--viewer-border); background:var(--viewer-surface-2); color:var(--viewer-text); font-size:0.78rem; font-family:system-ui; margin-top:4px; outline:none; }
-        .rm-input:focus { border-color:var(--viewer-primary); }
+        .rm-poll-bar-fill { height:100%; border-radius:5px; background:var(--primary); transition:width 0.3s ease; }
+        .rm-input { width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--outline-variant); background:var(--surface-container); color:var(--on-surface); font-size:0.78rem; font-family:system-ui; margin-top:4px; outline:none; }
+        .rm-input:focus { border-color:var(--primary); }
         .rm-select {
-            width:100%; padding:5px 28px 5px 8px; border-radius:6px; border:1px solid var(--viewer-border);
-            background:var(--viewer-surface-2);
+            width:100%; padding:5px 28px 5px 8px; border-radius:6px; border:1px solid var(--outline-variant);
+            background:var(--surface-container);
             background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
             background-repeat:no-repeat; background-position:right 9px center;
-            color:var(--viewer-text); font-size:0.78rem; margin-top:4px;
+            color:var(--on-surface); font-size:0.78rem; margin-top:4px;
             appearance:none; -webkit-appearance:none; -moz-appearance:none;
             outline:none; transition:border-color 0.15s, box-shadow 0.15s;
         }
-        .rm-select:focus { border-color:var(--viewer-primary); box-shadow:0 0 0 2px color-mix(in srgb, var(--viewer-primary) 15%, transparent); }
+        .rm-select:focus { border-color:var(--primary); box-shadow:0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent); }
         /* Wordcloud presenter overlay */
-        #sl-wordcloud-presenter { display:none; position:fixed; inset:0; background:var(--viewer-wordcloud-overlay); z-index:250; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+        #sl-wordcloud-presenter { display:none; position:fixed; inset:0; background:color-mix(in srgb, var(--surface) 96%, transparent); z-index:250; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
         #sl-wc-display-presenter { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justify-content:center; max-width:88vw; max-height:72vh; overflow:hidden; padding:20px; }
-        #sl-wc-close-presenter { padding:8px 20px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.08); color:var(--viewer-text); cursor:pointer; font-size:0.82rem; }
+        #sl-wc-close-presenter { padding:8px 20px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.08); color:var(--on-surface); cursor:pointer; font-size:0.82rem; }
         #wb-preview {
             position: fixed; top: 0; left: 0;
             width: 100vw; height: 100vh;
@@ -328,7 +317,7 @@
         .rm-title-icon-sm { vertical-align: -1px; margin-right: 4px; }
         .rm-connect-block { margin-bottom: 10px; }
         .rm-id-label {
-            font-size: 0.68rem; font-weight: 700; color: var(--viewer-muted);
+            font-size: 0.68rem; font-weight: 700; color: var(--on-surface-muted);
             text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
         }
         .rm-inline-row { display: flex; gap: 5px; }
@@ -336,19 +325,19 @@
         .rm-room-id-refresh { width: auto; padding: 4px 8px; margin-top: 0; flex-shrink: 0; }
         .rm-inline-row .rm-input { flex: 1; width: auto; min-width: 100px; margin-top: 0; }
         .rm-help {
-            font-size: 0.63rem; color: var(--viewer-muted-soft);
+            font-size: 0.63rem; color: var(--on-surface-variant);
             margin-top: 3px; line-height: 1.4;
         }
         .rm-room-status {
             font-size: 0.68rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             line-height: 1.35;
             min-height: 1em;
             margin-top: 0;
         }
-        .rm-room-status.ok { color: var(--viewer-success); }
-        .rm-room-status.warn { color: var(--viewer-warning); }
-        .rm-room-status.error { color: var(--viewer-danger); }
+        .rm-room-status.ok { color: var(--success); }
+        .rm-room-status.warn { color: var(--warning); }
+        .rm-room-status.error { color: var(--danger); }
         /* QR auto block */
         .rm-qr-block { background:#fff; border-radius:8px; padding:10px; margin:8px 0; text-align:center; }
         .rm-qr-label { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#555; margin-bottom:8px; }
@@ -370,24 +359,24 @@
         }
         .rm-remote-status {
             font-size: 0.7rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             margin-top: 6px;
             line-height: 1.4;
         }
-        .rm-remote-status.ok { color: var(--viewer-success); }
-        .rm-remote-status.warn { color: var(--viewer-warning); }
-        .rm-remote-status.error { color: var(--viewer-danger); }
+        .rm-remote-status.ok { color: var(--success); }
+        .rm-remote-status.warn { color: var(--warning); }
+        .rm-remote-status.error { color: var(--danger); }
         .rm-remote-link-wrap {
             margin-top: 8px;
             padding: 7px;
             border-radius: 8px;
-            border: 1px solid var(--viewer-border);
-            background: color-mix(in srgb, var(--viewer-surface-2) 76%, transparent);
+            border: 1px solid var(--outline-variant);
+            background: color-mix(in srgb, var(--surface-container) 76%, transparent);
         }
         .rm-remote-link {
             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             font-size: 0.63rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             word-break: break-all;
             line-height: 1.4;
             margin-bottom: 6px;
@@ -398,7 +387,7 @@
             border-radius: 8px;
             overflow: hidden;
             margin: 0 auto 6px;
-            background: var(--viewer-surface);
+            background: var(--surface-container-lowest);
             border: 1px solid var(--viewer-border-soft);
             display: flex;
             align-items: center;
@@ -413,10 +402,10 @@
             margin-top: 0;
         }
         .rm-copy-btn { margin-bottom: 8px; }
-        .rm-empty-text { color: var(--viewer-muted); font-size: 0.78rem; }
+        .rm-empty-text { color: var(--on-surface-muted); font-size: 0.78rem; }
         .rm-empty-text.center { text-align: center; }
         .rm-tool-meta { font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; }
-        .rm-tool-count { font-size: 0.72rem; color: var(--viewer-muted); margin-bottom: 6px; }
+        .rm-tool-count { font-size: 0.72rem; color: var(--on-surface-muted); margin-bottom: 6px; }
         .rm-gap-top { margin-top: 4px; }
         .rm-status {
             font-size: 0.75rem;
@@ -424,10 +413,10 @@
             text-align: center;
             line-height: 1.4;
         }
-        .rm-status.info { color: var(--viewer-primary); }
-        .rm-status.error { color: var(--viewer-danger); }
+        .rm-status.info { color: var(--primary); }
+        .rm-status.error { color: var(--danger); }
         .rm-students-summary {
-            color: var(--viewer-success);
+            color: var(--success);
             font-size: 0.78rem;
             margin-bottom: 6px;
             display: flex;
@@ -438,31 +427,31 @@
         .rm-student-row {
             display: flex; align-items: center; gap: 6px;
             padding: 3px 0;
-            border-bottom: 1px solid var(--viewer-border);
+            border-bottom: 1px solid var(--outline-variant);
         }
         .rm-student-rank { font-size: 0.75rem; min-width: 22px; }
         .rm-student-name {
             flex: 1;
-            color: var(--viewer-text);
+            color: var(--on-surface);
             font-size: 0.78rem;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
         .rm-student-score {
-            color: var(--viewer-primary);
+            color: var(--primary);
             font-weight: 700;
             font-size: 0.75rem;
         }
         .rm-hand-mark {
             display: inline-flex;
             vertical-align: -1px;
-            color: var(--viewer-warning);
+            color: var(--warning);
             margin-right: 2px;
         }
         .rm-hand-icon {
             display: inline-flex;
-            color: var(--viewer-warning);
+            color: var(--warning);
         }
         .rm-question-head {
             display: flex;
@@ -475,13 +464,13 @@
             font-size: 0.78rem;
         }
         .rm-poll-count {
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.7rem;
             min-width: 28px;
         }
         .rm-poll-total {
             font-size: 0.72rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             margin-bottom: 5px;
         }
         .rm-toolbar-badge {
@@ -509,7 +498,7 @@
         .rm-nudge-feedback {
             margin-top: 6px;
             font-size: 0.7rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             min-height: 1em;
         }
         .rm-feedback-summary {
@@ -519,11 +508,11 @@
             margin-top: 6px;
         }
         .rm-feedback-pill {
-            border: 1px solid var(--viewer-border);
+            border: 1px solid var(--outline-variant);
             border-radius: 999px;
             padding: 3px 4px;
             font-size: 0.64rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
@@ -541,11 +530,11 @@
             border: 1px solid var(--viewer-border-soft);
             border-radius: 8px;
             padding: 4px 6px;
-            background: color-mix(in srgb, var(--viewer-surface-2) 66%, transparent);
+            background: color-mix(in srgb, var(--surface-container) 66%, transparent);
         }
         .rm-feedback-row {
             font-size: 0.69rem;
-            color: var(--viewer-text);
+            color: var(--on-surface);
             display: flex;
             gap: 6px;
             align-items: center;
@@ -555,12 +544,12 @@
         .rm-feedback-row svg { width: 11px; height: 11px; flex-shrink: 0; }
         .rm-feedback-row:last-child { border-bottom: none; }
         .rm-feedback-time {
-            color: var(--viewer-muted-soft);
+            color: var(--on-surface-variant);
             font-size: 0.62rem;
             margin-left: auto;
         }
         .rm-feedback-empty {
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.68rem;
             text-align: center;
             padding: 6px 0;
@@ -571,14 +560,14 @@
             font-size: 0.71rem;
             width: auto;
         }
-        .rm-dashboard-empty { color: var(--viewer-muted); }
+        .rm-dashboard-empty { color: var(--on-surface-muted); }
         .rm-dashboard-label {
             min-width: 14px;
             font-size: 0.65rem;
             color: #94a3b8;
         }
         .rm-dashboard-count {
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.65rem;
             min-width: 18px;
         }
@@ -587,18 +576,18 @@
         }
         .rm-dashboard-quiz-head {
             font-size: 0.72rem;
-            color: var(--viewer-primary);
+            color: var(--primary);
             font-weight: 700;
             margin-bottom: 4px;
         }
         .rm-dashboard-muted {
             font-size: 0.68rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             margin-top: 4px;
         }
         .rm-dashboard-top {
             font-size: 0.75rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             margin-bottom: 6px;
         }
         .pv-room-panel-embedded {
@@ -624,13 +613,13 @@
             text-align: center;
             max-width: 80%;
         }
-        .wc-presenter-count { color: var(--viewer-muted); font-size: 0.72rem; }
+        .wc-presenter-count { color: var(--on-surface-muted); font-size: 0.72rem; }
         .icon-inline-tight { vertical-align: -1px; margin-right: 6px; }
         #sl-audience-qr-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: var(--viewer-qr-overlay);
+            background: rgba(29, 27, 26, 0.78);
             z-index: 200;
             align-items: center;
             justify-content: center;
@@ -642,12 +631,12 @@
             width: 320px;
             height: 320px;
             border-radius: 14px;
-            background: var(--viewer-qr-card-bg);
+            background: var(--surface-container-lowest);
             padding: 10px;
             box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
         }
         #sl-audience-qr-url {
-            color: var(--viewer-qr-url);
+            color: var(--on-surface);
             font-size: 1.1rem;
             font-family: monospace;
             max-width: 85%;
@@ -656,14 +645,14 @@
             opacity: 0.85;
         }
         .audience-qr-hint {
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.8rem;
         }
         #sl-audience-cloud-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: var(--viewer-wordcloud-overlay);
+            background: color-mix(in srgb, var(--surface) 96%, transparent);
             z-index: 210;
             align-items: center;
             justify-content: center;
@@ -673,7 +662,7 @@
         }
         #sl-audience-cloud-overlay.open { display: flex; }
         #sl-audience-cloud-prompt {
-            color: var(--viewer-muted-soft);
+            color: var(--on-surface-variant);
             font-size: 0.95rem;
             text-align: center;
             max-width: 86vw;
@@ -690,7 +679,7 @@
             padding: 20px;
         }
         #sl-audience-cloud-count {
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.82rem;
             text-align: center;
         }
@@ -708,7 +697,7 @@
         }
         #sl-audience-poll-overlay.open { display: flex; }
         #sl-audience-poll-prompt {
-            color: var(--viewer-muted-soft);
+            color: var(--on-surface-variant);
             font-size: 1rem;
             text-align: center;
             max-width: 84vw;
@@ -728,7 +717,7 @@
             color: #e2e8f0;
         }
         .aud-poll-waiting {
-            color: var(--viewer-muted, #94a3b8);
+            color: var(--on-surface-muted, #94a3b8);
             font-size: 0.92rem;
             text-align: center;
             padding: 12px 0;
@@ -743,11 +732,11 @@
             height: 100%;
             width: 0;
             border-radius: 999px;
-            background: var(--viewer-primary);
+            background: var(--primary);
             transition: width 0.28s ease;
         }
         #sl-audience-poll-total {
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.8rem;
             text-align: center;
         }
@@ -808,7 +797,7 @@
         .aud-exit-empty,
         .aud-rank-empty {
             font-size: 0.86rem;
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             text-align: center;
         }
         .aud-rank-row {
@@ -825,7 +814,7 @@
         }
         #sl-audience-exit-total,
         #sl-audience-rank-total {
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.8rem;
             text-align: center;
         }
@@ -853,8 +842,8 @@
             top: 14px;
             z-index: 236;
             border-radius: 999px;
-            border: 1px solid color-mix(in srgb, var(--viewer-warning) 58%, var(--viewer-border));
-            background: color-mix(in srgb, var(--viewer-warning) 22%, rgba(2, 6, 23, 0.92));
+            border: 1px solid color-mix(in srgb, var(--warning) 58%, var(--outline-variant));
+            background: color-mix(in srgb, var(--warning) 22%, rgba(2, 6, 23, 0.92));
             color: #fde68a;
             font-size: 0.72rem;
             font-weight: 700;
@@ -891,7 +880,7 @@
             line-height: 1.5;
         }
         .audience-cloud-empty {
-            color: var(--viewer-muted);
+            color: var(--on-surface-muted);
             font-size: 0.9rem;
         }
         /* Keyboard hint — hidden by default, shown briefly on first load */
@@ -1488,11 +1477,11 @@
             gap: 10px;
         }
         .pv-layout.salle-active #rm-panel-tools .rm-tool-section {
-            border: 1px solid var(--viewer-border);
+            border: 1px solid var(--outline-variant);
             border-radius: 10px;
             padding: 10px;
             margin: 0;
-            background: color-mix(in srgb, var(--viewer-surface-2) 72%, transparent);
+            background: color-mix(in srgb, var(--surface-container) 72%, transparent);
         }
         .pv-layout.salle-active #rm-panel-tools .rm-tool-section > :first-child { margin-top: 0; }
 
@@ -1741,9 +1730,16 @@
 
         /* ── Mode présentateur — thème SOMBRE ────────────────────────────────
            Actif quand la classe .light est absente (viewer-main.js la retire au
-           toggle sombre). On redéfinit ici le jeu de tokens complet pour le
-           sous-arbre présentateur : les surfaces MD3 (héritées de :root en clair)
-           ET la couche d'alias --viewer-* (définie sur <body>, sinon figée en clair). */
+           toggle sombre). viewer-main.js ne pose PAS data-theme="dark" (il bascule
+           seulement .light sur #presenter-view), donc le bloc [data-theme="dark"]
+           de ui-primitives.css ne s'applique pas ici : on redéfinit le jeu de
+           tokens de base Forge pour le sous-arbre présentateur. Les valeurs sont
+           alignées sur le bloc sombre de ui-primitives.css. Les règles .pv-* /
+           .rm-* consommant ces tokens (--primary, --surface*, --on-surface*,
+           --outline-variant…) basculent alors automatiquement.
+           NB : --success / --danger / --warning ne sont volontairement PAS
+           redéfinis ici (comportement pré-A3 : le panneau salle garde les teintes
+           claires en sombre — hors périmètre de cet audit). */
         .pv-layout:not(.light) {
             --surface:                   #131318;
             --surface-bright:            #1c1d24;
@@ -1762,16 +1758,8 @@
             --on-primary:                #06164a;
             --on-primary-fixed-variant:  #b6c4ff;
             --ui-overlay:                rgba(0, 0, 0, 0.6);
-            --viewer-surface:     var(--surface-container-lowest);
-            --viewer-surface-1:   var(--surface-container-lowest);
-            --viewer-surface-2:   var(--surface-container);
-            --viewer-border:      var(--outline-variant);
+            /* filet sans équivalent Forge — cf. --viewer-border-soft en tête de fichier */
             --viewer-border-soft: color-mix(in srgb, var(--outline-variant) 55%, transparent);
-            --viewer-text:        var(--on-surface);
-            --viewer-muted:       var(--on-surface-muted);
-            --viewer-muted-soft:  var(--on-surface-variant);
-            --viewer-primary:     var(--primary);
-            --viewer-modal-overlay: var(--ui-overlay);
         }
         .pv-layout:not(.light) .pv-brand-logo-light { display: none; }
         .pv-layout:not(.light) .pv-brand-logo-dark { display: block; }
@@ -1798,7 +1786,9 @@
 
         /* ── Presenter room panel ─── */
         #sl-room-panel { color: var(--on-surface, #1d1b1a); }
-        /* Room panel editorial colors — always light */
+        /* Barre de statut + onglets de mode : surfaces opaques (les règles de base
+           les veulent translucides) — suivent les tokens Forge, donc basculent en
+           sombre sous .pv-layout:not(.light). */
         .pv-room-status-bar { background: var(--surface-container-lowest, #ffffff); }
         .pv-room-status-pill { color: var(--on-surface-muted, #8a9099); background: var(--surface-container-lowest, #ffffff); }
         .pv-room-status-pill.ok { color: var(--success, #2e7d32); }
@@ -1866,7 +1856,7 @@
         }
         .wb-btn svg { width: 14px; height: 14px; }
         .wb-btn:hover { background: rgba(255,255,255,0.18); }
-        .wb-btn.active { background: var(--sl-primary, var(--viewer-primary)); border-color: var(--sl-primary, var(--viewer-primary)); }
+        .wb-btn.active { background: var(--sl-primary, var(--primary)); border-color: var(--sl-primary, var(--primary)); }
         .wb-color-btn {
             width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);
             cursor: pointer; transition: transform 0.15s;
