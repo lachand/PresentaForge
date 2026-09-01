@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=6">
-    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=39">
+    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=41">
     <style id="sl-preview-theme"></style>
     <style id="sl-thumb-css"></style>
 </head>
@@ -45,20 +45,20 @@
                 <span id="file-name-indicator" class="file-name-indicator" title="Aucun fichier lié — Ctrl+S pour sauvegarder">Brouillon</span>
                 <span id="save-text" class="save-text-offset"></span>
                 <span class="fb-cloud-badge" id="fb-cloud-badge" style="display:none" title="Firebase non connecté">
-                    <span class="ms" style="font-size:14px">cloud_off</span>
+                    <span class="ms">cloud_off</span>
                 </span>
             </div>
-            <button class="tb-btn ui-btn" id="btn-command-palette" title="Palette de commandes (Ctrl+K)" aria-label="Palette de commandes" style="font-size:0.7rem;gap:3px;padding:0 8px;opacity:0.65;">
-                <span class="ms" style="font-size:14px;">terminal</span><kbd style="font-size:0.65rem;background:var(--surface-container-highest);border:1px solid var(--border);border-radius:3px;padding:0 4px;pointer-events:none;">⌘K</kbd>
+            <button class="tb-btn ui-btn cmdk-trigger" id="btn-command-palette" title="Palette de commandes (Ctrl+K)" aria-label="Palette de commandes">
+                <span class="ms">terminal</span><kbd>⌘K</kbd>
             </button>
             <button class="tb-btn ui-btn tb-btn-compact-history" id="btn-revision-history" title="Historique des révisions" aria-label="Historique des révisions">
-                <span class="ms" style="font-size:16px;">history</span>
+                <span class="ms">history</span>
             </button>
             <button class="tb-btn ui-btn tb-btn-compact-history" id="btn-review-comments" title="Commentaires de relecture" aria-label="Commentaires de relecture">
-                <span class="ms" style="font-size:16px;">rate_review</span>
+                <span class="ms">rate_review</span>
             </button>
             <!-- Hidden theme toggle — kept for JS compatibility (editor-ui.js references icon-sun/icon-moon) -->
-            <button class="tb-btn ui-btn" id="btn-toggle-theme" style="display:none" aria-hidden="true">
+            <button class="tb-btn ui-btn tb-icon-hidden" id="btn-toggle-theme" aria-hidden="true">
                 <svg id="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                 <svg id="icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
             </button>
@@ -91,17 +91,17 @@
             <!-- A5: Move up/down + A6: Hide -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-slide-up" aria-label="Monter le slide (↑)" data-tooltip="Monter|Déplacer le slide vers le haut" data-shortcut="↑"><span class="ms" style="font-size:16px;">arrow_upward</span></button>
-                    <button class="tb-btn ui-btn" id="btn-slide-down" aria-label="Descendre le slide (↓)" data-tooltip="Descendre|Déplacer le slide vers le bas" data-shortcut="↓"><span class="ms" style="font-size:16px;">arrow_downward</span></button>
-                    <button class="tb-btn ui-btn" id="btn-hide-slide" aria-label="Masquer le slide" data-tooltip="Masquer|Le slide est sauté en présentation"><span class="ms" style="font-size:16px;">visibility_off</span></button>
+                    <button class="tb-btn ui-btn" id="btn-slide-up" aria-label="Monter le slide (↑)" data-tooltip="Monter|Déplacer le slide vers le haut" data-shortcut="↑"><span class="ms">arrow_upward</span></button>
+                    <button class="tb-btn ui-btn" id="btn-slide-down" aria-label="Descendre le slide (↓)" data-tooltip="Descendre|Déplacer le slide vers le bas" data-shortcut="↓"><span class="ms">arrow_downward</span></button>
+                    <button class="tb-btn ui-btn" id="btn-hide-slide" aria-label="Masquer le slide" data-tooltip="Masquer|Le slide est sauté en présentation"><span class="ms">visibility_off</span></button>
                 </div>
                 <span class="ribbon-group-label">Ordre</span>
             </div>
             <div class="ribbon-sep"></div>
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-undo" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler|Revenir à l'état précédent" data-shortcut="Ctrl+Z"><span class="ms" style="font-size:16px;">undo</span></button>
-                    <button class="tb-btn ui-btn" id="btn-redo" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir|Restaurer l'action annulée" data-shortcut="Ctrl+Y"><span class="ms" style="font-size:16px;">redo</span></button>
+                    <button class="tb-btn ui-btn" id="btn-undo" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler|Revenir à l'état précédent" data-shortcut="Ctrl+Z"><span class="ms">undo</span></button>
+                    <button class="tb-btn ui-btn" id="btn-redo" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir|Restaurer l'action annulée" data-shortcut="Ctrl+Y"><span class="ms">redo</span></button>
                 </div>
                 <span class="ribbon-group-label">Historique</span>
             </div>
@@ -109,11 +109,11 @@
             <!-- A1: Clipboard -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-cut" aria-label="Couper (Ctrl+X)" data-tooltip="Couper|Couper l'élément canvas" data-shortcut="Ctrl+X"><span class="ms" style="font-size:16px;">content_cut</span></button>
-                    <button class="tb-btn ui-btn" id="btn-copy" aria-label="Copier (Ctrl+C)" data-tooltip="Copier|Copier l'élément canvas" data-shortcut="Ctrl+C"><span class="ms" style="font-size:16px;">content_copy</span></button>
-                    <button class="tb-btn ui-btn" id="btn-paste" aria-label="Coller (Ctrl+V)" data-tooltip="Coller|Coller l'élément copié" data-shortcut="Ctrl+V"><span class="ms" style="font-size:16px;">content_paste</span></button>
+                    <button class="tb-btn ui-btn" id="btn-cut" aria-label="Couper (Ctrl+X)" data-tooltip="Couper|Couper l'élément canvas" data-shortcut="Ctrl+X"><span class="ms">content_cut</span></button>
+                    <button class="tb-btn ui-btn" id="btn-copy" aria-label="Copier (Ctrl+C)" data-tooltip="Copier|Copier l'élément canvas" data-shortcut="Ctrl+C"><span class="ms">content_copy</span></button>
+                    <button class="tb-btn ui-btn" id="btn-paste" aria-label="Coller (Ctrl+V)" data-tooltip="Coller|Coller l'élément copié" data-shortcut="Ctrl+V"><span class="ms">content_paste</span></button>
                     <!-- A2: Paste format -->
-                    <button class="tb-btn ui-btn" id="btn-paste-format" aria-label="Reproduire la mise en forme" data-tooltip="Reproduire la mise en forme|Copie le style d'un élément"><span class="ms" style="font-size:16px;">format_paint</span></button>
+                    <button class="tb-btn ui-btn" id="btn-paste-format" aria-label="Reproduire la mise en forme" data-tooltip="Reproduire la mise en forme|Copie le style d'un élément"><span class="ms">format_paint</span></button>
                 </div>
                 <span class="ribbon-group-label">Presse-papier</span>
             </div>
@@ -121,9 +121,9 @@
             <!-- A7/A8: Selection -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-select-all" aria-label="Tout sélectionner (Ctrl+A)" data-tooltip="Tout sélectionner|Sélectionne tous les éléments canvas" data-shortcut="Ctrl+A"><span class="ms" style="font-size:16px;">select_all</span></button>
-                    <button class="tb-btn ui-btn" id="btn-group" aria-label="Grouper (Ctrl+G)" data-tooltip="Grouper|Groupe les éléments sélectionnés" data-shortcut="Ctrl+G"><span class="ms" style="font-size:16px;">group_work</span></button>
-                    <button class="tb-btn ui-btn" id="btn-ungroup" aria-label="Dégrouper (Ctrl+Shift+G)" data-tooltip="Dégrouper|Sépare les éléments groupés" data-shortcut="Ctrl+Shift+G"><span class="ms" style="font-size:16px;">ungroup</span></button>
+                    <button class="tb-btn ui-btn" id="btn-select-all" aria-label="Tout sélectionner (Ctrl+A)" data-tooltip="Tout sélectionner|Sélectionne tous les éléments canvas" data-shortcut="Ctrl+A"><span class="ms">select_all</span></button>
+                    <button class="tb-btn ui-btn" id="btn-group" aria-label="Grouper (Ctrl+G)" data-tooltip="Grouper|Groupe les éléments sélectionnés" data-shortcut="Ctrl+G"><span class="ms">group_work</span></button>
+                    <button class="tb-btn ui-btn" id="btn-ungroup" aria-label="Dégrouper (Ctrl+Shift+G)" data-tooltip="Dégrouper|Sépare les éléments groupés" data-shortcut="Ctrl+Shift+G"><span class="ms">ungroup</span></button>
                 </div>
                 <span class="ribbon-group-label">Sélection</span>
             </div>
@@ -131,7 +131,7 @@
             <!-- A3/A4: Search -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-search" data-tooltip="Rechercher & Remplacer|Ctrl+F / Ctrl+H" data-shortcut="Ctrl+F"><span class="ms" style="font-size:15px;">search</span> Rechercher</button>
+                    <button class="tb-btn ui-btn" id="btn-search" data-tooltip="Rechercher & Remplacer|Ctrl+F / Ctrl+H" data-shortcut="Ctrl+F"><span class="ms">search</span> Rechercher</button>
                 </div>
                 <span class="ribbon-group-label">Recherche</span>
             </div>
@@ -145,17 +145,17 @@
                         </button>
                         <button class="split-btn-arrow ui-btn" id="split-open-arrow" aria-label="Options d'ouverture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
                         <div class="split-dropdown hidden" id="split-open-menu">
-                            <button class="tb-dropdown-item" id="btn-open-new"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg> Nouvelle présentation</button>
-                            <button class="tb-dropdown-item" id="btn-open-clipboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Depuis le presse-papier</button>
-                            <button class="tb-dropdown-item" id="btn-import-pptx"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Importer PowerPoint (.pptx)</button>
-                            <button class="tb-dropdown-item" id="btn-import-pdf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h4"/><path d="M8 17h3"/></svg> Importer PDF (.pdf)</button>
-                            <button class="tb-dropdown-item" id="btn-open-firebase"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Depuis Firebase</button>
+                            <button class="tb-dropdown-item" id="btn-open-new"><span class="ms">note_add</span> Nouvelle présentation</button>
+                            <button class="tb-dropdown-item" id="btn-open-clipboard"><span class="ms">content_paste</span> Depuis le presse-papier</button>
+                            <button class="tb-dropdown-item" id="btn-import-pptx"><span class="ms">slideshow</span> Importer PowerPoint (.pptx)</button>
+                            <button class="tb-dropdown-item" id="btn-import-pdf"><span class="ms">picture_as_pdf</span> Importer PDF (.pdf)</button>
+                            <button class="tb-dropdown-item" id="btn-open-firebase"><span class="ms">bolt</span> Depuis Firebase</button>
                             <div class="tb-dropdown-sep"></div>
                             <div id="recent-files-list"><div class="recent-empty">Aucun fichier récent</div></div>
                         </div>
                     </div>
                     <button class="tb-btn ui-btn" id="btn-edit-metadata" data-tooltip="Métadonnées|Configurer titre, auteur, description, format…">
-                        <span class="ms" style="font-size:15px;">article</span>
+                        <span class="ms">article</span>
                         Métadonnées
                     </button>
                     <button class="tb-btn-lg ui-btn" id="btn-ai-prompt" data-tooltip="Prompt IA|Copie le prompt de génération de slides dans le presse-papier">
@@ -163,7 +163,7 @@
                         <span class="tb-label">IA</span>
                     </button>
                     <button class="tb-btn ui-btn" id="btn-ai-tuning" data-tooltip="Réglages IA|Configurer les passes IA, le style visuel et la génération base64">
-                        <span class="ms" style="font-size:15px;">tune</span>
+                        <span class="ms">tune</span>
                         IA+
                     </button>
                 </div>
@@ -174,84 +174,84 @@
         <div class="ribbon-panel" id="ribbon-insertion" role="tabpanel" aria-labelledby="ribbontab-insertion" tabindex="0">
             <div class="ribbon-group" id="ribbon-insert-elements">
                 <div class="ribbon-group-content">
-                    <button class="el-type-btn" data-el="heading" data-tooltip="Titre|Élément titre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16"/><path d="M4 4v16"/><path d="M20 4v16"/></svg></span>Titre</button>
-                    <button class="el-type-btn" data-el="text" data-tooltip="Texte|Bloc de texte libre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>Texte</button>
-                    <button class="el-type-btn" data-el="highlight" data-tooltip="Code|Bloc de code / terminal avec mise en évidence optionnelle"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>Code/Terminal</button>
-                    <button class="el-type-btn" data-el="image" data-tooltip="Image|Insérer une image"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>Image</button>
+                    <button class="el-type-btn" data-el="heading" data-tooltip="Titre|Élément titre"><span class="el-icon"><span class="ms">title</span></span>Titre</button>
+                    <button class="el-type-btn" data-el="text" data-tooltip="Texte|Bloc de texte libre"><span class="el-icon"><span class="ms">notes</span></span>Texte</button>
+                    <button class="el-type-btn" data-el="highlight" data-tooltip="Code|Bloc de code / terminal avec mise en évidence optionnelle"><span class="el-icon"><span class="ms">code</span></span>Code/Terminal</button>
+                    <button class="el-type-btn" data-el="image" data-tooltip="Image|Insérer une image"><span class="el-icon"><span class="ms">image</span></span>Image</button>
                     <!-- B1: Shape gallery -->
                     <div class="el-inline-wrap">
-                        <button class="el-type-btn" id="btn-shape-gallery" data-tooltip="Formes|Galerie de formes géométriques"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></span>Forme ▾</button>
+                        <button class="el-type-btn" id="btn-shape-gallery" data-tooltip="Formes|Galerie de formes géométriques"><span class="el-icon"><span class="ms">shapes</span></span>Forme ▾</button>
                         <div class="shape-picker hidden" id="shape-picker"></div>
                     </div>
-                    <button class="el-type-btn" data-el="widget" data-tooltip="Widget|Composant interactif"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>Widget</button>
-                    <button class="el-type-btn" data-el="definition" data-tooltip="Définition|Terme + définition"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Déf.</button>
-                    <button class="el-type-btn el-color-activity" data-el="exercise-block" data-tooltip="Exercice|Objectif, consignes, indices, correction"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h10M8 18h7"/><path d="M4 6l1.5 1.5L7.5 5.5"/><path d="M4 12l1.5 1.5L7.5 11.5"/><path d="M4 18l1.5 1.5L7.5 17.5"/></svg></span>Exercice</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="before-after" data-tooltip="Before / After|Comparer un état avant/après"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6H4v5"/><path d="M4 6l6 6"/><path d="M15 18h5v-5"/><path d="M20 18l-6-6"/></svg></span>Before/After</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="mistake-fix" data-tooltip="Erreur / Correction|Comparer un mauvais et un bon exemple"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M3 7h7v10H3z"/><path d="M14 7h7v10h-7z"/></svg></span>Erreur/Fix</button>
-                    <button class="el-type-btn el-color-assessment" data-el="rubric-block" data-tooltip="Rubric block|Grille d'évaluation par critères"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/><path d="M15 10v10"/></svg></span>Rubric</button>
-                    <button class="el-type-btn" data-el="code-example" data-tooltip="Exemple de code|Bloc exemple avec widget terminal/live/stepper"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6 2 12l6 6"/><path d="M16 6 22 12l-6 6"/><path d="M11 19h5"/></svg></span>Ex. code</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="terminal-session" data-tooltip="Session terminal|Commandes + sorties shell"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 10 12 4 17"/><line x1="12" y1="17" x2="20" y2="17"/></svg></span>Session term.</button>
-                    <button class="el-type-btn" data-el="quote" data-tooltip="Citation|Bloc citation"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/></svg></span>Citation</button>
-                    <button class="el-type-btn" data-el="card" data-tooltip="Carte|Carte avec titre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h5"/></svg></span>Carte</button>
-                    <button class="el-type-btn el-color-connector" id="btn-add-connector" data-tooltip="Connecteur|Cliquer puis relier deux éléments"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="13 5 19 5 19 11"/></svg></span>Flèche</button>
+                    <button class="el-type-btn" data-el="widget" data-tooltip="Widget|Composant interactif"><span class="el-icon"><span class="ms">widgets</span></span>Widget</button>
+                    <button class="el-type-btn" data-el="definition" data-tooltip="Définition|Terme + définition"><span class="el-icon"><span class="ms">book</span></span>Déf.</button>
+                    <button class="el-type-btn el-color-activity" data-el="exercise-block" data-tooltip="Exercice|Objectif, consignes, indices, correction"><span class="el-icon"><span class="ms">assignment</span></span>Exercice</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="before-after" data-tooltip="Before / After|Comparer un état avant/après"><span class="el-icon"><span class="ms">compare</span></span>Before/After</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="mistake-fix" data-tooltip="Erreur / Correction|Comparer un mauvais et un bon exemple"><span class="el-icon"><span class="ms">fact_check</span></span>Erreur/Fix</button>
+                    <button class="el-type-btn el-color-assessment" data-el="rubric-block" data-tooltip="Rubric block|Grille d'évaluation par critères"><span class="el-icon"><span class="ms">grading</span></span>Rubric</button>
+                    <button class="el-type-btn" data-el="code-example" data-tooltip="Exemple de code|Bloc exemple avec widget terminal/live/stepper"><span class="el-icon"><span class="ms">code_blocks</span></span>Ex. code</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="terminal-session" data-tooltip="Session terminal|Commandes + sorties shell"><span class="el-icon"><span class="ms">terminal</span></span>Session term.</button>
+                    <button class="el-type-btn" data-el="quote" data-tooltip="Citation|Bloc citation"><span class="el-icon"><span class="ms">format_quote</span></span>Citation</button>
+                    <button class="el-type-btn" data-el="card" data-tooltip="Carte|Carte avec titre"><span class="el-icon"><span class="ms">web_asset</span></span>Carte</button>
+                    <button class="el-type-btn el-color-connector" id="btn-add-connector" data-tooltip="Connecteur|Cliquer puis relier deux éléments"><span class="el-icon"><span class="ms">call_made</span></span>Flèche</button>
                     <div class="el-inline-wrap">
-                        <button class="el-type-btn el-color-table" id="btn-insert-table" data-tooltip="Tableau|Grille de données"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></span>Table ▾</button>
+                        <button class="el-type-btn el-color-table" id="btn-insert-table" data-tooltip="Tableau|Grille de données"><span class="el-icon"><span class="ms">table_chart</span></span>Table ▾</button>
                         <div class="table-grid-picker hidden" id="table-grid-picker">
                             <div class="table-grid" id="table-grid"></div>
                             <div class="table-grid-label" id="table-grid-label">0 × 0</div>
                         </div>
                     </div>
-                    <button class="el-type-btn el-color-video" id="btn-insert-video" data-tooltip="Vidéo|Intégrer YouTube/Vimeo"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18"/><polygon points="10 8 16 12 10 16 10 8"/></svg></span>Vidéo</button>
-                    <button class="el-type-btn el-color-callout" id="btn-insert-callout" data-tooltip="Callout box|Encadré info/warning/success/danger"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>Callout box</button>
-<button class="el-type-btn el-color-mermaid" data-el="mermaid" data-tooltip="Diagramme|Mermaid (graphes, flowcharts)"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10"/><path d="M6.7 7.2 10.9 16"/><path d="M17.3 7.2 13.1 16"/></svg></span>Mermaid</button>
-                    <button class="el-type-btn el-color-diagram" data-el="diagramme" data-tooltip="Diagramme|Graphique à partir d'un tableau de données"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="2.8" height="9"/><rect x="11" y="8" width="2.8" height="12"/><rect x="16" y="5" width="2.8" height="15"/></svg></span>Diagramme</button>
-                    <button class="el-type-btn el-color-latex" data-el="latex" data-tooltip="Équation|LaTeX / KaTeX"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6h14M5 18h14"/><path d="M9 14l2-4 2 4"/><path d="M8 14h6"/></svg></span>LaTeX</button>
-                    <button class="el-type-btn el-color-timer" data-el="timer" data-tooltip="Minuteur|Compte à rebours interactif"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 13l3-2"/><path d="M9 3h6"/><path d="M12 5v2"/></svg></span>Timer</button>
-                    <button class="el-type-btn el-color-iframe" data-el="iframe" data-tooltip="Iframe|Contenu web embarqué"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10l-3 2 3 2"/><path d="M16 10l3 2-3 2"/></svg></span>Iframe</button>
-                    <button class="el-type-btn el-color-qrcode" data-el="qrcode" data-tooltip="QR Code|Générer un QR code"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2z"/><path d="M18 14h3v3"/><path d="M17 18h2v3"/></svg></span>QR</button>
-                    <button class="el-type-btn el-color-smartart" data-el="smartart" data-tooltip="SmartArt|Diagrammes processus, cycle…"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="6" height="4" rx="1"/><rect x="15" y="4" width="6" height="4" rx="1"/><rect x="9" y="16" width="6" height="4" rx="1"/><path d="M9 6h6"/><path d="M6 8v4h12V8"/><path d="M12 12v4"/></svg></span>SmartArt</button>
-                    <button class="el-type-btn el-color-code-live" data-el="code-live" data-tooltip="Code Live|Éditeur + exécution Python/JS en direct"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="8 5 19 12 8 19 8 5"/></svg></span>Code Live</button>
-                    <button class="el-type-btn el-color-quiz-live" data-el="quiz-live" data-tooltip="Quiz|Quiz interactif P2P en temps réel"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="7" cy="9" r="1.5" fill="currentColor" opacity="0.5"/><path d="M10 9h8" opacity="0.7"/><circle cx="7" cy="14" r="1.5" fill="currentColor" opacity="0.5"/><path d="M10 14h6" opacity="0.7"/><circle cx="7" cy="19" r="1.5" fill="currentColor" opacity="0.5"/><path d="M10 19h5" opacity="0.5"/></svg></span>Quiz</button>
-                    <button class="el-type-btn el-color-assessment" data-el="cloze" data-tooltip="Texte à trous|Compléter des mots manquants"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16"/><path d="M16 12h4"/></svg></span>Texte à trous</button>
-                    <button class="el-type-btn el-color-assessment" data-el="mcq-single" data-tooltip="QCM simple|Une seule bonne réponse"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="5" cy="18" r="2"/><path d="M10 6h11M10 12h11M10 18h11"/></svg></span>QCM simple</button>
-                    <button class="el-type-btn el-color-assessment" data-el="mcq-multi" data-tooltip="QCM multi|Plusieurs bonnes réponses"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="4" height="4"/><rect x="3" y="10" width="4" height="4"/><rect x="3" y="16" width="4" height="4"/><path d="M10 6h11M10 12h11M10 18h11"/></svg></span>QCM multi</button>
-                    <button class="el-type-btn el-color-assessment" data-el="poll-likert" data-tooltip="Likert live|Vote 1→5 en direct"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="12" width="2.5" height="8"/><rect x="11" y="9" width="2.5" height="11"/><rect x="16" y="6" width="2.5" height="14"/></svg></span>Likert live</button>
-                    <button class="el-type-btn el-color-assessment" data-el="debate-mode" data-tooltip="Débat live|Pour / Contre"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 14l-4-4 4-4"/><path d="M17 10l4 4-4 4"/><path d="M3 10h8M13 14h8"/></svg></span>Débat</button>
-                    <button class="el-type-btn el-color-assessment" data-el="exit-ticket" data-tooltip="Exit ticket|Bilan de fin de séance"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2"/></svg></span>Exit ticket</button>
-                    <button class="el-type-btn el-color-activity" data-el="drag-drop" data-tooltip="Drag & Drop|Classer des cartes"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 10l4 4"/></svg></span>Drag&Drop</button>
-                    <button class="el-type-btn el-color-activity" data-el="rank-order" data-tooltip="Classement|Ordonner des éléments"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h10M8 18h7"/><path d="M4 5l1.5 1.5L7.5 4.5"/><path d="M4 13l1.5 1.5L7.5 12.5"/><path d="M4 21l1.5-1.5L7.5 21.5"/></svg></span>Classement</button>
-                    <button class="el-type-btn el-color-activity" data-el="kanban-mini" data-tooltip="Kanban mini|Colonnes et cartes"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="5" height="16"/><rect x="10" y="4" width="5" height="10"/><rect x="17" y="4" width="4" height="7"/></svg></span>Kanban</button>
-                    <button class="el-type-btn el-color-activity" data-el="myth-reality" data-tooltip="Mythe vs Réalité|Carte recto/verso"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg></span>Mythe/Réalité</button>
-                    <button class="el-type-btn el-color-activity" data-el="flashcards-auto" data-tooltip="Flashcards|Mode révision intégré"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="14" height="10" rx="2"/><rect x="7" y="9" width="14" height="10" rx="2"/></svg></span>Flashcards</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="postit-wall" data-tooltip="Mur Post-it live|Collecte d'idées de la salle"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H8l-4 4z"/></svg></span>Post-it live</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="audience-roulette" data-tooltip="Roulette|Tirer un étudiant aléatoirement"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg></span>Roulette</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="room-stats" data-tooltip="Stats live|Indicateurs de la salle en direct"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg></span>Stats live</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="leaderboard-live" data-tooltip="Leaderboard live|Classement dynamique de la salle"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 01-10 0V4z"/><path d="M7 6H5a2 2 0 000 4h2"/><path d="M17 6h2a2 2 0 010 4h-2"/></svg></span>Leaderboard</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="swot-grid" data-tooltip="SWOT|Forces faiblesses opportunités menaces"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="7"/><rect x="13" y="4" width="8" height="7"/><rect x="3" y="13" width="8" height="7"/><rect x="13" y="13" width="8" height="7"/></svg></span>SWOT</button>
-                    <button class="el-type-btn el-color-diagram" data-el="decision-tree" data-tooltip="Arbre de décision|Branches cliquables"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M6 8v4h6"/><path d="M18 8v4h-6"/><path d="M12 12v4"/></svg></span>Arbre décision</button>
-                    <button class="el-type-btn el-color-diagram" data-el="timeline-vertical" data-tooltip="Timeline verticale|Jalons de progression"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="4" x2="8" y2="20"/><circle cx="8" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><path d="M12 6h8M12 12h8M12 18h8"/></svg></span>Timeline V</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="code-compare" data-tooltip="Comparateur de code|Avant / Après"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="10 6 4 12 10 18"/><polyline points="14 6 20 12 14 18"/></svg></span>Code compare</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="algo-stepper" data-tooltip="Algo stepper|Pas à pas algorithmique"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16"/><polyline points="14 10 16 12 14 14"/></svg></span>Algo stepper</button>
-                    <button class="el-type-btn el-color-mediax" data-el="gallery-annotable" data-tooltip="Gallery annotable|Image + points annotés"><span class="el-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8" cy="10" r="1.5"/><polyline points="21 14 16 9 9 16"/></svg></span>Gallery annot.</button>
+                    <button class="el-type-btn el-color-video" id="btn-insert-video" data-tooltip="Vidéo|Intégrer YouTube/Vimeo"><span class="el-icon"><span class="ms">movie</span></span>Vidéo</button>
+                    <button class="el-type-btn el-color-callout" id="btn-insert-callout" data-tooltip="Callout box|Encadré info/warning/success/danger"><span class="el-icon"><span class="ms">info</span></span>Callout box</button>
+<button class="el-type-btn el-color-mermaid" data-el="mermaid" data-tooltip="Diagramme|Mermaid (graphes, flowcharts)"><span class="el-icon"><span class="ms">hub</span></span>Mermaid</button>
+                    <button class="el-type-btn el-color-diagram" data-el="diagramme" data-tooltip="Diagramme|Graphique à partir d'un tableau de données"><span class="el-icon"><span class="ms">bar_chart</span></span>Diagramme</button>
+                    <button class="el-type-btn el-color-latex" data-el="latex" data-tooltip="Équation|LaTeX / KaTeX"><span class="el-icon"><span class="ms">functions</span></span>LaTeX</button>
+                    <button class="el-type-btn el-color-timer" data-el="timer" data-tooltip="Minuteur|Compte à rebours interactif"><span class="el-icon"><span class="ms">timer</span></span>Timer</button>
+                    <button class="el-type-btn el-color-iframe" data-el="iframe" data-tooltip="Iframe|Contenu web embarqué"><span class="el-icon"><span class="ms">web</span></span>Iframe</button>
+                    <button class="el-type-btn el-color-qrcode" data-el="qrcode" data-tooltip="QR Code|Générer un QR code"><span class="el-icon"><span class="ms">qr_code</span></span>QR</button>
+                    <button class="el-type-btn el-color-smartart" data-el="smartart" data-tooltip="SmartArt|Diagrammes processus, cycle…"><span class="el-icon"><span class="ms">account_tree</span></span>SmartArt</button>
+                    <button class="el-type-btn el-color-code-live" data-el="code-live" data-tooltip="Code Live|Éditeur + exécution Python/JS en direct"><span class="el-icon"><span class="ms">play_circle</span></span>Code Live</button>
+                    <button class="el-type-btn el-color-quiz-live" data-el="quiz-live" data-tooltip="Quiz|Quiz interactif P2P en temps réel"><span class="el-icon"><span class="ms">quiz</span></span>Quiz</button>
+                    <button class="el-type-btn el-color-assessment" data-el="cloze" data-tooltip="Texte à trous|Compléter des mots manquants"><span class="el-icon"><span class="ms">format_underlined</span></span>Texte à trous</button>
+                    <button class="el-type-btn el-color-assessment" data-el="mcq-single" data-tooltip="QCM simple|Une seule bonne réponse"><span class="el-icon"><span class="ms">radio_button_checked</span></span>QCM simple</button>
+                    <button class="el-type-btn el-color-assessment" data-el="mcq-multi" data-tooltip="QCM multi|Plusieurs bonnes réponses"><span class="el-icon"><span class="ms">check_box</span></span>QCM multi</button>
+                    <button class="el-type-btn el-color-assessment" data-el="poll-likert" data-tooltip="Likert live|Vote 1→5 en direct"><span class="el-icon"><span class="ms">poll</span></span>Likert live</button>
+                    <button class="el-type-btn el-color-assessment" data-el="debate-mode" data-tooltip="Débat live|Pour / Contre"><span class="el-icon"><span class="ms">compare_arrows</span></span>Débat</button>
+                    <button class="el-type-btn el-color-assessment" data-el="exit-ticket" data-tooltip="Exit ticket|Bilan de fin de séance"><span class="el-icon"><span class="ms">assignment_turned_in</span></span>Exit ticket</button>
+                    <button class="el-type-btn el-color-activity" data-el="drag-drop" data-tooltip="Drag & Drop|Classer des cartes"><span class="el-icon"><span class="ms">open_with</span></span>Drag&Drop</button>
+                    <button class="el-type-btn el-color-activity" data-el="rank-order" data-tooltip="Classement|Ordonner des éléments"><span class="el-icon"><span class="ms">sort</span></span>Classement</button>
+                    <button class="el-type-btn el-color-activity" data-el="kanban-mini" data-tooltip="Kanban mini|Colonnes et cartes"><span class="el-icon"><span class="ms">view_column</span></span>Kanban</button>
+                    <button class="el-type-btn el-color-activity" data-el="myth-reality" data-tooltip="Mythe vs Réalité|Carte recto/verso"><span class="el-icon"><span class="ms">flip</span></span>Mythe/Réalité</button>
+                    <button class="el-type-btn el-color-activity" data-el="flashcards-auto" data-tooltip="Flashcards|Mode révision intégré"><span class="el-icon"><span class="ms">style</span></span>Flashcards</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="postit-wall" data-tooltip="Mur Post-it live|Collecte d'idées de la salle"><span class="el-icon"><span class="ms">sticky_note_2</span></span>Post-it live</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="audience-roulette" data-tooltip="Roulette|Tirer un étudiant aléatoirement"><span class="el-icon"><span class="ms">donut_small</span></span>Roulette</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="room-stats" data-tooltip="Stats live|Indicateurs de la salle en direct"><span class="el-icon"><span class="ms">monitoring</span></span>Stats live</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="leaderboard-live" data-tooltip="Leaderboard live|Classement dynamique de la salle"><span class="el-icon"><span class="ms">leaderboard</span></span>Leaderboard</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="swot-grid" data-tooltip="SWOT|Forces faiblesses opportunités menaces"><span class="el-icon"><span class="ms">grid_view</span></span>SWOT</button>
+                    <button class="el-type-btn el-color-diagram" data-el="decision-tree" data-tooltip="Arbre de décision|Branches cliquables"><span class="el-icon"><span class="ms">alt_route</span></span>Arbre décision</button>
+                    <button class="el-type-btn el-color-diagram" data-el="timeline-vertical" data-tooltip="Timeline verticale|Jalons de progression"><span class="el-icon"><span class="ms">timeline</span></span>Timeline V</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="code-compare" data-tooltip="Comparateur de code|Avant / Après"><span class="el-icon"><span class="ms">compare</span></span>Code compare</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="algo-stepper" data-tooltip="Algo stepper|Pas à pas algorithmique"><span class="el-icon"><span class="ms">format_list_numbered</span></span>Algo stepper</button>
+                    <button class="el-type-btn el-color-mediax" data-el="gallery-annotable" data-tooltip="Gallery annotable|Image + points annotés"><span class="el-icon"><span class="ms">image_search</span></span>Gallery annot.</button>
                 </div>
                 <span class="ribbon-group-label">Éléments</span>
             </div>
             <div class="ribbon-sep"></div>
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-slide-number" data-tooltip="N° de slide|Numérotation automatique"><span class="ms" style="font-size:15px;">numbers</span> N°</button>
-                    <button class="tb-btn ui-btn" id="btn-auto-chapter" data-tooltip="N° chapitres auto|Numéroter les slides chapitre automatiquement (01, 02…)"><span class="ms" style="font-size:15px;">format_list_numbered</span> Chap.</button>
-                    <button class="tb-btn ui-btn" id="btn-footer" data-tooltip="Pied de page|Texte récurrent en bas"><span class="ms" style="font-size:15px;">border_bottom</span> Pied</button>
-                    <button class="tb-btn ui-btn" id="btn-layout-preset" data-tooltip="Dispositions & Masters|Choisir une disposition ou un master réutilisable"><span class="ms" style="font-size:15px;">dashboard_customize</span> Dispo./Master</button>
-                    <button class="tb-btn ui-btn" id="btn-block-presets" data-tooltip="Blocs pédagogiques|Insérer une séquence de slides prête à l'emploi"><span class="ms" style="font-size:15px;">auto_awesome_motion</span> Blocs</button>
+                    <button class="tb-btn ui-btn" id="btn-slide-number" data-tooltip="N° de slide|Numérotation automatique"><span class="ms">numbers</span> N°</button>
+                    <button class="tb-btn ui-btn" id="btn-auto-chapter" data-tooltip="N° chapitres auto|Numéroter les slides chapitre automatiquement (01, 02…)"><span class="ms">format_list_numbered</span> Chap.</button>
+                    <button class="tb-btn ui-btn" id="btn-footer" data-tooltip="Pied de page|Texte récurrent en bas"><span class="ms">border_bottom</span> Pied</button>
+                    <button class="tb-btn ui-btn" id="btn-layout-preset" data-tooltip="Dispositions & Masters|Choisir une disposition ou un master réutilisable"><span class="ms">dashboard_customize</span> Dispo./Master</button>
+                    <button class="tb-btn ui-btn" id="btn-block-presets" data-tooltip="Blocs pédagogiques|Insérer une séquence de slides prête à l'emploi"><span class="ms">auto_awesome_motion</span> Blocs</button>
                 </div>
                 <span class="ribbon-group-label">En-tête / Pied</span>
             </div>
             <div class="ribbon-sep" id="ribbon-insert-sep"></div>
             <div class="ribbon-group" id="ribbon-insert-actions">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-del-element" data-tooltip="Supprimer l'élément" data-shortcut="Suppr"><span class="ms" style="font-size:15px;">delete</span></button>
-                    <button class="tb-btn ui-btn" id="btn-convert-canvas" data-tooltip="Convertir en canvas"><span class="ms" style="font-size:15px;">edit_square</span></button>
+                    <button class="tb-btn ui-btn" id="btn-del-element" data-tooltip="Supprimer l'élément" data-shortcut="Suppr"><span class="ms">delete</span></button>
+                    <button class="tb-btn ui-btn" id="btn-convert-canvas" data-tooltip="Convertir en canvas"><span class="ms">edit_square</span></button>
                 </div>
                 <span class="ribbon-group-label">Actions</span>
             </div>
@@ -281,10 +281,10 @@
             <!-- C5: BG Image + C6: Gradient -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-bg-image" data-tooltip="Image de fond|URL ou upload"><span class="ms" style="font-size:15px;">wallpaper</span></button>
-                    <button class="tb-btn ui-btn" id="btn-gradient" data-tooltip="Dégradé|Fond en dégradé linéaire"><span class="ms" style="font-size:15px;">gradient</span></button>
+                    <button class="tb-btn ui-btn" id="btn-bg-image" data-tooltip="Image de fond|URL ou upload"><span class="ms">wallpaper</span></button>
+                    <button class="tb-btn ui-btn" id="btn-gradient" data-tooltip="Dégradé|Fond en dégradé linéaire"><span class="ms">gradient</span></button>
                     <!-- C7: Apply to all -->
-                    <button class="tb-btn ui-btn" id="btn-apply-all-bg" data-tooltip="Appliquer à tous|Applique fond + transition à tous les slides"><span class="ms" style="font-size:15px;">layers</span></button>
+                    <button class="tb-btn ui-btn" id="btn-apply-all-bg" data-tooltip="Appliquer à tous|Applique fond + transition à tous les slides"><span class="ms">layers</span></button>
                 </div>
                 <span class="ribbon-group-label">Arrière-plan</span>
             </div>
@@ -305,7 +305,7 @@
                         <label class="ribbon-label">Durée</label>
                         <input type="range" id="transition-duration" class="fmt-range" min="200" max="2000" value="500">
                         <span id="transition-duration-label" class="fmt-value-label">500ms</span>
-                        <button class="tb-btn ui-btn tb-btn-xs" id="btn-preview-transition" data-tooltip="Aperçu"><span class="ms" style="font-size:13px;">play_arrow</span></button>
+                        <button class="tb-btn ui-btn tb-btn-xs" id="btn-preview-transition" data-tooltip="Aperçu"><span class="ms">play_arrow</span></button>
                     </div>
                 </div>
                 <span class="ribbon-group-label">Transition</span>
@@ -317,7 +317,7 @@
                     <div class="fmt-field"><label class="fmt-label-micro">Titre</label><input type="color" id="override-heading" value="#000000" class="fmt-color-input-compact"></div>
                     <div class="fmt-field"><label class="fmt-label-micro">Texte</label><input type="color" id="override-text" value="#000000" class="fmt-color-input-compact"></div>
                     <div class="fmt-field"><label class="fmt-label-micro">Accent</label><input type="color" id="override-primary" value="#000000" class="fmt-color-input-compact"></div>
-                    <button class="tb-btn ui-btn tb-btn-mini-text" id="btn-clear-override" data-tooltip="Réinitialiser|Supprimer les surcharges de ce slide"><span class="ms" style="font-size:13px;">restart_alt</span></button>
+                    <button class="tb-btn ui-btn tb-btn-mini-text" id="btn-clear-override" data-tooltip="Réinitialiser|Supprimer les surcharges de ce slide"><span class="ms">restart_alt</span></button>
                 </div>
                 <span class="ribbon-group-label">Thème du slide</span>
             </div>
@@ -391,22 +391,22 @@
                         </button>
                         <button class="split-btn-arrow ui-btn" id="split-export-arrow" aria-label="Options d'export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
                         <div class="split-dropdown hidden" id="split-export-menu">
-                            <button class="tb-dropdown-item" id="btn-export-pdf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF</button>
-                            <button class="tb-dropdown-item" id="btn-export-html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> HTML autonome</button>
-                            <button class="tb-dropdown-item" id="btn-export-html-offline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> HTML offline (tout intégré)</button>
-                            <button class="tb-dropdown-item" id="btn-export-png"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> PNG (slide actuel)</button>
-                            <button class="tb-dropdown-item" id="btn-export-png-batch"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="18" height="18" rx="2"/></svg> PNG batch (ZIP)</button>
-                            <button class="tb-dropdown-item" id="btn-export-pptx"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h2v4H9z"/></svg> PowerPoint (PPTX)</button>
-                            <button class="tb-dropdown-item" id="btn-export-md"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4h20v16H2z"/><path d="M7 15V9l2.5 3L12 9v6"/></svg> Markdown</button>
-                            <button class="tb-dropdown-item" id="btn-optimize-media"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/><path d="M8 11h6"/><path d="M11 8v6"/></svg> Optimiser les médias</button>
+                            <button class="tb-dropdown-item" id="btn-export-pdf"><span class="ms">picture_as_pdf</span> PDF</button>
+                            <button class="tb-dropdown-item" id="btn-export-html"><span class="ms">code</span> HTML autonome</button>
+                            <button class="tb-dropdown-item" id="btn-export-html-offline"><span class="ms">offline_bolt</span> HTML offline (tout intégré)</button>
+                            <button class="tb-dropdown-item" id="btn-export-png"><span class="ms">image</span> PNG (slide actuel)</button>
+                            <button class="tb-dropdown-item" id="btn-export-png-batch"><span class="ms">photo_library</span> PNG batch (ZIP)</button>
+                            <button class="tb-dropdown-item" id="btn-export-pptx"><span class="ms">slideshow</span> PowerPoint (PPTX)</button>
+                            <button class="tb-dropdown-item" id="btn-export-md"><span class="ms">description</span> Markdown</button>
+                            <button class="tb-dropdown-item" id="btn-optimize-media"><span class="ms">compress</span> Optimiser les médias</button>
                             <div class="tb-dropdown-sep"></div>
-                            <button class="tb-dropdown-item" id="btn-print-notes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg> Imprimer les notes orateur</button>
-                            <button class="tb-dropdown-item" id="btn-export-notes-md"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h2v4H8z"/><path d="M14 13l-2 2 2 2"/></svg> Notes orateur → Markdown</button>
+                            <button class="tb-dropdown-item" id="btn-print-notes"><span class="ms">print</span> Imprimer les notes orateur</button>
+                            <button class="tb-dropdown-item" id="btn-export-notes-md"><span class="ms">speaker_notes</span> Notes orateur → Markdown</button>
                             <div class="tb-dropdown-sep"></div>
-                            <button class="tb-dropdown-item" id="btn-qr-slide"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4"/><rect x="18" y="18" width="4" height="4"/></svg> Slide QR code</button>
-                            <button class="tb-dropdown-item" id="btn-save-firebase"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Sauvegarder sur Firebase</button>
-                            <button class="tb-dropdown-item" id="btn-export-student"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8M8 11h6"/></svg> Export étudiant (HTML)</button>
-                            <button class="tb-dropdown-item" id="btn-export-course-pack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v2H3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 15h8"/></svg> Pack cours (ZIP)</button>
+                            <button class="tb-dropdown-item" id="btn-qr-slide"><span class="ms">qr_code_2</span> Slide QR code</button>
+                            <button class="tb-dropdown-item" id="btn-save-firebase"><span class="ms">bolt</span> Sauvegarder sur Firebase</button>
+                            <button class="tb-dropdown-item" id="btn-export-student"><span class="ms">school</span> Export étudiant (HTML)</button>
+                            <button class="tb-dropdown-item" id="btn-export-course-pack"><span class="ms">folder_zip</span> Pack cours (ZIP)</button>
                         </div>
                     </div>
                 </div>
@@ -424,15 +424,15 @@
                         <button class="split-btn-arrow ui-btn" id="split-presenter-arrow" aria-label="Options de présentation" data-tooltip="Options de présentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
                         <div class="split-dropdown hidden" id="split-presenter-menu">
                             <button class="tb-dropdown-item" id="menu-present-normal">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <span class="ms">play_arrow</span>
                                 <div>Depuis le début<div class="menu-desc">Diaporama plein écran (F5)</div></div>
                             </button>
                             <button class="tb-dropdown-item" id="menu-present-current">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="10 3 22 12 10 21 10 3"/><line x1="3" y1="5" x2="3" y2="19" stroke-width="2.5"/></svg>
+                                <span class="ms">skip_next</span>
                                 <div>Depuis la slide actuelle<div class="menu-desc">Reprendre à la slide sélectionnée</div></div>
                             </button>
                             <button class="tb-dropdown-item" id="menu-present-speaker">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+                                <span class="ms">co_present</span>
                                 <div>Mode présentateur<div class="menu-desc">Avec notes, slide suivant et minuteur</div></div>
                             </button>
                         </div>
@@ -444,11 +444,11 @@
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
                     <div class="zoom-controls" id="zoom-controls">
-                        <button class="tb-btn ui-btn" id="zoom-out" data-tooltip="Dézoomer"><span class="ms" style="font-size:15px;">zoom_out</span></button>
+                        <button class="tb-btn ui-btn" id="zoom-out" data-tooltip="Dézoomer"><span class="ms">zoom_out</span></button>
                         <input type="range" id="zoom-slider" min="25" max="200" value="100">
                         <span class="zoom-label" id="zoom-label">100%</span>
-                        <button class="tb-btn ui-btn" id="zoom-in" data-tooltip="Zoomer"><span class="ms" style="font-size:15px;">zoom_in</span></button>
-                        <button class="tb-btn ui-btn" id="zoom-fit" data-tooltip="Ajuster"><span class="ms" style="font-size:15px;">fit_screen</span></button>
+                        <button class="tb-btn ui-btn" id="zoom-in" data-tooltip="Zoomer"><span class="ms">zoom_in</span></button>
+                        <button class="tb-btn ui-btn" id="zoom-fit" data-tooltip="Ajuster"><span class="ms">fit_screen</span></button>
                     </div>
                 </div>
                 <span class="ribbon-group-label">Zoom</span>
@@ -456,17 +456,17 @@
             <div class="ribbon-sep"></div>
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-toggle-outline" data-tooltip="Mode plan"><span class="ms" style="font-size:15px;">list</span></button>
+                    <button class="tb-btn ui-btn" id="btn-toggle-outline" data-tooltip="Mode plan"><span class="ms">list</span></button>
                     <!-- D5: Sorter -->
-                    <button class="tb-btn ui-btn" id="btn-sorter" data-tooltip="Trieuse|Vue grille de toutes les diapositives"><span class="ms" style="font-size:15px;">grid_view</span></button>
+                    <button class="tb-btn ui-btn" id="btn-sorter" data-tooltip="Trieuse|Vue grille de toutes les diapositives"><span class="ms">grid_view</span></button>
                     <!-- D6: Editor theme toggle -->
-                    <button class="tb-btn ui-btn" id="btn-ribbon-theme-toggle" data-tooltip="Thème éditeur|Clair / Sombre"><span class="ms" style="font-size:15px;">light_mode</span></button>
-                    <button class="tb-btn ui-btn" id="btn-markdown-mode" data-tooltip="Brouillon Markdown|Éditer les slides en Markdown"><span class="ms" style="font-size:15px;">edit_note</span></button>
-                    <button class="tb-btn ui-btn" id="btn-toggle-grid" data-tooltip="Grille magnétique|Afficher/masquer la grille d'accrochage"><span class="ms" style="font-size:15px;">grid_on</span></button>
-                    <button class="tb-btn ui-btn" id="btn-checker" data-tooltip="Vérifier la présentation|Détecte les problèmes courants"><span class="ms" style="font-size:15px;">fact_check</span></button>
-                    <button class="tb-btn ui-btn" id="btn-assets-manager" data-tooltip="Assets|Inventaire et remplacement des URLs médias"><span class="ms" style="font-size:15px;">perm_media</span> Assets</button>
-                    <button class="tb-btn ui-btn" id="btn-design-tokens" data-tooltip="Design tokens|Styles globaux (couleurs, typo, layout)"><span class="ms" style="font-size:15px;">palette</span> Tokens</button>
-                    <button class="tb-btn ui-btn" id="btn-widget-plugins" data-tooltip="Plugins widgets|Installer des widgets via manifest JSON"><span class="ms" style="font-size:15px;">extension</span> Plugins</button>
+                    <button class="tb-btn ui-btn" id="btn-ribbon-theme-toggle" data-tooltip="Thème éditeur|Clair / Sombre"><span class="ms">light_mode</span></button>
+                    <button class="tb-btn ui-btn" id="btn-markdown-mode" data-tooltip="Brouillon Markdown|Éditer les slides en Markdown"><span class="ms">edit_note</span></button>
+                    <button class="tb-btn ui-btn" id="btn-toggle-grid" data-tooltip="Grille magnétique|Afficher/masquer la grille d'accrochage"><span class="ms">grid_on</span></button>
+                    <button class="tb-btn ui-btn" id="btn-checker" data-tooltip="Vérifier la présentation|Détecte les problèmes courants"><span class="ms">fact_check</span></button>
+                    <button class="tb-btn ui-btn" id="btn-assets-manager" data-tooltip="Assets|Inventaire et remplacement des URLs médias"><span class="ms">perm_media</span> Assets</button>
+                    <button class="tb-btn ui-btn" id="btn-design-tokens" data-tooltip="Design tokens|Styles globaux (couleurs, typo, layout)"><span class="ms">palette</span> Tokens</button>
+                    <button class="tb-btn ui-btn" id="btn-widget-plugins" data-tooltip="Plugins widgets|Installer des widgets via manifest JSON"><span class="ms">extension</span> Plugins</button>
                 </div>
                 <span class="ribbon-group-label">Vue</span>
             </div>
@@ -487,12 +487,13 @@
             <!-- Apparence -->
             <div class="ribbon-group" id="fmt-appearance-group">
                 <div class="ribbon-group-content">
-                    <div class="fmt-section"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M21 8A9 9 0 005.64 5.64"/></svg><input type="range" id="fmt-rotation" class="fmt-range" min="0" max="360" value="0"><span id="fmt-rotation-label" class="fmt-value-label">0°</span></div>
-                    <div class="fmt-section"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.5"/></svg><input type="range" id="fmt-opacity" class="fmt-range" min="0" max="100" value="100"><span id="fmt-opacity-label" class="fmt-value-label">100%</span></div>
+                    <div class="fmt-section"><span class="ms">rotate_right</span><input type="range" id="fmt-rotation" class="fmt-range" min="0" max="360" value="0"><span id="fmt-rotation-label" class="fmt-value-label">0°</span></div>
+                    <div class="fmt-section"><span class="ms">opacity</span><input type="range" id="fmt-opacity" class="fmt-range" min="0" max="100" value="100"><span id="fmt-opacity-label" class="fmt-value-label">100%</span></div>
                     <input type="color" id="fmt-fill-color" value="#818cf8" data-tooltip="Couleur de fond / remplissage">
                     <input type="color" id="fmt-border-color" value="#666666">
                     <div class="fmt-section"><input type="range" id="fmt-border-width" class="fmt-range" min="0" max="10" value="0"><span id="fmt-border-width-label" class="fmt-value-label">0px</span></div>
                     <div class="fmt-section"><input type="range" id="fmt-border-radius" class="fmt-range" min="0" max="50" value="0"><span id="fmt-border-radius-label" class="fmt-value-label">0px</span></div>
+                    <!-- fmt-shadow : pictogramme "ombre portée" sur mesure (2 carrés décalés), pas d'équivalent Material Symbols non ambigu — laissé en SVG (cf. audit UI/UX B2) -->
                     <button class="fmt-toggle" id="fmt-shadow" data-tooltip="Ombre portée"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="2"/><rect x="7" y="7" width="14" height="14" rx="2" opacity="0.3"/></svg></button>
                 </div>
                 <span class="ribbon-group-label">Apparence</span>
@@ -516,9 +517,9 @@
             <!-- Paragraphe -->
             <div class="ribbon-group" id="fmt-paragraph-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="fmt-align-left" data-tooltip="Gauche"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-align-center" data-tooltip="Centrer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-align-right" data-tooltip="Droite"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg></button>
+                    <button class="tb-btn ui-btn" id="fmt-align-left" data-tooltip="Gauche"><span class="ms">format_align_left</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-align-center" data-tooltip="Centrer"><span class="ms">format_align_center</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-align-right" data-tooltip="Droite"><span class="ms">format_align_right</span></button>
                 </div>
                 <span class="ribbon-group-label">Paragraphe</span>
             </div>
@@ -526,15 +527,15 @@
             <!-- Organiser -->
             <div class="ribbon-group" id="fmt-organize-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="fmt-z-up" data-tooltip="Avancer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="14" width="10" height="8" rx="1"/><rect x="10" y="2" width="10" height="8" rx="1" fill="color-mix(in srgb, currentColor 15%, transparent)"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-z-down" data-tooltip="Reculer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="14" width="10" height="8" rx="1"/><rect x="4" y="2" width="10" height="8" rx="1" fill="color-mix(in srgb, currentColor 15%, transparent)"/></svg></button>
-                    <button class="fmt-toggle" id="fmt-lock" data-tooltip="Verrouiller"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-group" data-tooltip="Grouper"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M14 7h3a2 2 0 012 2v3M10 17H7a2 2 0 01-2-2v-3"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-ungroup" data-tooltip="Dégrouper"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-duplicate" data-tooltip="Dupliquer" data-shortcut="Ctrl+D"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16V4a2 2 0 012-2h12"/></svg></button>
-                    <button class="tb-btn ui-btn" id="btn-pipette" data-tooltip="Pipette de style|Copie le style d'un élément et l'applique à un autre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.71 5.63l-2.34-2.34a1 1 0 00-1.42 0l-3.12 3.12-1.41-1.42-1.42 1.42 1.42 1.41-7.07 7.07a1 1 0 00-.29.71V18h2.83a1 1 0 00.71-.29l7.07-7.07 1.41 1.42 1.42-1.42-1.42-1.41 3.12-3.12a1 1 0 000-1.48z"/></svg></button>
-                    <button class="tb-btn ui-btn" id="btn-fit-content" data-tooltip="Ajuster à la taille du contenu|Redimensionne la hauteur automatiquement"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 3H3"/><path d="M21 21H3"/><path d="M12 7v10"/><polyline points="8 11 12 7 16 11"/><polyline points="8 17 12 21 16 17"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-delete" data-tooltip="Supprimer" data-shortcut="Suppr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                    <button class="tb-btn ui-btn" id="fmt-z-up" data-tooltip="Avancer"><span class="ms">flip_to_front</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-z-down" data-tooltip="Reculer"><span class="ms">flip_to_back</span></button>
+                    <button class="fmt-toggle" id="fmt-lock" data-tooltip="Verrouiller"><span class="ms">lock</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-group" data-tooltip="Grouper"><span class="ms">group_work</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-ungroup" data-tooltip="Dégrouper"><span class="ms">ungroup</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-duplicate" data-tooltip="Dupliquer" data-shortcut="Ctrl+D"><span class="ms">content_copy</span></button>
+                    <button class="tb-btn ui-btn" id="btn-pipette" data-tooltip="Pipette de style|Copie le style d'un élément et l'applique à un autre"><span class="ms">colorize</span></button>
+                    <button class="tb-btn ui-btn" id="btn-fit-content" data-tooltip="Ajuster à la taille du contenu|Redimensionne la hauteur automatiquement"><span class="ms">unfold_more</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-delete" data-tooltip="Supprimer" data-shortcut="Suppr"><span class="ms">delete</span></button>
                 </div>
                 <span class="ribbon-group-label">Organiser</span>
             </div>
@@ -542,15 +543,15 @@
             <!-- Align/Distribute (multi-select) -->
             <div class="ribbon-group" id="fmt-align-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="fmt-el-align-left" data-tooltip="Aligner gauche"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="2" x2="4" y2="22"/><rect x="7" y="4" width="13" height="5" rx="1"/><rect x="7" y="13" width="8" height="5" rx="1"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-ch" data-tooltip="Centrer H"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><rect x="5" y="4" width="14" height="5" rx="1"/><rect x="7" y="13" width="10" height="5" rx="1"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-right" data-tooltip="Aligner droite"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="20" y1="2" x2="20" y2="22"/><rect x="4" y="4" width="13" height="5" rx="1"/><rect x="9" y="13" width="8" height="5" rx="1"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-top" data-tooltip="Aligner haut"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="4" x2="22" y2="4"/><rect x="4" y="7" width="5" height="13" rx="1"/><rect x="13" y="7" width="5" height="8" rx="1"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-cv" data-tooltip="Centrer V"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><rect x="4" y="5" width="5" height="14" rx="1"/><rect x="13" y="7" width="5" height="10" rx="1"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-bottom" data-tooltip="Aligner bas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="20" x2="22" y2="20"/><rect x="4" y="4" width="5" height="13" rx="1"/><rect x="13" y="9" width="5" height="8" rx="1"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-dist-h" data-tooltip="Distribuer H"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="2" x2="4" y2="22"/><line x1="20" y1="2" x2="20" y2="22"/><rect x="8" y="6" width="8" height="5" rx="1"/><rect x="8" y="13" width="8" height="5" rx="1"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-dist-v" data-tooltip="Distribuer V"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="4" x2="22" y2="4"/><line x1="2" y1="20" x2="22" y2="20"/><rect x="6" y="8" width="5" height="8" rx="1"/><rect x="13" y="8" width="5" height="8" rx="1"/></svg></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-auto-layout" data-tooltip="Auto-layout intelligent|Réorganiser la sélection en grille lisible"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-left" data-tooltip="Aligner gauche"><span class="ms">align_horizontal_left</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-ch" data-tooltip="Centrer H"><span class="ms">align_horizontal_center</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-right" data-tooltip="Aligner droite"><span class="ms">align_horizontal_right</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-top" data-tooltip="Aligner haut"><span class="ms">align_vertical_top</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-cv" data-tooltip="Centrer V"><span class="ms">align_vertical_center</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-bottom" data-tooltip="Aligner bas"><span class="ms">align_vertical_bottom</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-dist-h" data-tooltip="Distribuer H"><span class="ms">horizontal_distribute</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-dist-v" data-tooltip="Distribuer V"><span class="ms">vertical_distribute</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-auto-layout" data-tooltip="Auto-layout intelligent|Réorganiser la sélection en grille lisible"><span class="ms">grid_view</span></button>
                 </div>
                 <span class="ribbon-group-label">Aligner</span>
             </div>

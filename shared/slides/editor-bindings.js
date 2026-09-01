@@ -819,7 +819,9 @@ function initInsertionGroupFilter() {
         if (!sourceId || seenSource.has(sourceId)) return;
         seenSource.add(sourceId);
         const grp = byElType[elType] || byId[btn.id] || 'content';
-        const rawLabel = (btn.textContent || '').replace('▾', '').trim();
+        const labelSource = btn.cloneNode(true);
+        labelSource.querySelector('.el-icon')?.remove();
+        const rawLabel = (labelSource.textContent || '').replace('▾', '').trim();
         const label = rawLabel || 'Élément';
         const iconHtml = btn.querySelector('.el-icon')?.innerHTML || icon(grp) || icon('text');
 

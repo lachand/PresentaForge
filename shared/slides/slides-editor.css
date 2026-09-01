@@ -437,6 +437,16 @@ html, body {
     background: var(--primary-hover); color: var(--on-primary);
 }
 .tb-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+.tb-btn .ms { font-size: 16px; }
+
+/* B2 audit — trigger palette de commandes (ex-styles inline sur #btn-command-palette) */
+.cmdk-trigger { font-size: 0.7rem; gap: 3px; padding: 0 8px; opacity: 0.65; }
+.cmdk-trigger .ms { font-size: 14px; }
+.cmdk-trigger kbd {
+    font-size: 0.65rem; background: var(--surface-container-highest);
+    border: 1px solid var(--border); border-radius: 3px; padding: 0 4px;
+    pointer-events: none;
+}
 
 /* Bouton en cours de chargement (export, import long) */
 @keyframes tb-spin { to { transform: rotate(360deg); } }
@@ -486,6 +496,7 @@ html, body {
     transition: background var(--transition-fast);
 }
 .tb-dropdown-item:hover { background: var(--surface-container-high); color: var(--on-surface); }
+.tb-dropdown-item .ms { color: var(--primary); flex-shrink: 0; font-size: 14px; }
 .tb-dropdown-item .dd-key {
     margin-left: auto; font-size: 0.68rem; color: var(--on-surface-muted);
     font-family: var(--mono);
@@ -617,6 +628,7 @@ html, body {
     color: var(--muted);
 }
 .el-type-btn .el-icon { font-size: 1.15rem; line-height: 1; display: flex; }
+.el-type-btn .el-icon .ms { font-size: 1.15rem; }
 .el-type-btn:hover {
     color: var(--el-color, var(--primary));
     background: var(--surface-container-highest);
@@ -1504,7 +1516,8 @@ html, body {
 }
 .split-dropdown.hidden { display: none; }
 #split-presenter-menu .tb-dropdown-item { gap: 10px; align-items: flex-start; }
-#split-presenter-menu .tb-dropdown-item svg { flex-shrink: 0; color: var(--primary); margin-top: 1px; }
+#split-presenter-menu .tb-dropdown-item svg,
+#split-presenter-menu .tb-dropdown-item .ms { flex-shrink: 0; color: var(--primary); margin-top: 1px; font-size: 16px; }
 #split-presenter-menu .menu-desc { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
 
 /* F3: Rich Tooltips */
@@ -2228,6 +2241,10 @@ html, body {
 }
 .fmt-section svg { color: var(--muted); flex-shrink: 0; }
 .fmt-section:hover svg { color: var(--primary); }
+.fmt-section .ms { color: var(--muted); flex-shrink: 0; font-size: 12px; }
+.fmt-section:hover .ms { color: var(--primary); }
+/* B2 audit — ruban dense (P2-6) : icônes .ms du panneau Format resserrées à 14px */
+#ribbon-format .tb-btn .ms { font-size: 14px; }
 .fmt-section-label { font-size: 0.55rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .fmt-range { width: 60px; height: 4px; accent-color: var(--primary); }
 .fmt-text-input {
@@ -2301,6 +2318,7 @@ html, body {
 }
 .fmt-toggle:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); }
 .fmt-toggle.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.fmt-toggle .ms { font-size: 12px; }
 
 /* ── Image fit selector ── */
 .fit-selector { display: flex; gap: 2px; }
@@ -2378,6 +2396,7 @@ select:focus,
     padding: 2px 5px;
     font-size: 0.6rem;
 }
+.tb-btn-xs .ms { font-size: 13px; }
 .fmt-label-micro {
     font-size: 0.6rem;
     color: var(--muted);
@@ -2388,6 +2407,7 @@ select:focus,
     padding: 0;
 }
 .tb-btn-mini-text { font-size: 0.6rem; }
+.tb-btn-mini-text .ms { font-size: 13px; }
 #slide-padding { width: 50px; }
 #fmt-rotation-label { min-width: 22px; }
 #fmt-opacity-label { min-width: 28px; }
@@ -4267,6 +4287,7 @@ body.is-loading #preview-frame {
     cursor: default;
     margin-left: 2px;
 }
+.fb-cloud-badge .ms { font-size: 14px; }
 .fb-cloud-badge.state-syncing { color: var(--warning); animation: fb-spin 1.2s linear infinite; }
 .fb-cloud-badge.state-saved   { color: var(--success); }
 .fb-cloud-badge.state-error   { color: var(--danger); }

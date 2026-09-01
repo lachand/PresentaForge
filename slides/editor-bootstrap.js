@@ -110,7 +110,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-enhancements.js?v=4'],
     ['../shared/slides/editor-resize.js?v=10'],
     ['../shared/slides/editor-checker.js?v=12'],
-    ['../shared/slides/editor-bindings.js?v=22'],
+    ['../shared/slides/editor-bindings.js?v=23'],
     ['../shared/slides/editor-main.js?v=3'],
 ]);
 
