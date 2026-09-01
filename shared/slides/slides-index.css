@@ -54,7 +54,7 @@ body {
 }
 .tn-action-btn:hover { background: var(--surface-container-high); }
 .tn-action-btn:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
-.tn-action-btn svg { width: 16px; height: 16px; }
+.tn-action-btn .ms { font-size: 18px; }
 
 #btn-sidebar-toggle {
     display: none;
@@ -68,7 +68,7 @@ body {
     flex-shrink: 0;
 }
 #btn-sidebar-toggle:hover { background: var(--surface-container-high); }
-#btn-sidebar-toggle svg { width: 18px; height: 18px; }
+#btn-sidebar-toggle .ms { font-size: 20px; }
 
 #sidebar-backdrop {
     display: none;
@@ -121,7 +121,7 @@ body {
     display: flex; align-items: center; justify-content: center;
     color: var(--on-primary); flex-shrink: 0;
 }
-.sn-brand-icon svg { width: 18px; height: 18px; }
+.sn-brand-icon .ms { font-size: 20px; }
 .sn-brand-name {
     font-family: var(--font-editorial);
     font-size: 0.875rem; font-weight: 700;
@@ -146,7 +146,7 @@ body {
 }
 .sn-new-btn:hover { background: var(--primary-hover); }
 .sn-new-btn:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
-.sn-new-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.sn-new-btn .ms { font-size: 16px; }
 
 .sn-section-label {
     font-size: 0.6rem; font-weight: 700;
@@ -175,7 +175,7 @@ body {
     font-weight: 600;
     box-shadow: inset 4px 0 0 var(--primary);
 }
-.sn-nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.sn-nav-item .ms { font-size: 18px; }
 
 .sn-spacer { flex: 1; min-height: 16px; }
 .sn-footer { padding-top: 12px; border-top: 1px solid var(--outline-variant); }
@@ -255,7 +255,7 @@ body {
 }
 .db-feature-btn:hover { background: var(--primary-hover); }
 .db-feature-btn:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
-.db-feature-btn svg { width: 13px; height: 13px; }
+.db-feature-btn .ms { font-size: 15px; }
 
 .db-blank-card {
     border: 1px dashed var(--outline-variant);
@@ -283,7 +283,7 @@ body {
     transition: background 0.15s, color 0.15s;
 }
 .db-blank-card:hover .db-blank-icon { background: var(--primary-fixed); color: var(--primary); }
-.db-blank-icon svg { width: 20px; height: 20px; }
+.db-blank-icon .ms { font-size: 22px; }
 .db-blank-card span { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface-variant); }
 .db-blank-card small { font-size: 0.7rem; color: var(--on-surface-muted); }
 .db-blank-card--firebase.connected {
@@ -349,7 +349,7 @@ body {
     color: var(--on-surface);
     display: flex; align-items: center; gap: 8px;
 }
-.db-section-head h2 svg { width: 15px; height: 15px; color: var(--on-surface-variant); }
+.db-section-head h2 .ms { font-size: 17px; color: var(--on-surface-variant); }
 .db-section-meta { font-size: 0.75rem; color: var(--on-surface-muted); }
 
 /* ── Filter tools ────────────────────────────────────────── */
