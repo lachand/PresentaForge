@@ -63,6 +63,7 @@
 
         const params = new URLSearchParams(location.search);
         const roomId = params.get('room');
+        const reviseParam = params.get('revise');
 
         const toSafeString = typeof NetworkSession.toSafeString === 'function'
             ? NetworkSession.toSafeString
@@ -103,6 +104,12 @@
 
         document.getElementById('theme-toggle')?.addEventListener('click', window.OEIStudentThemeToggle);
 
+        // ── Révision hors salle : student.html?revise=<courseKey> ─────────
+        if (!roomId && reviseParam) {
+            startOfflineRevise(reviseParam);
+            return;
+        }
+
         if (!roomId) {
             // Show manual room ID input + QR scan
             const roomInputRow = document.getElementById('room-input-row');
@@ -115,6 +122,8 @@
 
             if (roomInputRow) roomInputRow.classList.add('visible');
             setJoinStatus('Entrez l\'ID de la salle ou scannez le QR code.', 'info');
+            renderReviseHome();
+            bindReviseImport();
 
             if (joinBtn) {
                 joinBtn.disabled = false;
@@ -175,6 +184,202 @@
             }
             if (qrClose) qrClose.addEventListener('click', stopQr);
             return;
+        }
+
+        // ── Bottom-nav mobile : sélectionne le panneau secondaire visible ──
+        function bindBottomNav() {
+            const mv = document.getElementById('main-view');
+            const items = document.querySelectorAll('#student-bottomnav .ui-bottomnav-item');
+            if (!mv || !items.length) return;
+            mv.dataset.mtab = 'slide';
+            const setTab = (tab) => {
+                mv.dataset.mtab = tab;
+                items.forEach(b => {
+                    const on = b.dataset.mtab === tab;
+                    b.classList.toggle('is-active', on);
+                    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+                if (tab === 'notes') document.getElementById('notes-panel')?.setAttribute('open', '');
+            };
+            items.forEach(b => b.addEventListener('click', () => setTab(b.dataset.mtab)));
+        }
+
+        // ── Transport factice (mode révision hors salle : aucun réseau) ──
+        function makeNoopTransport() {
+            const noop = () => {};
+            return {
+                setConnectionDetail: noop, setConnectionState: noop, setConnected: noop,
+                canSend: () => false, send: () => false, sendReliable: () => null,
+                clearPendingAck: noop, clearAllPendingAcks: noop, pendingAcksSize: () => 0,
+                flushReliableQueue: noop, requestResync: noop, sendTelemetry: () => false,
+                startTelemetryLoop: noop, stopTelemetryLoop: noop, startConnectionWatchdog: noop,
+                setReliableQueueScope: noop, restoreReliableQueue: noop,
+                isResyncPending: () => false, markResyncApplied: noop, clearResyncMonitor: noop,
+                connect: noop, forceReconnectNow: noop, bindLifecycleEvents: noop,
+                RELAY_OPTIONS: { enabled: false, wsUrl: '', token: '' },
+            };
+        }
+
+        // ── Écran de choix « Revoir tout le cours » / « Réviser (N) » ──
+        function showReviseChoice(H, courseKey) {
+            const overlay = document.getElementById('revise-choice');
+            const title = document.getElementById('revise-choice-title');
+            const btnAll = document.getElementById('revise-choice-all');
+            const btnDue = document.getElementById('revise-choice-due');
+            if (!overlay || !btnAll || !btnDue) { H.render.showSlide(0); return; }
+            const meta = H.storage.loadReviseArchive()?.meta || {};
+            const due = H.storage.reviseDueCount(courseKey);
+            if (title) title.textContent = meta.title || 'Réviser';
+            btnDue.textContent = due > 0 ? `Réviser (${due} à revoir)` : 'Réviser';
+            btnDue.disabled = false;
+            overlay.hidden = false;
+            const start = (revise) => {
+                overlay.hidden = true;
+                if (revise) {
+                    H.revision.setMode(true);
+                    const deck = H.revision.orderedDeck();
+                    H.render.showSlide(deck.length ? deck[0] : 0);
+                } else {
+                    H.render.showSlide(0);
+                }
+            };
+            btnAll.addEventListener('click', () => start(false), { once: true });
+            btnDue.addEventListener('click', () => start(true), { once: true });
+        }
+
+        // ── Mode révision hors salle ─────────────────────────────────────
+        function startOfflineRevise(courseKeyRaw) {
+            const courseKey = String(courseKeyRaw || '').trim();
+            document.body.classList.add('revise-offline');
+
+            const storage = window.OEIStudentStorage.create({ roomId: '' });
+            storage.setCourseKey(courseKey);
+            const archive = storage.loadReviseArchive();
+            if (!courseKey || !archive || !archive.deck) {
+                document.body.classList.remove('revise-offline');
+                const row = document.getElementById('room-input-row');
+                if (row) row.classList.add('visible');
+                setJoinStatus('Cours introuvable sur cet appareil. Importez votre fichier de révision.', 'error');
+                renderReviseHome();
+                return;
+            }
+
+            const state = {
+                pseudo: '', transportMode: 'p2p', connectionState: CONNECTION_STATE.OFFLINE,
+                connectionStateSince: Date.now(), slidesHtml: [], slideModels: [], renderOpts: null,
+                deckMode: false, currentIndex: 0, currentFragmentOrder: -1,
+                presenterIndex: 0, followPresenter: false, handRaised: false,
+                quizActive: false, quizAnswered: false, offlineRevise: true,
+            };
+
+            const H = {
+                ROOM_MSG, CONNECTION_STATE, roomId: archive.meta.roomId || '', params,
+                WHITEBOARD_BASE_WIDTH: 1280, WHITEBOARD_BASE_HEIGHT: 720,
+                storage, NetworkSession,
+                runtime: StudentRuntime, bridge: StudentRuntimeBridge, transportUI: null,
+                validateRoomMessage, icon, esc, toSafeString, toSafeInt, state,
+                reviseOffline: true,
+                syncRuntime: () => {}, syncTransportMode: () => {}, handleMessage: () => {},
+                setConnectionDetail: () => {}, setConnectionState: () => {}, setConnected: () => {},
+            };
+            H.transport = makeNoopTransport();
+            H.render = window.OEIStudentRender.create(H);
+            H.revision = window.OEIStudentRevision.create(H);
+            H.quiz = window.OEIStudentQuiz.create(H);
+
+            H.render.bindControls();
+            H.revision.bindControls();
+            H.quiz.bindControls();
+            H.revision.updateBookmarkControls();
+            H.revision.updateControls();
+
+            const courseTitle = archive.meta.title || 'Révision';
+            document.getElementById('header-title').textContent = courseTitle;
+            document.title = courseTitle + ' — Révision';
+
+            H.render.applyInit({ type: ROOM_MSG.INIT, deck: archive.deck, currentIndex: 0 });
+            state.presenterIndex = Math.max(0, state.slidesHtml.length - 1);
+
+            document.getElementById('join-screen').style.display = 'none';
+            const mv = document.getElementById('main-view');
+            mv.style.display = 'flex';
+            mv.classList.add('revision-active');
+            document.getElementById('waiting-overlay')?.classList.remove('active');
+
+            bindBottomNav();
+            showReviseChoice(H, courseKey);
+        }
+
+        // ── Accueil « Mes cours à réviser » (écran de saisie de salle) ──
+        function renderReviseHome() {
+            const section = document.getElementById('revise-list-section');
+            const list = document.getElementById('revise-list');
+            if (!section || !list) return;
+            const store = window.OEIStudentStorage.create({ roomId: '' });
+            const archives = store.listReviseArchives();
+            list.textContent = '';
+            if (!archives.length) { section.setAttribute('hidden', ''); return; }
+            section.removeAttribute('hidden');
+            archives.forEach(it => {
+                const li = document.createElement('li');
+                li.className = 'revise-list-item';
+                const h = document.createElement('div');
+                h.className = 'revise-list-item-title';
+                h.textContent = it.title || 'Sans titre';
+                const meta = document.createElement('div');
+                meta.className = 'revise-list-item-meta';
+                const due = store.reviseDueCount(it.courseKey);
+                meta.textContent = `${it.slideCount || 0} slides · ${due} à revoir aujourd'hui`;
+                const actions = document.createElement('div');
+                actions.className = 'revise-list-item-actions';
+                const go = document.createElement('button');
+                go.type = 'button';
+                go.className = 'ui-btn ui-btn--primary';
+                go.textContent = 'Réviser';
+                go.addEventListener('click', () => {
+                    location.href = 'student.html?revise=' + encodeURIComponent(it.courseKey);
+                });
+                const del = document.createElement('button');
+                del.type = 'button';
+                del.className = 'ui-btn';
+                del.textContent = 'Supprimer';
+                del.addEventListener('click', () => {
+                    if (!window.confirm(`Supprimer la révision « ${it.title} » ?`)) return;
+                    store.deleteReviseArchive(it.courseKey);
+                    renderReviseHome();
+                });
+                actions.append(go, del);
+                li.append(h, meta, actions);
+                list.appendChild(li);
+            });
+        }
+
+        function bindReviseImport() {
+            const btn = document.getElementById('revise-import-btn');
+            const file = document.getElementById('revise-import-file');
+            if (!btn || !file) return;
+            btn.addEventListener('click', () => file.click());
+            file.addEventListener('change', async e => {
+                const f = e.target.files && e.target.files[0];
+                if (!f) return;
+                try {
+                    const parsed = JSON.parse(await f.text());
+                    const store = window.OEIStudentStorage.create({ roomId: '' });
+                    const res = store.importReviseFile(parsed);
+                    if (res.ok) {
+                        setJoinStatus('Révision importée ✓', 'info');
+                        renderReviseHome();
+                    } else {
+                        setJoinStatus(res.reason === 'no-deck'
+                            ? 'Ce fichier ne contient pas le cours — importez-le pendant une session.'
+                            : 'Fichier de révision invalide.', 'error');
+                    }
+                } catch (_) {
+                    setJoinStatus('Import impossible : JSON invalide.', 'error');
+                } finally {
+                    e.target.value = '';
+                }
+            });
         }
 
         // ── Shared mutable state ─────────────────────────
@@ -273,6 +478,32 @@
             quizAnswered: state.quizAnswered,
         });
 
+        // ── Archive de révision : à chaque room:init porteur d'un deck, on
+        //    (re)scope le stockage favoris/notes/SM-2 sur l'identité du cours et
+        //    on persiste le deck localement → révision possible hors salle. ──
+        function _archiveDeckForRevision(msg) {
+            const deck = msg && msg.deck;
+            if (!deck || !Array.isArray(deck.slides) || typeof storage.setCourseKey !== 'function') return;
+            try {
+                const ck = window.OEIStudentStorage.courseKeyFromDeck(deck);
+                storage.setCourseKey(ck);
+                H.render.rebindCourseStorage();
+                H.revision.reloadForCourse();
+                const res = storage.saveReviseArchive({
+                    deck,
+                    meta: {
+                        title: msg.title || deck.metadata?.title || 'Présentation',
+                        author: deck.metadata?.author || '',
+                        slideCount: deck.slides.length,
+                        roomId,
+                    },
+                });
+                if (!res.ok) console.warn('[revise] archive non persistée:', res.reason);
+            } catch (err) {
+                console.warn('[revise] archive impossible:', err);
+            }
+        }
+
         // ── room:* message router ────────────────────────
         function handleMessage(msg) {
             if (!msg?.type) return;
@@ -301,6 +532,7 @@
 
                 case ROOM_MSG.INIT:
                     H.render.applyInit(msg);
+                    _archiveDeckForRevision(msg);
                     H.transport.setConnected(true);
                     H.render.applyInitDisplay(msg);
                     if (state.transportMode === 'relay') {
@@ -357,23 +589,7 @@
         H.revision.updateBookmarkControls();
         H.revision.updateControls();
 
-        // ── Bottom-nav mobile : sélectionne le panneau secondaire visible ──
-        (function bindBottomNav() {
-            const mv = document.getElementById('main-view');
-            const items = document.querySelectorAll('#student-bottomnav .ui-bottomnav-item');
-            if (!mv || !items.length) return;
-            mv.dataset.mtab = 'slide';
-            const setTab = (tab) => {
-                mv.dataset.mtab = tab;
-                items.forEach(b => {
-                    const on = b.dataset.mtab === tab;
-                    b.classList.toggle('is-active', on);
-                    b.setAttribute('aria-pressed', on ? 'true' : 'false');
-                });
-                if (tab === 'notes') document.getElementById('notes-panel')?.setAttribute('open', '');
-            };
-            items.forEach(b => b.addEventListener('click', () => setTab(b.dataset.mtab)));
-        })();
+        bindBottomNav();
 
         // ── Join handler ─────────────────────────────────
         document.getElementById('pseudo-input').addEventListener('keydown', e => {

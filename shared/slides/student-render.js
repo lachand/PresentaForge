@@ -20,8 +20,17 @@
         const studentWidgetScriptVersion = Date.now();
 
         // ── Per-slide notes ──────────────────────────────
-        const NOTES_KEY = H.storage.keys.notes;
+        // Clé lue à la volée : `storage.setCourseKey()` la re-pointe vers l'archive
+        // du cours après `room:init` ; `rebindCourseStorage()` recharge alors `_notesData`.
+        let NOTES_KEY = H.storage.keys.notes;
         let _notesData = H.storage.localGetJSON(NOTES_KEY, {}) || {};
+
+        /** Recharge les notes par slide depuis l'archive du cours courant. */
+        function rebindCourseStorage() {
+            NOTES_KEY = H.storage.keys.notes;
+            _notesData = H.storage.localGetJSON(NOTES_KEY, {}) || {};
+            _loadSlideNotes(st.currentIndex);
+        }
 
         function _saveSlideNotes() {
             const area = document.getElementById('notes-area');
@@ -94,6 +103,7 @@
         }
 
         function currentSlideCheckpointLocked() {
+            if (H.reviseOffline) return false;           // révision hors salle : pas de présentateur, aucun verrou
             if (st.followPresenter) return false;
             if (!_checkpointRequiredSlides.has(st.currentIndex)) return false;
             return !_checkpointCompletedSlides.has(st.currentIndex);
@@ -143,6 +153,7 @@
         }
 
         function updateNavSync() {
+            if (H.reviseOffline) return;                 // #nav-sync masqué en révision hors salle (CSS body.revise-offline)
             const el = document.getElementById('nav-sync');
             if (!el) return;
             const synced = navSyncIsSynced();
@@ -441,6 +452,7 @@
 
         function maxPresenterAllowedIndex() {
             const hardMax = Math.max(0, st.slidesHtml.length - 1);
+            if (H.reviseOffline) return hardMax;         // révision hors salle : navigation libre sur tout le deck
             const safePresenterIndex = toSafeInt(st.presenterIndex);
             if (safePresenterIndex === null) return hardMax;
             return Math.max(0, Math.min(hardMax, safePresenterIndex));
@@ -1096,6 +1108,7 @@ window.addEventListener('load', function() {
             markCheckpointCompleted,
             updateCheckpointStatus,
             updateNavSync,
+            rebindCourseStorage,
             currentSlideCheckpointLocked,
             enforceCheckpointBeforeNext,
             getQuizSlides: () => _quizSlides,

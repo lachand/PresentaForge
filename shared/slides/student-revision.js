@@ -16,8 +16,10 @@
         const storage = H.storage;
         const icon = H.icon;
         const toSafeString = H.toSafeString;
-        const REVISION_KEY = storage.keys.revision;
-        const BOOKMARKS_KEY = storage.keys.bookmarks;
+        // Clés lues à la volée : `storage.setCourseKey()` les re-pointe vers
+        // l'archive du cours (`oei-v2-student-revise-<courseKey>-*`) après `room:init`.
+        const revKey = () => storage.keys.revision;
+        const bmKey = () => storage.keys.bookmarks;
 
         const slideCount = () => (H.render ? H.render.getSlides().length : st.slidesHtml.length);
         const showSlide = idx => H.render.showSlide(idx);
@@ -30,46 +32,65 @@
             return `${d.getFullYear()}-W${String(Math.ceil((((d - new Date(d.getFullYear(), 0, 1)) / 86400000) + 1) / 7)).padStart(2, '0')}`;
         };
 
-        const _revisionRaw = storage.localGetJSON(REVISION_KEY, {}) || {};
-        let _bookmarks = new Set((storage.localGetJSON(BOOKMARKS_KEY, []) || []).map(v => String(v)));
+        let _bookmarks = new Set();
         let _bookmarksOnly = false;
         let _revisionEnabled = false;
-        let _revisionWeeklyGoal = Number.isFinite(Number(_revisionRaw?.weeklyGoal))
-            ? Math.max(1, Math.trunc(Number(_revisionRaw.weeklyGoal)))
-            : 20;
-        let _revisionWeeklyProgress = (() => {
-            const raw = _revisionRaw?.weeklyProgress || {};
-            const wk = toSafeString(raw.weekKey, 20) || revisionWeekKey();
-            const done = Number.isFinite(Number(raw.done)) ? Math.max(0, Math.trunc(Number(raw.done))) : 0;
-            return { weekKey: wk, done };
-        })();
-        if (_revisionWeeklyProgress.weekKey !== revisionWeekKey()) _revisionWeeklyProgress = { weekKey: revisionWeekKey(), done: 0 };
-        let _revisionStateBySlide = (() => {
-            const out = {};
-            const bySlide = _revisionRaw && typeof _revisionRaw === 'object' ? _revisionRaw.bySlide : null;
-            if (!bySlide || typeof bySlide !== 'object') return out;
-            Object.entries(bySlide).forEach(([idx, item]) => {
-                const slideIdx = Number(idx);
-                if (!Number.isFinite(slideIdx) || slideIdx < 0) return;
-                const bucket = REVISION_BUCKETS.includes(item?.bucket) ? item.bucket : 'new';
-                out[String(slideIdx)] = {
-                    bucket,
-                    seen: Number.isFinite(Number(item?.seen)) ? Math.max(0, Math.trunc(Number(item.seen))) : 0,
-                    nextDue: Number.isFinite(Number(item?.nextDue)) ? Math.max(0, Math.trunc(Number(item.nextDue))) : 0,
-                    easiness: Number.isFinite(Number(item?.easiness)) ? Math.max(1.3, Math.min(3.2, Number(item.easiness))) : 2.5,
-                    intervalDays: Number.isFinite(Number(item?.intervalDays)) ? Math.max(0, Math.trunc(Number(item.intervalDays))) : 0,
-                    repetitions: Number.isFinite(Number(item?.repetitions)) ? Math.max(0, Math.trunc(Number(item.repetitions))) : 0,
-                    dueAt: Number.isFinite(Number(item?.dueAt)) ? Math.max(0, Math.trunc(Number(item.dueAt))) : 0,
-                    lastGrade: Number.isFinite(Number(item?.lastGrade)) ? Math.max(0, Math.min(5, Math.trunc(Number(item.lastGrade)))) : 0,
-                    updatedAt: Number.isFinite(Number(item?.updatedAt)) ? Math.max(0, Math.trunc(Number(item.updatedAt))) : 0,
-                };
-            });
-            return out;
-        })();
+        let _revisionWeeklyGoal = 20;
+        let _revisionWeeklyProgress = { weekKey: revisionWeekKey(), done: 0 };
+        let _revisionStateBySlide = {};
         const _revisionLastSeenAt = new Map();
 
+        /**
+         * (Re)charge favoris + état SM-2 + objectif hebdo depuis les clés de
+         * stockage courantes. Appelé une fois à la construction, puis à nouveau
+         * via `reloadForCourse()` quand le stockage bascule sur l'archive du cours.
+         */
+        function _hydrate() {
+            const raw = storage.localGetJSON(revKey(), {}) || {};
+            _bookmarks = new Set((storage.localGetJSON(bmKey(), []) || []).map(v => String(v)));
+            _revisionWeeklyGoal = Number.isFinite(Number(raw.weeklyGoal))
+                ? Math.max(1, Math.trunc(Number(raw.weeklyGoal))) : 20;
+            const wkRaw = raw.weeklyProgress || {};
+            _revisionWeeklyProgress = {
+                weekKey: toSafeString(wkRaw.weekKey, 20) || revisionWeekKey(),
+                done: Number.isFinite(Number(wkRaw.done)) ? Math.max(0, Math.trunc(Number(wkRaw.done))) : 0,
+            };
+            if (_revisionWeeklyProgress.weekKey !== revisionWeekKey()) {
+                _revisionWeeklyProgress = { weekKey: revisionWeekKey(), done: 0 };
+            }
+            _revisionStateBySlide = {};
+            const bySlide = raw && typeof raw === 'object' ? raw.bySlide : null;
+            if (bySlide && typeof bySlide === 'object') {
+                Object.entries(bySlide).forEach(([idx, item]) => {
+                    const slideIdx = Number(idx);
+                    if (!Number.isFinite(slideIdx) || slideIdx < 0) return;
+                    const bucket = REVISION_BUCKETS.includes(item?.bucket) ? item.bucket : 'new';
+                    _revisionStateBySlide[String(slideIdx)] = {
+                        bucket,
+                        seen: Number.isFinite(Number(item?.seen)) ? Math.max(0, Math.trunc(Number(item.seen))) : 0,
+                        nextDue: Number.isFinite(Number(item?.nextDue)) ? Math.max(0, Math.trunc(Number(item.nextDue))) : 0,
+                        easiness: Number.isFinite(Number(item?.easiness)) ? Math.max(1.3, Math.min(3.2, Number(item.easiness))) : 2.5,
+                        intervalDays: Number.isFinite(Number(item?.intervalDays)) ? Math.max(0, Math.trunc(Number(item.intervalDays))) : 0,
+                        repetitions: Number.isFinite(Number(item?.repetitions)) ? Math.max(0, Math.trunc(Number(item.repetitions))) : 0,
+                        dueAt: Number.isFinite(Number(item?.dueAt)) ? Math.max(0, Math.trunc(Number(item.dueAt))) : 0,
+                        lastGrade: Number.isFinite(Number(item?.lastGrade)) ? Math.max(0, Math.min(5, Math.trunc(Number(item.lastGrade)))) : 0,
+                        updatedAt: Number.isFinite(Number(item?.updatedAt)) ? Math.max(0, Math.trunc(Number(item.updatedAt))) : 0,
+                    };
+                });
+            }
+        }
+        _hydrate();
+
+        /** Re-lit l'état depuis l'archive du cours (après `storage.setCourseKey`). */
+        function reloadForCourse() {
+            _hydrate();
+            _bookmarksOnly = false;
+            updateBookmarkControls();
+            updateRevisionControls();
+        }
+
         function saveBookmarks() {
-            storage.localSetJSON(BOOKMARKS_KEY, Array.from(_bookmarks.values()));
+            storage.localSetJSON(bmKey(), Array.from(_bookmarks.values()));
         }
 
         function bookmarksSorted() {
@@ -111,7 +132,7 @@
         }
 
         function saveRevisionState() {
-            storage.localSetJSON(REVISION_KEY, {
+            storage.localSetJSON(revKey(), {
                 version: 2,
                 weeklyGoal: _revisionWeeklyGoal,
                 weeklyProgress: _revisionWeeklyProgress,
@@ -310,27 +331,60 @@
             if (_revisionEnabled && quality >= 3) showRevisionStep(1);
         }
 
-        function exportRevisionProgress() {
+        /**
+         * Exporte un bundle de révision **autonome** (porte le deck + favoris +
+         * notes + planning SM-2) → transfert vers un autre appareil. Repli sur
+         * l'export SM-2 seul si l'archive du cours n'est pas disponible.
+         */
+        function exportReviseBundle() {
             revisionEnsureWeek();
-            const payload = {
-                version: 2,
-                roomId: H.roomId,
-                exportedAt: new Date().toISOString(),
-                weeklyGoal: _revisionWeeklyGoal,
-                weeklyProgress: _revisionWeeklyProgress,
-                bySlide: _revisionStateBySlide,
-            };
+            saveRevisionState();
+            saveBookmarks();
+            let payload = null;
+            if (typeof storage.buildReviseExport === 'function') payload = storage.buildReviseExport();
+            if (!payload) {
+                payload = {
+                    version: 2,
+                    roomId: H.roomId,
+                    exportedAt: new Date().toISOString(),
+                    weeklyGoal: _revisionWeeklyGoal,
+                    weeklyProgress: _revisionWeeklyProgress,
+                    bySlide: _revisionStateBySlide,
+                };
+            }
+            const slug = (payload.course && payload.course.title
+                ? (window.OEIStudentStorage?.slugify?.(payload.course.title) || 'cours')
+                : (storage.courseKey || H.roomId || 'cours'));
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `revision-${H.roomId}-${new Date().toISOString().slice(0, 10)}.json`;
+            a.download = `revision-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
             a.click();
             setTimeout(() => URL.revokeObjectURL(url), 1500);
         }
 
         function importRevisionProgress(rawPayload) {
             if (!rawPayload || typeof rawPayload !== 'object') return false;
+            // Bundle autonome « presentaforge-revision » : favoris + notes + SM-2
+            // fusionnés dans le cours courant (le deck est déjà chargé).
+            if (rawPayload.type === 'presentaforge-revision') {
+                if (rawPayload.revision && typeof rawPayload.revision === 'object') {
+                    storage.localSetJSON(revKey(), rawPayload.revision);
+                }
+                if (Array.isArray(rawPayload.bookmarks)) {
+                    storage.localSetJSON(bmKey(), rawPayload.bookmarks.map(String));
+                }
+                if (rawPayload.notes && typeof rawPayload.notes === 'object' && H.render?.rebindCourseStorage) {
+                    storage.localSetJSON(storage.keys.notes, rawPayload.notes);
+                    H.render.rebindCourseStorage();
+                }
+                _hydrate();
+                revisionEnsureWeek();
+                updateBookmarkControls();
+                updateRevisionControls();
+                return true;
+            }
             const bySlide = rawPayload.bySlide;
             if (!bySlide || typeof bySlide !== 'object') return false;
             const imported = {};
@@ -465,7 +519,7 @@
             document.getElementById('revision-mark-review')?.addEventListener('click', () => markRevision('review'));
             document.getElementById('revision-mark-known')?.addEventListener('click', () => markRevision('known'));
             document.getElementById('revision-mark-easy')?.addEventListener('click', () => markRevision('easy'));
-            document.getElementById('revision-export')?.addEventListener('click', exportRevisionProgress);
+            document.getElementById('revision-export')?.addEventListener('click', exportReviseBundle);
             document.getElementById('revision-import')?.addEventListener('click', () => {
                 document.getElementById('revision-import-file')?.click();
             });
@@ -496,6 +550,9 @@
             showByModeStep,
             updateControls: updateRevisionControls,
             updateBookmarkControls,
+            reloadForCourse,
+            importProgress: importRevisionProgress,
+            exportBundle: exportReviseBundle,
             bindControls,
         };
     }

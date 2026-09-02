@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=6">
-    <link rel="stylesheet" href="../shared/slides/slides-student.css?v=8">
+    <link rel="stylesheet" href="../shared/slides/slides-student.css?v=9">
     <!-- Presentation theme injected dynamically -->
     <style id="presentation-theme"></style>
 </head>
@@ -42,6 +42,15 @@
             <input id="pseudo-input" class="join-input ui-input" type="text" placeholder="Votre prénom" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
             <button id="join-btn" class="join-btn ui-btn ui-btn--primary"><span>Rejoindre</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button>
             <div id="join-status" class="status-msg"></div>
+
+            <!-- Reprendre une révision hors CM (peuplé depuis l'archive locale ;
+                 masqué s'il n'y a aucun cours enregistré). -->
+            <section id="revise-list-section" hidden>
+                <h2 class="revise-list-title">Mes cours à réviser</h2>
+                <ul id="revise-list"></ul>
+                <button id="revise-import-btn" class="ui-btn" type="button">Importer une révision</button>
+                <input id="revise-import-file" type="file" accept="application/json" hidden>
+            </section>
         </div>
     </div>
 
@@ -59,6 +68,7 @@
                 <img class="student-brand-logo student-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="presentaForge">
             </a>
             <span id="header-title">Présentation</span>
+            <a id="revise-exit-offline" href="student.html" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>Mes révisions</a>
             <button id="theme-toggle" title="Thème clair/sombre">
                 <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
                 <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
@@ -325,6 +335,16 @@
         </div><!-- /#student-side-panel -->
         </div><!-- /.st-body -->
     </div><!-- /#main-view -->
+
+    <!-- Écran de choix — révision hors salle (student.html?revise=<courseKey>) -->
+    <div id="revise-choice" hidden>
+        <div class="revise-choice-panel">
+            <div class="revise-choice-eyebrow">Révision</div>
+            <h2 id="revise-choice-title">Réviser</h2>
+            <button id="revise-choice-due" class="ui-btn ui-btn--primary" type="button">Réviser</button>
+            <button id="revise-choice-all" class="ui-btn" type="button">Revoir tout le cours</button>
+        </div>
+    </div>
 
     <script type="module" src="student-bootstrap.js?v=1"></script>
 </body>
