@@ -1,0 +1,4224 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "title": "Conception agile de projets informatiques — Partie 2",
+    "author": "Valentin Lachand-Pascal",
+    "created": "2026-09-04",
+    "modified": "2026-09-04"
+  },
+  "theme": "academic",
+  "showSlideNumber": true,
+  "footerText": "Conception agile de projets informatiques — M1",
+  "autoNumberChapters": true,
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "M1 — Partie 2",
+      "title": "Conception agile de projets informatiques",
+      "subtitle": "Méthodes agiles",
+      "author": "Valentin Lachand-Pascal",
+      "date": "2026",
+      "notes": "Se présenter à nouveau si besoin. Rappeler que ce cours s'appuie sur les cours d'Aurélien Tabard et fait suite à la partie 1 (contexte, méthodes, processus).",
+      "bg": "linear-gradient(135deg, #1a2744, #0f1729)"
+    },
+    {
+      "type": "bullets",
+      "title": "Plan",
+      "items": [
+        "Retour rapide sur les méthodes de conception",
+        "Principes des méthodes Agiles",
+        "XP : eXtreme Programming",
+        "Scrum",
+        "Autres méthodes"
+      ],
+      "notes": "Annoncer les 5 parties du cours. Ce cours prolonge la partie 1 en se concentrant sur les méthodes agiles."
+    },
+    {
+      "type": "bullets",
+      "title": "Objectifs du cours",
+      "items": [
+        "Connaître différentes méthodes itératives",
+        "Développer une pratique de travail réflexive",
+        "Être capable d'appliquer SCRUM",
+        "Être conscient des limites de ces méthodes"
+      ],
+      "notes": "Insister sur le dernier point : aucune méthode n'est une solution miracle."
+    },
+    {
+      "type": "bullets",
+      "title": "Lectures pour aller plus loin",
+      "items": [
+        "<b>The Agile Manifesto</b> — le texte fondateur, court et à lire au moins une fois",
+        "<b>Getting Real</b>, par 37signals — plutôt orienté Lean",
+        "<b>Scrum, le guide pratique de la méthode agile la plus populaire</b>"
+      ],
+      "notes": "Ces lectures sont facultatives mais recommandées pour approfondir."
+    },
+    {
+      "type": "chapter",
+      "title": "Retour rapide sur les méthodes de conception",
+      "subtitle": "Ce qui a déjà été vu en partie 1",
+      "notes": "Transition de section. Rappeler rapidement les 5 approches, sans repasser en détail dessus."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_hmzr6pp",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Cinq approches, du plus libre au plus structuré"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_5iarx47",
+          "type": "card",
+          "x": 60,
+          "y": 110,
+          "w": 210,
+          "h": 230,
+          "z": 2,
+          "data": {
+            "title": "Rien",
+            "items": [
+              "« Code and fix »",
+              "Aucune méthode"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-muted)"
+          }
+        },
+        {
+          "id": "el_ro8rdif",
+          "type": "card",
+          "x": 285,
+          "y": 110,
+          "w": 210,
+          "h": 230,
+          "z": 2,
+          "data": {
+            "title": "Cascade",
+            "items": [
+              "Linéaire",
+              "Phases strictes"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_xt5dm0r",
+          "type": "card",
+          "x": 510,
+          "y": 110,
+          "w": 210,
+          "h": 230,
+          "z": 2,
+          "data": {
+            "title": "Modèle en V",
+            "items": [
+              "Linéaire",
+              "Tests structurés"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_blq4rfh",
+          "type": "card",
+          "x": 735,
+          "y": 110,
+          "w": 210,
+          "h": 230,
+          "z": 2,
+          "data": {
+            "title": "Itératif (RUP)",
+            "items": [
+              "Incrémental",
+              "Piloté par les risques"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-accent)"
+          }
+        },
+        {
+          "id": "el_y92axd1",
+          "type": "card",
+          "x": 960,
+          "y": 110,
+          "w": 210,
+          "h": 230,
+          "z": 2,
+          "data": {
+            "title": "Agile",
+            "items": [
+              "Itératif",
+              "Adaptatif"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-accent)"
+          }
+        },
+        {
+          "id": "el_867li1z",
+          "type": "text",
+          "x": 60,
+          "y": 380,
+          "w": 400,
+          "h": 40,
+          "z": 2,
+          "data": {
+            "html": "Rigidité et prévisibilité"
+          },
+          "style": {
+            "fontSize": 15,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_qbrig3r",
+          "type": "text",
+          "x": 780,
+          "y": 380,
+          "w": 400,
+          "h": 40,
+          "z": 2,
+          "data": {
+            "html": "Souplesse et adaptation &#8594;"
+          },
+          "style": {
+            "fontSize": 15,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "right",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        }
+      ],
+      "notes": "Ce cours se concentre sur la partie droite du spectre : les méthodes agiles."
+    },
+    {
+      "type": "comparison",
+      "title": "« Rien » (a.k.a. code and fix)",
+      "left": {
+        "title": "✅ Bénéfices",
+        "items": [
+          "Marche si vous travaillez seul",
+          "Pas de surcoûts dûs à la gestion de projet"
+        ]
+      },
+      "right": {
+        "title": "❌ Inconvénients",
+        "items": [
+          "Rapidement compliqué",
+          "Pas de visibilité sur l'avancement"
+        ]
+      },
+      "notes": "Point de départ volontairement provocateur : personne ne recommande cette approche au-delà d'un prototype solo."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_8vu386d",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Modèle linéaire : en cascade"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_vln12wm",
+          "type": "shape",
+          "x": 60,
+          "y": 110,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Analyse des besoins"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_s9pzhei",
+          "type": "shape",
+          "x": 60,
+          "y": 210,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Spécifications"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_sy3bn69",
+          "type": "shape",
+          "x": 60,
+          "y": 310,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Conception"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_6iili42",
+          "type": "shape",
+          "x": 60,
+          "y": 410,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Codage"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_ct59wlu",
+          "type": "shape",
+          "x": 60,
+          "y": 510,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Intégration"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_2f3kfd0",
+          "type": "shape",
+          "x": 340,
+          "y": 510,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Test"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_lboph96",
+          "type": "shape",
+          "x": 620,
+          "y": 510,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Installation"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_zxaispj",
+          "type": "text",
+          "x": 340,
+          "y": 110,
+          "w": 620,
+          "h": 120,
+          "z": 2,
+          "data": {
+            "html": "Chaque phase se termine avant que la suivante ne commence. Le retour en arrière est en théorie limité à la phase amont."
+          },
+          "style": {
+            "fontSize": 18,
+            "fontWeight": 400,
+            "color": "var(--sl-text)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        }
+      ],
+      "notes": "Diagramme volontairement simplifié : l'important est le flot strictement descendant.",
+      "connectors": [
+        {
+          "id": "conn_ncxwmuc",
+          "sourceId": "el_vln12wm",
+          "sourceAnchor": "bottom",
+          "targetId": "el_s9pzhei",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_x64alwz",
+          "sourceId": "el_s9pzhei",
+          "sourceAnchor": "bottom",
+          "targetId": "el_sy3bn69",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_v0yibp7",
+          "sourceId": "el_sy3bn69",
+          "sourceAnchor": "bottom",
+          "targetId": "el_6iili42",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_hqyc1bh",
+          "sourceId": "el_6iili42",
+          "sourceAnchor": "bottom",
+          "targetId": "el_ct59wlu",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_fwi0g15",
+          "sourceId": "el_ct59wlu",
+          "sourceAnchor": "right",
+          "targetId": "el_2f3kfd0",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_9k34zl0",
+          "sourceId": "el_2f3kfd0",
+          "sourceAnchor": "right",
+          "targetId": "el_lboph96",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        }
+      ]
+    },
+    {
+      "type": "comparison",
+      "title": "Cascade",
+      "left": {
+        "title": "✅ Bénéfices",
+        "items": [
+          "Tâches établies au début du projet",
+          "Segmentation claire des responsabilités",
+          "Passation de tâches aisée"
+        ]
+      },
+      "right": {
+        "title": "❌ Inconvénients",
+        "items": [
+          "Planification rigide alors que les besoins changent",
+          "Responsabilité du succès non partagée",
+          "Tests uniquement à la toute fin"
+        ]
+      },
+      "notes": "Contre-exemple classique en cours — existe peu tel quel dans la réalité, mais reste une bonne base pédagogique."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_yyd0yjs",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Modèle linéaire : en V"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_bjf0j3x",
+          "type": "shape",
+          "x": 60,
+          "y": 100,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Analyse des besoins"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_6wfdm1u",
+          "type": "shape",
+          "x": 1000,
+          "y": 100,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Recette"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_0edqkff",
+          "type": "shape",
+          "x": 95,
+          "y": 200,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Spécifications"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_y7bearu",
+          "type": "shape",
+          "x": 965,
+          "y": 200,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Tests de validation"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_40ght6n",
+          "type": "shape",
+          "x": 160,
+          "y": 300,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Conception architecturale"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_pqubrj3",
+          "type": "shape",
+          "x": 900,
+          "y": 300,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Tests d'intégration"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_oo6sxuy",
+          "type": "shape",
+          "x": 260,
+          "y": 400,
+          "w": 210,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Conception détaillée"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_znxtc7h",
+          "type": "shape",
+          "x": 810,
+          "y": 400,
+          "w": 210,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Tests unitaires"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_ebq7947",
+          "type": "shape",
+          "x": 500,
+          "y": 500,
+          "w": 280,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Codage"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        }
+      ],
+      "notes": "Variante du modèle en cascade : chaque étape de conception (gauche) est validée par son miroir de test (droite). Variante W : validation d'une maquette avant la conception.",
+      "connectors": [
+        {
+          "id": "conn_yqjlnq2",
+          "sourceId": "el_bjf0j3x",
+          "sourceAnchor": "bottom",
+          "targetId": "el_0edqkff",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_160n9lz",
+          "sourceId": "el_6wfdm1u",
+          "sourceAnchor": "bottom",
+          "targetId": "el_y7bearu",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-accent)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_zkemctz",
+          "sourceId": "el_0edqkff",
+          "sourceAnchor": "bottom",
+          "targetId": "el_40ght6n",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_ht4zcri",
+          "sourceId": "el_y7bearu",
+          "sourceAnchor": "bottom",
+          "targetId": "el_pqubrj3",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-accent)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_yhi71pa",
+          "sourceId": "el_40ght6n",
+          "sourceAnchor": "bottom",
+          "targetId": "el_oo6sxuy",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_ku0bj87",
+          "sourceId": "el_pqubrj3",
+          "sourceAnchor": "bottom",
+          "targetId": "el_znxtc7h",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-accent)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_qfmdvqn",
+          "sourceId": "el_oo6sxuy",
+          "sourceAnchor": "bottom",
+          "targetId": "el_ebq7947",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_9pou2vm",
+          "sourceId": "el_ebq7947",
+          "sourceAnchor": "right",
+          "targetId": "el_znxtc7h",
+          "targetAnchor": "bottom",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-accent)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_n4xaci9",
+          "sourceId": "el_bjf0j3x",
+          "sourceAnchor": "right",
+          "targetId": "el_6wfdm1u",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-muted)",
+            "strokeWidth": 2,
+            "dashArray": "4 4"
+          }
+        },
+        {
+          "id": "conn_gktws0a",
+          "sourceId": "el_0edqkff",
+          "sourceAnchor": "right",
+          "targetId": "el_y7bearu",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-muted)",
+            "strokeWidth": 2,
+            "dashArray": "4 4"
+          }
+        },
+        {
+          "id": "conn_munv3a4",
+          "sourceId": "el_40ght6n",
+          "sourceAnchor": "right",
+          "targetId": "el_pqubrj3",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-muted)",
+            "strokeWidth": 2,
+            "dashArray": "4 4"
+          }
+        },
+        {
+          "id": "conn_bi80sdi",
+          "sourceId": "el_oo6sxuy",
+          "sourceAnchor": "right",
+          "targetId": "el_znxtc7h",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-muted)",
+            "strokeWidth": 2,
+            "dashArray": "4 4"
+          }
+        }
+      ]
+    },
+    {
+      "type": "comparison",
+      "title": "Modèle en V",
+      "left": {
+        "title": "✅ Bénéfices",
+        "items": [
+          "Tâches clairement établies au début",
+          "Responsabilisation via des retours en cas d'erreur"
+        ]
+      },
+      "right": {
+        "title": "❌ Inconvénients",
+        "items": [
+          "Les tâches sont changeantes en pratique",
+          "Responsabilité du succès non partagée"
+        ]
+      },
+      "notes": ""
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_bi20pl7",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Itératif : le cas de Rational Unified Process (RUP)"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_bbvb9l0",
+          "type": "shape",
+          "x": 60,
+          "y": 260,
+          "w": 200,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Planning initial"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_q2h9kug",
+          "type": "shape",
+          "x": 340,
+          "y": 140,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Recueil des besoins"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_hr9u3ez",
+          "type": "shape",
+          "x": 620,
+          "y": 140,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Analyse & Conception"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_sen8m9e",
+          "type": "shape",
+          "x": 900,
+          "y": 140,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Implémentation"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_tlqgjq6",
+          "type": "shape",
+          "x": 620,
+          "y": 380,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Test"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_rolmbpq",
+          "type": "shape",
+          "x": 340,
+          "y": 380,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Évaluation"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        }
+      ],
+      "notes": "Cycle itératif et incrémental, dirigé par les cas d'utilisation, centré sur l'architecture, avec un focus sur le risque. Chaque tour de boucle affine le produit.",
+      "connectors": [
+        {
+          "id": "conn_p64evkl",
+          "sourceId": "el_bbvb9l0",
+          "sourceAnchor": "right",
+          "targetId": "el_q2h9kug",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_t42m3d9",
+          "sourceId": "el_q2h9kug",
+          "sourceAnchor": "right",
+          "targetId": "el_hr9u3ez",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_nhuou23",
+          "sourceId": "el_hr9u3ez",
+          "sourceAnchor": "right",
+          "targetId": "el_sen8m9e",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_49lnm4e",
+          "sourceId": "el_sen8m9e",
+          "sourceAnchor": "bottom",
+          "targetId": "el_tlqgjq6",
+          "targetAnchor": "right",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_ska863p",
+          "sourceId": "el_tlqgjq6",
+          "sourceAnchor": "left",
+          "targetId": "el_rolmbpq",
+          "targetAnchor": "right",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-accent)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_8yzy896",
+          "sourceId": "el_rolmbpq",
+          "sourceAnchor": "top",
+          "targetId": "el_q2h9kug",
+          "targetAnchor": "bottom",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-accent)",
+            "strokeWidth": 2,
+            "dashArray": "4 4"
+          },
+          "label": "itération suivante"
+        }
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Méthodes agiles",
+      "items": [
+        "Trouver un compromis : le <b>minimum</b> de méthode permettant de mener à bien les projets en restant agile",
+        "Capacité de réponse rapide et souple au changement",
+        "Orientation vers le <b>code</b> plutôt que la documentation"
+      ],
+      "notes": "Transition vers l'agilité : ni « rien » (Rien), ni trop de process (cascade/V)."
+    },
+    {
+      "type": "bullets",
+      "title": "Pourquoi être agile ?",
+      "items": [
+        {
+          "text": "Cas innovation : un grand fabricant de stylos",
+          "sub": [
+            "Le besoin n'est pas encore stabilisé"
+          ]
+        },
+        {
+          "text": "Cas service : embauché pour un site web",
+          "sub": [
+            "Le client change d'avis en cours de route"
+          ]
+        },
+        {
+          "text": "Cas client avec un problème mais sans solution",
+          "sub": [
+            "Il faut explorer avant de figer"
+          ]
+        },
+        {
+          "text": "Cas domaine complexe : les transports",
+          "sub": [
+            "Trop de paramètres pour tout spécifier au début"
+          ]
+        }
+      ],
+      "notes": "Demander aux étudiants s'ils ont d'autres exemples vécus."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_fsalkjl",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Historique"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_70vm8os",
+          "type": "shape",
+          "x": 60,
+          "y": 120,
+          "w": 260,
+          "h": 90,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Années 90"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_am5m8ab",
+          "type": "shape",
+          "x": 380,
+          "y": 120,
+          "w": 260,
+          "h": 90,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Fin des années 90"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_x1q1htv",
+          "type": "shape",
+          "x": 700,
+          "y": 120,
+          "w": 260,
+          "h": 90,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "2001"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_bhqicgv",
+          "type": "shape",
+          "x": 1020,
+          "y": 120,
+          "w": 140,
+          "h": 90,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Depuis"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_r086aq5",
+          "type": "text",
+          "x": 60,
+          "y": 230,
+          "w": 300,
+          "h": 180,
+          "z": 2,
+          "data": {
+            "html": "Réaction contre les grosses méthodes ; prise en compte des facteurs humains du développement logiciel."
+          },
+          "style": {
+            "fontSize": 14,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_6rxj3dq",
+          "type": "text",
+          "x": 380,
+          "y": 230,
+          "w": 300,
+          "h": 180,
+          "z": 2,
+          "data": {
+            "html": "Pratiques de consultants puis livres : XP, Scrum, FDD, Crystal…"
+          },
+          "style": {
+            "fontSize": 14,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_d0jrume",
+          "type": "text",
+          "x": 700,
+          "y": 230,
+          "w": 300,
+          "h": 180,
+          "z": 2,
+          "data": {
+            "html": "Les principaux méthodologues s'accordent sur <b>l'Agile Manifesto</b>."
+          },
+          "style": {
+            "fontSize": 14,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_mqvug7t",
+          "type": "text",
+          "x": 1020,
+          "y": 230,
+          "w": 200,
+          "h": 180,
+          "z": 2,
+          "data": {
+            "html": "Les projets agiles mixent des éléments des principales méthodes."
+          },
+          "style": {
+            "fontSize": 14,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        }
+      ],
+      "notes": "Frise chronologique : de la réaction anti-process au manifeste de 2001, jusqu'aux pratiques hybrides actuelles."
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier que le vocabulaire de la première approche (volontairement provocatrice) est bien retenu.",
+      "elements": [
+        {
+          "id": "el_lrjp5fz",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quel modèle de conception correspond à l'approche « code and fix », sans méthode définie ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Cascade",
+              "Rien",
+              "Modèle en V",
+              "Itératif (RUP)"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "title": "Principes des méthodes Agiles",
+      "subtitle": "Le manifeste et ses valeurs",
+      "notes": "Transition de section."
+    },
+    {
+      "type": "bullets",
+      "title": "Principes communs aux méthodes agiles",
+      "items": [
+        {
+          "text": "Méthodes adaptatives (vs. prédictives)",
+          "sub": [
+            "Itérations courtes",
+            "Lien fort avec le client"
+          ]
+        },
+        "Fixer les délais et les coûts, mais pas la portée",
+        {
+          "text": "Insistance sur les hommes",
+          "sub": [
+            "Les programmeurs sont des spécialistes, pas des unités interchangeables",
+            "Attention à la communication humaine"
+          ]
+        },
+        {
+          "text": "Équipes auto-organisées",
+          "sub": [
+            "Processus auto-adaptatif : révision à chaque itération"
+          ]
+        }
+      ],
+      "notes": "C'est le socle commun à toutes les méthodes agiles qui vont suivre (XP, Scrum, etc.)."
+    },
+    {
+      "type": "bullets",
+      "title": "Méthodes",
+      "items": [
+        "Simplicité, légèreté",
+        "Orientées <b>participants</b> plutôt que plan",
+        "Nombreuses : eXtreme Programming, SCRUM…",
+        "Pas de définition unique, mais un <b>manifeste</b> commun"
+      ],
+      "notes": "« Agile » n'est pas une méthode unique : c'est une famille de méthodes qui partagent un même manifeste."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_ncobhcs",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Le manifeste Agile — 4 valeurs"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_66l1la8",
+          "type": "text",
+          "x": 60,
+          "y": 60,
+          "w": 1160,
+          "h": 30,
+          "z": 2,
+          "data": {
+            "html": "Février 2001 : rencontre et accord sur un manifeste, mise en place de l'« Agile Alliance »."
+          },
+          "style": {
+            "fontSize": 16,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_4xwkkus",
+          "type": "card",
+          "x": 60,
+          "y": 130,
+          "w": 560,
+          "h": 150,
+          "z": 2,
+          "data": {
+            "title": "Individus & interactions",
+            "items": [
+              "Plus que les processus et les outils"
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_hbqjpcs",
+          "type": "card",
+          "x": 660,
+          "y": 130,
+          "w": 560,
+          "h": 150,
+          "z": 2,
+          "data": {
+            "title": "Logiciel opérationnel",
+            "items": [
+              "Plus qu'une documentation exhaustive"
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_cruh6ll",
+          "type": "card",
+          "x": 60,
+          "y": 310,
+          "w": 560,
+          "h": 150,
+          "z": 2,
+          "data": {
+            "title": "Collaboration avec le client",
+            "items": [
+              "Plus que la négociation de contrat"
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_pj5dpm1",
+          "type": "card",
+          "x": 660,
+          "y": 310,
+          "w": 560,
+          "h": 150,
+          "z": 2,
+          "data": {
+            "title": "Réponse au changement",
+            "items": [
+              "Plus que l'application d'un plan"
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_xknmlc9",
+          "type": "text",
+          "x": 60,
+          "y": 490,
+          "w": 1160,
+          "h": 60,
+          "z": 2,
+          "data": {
+            "html": "Les éléments de droite gardent de la valeur — mais ceux de gauche priment. 12 principes en découlent."
+          },
+          "style": {
+            "fontSize": 15,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "center",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        }
+      ],
+      "notes": "Ce sont LES 4 valeurs à retenir par cœur — elles reviendront dans le quiz."
+    },
+    {
+      "type": "bullets",
+      "title": "Manifeste Agile : les principes (1/2)",
+      "items": [
+        "Satisfaire le client en priorité, par une livraison précoce et continue de logiciel de valeur",
+        "Accueillir favorablement le changement des exigences, même tard dans le projet",
+        "Livrer fréquemment un logiciel opérationnel, de quelques semaines à quelques mois",
+        "Le métier et les développeurs doivent travailler ensemble, quotidiennement",
+        "Construire des projets autour de personnes motivées, en leur faisant confiance",
+        "La conversation en face à face est la méthode la plus efficace pour transmettre l'information"
+      ],
+      "notes": "Traduction/adaptation des 6 premiers des 12 principes officiels (texte original en anglais sur agilemanifesto.org)."
+    },
+    {
+      "type": "bullets",
+      "title": "Manifeste Agile : les principes (2/2)",
+      "items": [
+        "Le logiciel opérationnel est la principale mesure d'avancement",
+        "Les processus agiles favorisent un rythme de développement soutenable indéfiniment",
+        "Une attention continue à l'excellence technique et à la qualité renforce l'agilité",
+        "La simplicité — l'art de maximiser le travail <b>non</b> fait — est essentielle",
+        "Les meilleures architectures et conceptions émergent d'équipes auto-organisées",
+        "À intervalles réguliers, l'équipe ajuste son comportement pour être plus efficace"
+      ],
+      "notes": "6 principes suivants. Le principe 10 (simplicité) surprend souvent — insister dessus."
+    },
+    {
+      "type": "bullets",
+      "title": "Processus agile et modélisation",
+      "items": [
+        "Utilisation d'UML : oui, mais pas systématique",
+        "La modélisation vise avant tout à <b>comprendre et communiquer</b>",
+        "Modéliser pour les parties inhabituelles, difficiles ou délicates",
+        "Rester à un niveau de modélisation minimalement suffisant",
+        "Modélisation en groupe, avec des outils simples et adaptés",
+        "Les développeurs créent les modèles qu'ils développeront eux-mêmes"
+      ],
+      "notes": "D'après Larman (2005, p.36-37). Fait le pont avec le cours de modélisation vu par ailleurs."
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la mémorisation des 4 valeurs (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_fdgkw5k",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quelle est l'une des valeurs fondamentales du Manifeste Agile ?",
+            "duration": 30,
+            "answer": 2,
+            "options": [
+              "Planification détaillée",
+              "Documentation exhaustive",
+              "Collaboration avec le client",
+              "Conformité stricte aux spécifications"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Le Kahoot du cours cochait 3 des 4 valeurs comme correctes (QCM à choix multiple) — reformulé ici en « lequel est faux » pour rester compatible avec le moteur quiz-live (réponse unique). La 4e proposition est l'exact inverse de la vraie valeur (« répondre au changement plus qu'un plan »).",
+      "elements": [
+        {
+          "id": "el_xrxshbh",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Laquelle de ces phrases NE fait PAS partie des 4 valeurs du Manifeste Agile ?",
+            "duration": 30,
+            "answer": 3,
+            "options": [
+              "Individus et interactions plus que les processus et les outils",
+              "Logiciel opérationnel plus qu'une documentation exhaustive",
+              "Collaboration avec le client plus que la négociation contractuelle",
+              "Suivre un plan détaillé plutôt que de répondre au changement"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la compréhension du 1er des 12 principes (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_z63r5vm",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quel principe de l'agilité met l'accent sur la livraison précoce et continue de logiciels fonctionnels ?",
+            "duration": 30,
+            "answer": 3,
+            "options": [
+              "Priorité à la documentation",
+              "Priorité à la planification",
+              "Priorité à la collaboration avec le client",
+              "Priorité à la livraison de valeur"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "title": "XP : eXtreme Programming",
+      "subtitle": "La méthode agile historique, portée à l'extrême",
+      "notes": "Transition de section. XP est la méthode la plus ancienne et la plus radicale des méthodes agiles."
+    },
+    {
+      "type": "bullets",
+      "title": "Historique de l'eXtreme Programming",
+      "items": [
+        "1996 : Ward Cunningham et Kent Beck",
+        "Projet Chrysler Comprehensive Compensation (C3) — réorganisation du système de paie",
+        "Propagation mondiale grâce à Internet",
+        "Implantation plus lente en France"
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "Principes de l'XP",
+      "items": [
+        "La <b>dimension humaine</b> est déterminante pour la réussite de tout projet",
+        "Feedback rapide et constant",
+        "Compréhension partagée",
+        "Bien-être de l'équipe",
+        "Processus fluide et continu"
+      ],
+      "notes": "Source : extremeprogramming.org. XP pousse à l'extrême des pratiques de bon sens."
+    },
+    {
+      "type": "bullets",
+      "title": "Caractéristiques principales",
+      "items": [
+        "Le client (MOA) pilote le projet de très près, via des cycles itératifs courts (1 à 2 semaines)",
+        "L'équipe livre très tôt une première version, puis enchaîne les livraisons à un rythme soutenu",
+        "L'équipe s'auto-organise pour atteindre ses objectifs",
+        "Des tests automatiques garantissent un niveau de robustesse élevé",
+        "Les développeurs améliorent sans cesse la structure interne du logiciel"
+      ],
+      "notes": "D'après design-up.com/methodes/XP/"
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_w32c6s1",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Vue d'ensemble du cycle XP"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_6mkn8jj",
+          "type": "shape",
+          "x": 500,
+          "y": 60,
+          "w": 260,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Planning"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_afqpjo2",
+          "type": "shape",
+          "x": 500,
+          "y": 170,
+          "w": 260,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Écriture des tests"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_ps5i4ax",
+          "type": "shape",
+          "x": 470,
+          "y": 280,
+          "w": 320,
+          "h": 90,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Programmation par paires + Refactoring"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 14,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_zcctdad",
+          "type": "shape",
+          "x": 500,
+          "y": 410,
+          "w": 260,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Test"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_4zs62x7",
+          "type": "shape",
+          "x": 500,
+          "y": 510,
+          "w": 260,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Intégration"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_5645o2a",
+          "type": "shape",
+          "x": 140,
+          "y": 280,
+          "w": 200,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Release"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_0v2uhh9",
+          "type": "text",
+          "x": 800,
+          "y": 60,
+          "w": 320,
+          "h": 30,
+          "z": 2,
+          "data": {
+            "html": "toutes les 2 ou 3 semaines"
+          },
+          "style": {
+            "fontSize": 13,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_mxm0v20",
+          "type": "text",
+          "x": 850,
+          "y": 250,
+          "w": 320,
+          "h": 40,
+          "z": 2,
+          "data": {
+            "html": "développement piloté par les tests"
+          },
+          "style": {
+            "fontSize": 13,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_y45wbx9",
+          "type": "text",
+          "x": 800,
+          "y": 540,
+          "w": 320,
+          "h": 30,
+          "z": 2,
+          "data": {
+            "html": "chaque jour (intégration continue)"
+          },
+          "style": {
+            "fontSize": 13,
+            "fontWeight": 400,
+            "color": "var(--sl-muted)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        }
+      ],
+      "notes": "Cycle très court : plusieurs itérations Planning &#8594; Tests &#8594; Programmation par paires &#8594; Test &#8594; Intégration par jour, avec une release toutes les 2-3 semaines.",
+      "connectors": [
+        {
+          "id": "conn_5ymf0an",
+          "sourceId": "el_6mkn8jj",
+          "sourceAnchor": "bottom",
+          "targetId": "el_afqpjo2",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_b726fn9",
+          "sourceId": "el_afqpjo2",
+          "sourceAnchor": "bottom",
+          "targetId": "el_ps5i4ax",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_mfx1ae4",
+          "sourceId": "el_ps5i4ax",
+          "sourceAnchor": "bottom",
+          "targetId": "el_zcctdad",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_070smz7",
+          "sourceId": "el_zcctdad",
+          "sourceAnchor": "left",
+          "targetId": "el_afqpjo2",
+          "targetAnchor": "bottom",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-accent)",
+            "strokeWidth": 2,
+            "dashArray": "4 4"
+          }
+        },
+        {
+          "id": "conn_cgjf41n",
+          "sourceId": "el_zcctdad",
+          "sourceAnchor": "bottom",
+          "targetId": "el_4zs62x7",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_23mfeie",
+          "sourceId": "el_4zs62x7",
+          "sourceAnchor": "left",
+          "targetId": "el_5645o2a",
+          "targetAnchor": "bottom",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-heading)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_a7taz4s",
+          "sourceId": "el_5645o2a",
+          "sourceAnchor": "top",
+          "targetId": "el_6mkn8jj",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-heading)",
+            "strokeWidth": 2,
+            "dashArray": "4 4"
+          }
+        }
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Comité de pilotage (CoPil)",
+      "items": [
+        {
+          "text": "Comité de pilotage",
+          "sub": [
+            "Dirige les aspects stratégiques du projet",
+            "Définit les objectifs et alloue les moyens nécessaires"
+          ]
+        },
+        {
+          "text": "Client interlocuteur",
+          "sub": [
+            "Le plus à même de connaître le besoin et de l'exprimer",
+            "Appui du « sponsor principal » (DSI ou porte-parole officiel)"
+          ]
+        },
+        {
+          "text": "En phase de préparation, s'assurer de",
+          "sub": [
+            "La clarté des objectifs du projet",
+            "Leur compréhension par toutes les parties prenantes",
+            "L'accord de l'entreprise cliente"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "Bien-être de l'équipe",
+      "items": [
+        "Pratique humaniste favorisant l'élimination progressive des risques",
+        "Établissement d'un rythme de travail régulier, sans heures supplémentaires",
+        {
+          "text": "But",
+          "sub": [
+            "Éliminer le stress",
+            "Éliminer les tensions internes au groupe",
+            "Éliminer les tensions entre le groupe et les donneurs d'ordres",
+            "Éliminer le risque de défection"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_ovghy9l",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Structure d'une équipe XP"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_ktmwxk6",
+          "type": "card",
+          "x": 60,
+          "y": 110,
+          "w": 180,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Client",
+            "items": [
+              "Spécifie les besoins"
+            ]
+          },
+          "style": {
+            "fontSize": 13,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_4u0pbvm",
+          "type": "card",
+          "x": 260,
+          "y": 110,
+          "w": 180,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Testeur",
+            "items": [
+              "Assiste le client"
+            ]
+          },
+          "style": {
+            "fontSize": 13,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_gs6fthj",
+          "type": "card",
+          "x": 460,
+          "y": 110,
+          "w": 180,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Manager",
+            "items": [
+              "Gère l'espace de travail"
+            ]
+          },
+          "style": {
+            "fontSize": 13,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_inpu14j",
+          "type": "card",
+          "x": 660,
+          "y": 110,
+          "w": 180,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Coach",
+            "items": [
+              "Garant de la méthode"
+            ]
+          },
+          "style": {
+            "fontSize": 13,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_r4co7vn",
+          "type": "card",
+          "x": 860,
+          "y": 110,
+          "w": 180,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Tracker",
+            "items": [
+              "Suit le projet au jour le jour"
+            ]
+          },
+          "style": {
+            "fontSize": 13,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_u6nj3yq",
+          "type": "card",
+          "x": 1060,
+          "y": 110,
+          "w": 160,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Programmeur",
+            "items": [
+              "Code et teste"
+            ]
+          },
+          "style": {
+            "fontSize": 13,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "6 profils dans une équipe XP — détaillés sur les 3 slides suivantes."
+    },
+    {
+      "type": "split",
+      "title": "Le rôle de chaque profil (1/3)",
+      "left": {
+        "label": "Le client",
+        "type": "bullets",
+        "items": [
+          "Membre à part entière de l'équipe",
+          "Présence physique imposée tout au long du développement",
+          "Spécifie les fonctionnalités à implémenter et les tests fonctionnels",
+          "Rôle pouvant être tenu par une ou plusieurs personnes"
+        ]
+      },
+      "right": {
+        "label": "Le testeur",
+        "type": "bullets",
+        "items": [
+          "Assistant du client — un programmeur",
+          "Implémente les tests de recette le plus tôt possible",
+          "Valide le fonctionnement du code et vérifie la non-régression"
+        ]
+      },
+      "notes": ""
+    },
+    {
+      "type": "split",
+      "title": "Le rôle de chaque profil (2/3)",
+      "left": {
+        "label": "Le manager",
+        "type": "bullets",
+        "items": [
+          "Responsable de l'infrastructure de l'équipe",
+          "S'assure de l'absence de problèmes logistiques (espace, outillage, documentation…)"
+        ]
+      },
+      "right": {
+        "label": "Le coach",
+        "type": "bullets",
+        "items": [
+          "S'assure de la bonne application de la méthode XP",
+          "Généralement « expert méthode » et bon communicateur",
+          "A pour objectif de… se faire oublier"
+        ]
+      },
+      "notes": ""
+    },
+    {
+      "type": "split",
+      "title": "Le rôle de chaque profil (3/3)",
+      "left": {
+        "label": "Le tracker",
+        "type": "bullets",
+        "items": [
+          "Contrôle l'avancement des tâches dans l'itération",
+          "S'entretient fréquemment avec chaque programmeur",
+          "Détecte le plus tôt possible les dérives"
+        ]
+      },
+      "right": {
+        "label": "Le programmeur",
+        "type": "bullets",
+        "items": [
+          "Estime la charge d'implémentation d'un scénario",
+          "Implémente en s'appuyant sur des tests unitaires",
+          "Est aussi analyste et concepteur"
+        ]
+      },
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "XP : Pratiques (1)",
+      "items": [
+        {
+          "text": "Le « jeu de la planification »",
+          "sub": [
+            "Regroupement des intervenants pour planifier l'itération",
+            "Les développeurs évaluent risques techniques et efforts prévisibles",
+            "Les clients estiment la valeur des fonctionnalités et décident du contenu"
+          ]
+        },
+        {
+          "text": "Temps court entre les releases",
+          "sub": [
+            "Au début : le plus petit ensemble de fonctionnalités utiles",
+            "Puis : sorties régulières de prototypes enrichis"
+          ]
+        },
+        "Métaphore : une convention facile à retenir pour organiser le projet"
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "XP : Pratiques (2)",
+      "items": [
+        {
+          "text": "Conception simple",
+          "sub": [
+            "Toujours la conception la plus simple qui fonctionne",
+            "Doit passer les tests, être claire",
+            "Pas de généricité spéculative"
+          ]
+        },
+        {
+          "text": "Tests",
+          "sub": [
+            "Développement piloté par les tests (TDD) : tests d'abord, code ensuite",
+            "Programmeurs → tests unitaires ; clients → tests d'acceptation"
+          ]
+        },
+        {
+          "text": "Refactoring",
+          "sub": [
+            "Réécriture et simplification permanente du code",
+            "Le code doit toujours rester propre"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "XP : Pratiques (3)",
+      "items": [
+        "Programmation par paires : tout le code de production est écrit à deux, devant un même ordinateur",
+        "L'un pense à l'implémentation en cours, l'autre à l'ensemble du système",
+        "Les paires échangent les rôles et les participants changent régulièrement",
+        {
+          "text": "Bénéfices",
+          "sub": [
+            "Contrôle mutuel, moins d'erreurs de conception",
+            "Meilleure concentration",
+            "Pas de dépendance à un seul développeur",
+            "Circulation de la connaissance"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "XP : Pratiques (4)",
+      "items": [
+        {
+          "text": "Propriété collective du code",
+          "sub": [
+            "Tout programmeur qui voit une amélioration possible peut l'apporter, à tout moment"
+          ]
+        },
+        {
+          "text": "Intégration continue",
+          "sub": [
+            "Gestionnaire de versions (ex. Git)",
+            "Au minimum une construction (build) complète par jour",
+            "100 % des tests doivent passer avant et après l'intégration"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "XP : Pratiques (5)",
+      "items": [
+        {
+          "text": "Semaine de 40 heures",
+          "sub": [
+            "Les programmeurs rentrent à l'heure",
+            "Les heures supplémentaires sont un signe de problème",
+            "Moins d'erreurs de fatigue, meilleure motivation"
+          ]
+        },
+        {
+          "text": "Des clients sur place",
+          "sub": [
+            "Accès permanent à un vrai client/utilisateur"
+          ]
+        },
+        {
+          "text": "Des standards de codage",
+          "sub": [
+            "Tout le monde code de la même manière",
+            "On ne devrait pas pouvoir dire qui a écrit quoi"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "XP : Pratiques (6)",
+      "items": [
+        {
+          "text": "Règles",
+          "sub": [
+            "L'équipe décide de ses règles et peut les changer à tout moment"
+          ]
+        },
+        {
+          "text": "Espace de travail",
+          "sub": [
+            "Tout le monde dans la même pièce (awareness)",
+            "Tableaux muraux qui matérialisent la progression du projet",
+            "User stories réalisées / à faire, résultats des tests"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la compréhension du TDD (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_4o5mbng",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quelle pratique d'XP est axée sur l'écriture de tests automatisés pour garantir la qualité du code ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Pair programming",
+              "Test-driven development (TDD)",
+              "Planning poker",
+              "Stand-up meetings"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la compréhension des bénéfices du pair programming (question ajoutée, non issue du Kahoot).",
+      "elements": [
+        {
+          "id": "el_9qkf2u4",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "En programmation par paires, quel est l'un des bénéfices recherchés ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Réduire de moitié le temps de développement",
+              "Diminuer les erreurs de conception grâce au contrôle mutuel",
+              "Éviter d'avoir à écrire des tests",
+              "Permettre à chacun de coder seul plus efficacement"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Unification des savoirs (1/2)",
+      "items": [
+        {
+          "text": "Formation avant le lancement du projet",
+          "sub": [
+            "Phase d'apprentissage théorique par un formateur professionnel",
+            "Mise en pratique dans le cadre d'un projet pilote"
+          ]
+        },
+        {
+          "text": "Projet partagé en 2 phases",
+          "sub": [
+            "Phase coaching : réaliser le potentiel de chaque membre, avec le soutien des coachs",
+            "Phase productive : lors de la première phase du vrai projet"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "Unification des savoirs (2/2)",
+      "items": [
+        "Maximiser la rentabilité de l'investissement en montée en compétences",
+        "Éviter l'écueil 80/20 : les 20 % de connaissances les plus pointues coûtent 80 % de l'effort de formation",
+        "Faire confiance au temps et à l'uniformisation progressive des compétences collectives"
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "XP : avantages",
+      "items": [
+        "Concepts intégrés et simples",
+        {
+          "text": "Pas trop de management",
+          "sub": [
+            "Pas de procédures complexes",
+            "Pas de documentation à maintenir",
+            "Communication directe"
+          ]
+        },
+        "Programmation par paires",
+        "Gestion continuelle du risque, estimation permanente des efforts",
+        "Insistance sur les tests : facilite l'évolution et la maintenance"
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "XP : inconvénients",
+      "items": [
+        "Approprié pour de petites équipes (≤ 10 développeurs) — ne passe pas à l'échelle",
+        "Pour des groupes plus gros, il faut plus de structure et de documentation (« ceremony »)",
+        "Risque d'un code pas assez documenté — reprise difficile par des développeurs extérieurs",
+        "Pas de design générique : pas d'anticipation des développements futurs"
+      ],
+      "notes": "Transition naturelle vers Scrum, qui structure davantage la gestion de projet tout en restant agile."
+    },
+    {
+      "type": "chapter",
+      "title": "Scrum",
+      "subtitle": "La méthode agile la plus répandue en entreprise",
+      "notes": "Transition de section. Scrum est aujourd'hui la méthode agile la plus utilisée en entreprise."
+    },
+    {
+      "type": "definition",
+      "title": "Scrum",
+      "term": "Scrum (la « mêlée », au rugby)",
+      "definition": "Part de l'observation que le client change d'avis et de besoins en cours de projet : Scrum prend en compte l'aspect incertain de la gestion de projet avec une approche empirique.",
+      "example": "Comme au rugby, l'équipe avance groupée, en se resynchronisant en permanence.",
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "Phases de Scrum",
+      "items": [
+        {
+          "text": "1. Initiation / démarrage",
+          "sub": [
+            "Planning : définir le Product Backlog (fonctionnalités ordonnées par priorité et effort)",
+            "Architecture : conception de haut niveau"
+          ]
+        },
+        {
+          "text": "2. Développement",
+          "sub": [
+            "Cycles itératifs (sprints) de 30 jours",
+            "Amélioration progressive du prototype"
+          ]
+        },
+        {
+          "text": "3. Clôture",
+          "sub": [
+            "Gestion de la fin du projet : livraison…"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_m5t25jp",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Le cycle Scrum"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_3hh8l3x",
+          "type": "shape",
+          "x": 60,
+          "y": 300,
+          "w": 220,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Backlog du produit"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_1o6kyi8",
+          "type": "shape",
+          "x": 340,
+          "y": 300,
+          "w": 200,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Backlog du sprint"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_5d1he8n",
+          "type": "shape",
+          "x": 620,
+          "y": 150,
+          "w": 240,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Mêlée quotidienne (24h)"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_80maise",
+          "type": "shape",
+          "x": 620,
+          "y": 380,
+          "w": 240,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Sprint (2 à 4 semaines)"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_p4uh5kj",
+          "type": "shape",
+          "x": 960,
+          "y": 300,
+          "w": 240,
+          "h": 70,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Incrément potentiellement livrable"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 13,
+            "fontWeight": 700
+          }
+        }
+      ],
+      "notes": "Le Product Backlog alimente le Sprint Backlog ; pendant le sprint, l'équipe se resynchronise chaque jour (mêlée quotidienne) ; à l'issue du sprint, un incrément utilisable est livré.",
+      "connectors": [
+        {
+          "id": "conn_1x0dh01",
+          "sourceId": "el_3hh8l3x",
+          "sourceAnchor": "right",
+          "targetId": "el_1o6kyi8",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_f9nh0b4",
+          "sourceId": "el_1o6kyi8",
+          "sourceAnchor": "top",
+          "targetId": "el_5d1he8n",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_d1zfubs",
+          "sourceId": "el_1o6kyi8",
+          "sourceAnchor": "bottom",
+          "targetId": "el_80maise",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        },
+        {
+          "id": "conn_3kenrn6",
+          "sourceId": "el_5d1he8n",
+          "sourceAnchor": "bottom",
+          "targetId": "el_80maise",
+          "targetAnchor": "top",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-accent)",
+            "strokeWidth": 2,
+            "dashArray": "4 4"
+          }
+        },
+        {
+          "id": "conn_0l6t0lv",
+          "sourceId": "el_80maise",
+          "sourceAnchor": "right",
+          "targetId": "el_p4uh5kj",
+          "targetAnchor": "left",
+          "lineType": "straight",
+          "arrowEnd": true,
+          "arrowStart": false,
+          "style": {
+            "stroke": "var(--sl-primary)",
+            "strokeWidth": 2,
+            "dashArray": ""
+          }
+        }
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Principes Scrum (1/2)",
+      "items": [
+        {
+          "text": "Isolement de l'équipe de développement",
+          "sub": [
+            "L'équipe est isolée de toute influence extérieure qui pourrait lui nuire",
+            "Pas d'évolution des besoins pendant un sprint en cours"
+          ]
+        },
+        {
+          "text": "Développement progressif",
+          "sub": [
+            "L'équipe livre une solution tous les 30 jours",
+            "Série de fonctionnalités opérationnelles à la fin de chaque période"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "Principes Scrum (2/2)",
+      "items": [
+        {
+          "text": "Pouvoir à l'équipe",
+          "sub": [
+            "L'équipe a les pleins pouvoirs pour réaliser les fonctionnalités",
+            "Seule contrainte : livrer une solution qui convient au client sous 30 jours"
+          ]
+        },
+        {
+          "text": "Contrôle du travail",
+          "sub": [
+            "Contrôlé quotidiennement (les membres vont bien, tout avance)",
+            "Contrôlé en fin de sprint (la solution répond-elle au besoin ?)"
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_5v5k84h",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Scrum : rôles et responsabilités"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_laerun1",
+          "type": "card",
+          "x": 60,
+          "y": 120,
+          "w": 280,
+          "h": 250,
+          "z": 2,
+          "data": {
+            "title": "Product Owner",
+            "items": [
+              "Responsable officiel du projet",
+              "Gère le Product Backlog"
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_o0jg3s8",
+          "type": "card",
+          "x": 360,
+          "y": 120,
+          "w": 280,
+          "h": 250,
+          "z": 2,
+          "data": {
+            "title": "Scrum Master",
+            "items": [
+              "Expert de l'application de Scrum",
+              "Retire les obstacles de l'équipe"
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_lg6nojo",
+          "type": "card",
+          "x": 660,
+          "y": 120,
+          "w": 280,
+          "h": 250,
+          "z": 2,
+          "data": {
+            "title": "Scrum Team",
+            "items": [
+              "L'équipe projet",
+              "Auto-organisée"
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_j9iljqp",
+          "type": "card",
+          "x": 960,
+          "y": 120,
+          "w": 260,
+          "h": 250,
+          "z": 2,
+          "data": {
+            "title": "Management",
+            "items": [
+              "Prend les décisions stratégiques"
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la distinction des rôles Scrum (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_n8q1ioq",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quel rôle est responsable de la gestion du backlog de produit dans Scrum ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Scrum Master",
+              "Product Owner",
+              "Développeur",
+              "Management"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier l'association Scrum &#8594; auto-organisation (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_lp1cmf7",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quelle méthodologie agile met l'accent sur l'auto-organisation des équipes de développement ?",
+            "duration": 30,
+            "answer": 0,
+            "options": [
+              "Scrum",
+              "Kanban",
+              "Extreme Programming",
+              "Lean"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_jyx81zt",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Scrum : Pratiques"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_v78hqkw",
+          "type": "card",
+          "x": 60,
+          "y": 110,
+          "w": 360,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Product Backlog",
+            "items": [
+              "État courant des tâches à accomplir"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_gan4wt0",
+          "type": "card",
+          "x": 440,
+          "y": 110,
+          "w": 360,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Sprint Backlog",
+            "items": [
+              "Product Backlog limité au sprint en cours"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_6eww6fi",
+          "type": "card",
+          "x": 820,
+          "y": 110,
+          "w": 360,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Effort Estimation",
+            "items": [
+              "Permanente, sur les entrées du backlog"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_fp11mdh",
+          "type": "card",
+          "x": 60,
+          "y": 290,
+          "w": 360,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Sprint Planning Meeting",
+            "items": [
+              "Décide des objectifs du sprint à venir"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_qorf05x",
+          "type": "card",
+          "x": 440,
+          "y": 290,
+          "w": 360,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Daily Scrum Meeting",
+            "items": [
+              "Ce qui a été fait, reste à faire, les problèmes"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_ntk5r8o",
+          "type": "card",
+          "x": 820,
+          "y": 290,
+          "w": 360,
+          "h": 160,
+          "z": 2,
+          "data": {
+            "title": "Sprint Review Meeting",
+            "items": [
+              "Présentation des résultats du sprint"
+            ]
+          },
+          "style": {
+            "fontSize": 14,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "Sprint = itération de 30 jours. À ces 6 pratiques s'ajoute la Sprint Retrospective (slide suivante)."
+    },
+    {
+      "type": "canvas",
+      "notes": "Le Kahoot du cours cochait à la fois « Backlog product » et « MVP » comme corrects — or un MVP est une VERSION du produit, pas un ensemble de tâches : seule la réponse « backlog » correspond à la définition donnée. Correction apportée lors de la vérification du quiz.",
+      "elements": [
+        {
+          "id": "el_1431ri4",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Un « backlog produit », dans un projet agile, désigne…",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Un sprint",
+              "Un ensemble de fonctionnalités ou de tâches à réaliser, ordonnées par priorité",
+              "Un prototype",
+              "Un rapport de fin de projet"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Le cours retient 30 jours comme référence classique, tout en reconnaissant une pratique moderne plus courte (question issue du quiz Kahoot du cours, reformulée pour coller au support).",
+      "elements": [
+        {
+          "id": "el_e9d1pmg",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Dans Scrum, un sprint dure typiquement…",
+            "duration": 30,
+            "answer": 2,
+            "options": [
+              "1 semaine",
+              "2 semaines",
+              "Une durée variable d'un projet à l'autre, classiquement jusqu'à 30 jours",
+              "6 mois"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la définition de user story (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_vt65h8g",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Qu'est-ce qu'une user story dans le contexte de Scrum ?",
+            "duration": 30,
+            "answer": 2,
+            "options": [
+              "Un scénario de test",
+              "Une description technique détaillée des exigences",
+              "Une fonctionnalité du logiciel, vue du point de vue de l'utilisateur",
+              "Une tâche assignée à un développeur"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la distinction Review (le PRODUIT) / Retrospective (le PROCESSUS) — question issue du quiz Kahoot du cours.",
+      "elements": [
+        {
+          "id": "el_djzeoua",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quel terme désigne le processus d'examen du produit réalisé à l'issue d'un sprint ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Sprint Planning",
+              "Sprint Review",
+              "Sprint Retrospective",
+              "Daily Scrum"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "En miroir de la question précédente — question issue du quiz Kahoot du cours.",
+      "elements": [
+        {
+          "id": "el_cpi7i0n",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quel terme désigne le processus de réflexion de l'équipe sur le sprint écoulé, pour améliorer son fonctionnement ?",
+            "duration": 30,
+            "answer": 2,
+            "options": [
+              "Sprint Planning",
+              "Sprint Review",
+              "Sprint Retrospective",
+              "Daily Scrum"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_ezm8w3w",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Scrum : point sur l'estimation"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_i2r6fwa",
+          "type": "text",
+          "x": 60,
+          "y": 60,
+          "w": 1160,
+          "h": 40,
+          "z": 2,
+          "data": {
+            "html": "Il ne faut pas estimer en <b>temps</b> mais en <b>difficulté</b> — outil classique : le planning poker."
+          },
+          "style": {
+            "fontSize": 18,
+            "fontWeight": 400,
+            "color": "var(--sl-text)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_nj0wy3q",
+          "type": "text",
+          "x": 60,
+          "y": 130,
+          "w": 560,
+          "h": 320,
+          "z": 2,
+          "data": {
+            "html": "1. Chacun dispose d'un jeu de cartes.<br>2. On vote sur la difficulté d'une tâche.<br>3. Seuls les votes extrêmes s'expriment, puis on revote.<br>4. On continue jusqu'au consensus.<br>5. Trop petite &#8594; triviale. Trop grande &#8594; on la découpe en sous-tâches."
+          },
+          "style": {
+            "fontSize": 17,
+            "fontWeight": 400,
+            "color": "var(--sl-text)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_x5jm165",
+          "type": "shape",
+          "x": 660,
+          "y": 200,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "0"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_f3s17fj",
+          "type": "shape",
+          "x": 750,
+          "y": 200,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "½"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_rtns72c",
+          "type": "shape",
+          "x": 840,
+          "y": 200,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "1"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_t8s3hzo",
+          "type": "shape",
+          "x": 930,
+          "y": 200,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "2"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_o7m6h7d",
+          "type": "shape",
+          "x": 1020,
+          "y": 200,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "3"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_log1733",
+          "type": "shape",
+          "x": 1110,
+          "y": 200,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "5"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_6fehy4d",
+          "type": "shape",
+          "x": 660,
+          "y": 320,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "8"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_h1rzsgn",
+          "type": "shape",
+          "x": 750,
+          "y": 320,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "13"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_nqxtyeu",
+          "type": "shape",
+          "x": 840,
+          "y": 320,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "20"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_z3xee5q",
+          "type": "shape",
+          "x": 930,
+          "y": 320,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "40"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_w2bzst5",
+          "type": "shape",
+          "x": 1020,
+          "y": 320,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "100"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_h0n3qv7",
+          "type": "shape",
+          "x": 1110,
+          "y": 320,
+          "w": 70,
+          "h": 100,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "?"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.4,
+            "color": "var(--sl-heading)",
+            "fontSize": 18,
+            "fontWeight": 700
+          }
+        }
+      ],
+      "notes": "Le jeu de cartes reprend la suite de Fibonacci (approximativement) : plus les valeurs sont élevées, plus l'estimation est grossière (l'incertitude croît avec la taille)."
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier le lien entre planning poker et estimation d'effort (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_7zvxx0c",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quelle activité agile consiste à estimer collectivement l'effort requis pour une user story ?",
+            "duration": 30,
+            "answer": 2,
+            "options": [
+              "Sprint Planning",
+              "Storytelling",
+              "Planning Poker",
+              "Grooming"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "chapter",
+      "title": "Autres méthodes",
+      "subtitle": "Lean et Kanban",
+      "notes": "Transition de section."
+    },
+    {
+      "type": "definition",
+      "title": "Le Lean",
+      "term": "Lean",
+      "definition": "« Sans gras » (mais pas maigre non plus), « au plus juste » — méthode de gestion de production de chez Toyota, adaptée aux développements informatiques agiles.",
+      "example": "Se concentre sur l'élimination des gaspillages à chaque étape du processus.",
+      "notes": ""
+    },
+    {
+      "type": "bullets",
+      "title": "Principes de développement Lean",
+      "items": [
+        "Éliminer les gaspillages",
+        "Améliorer l'apprentissage",
+        "Décider aussi tard que possible",
+        "Livrer aussi vite que possible",
+        "Donner le pouvoir à l'équipe",
+        "Intégrer la qualité dès la conception",
+        "Considérer le produit dans sa globalité"
+      ],
+      "notes": "7 principes à connaître — insister sur « décider aussi tard que possible », contre-intuitif au premier abord."
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier l'association Lean &#8594; amélioration continue / gaspillages (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_iw49d4b",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quelle méthode agile se concentre principalement sur l'amélioration continue des processus, en éliminant les gaspillages ?",
+            "duration": 30,
+            "answer": 0,
+            "options": [
+              "Lean",
+              "Kanban",
+              "Scrum",
+              "Extreme Programming"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_hkcs3vp",
+          "type": "heading",
+          "x": 60,
+          "y": 10,
+          "w": 1160,
+          "h": 55,
+          "z": 1,
+          "data": {
+            "text": "Kanban"
+          },
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_2yd0zfy",
+          "type": "text",
+          "x": 60,
+          "y": 55,
+          "w": 1160,
+          "h": 60,
+          "z": 2,
+          "data": {
+            "html": "Méthode visuelle de gestion de flux : chaque tâche est une carte qui avance de colonne en colonne. Contrairement à Scrum, il n'y a pas d'itération fixe, le flux est continu."
+          },
+          "style": {
+            "fontSize": 16,
+            "fontWeight": 400,
+            "color": "var(--sl-text)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_p58vgm6",
+          "type": "shape",
+          "x": 60,
+          "y": 150,
+          "w": 170,
+          "h": 44,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Backlog"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_8y6kkt6",
+          "type": "shape",
+          "x": 250,
+          "y": 150,
+          "w": 170,
+          "h": 44,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Ready"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_bsw0uyq",
+          "type": "shape",
+          "x": 440,
+          "y": 150,
+          "w": 170,
+          "h": 44,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Coding"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_yg83f6z",
+          "type": "shape",
+          "x": 630,
+          "y": 150,
+          "w": 170,
+          "h": 44,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Testing"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_i613myg",
+          "type": "shape",
+          "x": 820,
+          "y": 150,
+          "w": 170,
+          "h": 44,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Approval"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_1d0s3bc",
+          "type": "shape",
+          "x": 1010,
+          "y": 150,
+          "w": 170,
+          "h": 44,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Done"
+          },
+          "style": {
+            "fill": "var(--sl-muted)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 15,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_16zbq6m",
+          "type": "shape",
+          "x": 70,
+          "y": 220,
+          "w": 150,
+          "h": 50,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Carte A"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 12,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_7ny1gwa",
+          "type": "shape",
+          "x": 70,
+          "y": 280,
+          "w": 150,
+          "h": 50,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Carte B"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 12,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_r4c7gwy",
+          "type": "shape",
+          "x": 260,
+          "y": 220,
+          "w": 150,
+          "h": 50,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Carte C"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 12,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_1f7cdxm",
+          "type": "shape",
+          "x": 450,
+          "y": 220,
+          "w": 150,
+          "h": 50,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Carte D"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 12,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_ajjbw4v",
+          "type": "shape",
+          "x": 450,
+          "y": 280,
+          "w": 150,
+          "h": 50,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Carte E"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 12,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_zkt2v1n",
+          "type": "shape",
+          "x": 640,
+          "y": 220,
+          "w": 150,
+          "h": 50,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Carte F"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 12,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_uhk2oqv",
+          "type": "shape",
+          "x": 830,
+          "y": 220,
+          "w": 150,
+          "h": 50,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Carte G"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 12,
+            "fontWeight": 700
+          }
+        },
+        {
+          "id": "el_woknsdw",
+          "type": "shape",
+          "x": 1020,
+          "y": 220,
+          "w": 150,
+          "h": 50,
+          "z": 2,
+          "data": {
+            "shape": "rounded-rect",
+            "text": "Carte H"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 0.45,
+            "color": "var(--sl-heading)",
+            "fontSize": 12,
+            "fontWeight": 700
+          }
+        }
+      ],
+      "notes": "Le nombre de cartes « en cours » (colonnes du milieu) est volontairement plafonné — c'est le cœur du principe de Kanban : limiter le travail en cours (WIP) pour fluidifier le flux global."
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la reconnaissance du tableau Kanban comme outil visuel de suivi (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_r3mar42",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quel outil visuel est souvent utilisé dans les méthodes agiles pour suivre la progression des tâches ?",
+            "duration": 30,
+            "answer": 2,
+            "options": [
+              "Diagramme de Gantt",
+              "Matrice de responsabilité",
+              "Tableau Kanban",
+              "Diagramme de Gantt inversé"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Vérifier la compréhension de l'objectif central de Kanban (question issue du quiz Kahoot du cours).",
+      "elements": [
+        {
+          "id": "el_g5vo456",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Dans Kanban, quel est l'objectif principal ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Planifier des sprints de 30 jours",
+              "Limiter le travail en cours (WIP)",
+              "Organiser des réunions quotidiennes obligatoires",
+              "Estimer le temps nécessaire pour chaque tâche"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "quote",
+      "quote": "Il n'existe pas de baguette magique. Même si le développement incrémental permet de s'affranchir de beaucoup de problèmes, il y en aura toujours — mais d'ampleur plus faible, et mieux gérés. Toute méthode est adaptable et doit être adaptée ; mais lorsqu'on débute, mieux vaut ne pas trop s'écarter de la voie décrite, pour bien la comprendre d'abord.",
+      "author": "Conclusion",
+      "notes": "Faire le lien avec la partie 1 : la rigueur et l'adaptation au changement restent les deux piliers, quelle que soit la méthode choisie."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_3trjqag",
+          "type": "heading",
+          "x": 60,
+          "y": 260,
+          "w": 1160,
+          "h": 120,
+          "z": 1,
+          "data": {
+            "text": "Et maintenant, un petit quizz !"
+          },
+          "style": {
+            "fontSize": 46,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        }
+      ],
+      "notes": "Grand quiz récapitulatif de fin de cours, sur l'ensemble de la partie 2."
+    },
+    {
+      "type": "canvas",
+      "notes": "Question du quiz final.",
+      "elements": [
+        {
+          "id": "el_z14olaq",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quelle est l'une des 4 valeurs du Manifeste Agile ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Documentation exhaustive",
+              "Collaboration avec le client",
+              "Négociation contractuelle",
+              "Suivi d'un plan détaillé"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Question du quiz final.",
+      "elements": [
+        {
+          "id": "el_h4ltn1t",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quel rôle Scrum est expert de l'application de la méthode et retire les obstacles de l'équipe ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Product Owner",
+              "Scrum Master",
+              "Scrum Team",
+              "Management"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Question du quiz final.",
+      "elements": [
+        {
+          "id": "el_j7cmqq7",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quelle pratique XP consiste à écrire les tests avant le code ?",
+            "duration": 30,
+            "answer": 2,
+            "options": [
+              "Pair programming",
+              "Refactoring",
+              "Test-driven development (TDD)",
+              "Intégration continue"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Question du quiz final.",
+      "elements": [
+        {
+          "id": "el_7j6wad5",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Quel est le principal objectif de la méthode Kanban ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Fixer des sprints de 30 jours",
+              "Limiter le travail en cours",
+              "Éliminer la documentation",
+              "Remplacer le Product Owner"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
