@@ -634,7 +634,7 @@
                 break;
             }
             case 'quiz-live': {
-                const question = esc(el.data?.question || '');
+                const question = SlidesShared.formatInlineRichText(el.data?.question || '');
                 const quizOpts = el.data?.options || [];
                 const answer = el.data?.answer ?? 0;
                 const duration = el.data?.duration || 30;
@@ -643,7 +643,7 @@
                 const optsHtml = quizOpts.map((o, i) =>
                     `<div class="${P}-quizlive-option" data-idx="${i}" style="padding:10px 16px;border:2px solid var(--sl-border,#2d3347);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s;pointer-events:auto;">
                         <span style="width:calc(var(--sl-quiz-marker-size,2rem) * 0.9);height:calc(var(--sl-quiz-marker-size,2rem) * 0.9);border-radius:50%;background:color-mix(in srgb,var(--sl-primary,#818cf8) 15%,var(--sl-slide-bg,#141620));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(var(--sl-quiz-option-size,1rem) * 0.62);color:var(--sl-primary,#818cf8);">${String.fromCharCode(65 + i)}</span>
-                        <span style="color:var(--sl-text,#cbd5e1);font-size:var(--sl-quiz-option-size,1rem);line-height:1.4;">${esc(o)}</span>
+                        <span style="color:var(--sl-text,#cbd5e1);font-size:var(--sl-quiz-option-size,1rem);line-height:1.4;">${SlidesShared.formatInlineRichText(o)}</span>
                     </div>`
                 ).join('');
                 content = `<div class="${P}-quizlive-pending" data-room="${esc(roomId)}" data-answer="${answer}" data-duration="${duration}" style="width:100%;height:100%;display:flex;flex-direction:column;padding:16px;box-sizing:border-box;gap:12px;">
