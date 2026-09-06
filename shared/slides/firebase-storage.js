@@ -167,18 +167,40 @@
     const _CHUNK_BYTES = 768 * 1024;   // marge sous ~1 048 487 octets
     const _partId = (id, i) => `${id}__p${i}`;
 
+    /** Lit et concatène les fragments contigus `<id>__p0..` (s'arrête au premier absent). */
+    async function _readParts(col, id, expected = 0) {
+        let json = '';
+        let i = 0;
+        for (;;) {
+            // eslint-disable-next-line no-await-in-loop
+            const snap = await col.doc(_partId(id, i)).get();
+            if (!snap.exists) break;
+            json += (snap.data() || {}).s || '';
+            i++;
+            if (i > 512) break; // garde-fou
+        }
+        if (expected && i < expected) throw new Error(`Fragments incomplets : ${i}/${expected}`);
+        return { json, count: i };
+    }
+
     async function _loadChunked(col, id, docData) {
         const n = Number(docData.chunks) || 0;
-        if (n <= 0) return JSON.parse(docData.json);
-        const parts = await Promise.all(
-            Array.from({ length: n }, (_, i) => col.doc(_partId(id, i)).get())
-        );
-        let json = '';
-        for (let i = 0; i < n; i++) {
-            if (!parts[i].exists) throw new Error(`Fragment ${i + 1}/${n} manquant`);
-            json += (parts[i].data() || {}).s || '';
+        const inline = typeof docData.json === 'string' ? docData.json : '';
+
+        if (n > 0) {
+            const { json } = await _readParts(col, id, n);
+            return JSON.parse(json);
         }
-        return JSON.parse(json);
+        // Pas de `chunks` : deck inline classique — mais si `json` est vide/illisible,
+        // tenter une récupération via d'éventuels fragments orphelins (méta qui a
+        // perdu son champ `chunks`, ancienne sauvegarde partielle…).
+        try {
+            if (inline) return JSON.parse(inline);
+        } catch (_) { /* on tente les fragments */ }
+        const { json, count } = await _readParts(col, id, 0);
+        if (count > 0) return JSON.parse(json);
+        if (inline) return JSON.parse(inline); // relance l'erreur d'origine, explicite
+        throw new Error('Présentation vide ou corrompue sur Firebase');
     }
 
     async function loadPresentation(id) {
@@ -215,14 +237,17 @@
     }
 
     async function savePresentation(presentationData, existingId, opts = {}) {
+        const json = JSON.stringify(presentationData);
+        if (!presentationData || !json || json === 'undefined' || json === 'null') {
+            throw new Error('Présentation vide — sauvegarde annulée');
+        }
         const col   = _presCol();
         const id    = existingId || col.doc().id;
         const title = (presentationData.metadata && presentationData.metadata.title) || 'Sans titre';
         const course = opts.course || (presentationData.metadata && presentationData.metadata.course) || '';
         const isPublic = typeof opts.public === 'boolean' ? opts.public : false;
         const thumb = _computeThumb(presentationData);
-        const json = JSON.stringify(presentationData);
-        const meta = { id, title, modified: new Date().toISOString(), public: isPublic, course, thumb };
+        const meta = { id, title, modified: new Date().toISOString(), public: isPublic, course, thumb: thumb || null };
 
         const bytes = (typeof TextEncoder !== 'undefined') ? new TextEncoder().encode(json).length : json.length;
 
@@ -232,15 +257,17 @@
             return id;
         }
 
-        // Fragments D'ABORD, méta (chunks=N) ENSUITE — un `chunks` valide implique
-        // que les fragments existent.
+        // Découpage. Écriture ATOMIQUE via un WriteBatch : tous les fragments + la
+        // méta sont commités ensemble ou pas du tout → jamais de `chunks: N` avec
+        // des fragments manquants. (Limite de commit Firestore : 10 Mio ; largement
+        // suffisant pour un deck de slides.)
         const parts = [];
         for (let i = 0; i < json.length; i += _CHUNK_BYTES) parts.push(json.slice(i, i + _CHUNK_BYTES));
-        for (let i = 0; i < parts.length; i++) {
-            await col.doc(_partId(id, i)).set({ s: parts[i] });
-        }
-        await col.doc(id).set({ ...meta, json: '', chunks: parts.length });
-        await _clearParts(col, id, parts.length); // supprime les fragments en trop
+        const batch = _db.batch();
+        parts.forEach((s, i) => batch.set(col.doc(_partId(id, i)), { s }));
+        batch.set(col.doc(id), { ...meta, json: '', chunks: parts.length });
+        await batch.commit();
+        await _clearParts(col, id, parts.length); // supprime d'éventuels fragments en trop d'une version antérieure
         return id;
     }
 
