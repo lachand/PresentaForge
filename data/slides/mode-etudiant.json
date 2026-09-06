@@ -18,7 +18,7 @@
       "subtitle": "Rejoindre le cours, suivre en direct, répondre, réagir, prendre des notes et réviser",
       "author": "PresentaForge",
       "date": "2026",
-      "notes": "Deck montré en amphi puis mis à disposition. Objectif : que chacun sache se servir de student.html avant le premier vrai cours. Rappeler l'adresse : lachand.github.io/PresentaForge/slides/student.html"
+      "notes": "Deck montré en amphi puis mis à disposition. Objectif : que chacun sache se servir de student.html avant le premier vrai cours. Rappeler l'adresse : valentin.lachand.net/OutilsEnseignementInformatique/slides/student.html"
     },
     {
       "type": "chapter",
@@ -5633,7 +5633,7 @@
           "h": 240,
           "z": 2,
           "data": {
-            "value": "https://lachand.github.io/PresentaForge/slides/student.html",
+            "value": "https://valentin.lachand.net/OutilsEnseignementInformatique/slides/student.html",
             "label": ""
           }
         },
@@ -5646,7 +5646,7 @@
           "h": 40,
           "z": 3,
           "data": {
-            "html": "<b>lachand.github.io/PresentaForge/slides/student.html</b>"
+            "html": "<b>valentin.lachand.net/OutilsEnseignementInformatique/slides/student.html</b>"
           },
           "style": {
             "fontSize": 22,
