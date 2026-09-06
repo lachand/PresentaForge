@@ -29,17 +29,86 @@ if (EditorRuntime?.bindLegacyGlobals) {
 
 /* ── init() — Bootstrap the editor ─────────────────────── */
 
+/**
+ * Résout la source du deck initial et le charge, dans un ORDRE strict, chaîne
+ * unique `await`ée (pas de fetch parallèle qui ré-écraserait tardivement) :
+ *   ?file=X  >  ?firebase=id / sessionStorage (contenu RÉELLEMENT rechargé)  >
+ *   brouillon SLIDE_DRAFT (hand-off tableau de bord + autosave)  >  démo  >  vide.
+ * `editor._loadGen` est incrémenté par `editor.load()` : si une action utilisateur
+ * charge un deck pendant qu'une étape asynchrone est en vol, on abandonne.
+ */
+async function resolveInitialDeck(params) {
+    const fileParam = params.get('file');
+    const fbId = params.get('firebase')
+        || (() => { try { return sessionStorage.getItem('oei-firebase-open-id'); } catch { return null; } })();
+    const startGen = editor._loadGen || 0;
+    const superseded = () => (editor._loadGen || 0) !== startGen;
+
+    // Synchroniser sessionStorage + URL (comportement historique).
+    if (fbId) {
+        try { sessionStorage.setItem('oei-firebase-open-id', fbId); } catch {}
+        if (!params.get('firebase')) { try { history.replaceState({}, '', '?firebase=' + encodeURIComponent(fbId)); } catch {} }
+    }
+
+    // 1. ?file=X (X ≠ __draft__)
+    if (fileParam && fileParam !== '__draft__') {
+        try {
+            const r = await fetch(fileParam);
+            if (!r.ok) throw new Error(String(r.status));
+            const data = await r.json();
+            if (superseded()) return;
+            editor.load(data);
+            return;
+        } catch {
+            notify('Erreur chargement fichier', 'error');
+        }
+    }
+
+    // 2. Firebase : recharger réellement le contenu (pas seulement armer le badge).
+    if (!superseded() && fbId) {
+        try {
+            await window.OEIFirebase?.ready?.();
+            if (!window.OEIFirebase?.isReady?.()) throw new Error('Firebase indisponible');
+            const data = await window.OEIFirebase.loadPresentation(fbId);
+            if (superseded()) return;
+            editor.load(data);
+            window.OEIFirebase.setCurrentId(fbId);
+            window.OEIFirebase.markLoaded(fbId);
+            window.updateFirebaseCloudBadge?.('saved');
+            return;
+        } catch {
+            try { window.OEIFirebase?.clearCurrentId?.(); } catch {}
+            try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
+            try { history.replaceState({}, '', location.pathname); } catch {}
+            window.updateFirebaseCloudBadge?.('hidden');
+            notify('Impossible de recharger la présentation Firebase — ouverture du brouillon local', 'error');
+        }
+    }
+
+    // 3. Brouillon local (SLIDE_DRAFT).
+    if (!superseded() && editor.loadDraft()) return;
+
+    // 4. Démo par défaut, sinon deck vide.
+    if (!superseded()) {
+        try {
+            const r = await fetch('../data/slides/demo-complete.json');
+            if (!r.ok) throw new Error(String(r.status));
+            const data = await r.json();
+            if (superseded()) return;
+            editor.load(data);
+        } catch {
+            if (!superseded()) editor.new();
+        }
+    }
+}
+
 function init() {
     initEditorTheme();
     const params = new URLSearchParams(location.search);
-    const file = params.get('file');
 
-    const defaultFile = file || '../data/slides/demo-complete.json';
-    fetch(defaultFile).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(data => {
-        if (file || !editor.loadDraft()) editor.load(data);
-    }).catch(() => {
-        if (file) notify('Erreur chargement fichier', 'error');
-        if (!editor.loadDraft()) editor.new();
+    resolveInitialDeck(params).catch(err => {
+        console.error('[editor] resolveInitialDeck', err);
+        if (!(editor._loadGen > 0)) editor.new();
     });
 
     buildThemeSelect();
@@ -134,19 +203,9 @@ function init() {
         }, 600);
     });
 
-    // Firebase — restaurer l'ID courant (URL param > sessionStorage, persiste après hard refresh)
-    const _fbOpenId = params.get('firebase') || (() => { try { return sessionStorage.getItem('oei-firebase-open-id'); } catch { return null; } })();
-    if (_fbOpenId) {
-        // Sync both stores so they stay consistent
-        try { sessionStorage.setItem('oei-firebase-open-id', _fbOpenId); } catch {}
-        if (!params.get('firebase')) try { history.replaceState({}, '', '?firebase=' + encodeURIComponent(_fbOpenId)); } catch {}
-        window.OEIFirebase?.ready().then(() => {
-            if (window.OEIFirebase?.isReady()) {
-                window.OEIFirebase.setCurrentId(_fbOpenId);
-                window.updateFirebaseCloudBadge?.('saved');
-            }
-        });
-    }
+    // Le lien Firebase (?firebase= / sessionStorage) est désormais résolu dans
+    // resolveInitialDeck() : le contenu est réellement rechargé depuis Firestore
+    // avant d'armer le badge « saved » et l'autosave cloud.
 
     // Command palette input events
     // Chantier 8 — l'overlay fermait via onclick="closeCommandPalette()" inline (bloqué

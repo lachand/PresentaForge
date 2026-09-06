@@ -383,6 +383,8 @@ async function restoreRevision(revId) {
                 if (req.result?.data) {
                     const data = JSON.parse(req.result.data);
                     editor.load(data);
+                    // Même deck logique → on garde le lien Firebase, on retire juste ?file=.
+                    window.resetEditorBindingContext?.({ keepFirebase: true });
                     notify('Révision restaurée', 'success');
                     resolve(true);
                 } else {

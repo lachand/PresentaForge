@@ -213,12 +213,14 @@ class SlidesEditor {
         this._historyIndex = -1;
         this._pushDebounceTimer = null;
         this._lastRevisionSnapshotAt = 0;
+        this._loadGen = 0; // incrémenté à chaque load()/new() — garde d'amorçage (editor-main)
     }
 
     // ── Lifecycle ──────────────────────────────────────────
 
     new() {
         this.data = SlidesEditor.DEFAULT_PRESENTATION();
+        this._loadGen = (this._loadGen || 0) + 1;
         this._ensurePresentationDefaults();
         this._ensureTypographyDefaults();
         this.selectedIndex = 0;
@@ -240,6 +242,7 @@ class SlidesEditor {
             }
         }
         this.data = JSON.parse(JSON.stringify(incoming)); // deep clone
+        this._loadGen = (this._loadGen || 0) + 1; // signal : un deck vient d'être chargé
         this._ensurePresentationDefaults();
         this._ensureTypographyDefaults();
         this._normalizeLegacyCanvasFontSizes();
@@ -250,7 +253,27 @@ class SlidesEditor {
         this._historyStack = [];
         this._historyIndex = -1;
         this._push();
+        if (this._lastSaveOk === false) this._onDraftSaveFailed();
         this.onUpdate('load');
+    }
+
+    /**
+     * Sauvegarde locale échouée (quota dépassé) lors d'un chargement de deck :
+     * effacer le brouillon obsolète pour qu'un rechargement ne ressuscite pas le
+     * MAUVAIS deck précédent, et prévenir l'utilisateur de façon visible. Le deck
+     * courant reste en mémoire mais ne survivra pas à un rechargement — il doit
+     * être exporté manuellement.
+     */
+    _onDraftSaveFailed() {
+        try { this.clearDraft(); } catch (_) {}
+        try {
+            const dlg = window.OEIDialog;
+            const msg = 'Sauvegarde locale impossible — espace de stockage insuffisant. '
+                + 'Le deck est chargé mais ne survivra PAS à un rechargement : exportez une '
+                + 'copie JSON dès maintenant (Ctrl+S ou « Exporter »).';
+            if (dlg?.alert) dlg.alert(msg);
+            else if (typeof alert === 'function') alert(msg);
+        } catch (_) {}
     }
 
     // ── Metadata ───────────────────────────────────────────

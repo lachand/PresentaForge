@@ -114,9 +114,17 @@
 
     // ── Présentation courante (pour auto-save) ────────────────────────────────
 
+    // `_loadedId` = l'id dont le CONTENU a réellement été chargé/sauvé cette session.
+    // Distinct de `_currentId` (simple cible de sauvegarde qui peut n'avoir été que
+    // restaurée depuis sessionStorage). Les uploads auto ne sont autorisés que si
+    // `_currentId === _loadedId` (sinon on écraserait le vrai doc par un vieux brouillon).
+    let _loadedId = null;
+
     function getCurrentId()      { return _currentId; }
     function setCurrentId(id)    { _currentId = id || null; }
-    function clearCurrentId()    { _currentId = null; }
+    function clearCurrentId()    { _currentId = null; _loadedId = null; }
+    function markLoaded(id)      { _loadedId = id || null; }
+    function getLoadedId()       { return _loadedId; }
 
     // Adresse du dernier utilisateur connu (même sans session active)
     function getLastUser() {
@@ -198,6 +206,8 @@
         getCurrentId,
         setCurrentId,
         clearCurrentId,
+        markLoaded,
+        getLoadedId,
         listPresentations,
         loadPresentation,
         loadPublicPresentation,

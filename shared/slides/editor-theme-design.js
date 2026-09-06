@@ -140,16 +140,19 @@ function renderThemeColorGrid() {
         ? (SlidesThemes.BUILT_IN[runtimeEditor.data.theme] || SlidesThemes.BUILT_IN.dark)
         : (runtimeEditor.data.theme || SlidesThemes.BUILT_IN.dark);
     const c = themeData.colors || {};
+    // Clé sémantique → variable de thème correspondante (le fond suit alors les
+    // changements de thème au lieu de figer un hex).
+    const VAR_BY_KEY = { primary: '--sl-primary', accent: '--sl-accent', heading: '--sl-heading',
+        text: '--sl-text', slideBg: '--sl-slide-bg', bg: '--sl-bg' };
     const keys = ['primary', 'accent', 'heading', 'text', 'slideBg', 'bg'];
     container.innerHTML = keys.map(k =>
-        `<div class="theme-color-chip" style="background:${c[k]}" title="${k}: ${c[k]}" data-color-key="${k}" data-color="${c[k]}"></div>`
+        `<div class="theme-color-chip" style="background:${c[k]}" title="${k}: var(${VAR_BY_KEY[k]})" data-color-key="${k}" data-color="var(${VAR_BY_KEY[k]})"></div>`
     ).join('');
     container.querySelectorAll('.theme-color-chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const currentEditor = _themeEditor();
             if (!currentEditor) return;
-            const color = chip.dataset.color;
-            // Apply as slide background
+            const color = chip.dataset.color;  // var(--sl-*)
             const slide = currentEditor.currentSlide;
             if (slide) {
                 currentEditor.updateSlide(currentEditor.selectedIndex, { bg: color });
@@ -172,9 +175,12 @@ function renderQuickPalette() {
         ? (SlidesThemes.BUILT_IN[runtimeEditor.data.theme] || SlidesThemes.BUILT_IN.dark)
         : (runtimeEditor.data.theme || SlidesThemes.BUILT_IN.dark);
     const c = themeData.colors || {};
-    const colors = [c.slideBg, c.primary, c.accent, c.heading, c.bg].filter(Boolean);
-    container.innerHTML = colors.map(col =>
-        `<div class="quick-palette-dot" style="background:${col}" title="${col}" data-color="${col}"></div>`
+    const entries = [
+        ['--sl-slide-bg', c.slideBg], ['--sl-primary', c.primary], ['--sl-accent', c.accent],
+        ['--sl-heading', c.heading], ['--sl-bg', c.bg],
+    ].filter(e => e[1]);
+    container.innerHTML = entries.map(([varName, col]) =>
+        `<div class="quick-palette-dot" style="background:${col}" title="var(${varName})" data-color="var(${varName})"></div>`
     ).join('');
     container.querySelectorAll('.quick-palette-dot').forEach(dot => {
         dot.addEventListener('click', () => {

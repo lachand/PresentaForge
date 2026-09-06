@@ -2275,7 +2275,27 @@ function _bindConnectorProps(conn) {
         upd({ style: { strokeWidth: +e.target.value } });
     });
 
-    document.getElementById('sp-conn-color')?.addEventListener('input', e => upd({ style: { stroke: e.target.value } }));
+    const connColorInput = document.getElementById('sp-conn-color');
+    connColorInput?.addEventListener('input', e => upd({ style: { stroke: e.target.value } }));
+    // Rangée de pastilles de jetons de thème (var(--sl-*)) — construite en DOM
+    // (pas d'interpolation innerHTML), stocke la valeur `var(...)` telle quelle.
+    if (connColorInput && window.OEIColorField) {
+        const row = document.createElement('span');
+        row.style.cssText = 'display:inline-flex;gap:2px;flex-wrap:wrap;margin-left:4px';
+        for (const t of window.OEIColorField.TOKENS) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.title = t.label + ' — ' + t.v;
+            b.style.cssText = 'width:15px;height:15px;border-radius:3px;border:1px solid var(--border);cursor:pointer;padding:0;background:'
+                + window.OEIColorField.resolveTokenColor(t.v, t.hex);
+            b.addEventListener('click', () => {
+                upd({ style: { stroke: t.v } });
+                try { connColorInput.value = window.colorToHex(t.v); } catch (_) {}
+            });
+            row.appendChild(b);
+        }
+        connColorInput.insertAdjacentElement('afterend', row);
+    }
 
     document.getElementById('sp-conn-arrows')?.addEventListener('change', e => {
         const v = e.target.value;

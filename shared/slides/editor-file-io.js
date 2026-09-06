@@ -31,6 +31,35 @@ const _fileIoCtx = () => {
     };
 };
 
+/**
+ * À appeler après avoir remplacé le deck de l'éditeur par une source LOCALE
+ * (import glisser-déposer / presse-papier / fichier, nouveau deck) : coupe le
+ * lien Firebase de la session précédente et retire `?file=` / `?firebase=` de
+ * l'URL — sinon un rechargement re-fetche l'ancien `?file=` et l'affiche à la
+ * place de l'import, et l'autosave cloud pousserait le nouveau contenu sous
+ * l'ancien id Firebase.
+ *
+ * @param {{ keepFirebase?: boolean }} [opts] — `keepFirebase:true` (restauration
+ *   de révision : même deck logique) ne retire que `?file=`, garde le lien cloud.
+ */
+function resetEditorBindingContext(opts = {}) {
+    if (opts.keepFirebase) {
+        try {
+            const u = new URL(location.href);
+            if (u.searchParams.has('file')) {
+                u.searchParams.delete('file');
+                history.replaceState({}, '', u.pathname + (u.search || ''));
+            }
+        } catch {}
+        return;
+    }
+    try { window.OEIFirebase?.clearCurrentId?.(); } catch {}
+    try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
+    try { history.replaceState({}, '', location.pathname); } catch {}
+    try { window.updateFirebaseCloudBadge?.('hidden'); } catch {}
+}
+window.resetEditorBindingContext = resetEditorBindingContext;
+
 function initFileDrop() {
     const wrap = document.getElementById('preview-wrap');
     const overlay = document.getElementById('drop-overlay');
@@ -97,6 +126,7 @@ function initFileDrop() {
                             const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name });
                             if (!ok) return;
                             ctx.editor?.load(result.data);
+                            resetEditorBindingContext();
                             if (typeof ctx.notify === 'function') {
                                 ctx.notify(
                                     result.report?.fixes?.length
@@ -110,6 +140,7 @@ function initFileDrop() {
                         const data = JSON.parse(_repairJsonText(rawText));
                         if (!Array.isArray(data?.slides)) throw new Error('Format JSON invalide');
                         ctx.editor?.load(data);
+                        resetEditorBindingContext();
                         if (typeof ctx.notify === 'function') ctx.notify('Présentation chargée', 'success');
                     } catch(e) {
                         const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
@@ -178,6 +209,7 @@ function renderRecentFiles() {
             if (r?.data) {
                 try {
                     ctx.editor?.load(JSON.parse(r.data));
+                    resetEditorBindingContext();
                     if (typeof ctx.notify === 'function') ctx.notify('Chargé : ' + r.title, 'success');
                 } catch (e) {
                     if (typeof ctx.notify === 'function') ctx.notify('Erreur de chargement', 'error');

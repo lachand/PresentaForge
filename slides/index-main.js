@@ -34,7 +34,12 @@
         try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
     };
 
-    const DRAFT_KEY = Storage?.KEYS?.PRESENT_DATA || 'oei-slide-present-data';
+    // Deux canaux de hand-off distincts : l'éditeur restaure SLIDE_DRAFT (via
+    // SlidesEditor.loadDraft) ; le viewer lit PRESENT_DATA pour ?file=__draft__.
+    // Historiquement une seule constante (PRESENT_DATA) servait aux deux → l'éditeur
+    // ne voyait jamais le deck fraîchement choisi.
+    const EDITOR_HANDOFF_KEY = Storage?.KEYS?.SLIDE_DRAFT || 'oei-v2-slide-draft';
+    const VIEWER_PRESENT_KEY = Storage?.KEYS?.PRESENT_DATA || 'oei-v2-slide-present-data';
     const LOCAL_KEY = Storage?.KEYS?.SLIDE_LIBRARY || 'oei-slide-library';
     const WORKDOCS_KEY = Storage?.KEYS?.SLIDE_WORKDOCS || 'oei-slide-workdocs';
     const RECENT_KEY = Storage?.KEYS?.RECENT_PRESENTATIONS || 'oei-recent-presentations';
@@ -321,13 +326,14 @@
         const deck = _localDecks[idx];
         if (!deck || !deck.rawData) return;
         _touchDeckAccess(deck);
-        storageSetRaw(DRAFT_KEY, deck.rawData);
         if (mode === 'viewer') {
+            storageSetRaw(VIEWER_PRESENT_KEY, deck.rawData);
             window.open('viewer.html?file=__draft__', '_blank');
             _localDecks = loadLocalDecks();
             renderLocalDecks();
             return;
         }
+        storageSetRaw(EDITOR_HANDOFF_KEY, deck.rawData);
         _localDecks = loadLocalDecks();
         renderLocalDecks();
         location.href = 'editor.html';
@@ -409,7 +415,7 @@
     }
 
     function renderDraftNotice() {
-        const raw = storageGetRaw(DRAFT_KEY);
+        const raw = storageGetRaw(EDITOR_HANDOFF_KEY);
         const host = document.getElementById('draft-notice');
         if (!raw) {
             host.innerHTML = '';
@@ -495,7 +501,7 @@
     async function discardDraft() {
         const ok = await OEIDialog.confirm('Supprimer le brouillon ?', { danger: true });
         if (!ok) return;
-        storageRemove(DRAFT_KEY);
+        storageRemove(EDITOR_HANDOFF_KEY);
         renderDraftNotice();
     }
 
@@ -512,12 +518,14 @@
                     const result = await window.OEIImportPipeline.importFromText(text);
                     const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name || 'Fichier JSON' });
                     if (!ok) return;
-                    storageSetRaw(DRAFT_KEY, JSON.stringify(result.data));
+                    storageSetRaw(EDITOR_HANDOFF_KEY, JSON.stringify(result.data));
                 } else {
                     const data = JSON.parse(text);
                     if (!Array.isArray(data.slides)) throw new Error('Format invalide');
-                    storageSetRaw(DRAFT_KEY, text);
+                    storageSetRaw(EDITOR_HANDOFF_KEY, text);
                 }
+                // Import = nouveau deck : couper tout lien Firebase de la session précédente.
+                try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
                 location.href = 'editor.html';
             } catch (err) {
                 const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
@@ -752,11 +760,13 @@
         if (!p) return;
         try {
             const data = await window.OEIFirebase.loadPresentation(p.id);
-            storageSetRaw(DRAFT_KEY, JSON.stringify(data));
             if (mode === 'viewer') {
+                storageSetRaw(VIEWER_PRESENT_KEY, JSON.stringify(data));
                 window.open('viewer.html?file=__draft__', '_blank');
             } else {
-                // Passer l'ID Firebase à l'éditeur pour la sauvegarde auto
+                // Passer l'ID Firebase à l'éditeur : il rechargera le contenu depuis
+                // Firestore, mais on écrit aussi SLIDE_DRAFT comme repli hors-ligne.
+                storageSetRaw(EDITOR_HANDOFF_KEY, JSON.stringify(data));
                 try { sessionStorage.setItem('oei-firebase-open-id', p.id); } catch {}
                 location.href = 'editor.html';
             }
@@ -804,8 +814,9 @@
         if (!window.OEIFirebaseModal) return;
         window.OEIFirebaseModal.open({
             mode: 'open',
-            onLoad: (data) => {
-                storageSetRaw(DRAFT_KEY, JSON.stringify(data));
+            onLoad: (data, id) => {
+                storageSetRaw(EDITOR_HANDOFF_KEY, JSON.stringify(data));
+                if (id) { try { sessionStorage.setItem('oei-firebase-open-id', id); } catch {} }
                 location.href = 'editor.html';
             },
         });

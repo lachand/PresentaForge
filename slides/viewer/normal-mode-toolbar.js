@@ -114,7 +114,14 @@ export function initNormalModeToolbar(context = {}) {
             mode: 'open',
             onLoad: (data) => {
                 try {
-                    localStorage.setItem('oei-slide-present-data', JSON.stringify(data));
+                    // Écrire la clé v2 : sinon getRaw (qui ne retombe sur la legacy que si
+                    // la clé v2 est null) sert une valeur v2 périmée par-dessus.
+                    const json = JSON.stringify(data);
+                    if (window.OEIStorage?.setRaw && window.OEIStorage?.KEYS?.PRESENT_DATA) {
+                        window.OEIStorage.setRaw(window.OEIStorage.KEYS.PRESENT_DATA, json);
+                    } else {
+                        localStorage.setItem('oei-v2-slide-present-data', json);
+                    }
                     window.location.href = window.location.pathname + '?file=__draft__';
                 } catch (e) {
                     alert('Erreur lors du chargement : ' + e.message);

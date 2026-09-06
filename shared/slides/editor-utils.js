@@ -94,8 +94,16 @@ function colorToHex(color) {
     };
     const lower = color.toLowerCase().trim();
     if (named[lower]) return named[lower];
-    // CSS var() — can't resolve, use fallback
-    const varMatch = color.match(/var\([^,]+,\s*([^)]+)\)/);
-    if (varMatch) return colorToHex(varMatch[1].trim());
+    // var(--x, #fallback) — utiliser le fallback explicite
+    const varFallback = color.match(/var\([^,]+,\s*([^)]+)\)/);
+    if (varFallback) return colorToHex(varFallback[1].trim());
+    // var(--x) nu — résoudre la vraie valeur calculée depuis :root (thème injecté)
+    const bareVar = color.match(/^var\(\s*(--[\w-]+)\s*\)$/);
+    if (bareVar && typeof getComputedStyle === 'function' && typeof document !== 'undefined') {
+        try {
+            const resolved = getComputedStyle(document.documentElement).getPropertyValue(bareVar[1]).trim();
+            if (resolved) return colorToHex(resolved);
+        } catch (_) { /* SSR / sandbox */ }
+    }
     return '#818cf8';
 }

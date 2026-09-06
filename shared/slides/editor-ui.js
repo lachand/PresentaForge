@@ -212,10 +212,7 @@ function initSplitButtons() {
     document.getElementById('btn-open-new')?.addEventListener('click', async () => {
         if (await OEIDialog.confirm('Créer une nouvelle présentation ? Les modifications non sauvegardées seront perdues.')) {
             editor.new();
-            window.OEIFirebase?.clearCurrentId();
-            try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
-            try { history.replaceState({}, '', location.pathname); } catch {}
-            window.updateFirebaseCloudBadge?.('hidden');
+            window.resetEditorBindingContext?.();
             notify('Nouvelle présentation', 'success');
         }
         document.getElementById('split-open-menu').classList.add('hidden');
@@ -236,6 +233,7 @@ function initSplitButtons() {
                 const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: 'Presse-papier' });
                 if (!ok) return;
                 editor.load(result.data);
+                window.resetEditorBindingContext?.();
                 notify(
                     result.report?.fixes?.length
                         ? `Importé (${result.report.fixes.length} correction(s))`
@@ -246,6 +244,7 @@ function initSplitButtons() {
             }
             const data = JSON.parse(_repairJsonText(text));
             editor.load(data);
+            window.resetEditorBindingContext?.();
             notify('Importé depuis le presse-papier', 'success');
         } catch (e) {
             const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';

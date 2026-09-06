@@ -312,10 +312,7 @@ function bindToolbar() {
 
     document.getElementById('btn-import').addEventListener('click', () => {
         openFromFile();
-        window.OEIFirebase?.clearCurrentId();
-        try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
-        try { history.replaceState({}, '', location.pathname); } catch {}
-        window.updateFirebaseCloudBadge?.('hidden');
+        window.resetEditorBindingContext?.();
     });
     document.getElementById('btn-edit-metadata')?.addEventListener('click', openMetadataModal);
 
@@ -338,6 +335,7 @@ function bindToolbar() {
             onLoad: (data, id) => {
                 activeEditor.load(data);
                 window.OEIFirebase?.setCurrentId(id);
+                window.OEIFirebase?.markLoaded(id);
                 try { sessionStorage.setItem('oei-firebase-open-id', id); } catch {}
                 try { history.replaceState({}, '', '?firebase=' + encodeURIComponent(id)); } catch {}
                 window.updateFirebaseCloudBadge?.('saved');
@@ -422,6 +420,7 @@ function bindToolbar() {
             currentData: JSON.parse(JSON.stringify(activeEditor.data)),
             onSave: (id) => {
                 window.OEIFirebase?.setCurrentId(id);
+                window.OEIFirebase?.markLoaded(id);  // on vient d'y écrire le contenu courant → cible valide
                 try { sessionStorage.setItem('oei-firebase-open-id', id); } catch {}
                 try { history.replaceState({}, '', '?firebase=' + encodeURIComponent(id)); } catch {}
                 window.updateFirebaseCloudBadge?.('saved');
@@ -430,10 +429,17 @@ function bindToolbar() {
         });
     });
 
+    // Ne pousser sur Firestore que si le deck affiché vient RÉELLEMENT de cet id
+    // cette session (chargé/sauvé) — pas si le lien n'a été que restauré depuis
+    // sessionStorage sans recharger le contenu (sinon on écrase le vrai document
+    // par un vieux brouillon local).
+    const _fbUploadAllowed = fb =>
+        !!fb && fb.isReady() && !!fb.getCurrentId() && fb.getCurrentId() === fb.getLoadedId?.();
+
     // Firebase — sauvegarde directe (Ctrl+S ou badge)
     async function _saveToFirebaseNow() {
         const fb = window.OEIFirebase;
-        if (!fb || !fb.isReady() || !fb.getCurrentId()) return false;
+        if (!_fbUploadAllowed(fb)) return false;
         const data = activeEditor?.data;
         if (!data) return false;
         window.updateFirebaseCloudBadge?.('syncing');
@@ -457,7 +463,7 @@ function bindToolbar() {
     let _fbAutoSaveHash = null;
     setInterval(async () => {
         const fb = window.OEIFirebase;
-        if (!fb || !fb.isReady() || !fb.getCurrentId()) return;
+        if (!_fbUploadAllowed(fb)) return;
         const data = activeEditor?.data;
         if (!data) return;
         // Hash rapide pour détecter les changements
@@ -474,8 +480,9 @@ function bindToolbar() {
     }, 60_000);
 
     // Rafraîchir le badge cloud au démarrage si Firebase déjà connecté
+    // (resolveInitialDeck a la charge d'armer « saved » après un vrai rechargement).
     window.OEIFirebase?.ready().then(() => {
-        if (window.OEIFirebase?.isReady() && window.OEIFirebase?.getCurrentId()) {
+        if (_fbUploadAllowed(window.OEIFirebase)) {
             window.updateFirebaseCloudBadge?.('saved');
         } else if (window.OEIFirebase?.isReady()) {
             window.updateFirebaseCloudBadge?.('idle');
@@ -989,7 +996,7 @@ function bindKeyboard() {
             if (e.key === 's') {
                 e.preventDefault();
                 const _fb = window.OEIFirebase;
-                if (_fb?.isReady() && _fb?.getCurrentId()) {
+                if (_fb?.isReady() && _fb?.getCurrentId() && _fb.getCurrentId() === _fb.getLoadedId?.()) {
                     window._saveToFirebaseNow?.();
                 } else {
                     saveToFile();
