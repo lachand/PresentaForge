@@ -70,6 +70,150 @@ function _toneOptionsHtml(selectedTone = 'auto') {
 /* ── Constantes et helpers diagramme — extraits vers editor-diagram-panel.js (Lot 18B) ── */
 /* DIAGRAM_* constantes et _diagram* fonctions définies dans editor-diagram-panel.js */
 
+/* ── Section « Style » — pilotée par element-style-schema.js ── */
+
+const _ELEMENT_STYLE_GROUP_LABELS = {
+    box: 'Boîte', title: 'Titre', text: 'Texte', paragraph: 'Paragraphe', table: 'Tableau', image: 'Image',
+};
+
+function _colorToHexSafe(value) {
+    try { return (window.colorToHex ? window.colorToHex(value) : value) || '#818cf8'; }
+    catch (_) { return '#818cf8'; }
+}
+
+function _elementStyleControlHtml(desc, style) {
+    const key = desc.key;
+    const raw = style && style[key] != null ? style[key] : '';
+    const label = esc(desc.label || key);
+    const idAttr = `sp-elstyle-${escAttr(key)}`;
+    const common = `data-el-style="${escAttr(key)}" id="${idAttr}"`;
+    const inputStyle = 'flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem';
+    let field;
+    switch (desc.control) {
+        case 'color':
+            if (window.OEIColorField) { field = window.OEIColorField.renderColorField({ key, value: raw }); break; }
+            field = `<input type="color" ${common} value="${escAttr(_colorToHexSafe(raw))}" data-el-style-set="${raw ? '1' : ''}" style="width:34px;height:24px;padding:0;border:1px solid var(--border);border-radius:4px;background:none">`
+                + `<button type="button" class="sp-elstyle-clear" data-el-style-clear="${escAttr(key)}" title="Réinitialiser" style="margin-left:4px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem">↺</button>`;
+            break;
+        case 'number':
+        case 'range': {
+            const min = desc.min != null ? ` min="${desc.min}"` : '';
+            const max = desc.max != null ? ` max="${desc.max}"` : '';
+            const step = desc.step != null ? ` step="${desc.step}"` : '';
+            field = `<input type="number" ${common}${min}${max}${step} value="${escAttr(raw)}" placeholder="${desc.default != null ? escAttr(desc.default) : 'auto'}" style="${inputStyle};max-width:80px">`;
+            break;
+        }
+        case 'select': {
+            const opts = (desc.options || []).map((o, i) => {
+                const oLabel = (desc.optionLabels && desc.optionLabels[i]) || o || '(défaut)';
+                return `<option value="${escAttr(o)}"${String(raw) === String(o) ? ' selected' : ''}>${esc(oLabel)}</option>`;
+            }).join('');
+            field = `<select ${common} style="${inputStyle}"><option value=""${raw === '' ? ' selected' : ''}>(défaut)</option>${opts}</select>`;
+            break;
+        }
+        case 'align': {
+            const cur = raw || '';
+            const btn = (v, sym) => `<button type="button" class="sp-elstyle-align${cur === v ? ' active' : ''}" data-el-style-align-key="${escAttr(key)}" data-el-style-align="${v}" style="flex:1;background:${cur === v ? 'var(--primary,#4a7)' : 'var(--bg)'};border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px;cursor:pointer;font-size:0.72rem">${sym}</button>`;
+            field = `<div style="display:flex;gap:3px;flex:1">${btn('left', '⟵')}${btn('center', '↔')}${btn('right', '⟶')}</div>`;
+            break;
+        }
+        case 'font-family':
+            field = `<select ${common} style="${inputStyle}">
+                <option value=""${raw === '' ? ' selected' : ''}>Thème</option>
+                ${['Inter', 'Barlow', 'Georgia', 'monospace'].map(f => `<option value="${f}"${raw === f ? ' selected' : ''}>${f === 'monospace' ? 'Mono' : f}</option>`).join('')}
+            </select>`;
+            break;
+        case 'toggle':
+            field = `<input type="checkbox" ${common}${raw && raw !== 'none' ? ' checked' : ''}>`;
+            break;
+        default:
+            field = `<input type="text" ${common} value="${escAttr(raw)}" placeholder="${escAttr(desc.placeholder || (desc.default != null ? desc.default : ''))}" style="${inputStyle}">`;
+    }
+    return `<div class="props-row"><label>${label}</label>${field}</div>`;
+}
+
+// Types dont le renderer consomme leur schéma de style (source : element-style-schema.js).
+const _ELEMENT_STYLE_ENABLED_TYPES = new Set([
+    'card', 'shape', 'image', 'table', 'list', 'heading', 'text', 'quote', 'definition',
+    'smartart', 'latex', 'timer',
+]);
+
+function _renderElementStyleSection(el) {
+    const ES = window.OEISlidesElementStyle;
+    if (!ES || !_ELEMENT_STYLE_ENABLED_TYPES.has(el.type)) return '';
+    const schema = ES.schemaFor(el.type);
+    if (!schema.length) return '';
+    const style = el.style || {};
+    const groups = new Map();
+    for (const desc of schema) {
+        if (!groups.has(desc.group)) groups.set(desc.group, []);
+        groups.get(desc.group).push(desc);
+    }
+    const order = ES.GROUP_ORDER || Array.from(groups.keys());
+    let rows = '';
+    for (const g of order) {
+        if (!groups.has(g)) continue;
+        rows += `<div class="props-subgroup-title" style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin:8px 0 3px">${esc(_ELEMENT_STYLE_GROUP_LABELS[g] || g)}</div>`;
+        rows += groups.get(g).map(desc => _elementStyleControlHtml(desc, style)).join('');
+    }
+    return `<div class="props-section" id="props-style-section" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+        <div class="props-section-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>Style</span>
+            <button type="button" id="sp-elstyle-reset-all" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.65rem">Tout réinitialiser</button>
+        </div>
+        ${rows}
+    </div>`;
+}
+
+function _bindElementStyleSection(el) {
+    const canvasEditor = _propsCanvas();
+    const ES = window.OEISlidesElementStyle;
+    if (!canvasEditor || !ES || !_ELEMENT_STYLE_ENABLED_TYPES.has(el.type)) return;
+    const id = el.id;
+    const schema = ES.schemaFor(el.type);
+    if (!schema.length) return;
+    const write = (key, value) => canvasEditor.updateData(id, { style: { [key]: value } });
+    const section = document.getElementById('props-style-section');
+
+    // Champs couleur « conscients du thème » (pastilles var(--sl-*) + input natif)
+    if (section && window.OEIColorField) {
+        window.OEIColorField.bindColorField(section, (key, value) => { write(key, value); if (value === undefined) updatePropsPanel(); });
+    }
+
+    const colorHandledByField = section && window.OEIColorField;
+    document.querySelectorAll('#props-style-section [data-el-style]').forEach(inp => {
+        if (inp.type === 'color' && colorHandledByField) return; // géré par OEIColorField
+        const key = inp.dataset.elStyle;
+        const ev = inp.type === 'checkbox' ? 'change' : 'input';
+        inp.addEventListener(ev, () => {
+            let value;
+            if (inp.type === 'checkbox') value = inp.checked ? '1' : undefined;
+            else if (inp.type === 'color') value = inp.value;
+            else if (inp.type === 'number') value = inp.value === '' ? undefined : Number(inp.value);
+            else value = inp.value === '' ? undefined : inp.value;
+            write(key, value);
+        });
+    });
+    document.querySelectorAll('#props-style-section [data-el-style-clear]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            write(btn.dataset.elStyleClear, undefined);
+            updatePropsPanel();
+        });
+    });
+    document.querySelectorAll('#props-style-section [data-el-style-align-key]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            write(btn.dataset.elStyleAlignKey, btn.dataset.elStyleAlign);
+            updatePropsPanel();
+        });
+    });
+    document.getElementById('sp-elstyle-reset-all')?.addEventListener('click', () => {
+        const patch = {};
+        for (const desc of schema) patch[desc.key] = undefined;
+        canvasEditor.updateData(id, { style: patch });
+        updatePropsPanel();
+    });
+}
+
 function updatePropsPanel() {
     const editor = _propsEditor();
     const canvasEditor = _propsCanvas();
@@ -942,6 +1086,9 @@ function updatePropsPanel() {
         default:
             html = `<div class="props-empty"><span>Pas de propriétés de contenu</span></div>`;
     }
+
+    // ── Section « Style » (pilotée par element-style-schema.js) ──
+    html += _renderElementStyleSection(el);
 
     // ── Common section: Label (renvoi) & Légende (caption) ──
     html += `<div class="props-section" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
@@ -2032,6 +2179,9 @@ function _bindPropsPanel(el) {
     // ── Common bindings: Label & Caption ──
     bind('sp-caption', inp => canvasEditor.updateData(id, { data: { caption: inp.value || undefined } }));
     bind('sp-label', inp => canvasEditor.updateData(id, { data: { refLabel: inp.value || undefined } }));
+
+    // ── Section « Style » ──
+    _bindElementStyleSection(el);
 }
 
 /* ── Connector Properties Panel ────────────────────────── */

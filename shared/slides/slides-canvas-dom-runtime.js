@@ -13,6 +13,34 @@
         return container.querySelector(`.cel[data-id="${id}"]`);
     };
 
+    /**
+     * Applique/efface la CSS de « boîte » (bordure, rayon, ombre) sur le wrapper d'un
+     * élément dans la preview éditeur — parité avec le wrapper du viewer
+     * (`slides-renderer-canvas.js` `_canvasElement` → `SlidesShared.wrapperBoxCss`).
+     */
+    const applyWrapperBoxStyle = (div, el) => {
+        if (!div || !div.style) return;
+        const s = el && el.style;
+        const isShape = el && el.type === 'shape';
+        div.style.border = '';
+        div.style.borderRadius = '';
+        div.style.filter = '';
+        if (!s || typeof s !== 'object') return;
+        if (!isShape) {
+            const bw = Number(s.borderWidth);
+            if (Number.isFinite(bw) && bw > 0 && s.borderColor) {
+                div.style.border = `${bw}px ${s.borderStyle || 'solid'} ${s.borderColor}`;
+            }
+            if (s.borderRadius != null && s.borderRadius !== '') {
+                div.style.borderRadius = typeof s.borderRadius === 'number' ? `${s.borderRadius}px` : String(s.borderRadius);
+            }
+        }
+        if (s.boxShadow && s.boxShadow !== 'none') {
+            const shadow = s.boxShadow === true || s.boxShadow === '1' ? '0 8px 24px rgba(0,0,0,0.35)' : String(s.boxShadow);
+            div.style.filter = `drop-shadow(${shadow.replace(/^0 8px 32px/, '0 8px 24px')})`;
+        }
+    };
+
     const refreshElementDom = context => {
         const id = context?.id;
         const container = context?.container;
@@ -40,6 +68,7 @@
         } else if (el.type !== 'shape') {
             div.style.backgroundColor = '';
         }
+        applyWrapperBoxStyle(div, el);
 
         context.syncLockVisual?.(div, el);
 
@@ -78,10 +107,12 @@
     root.OEISlidesCanvasDomRuntime = Object.freeze({
         getElementDom,
         refreshElementDom,
+        applyWrapperBoxStyle,
         testUtils: Object.freeze({
             CODE_TYPES: new Set(CODE_TYPES),
             getElementDom,
             refreshElementDom,
+            applyWrapperBoxStyle,
         }),
     });
 })(window);

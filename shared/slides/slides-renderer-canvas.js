@@ -96,7 +96,11 @@
             paths += `<path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="${sw}" opacity="${opacity}"${dashAttr} ${me} ${ms}/>`;
             if (conn.label) {
                 const lx = (p1.x+p2.x)/2, ly = (p1.y+p2.y)/2;
-                paths += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${stroke}" font-size="14" font-family="var(--sl-font-body)">${esc(conn.label)}</text>`;
+                const lc = s.labelColor || stroke;
+                const ls = s.labelSize || 14;
+                const lbg = s.labelBg && s.labelBg !== ''
+                    ? `<rect x="${lx - String(conn.label).length * ls * 0.3}" y="${ly - ls * 0.75}" width="${String(conn.label).length * ls * 0.6}" height="${ls * 1.5}" rx="3" fill="${s.labelBg}"/>` : '';
+                paths += `${lbg}<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${lc}" font-size="${ls}" font-family="var(--sl-font-body)">${esc(conn.label)}</text>`;
             }
         }
         return `<svg width="1280" height="720" viewBox="0 0 1280 720" style="position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:9000;"><defs>${defs}</defs>${paths}</svg>`;
@@ -146,7 +150,8 @@
         const needsOverflow = hasCaption || el.type === 'timer' || el.type === 'latex' || el.type === 'code-live' || el.type === 'quiz-live';
         const elStyle = el.style || {};
         const fillBg = el.type !== 'shape' && elStyle.fill ? `background-color:${elStyle.fill};` : '';
-        const css = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;z-index:${el.z||1};overflow:${needsOverflow ? 'visible' : 'hidden'};box-sizing:border-box;${rot}${fillBg}`;
+        const boxCss = SlidesShared.wrapperBoxCss(elStyle, el.type);
+        const css = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;z-index:${el.z||1};overflow:${needsOverflow ? 'visible' : 'hidden'};box-sizing:border-box;${rot}${fillBg}${boxCss}`;
         const content = _canvasElementContent(el, slideIndex, opts);
         const captionHtml = SlidesShared.renderCaptionHtml(el, 'sl');
         const elementIdAttr = el?.id ? ` data-element-id="${esc(String(el.id))}"` : '';
@@ -212,12 +217,23 @@
                 const base = SlidesShared.resolveElementFontSize('list', s, opts.typography, 22);
                 const liCls = el.data?.revealItems ? ' class="fragment"' : '';
                 const items = (el.data?.items || []).map(i => `<li${liCls}>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
-                content = `<ul style="margin:0;padding:6px 0 6px 1.5em;font-size:${base}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>`;
+                const lAlign = SlidesShared.resolveElementStyle('list', s, 'textAlign', 'left');
+                const lExtra = (s.fontWeight ? `font-weight:${s.fontWeight};` : '')
+                    + (s.fontFamily ? `font-family:${s.fontFamily};` : '')
+                    + (s.lineHeight ? `line-height:${s.lineHeight};` : '');
+                content = `<ul style="margin:0;padding:6px 0 6px 1.5em;font-size:${base}px;color:${s.color||'var(--sl-text)'};text-align:${lAlign};${lExtra}">${items}</ul>`;
                 break;
             }
             case 'image': {
+                const is = el.style || {};
+                const fitMap = { contain: 'contain', cover: 'cover', fill: 'fill', stretch: 'fill' };
+                const fit = fitMap[SlidesShared.resolveElementStyle('image', is, 'objectFit', 'contain')] || 'contain';
+                const rad = is.borderRadius != null && is.borderRadius !== ''
+                    ? `border-radius:${typeof is.borderRadius === 'number' ? is.borderRadius + 'px' : is.borderRadius};` : '';
+                const flt = is.filter && is.filter !== 'none' ? `filter:${is.filter};` : '';
+                const op = is.opacity != null && is.opacity !== '' ? `opacity:${is.opacity};` : '';
                 content = el.data?.src
-                    ? `<img src="${esc(el.data.src)}" alt="${esc(el.data?.alt||'')}" style="width:100%;height:100%;object-fit:contain;">`
+                    ? `<img src="${esc(el.data.src)}" alt="${esc(el.data?.alt||'')}" style="width:100%;height:100%;object-fit:${fit};${rad}${flt}${op}">`
                     : '';
                 break;
             }
@@ -245,7 +261,7 @@
                 content = `<div style="width:100%;height:100%;background:${tone.strongBg};border-left:4px solid ${tone.accent};border:1px solid ${tone.border};border-left-width:4px;border-radius:0 8px 8px 0;padding:0.75rem 1rem;overflow:auto;box-sizing:border-box;">
                     <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${esc(label)}</div>
                     <div style="font-family:var(--sl-font-mono);font-weight:700;color:${tone.accent};margin-bottom:0.35rem;font-size:${termSize}px;">${esc(el.data?.term||'')}</div>
-                    <div style="color:var(--sl-text);line-height:1.5;font-size:${bodySize}px;">${el.data?.definition||''}</div>
+                    <div style="color:${s.color||'var(--sl-text)'};line-height:1.5;font-size:${bodySize}px;">${el.data?.definition||''}</div>
                     ${el.data?.example ? `<div style="margin-top:0.5rem;font-size:${exampleSize}px;color:var(--sl-muted);">${esc(exampleLabel)} : ${esc(el.data.example)}</div>` : ''}
                 </div>`;
                 break;
@@ -439,9 +455,13 @@
                 const author = el.data?.author
                     ? `<div style="margin-top:0.75rem;font-size:${authorSize}px;color:var(--sl-primary);font-weight:600;font-style:normal;">— ${esc(el.data.author)}</div>`
                     : '';
-                content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1rem 1.5rem;box-sizing:border-box;overflow:hidden;">
+                const qAlign = SlidesShared.resolveElementStyle('quote', s, 'textAlign', 'center');
+                const qJustify = { left: 'flex-start', center: 'center', right: 'flex-end' }[qAlign] || 'center';
+                const qStyle = SlidesShared.resolveElementStyle('quote', s, 'fontStyle', 'italic');
+                const qFam = s.fontFamily || 'var(--sl-font-body)';
+                content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:${qJustify};justify-content:center;text-align:${qAlign};padding:1rem 1.5rem;box-sizing:border-box;overflow:hidden;">
                     <div style="font-size:${markSize}px;color:var(--sl-primary);opacity:0.4;line-height:0.7;margin-bottom:0.2rem;">"</div>
-                    <div style="font-size:${base}px;font-style:italic;color:${s.color||'var(--sl-heading)'};line-height:1.5;font-family:var(--sl-font-body);">${el.data?.text||''}</div>
+                    <div style="font-size:${base}px;font-style:${qStyle};color:${s.color||'var(--sl-heading)'};line-height:1.5;font-family:${qFam};">${el.data?.text||''}</div>
                     ${author}
                 </div>`;
                 break;
@@ -449,15 +469,21 @@
             case 'card': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('card', s, opts.typography, 18);
-                const titleSize = Math.round(base * 0.76);
                 const titleRaw = String(el.data?.title || '').trim();
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, titleRaw);
+                const titleSize = SlidesShared.resolveElementStyle('card', s, 'titleSize', Math.round(base * 0.76));
+                const titleWeight = SlidesShared.resolveElementStyle('card', s, 'titleWeight', 700);
+                const cardFill = SlidesShared.resolveElementStyle('card', s, 'fill', tone.softBg);
+                const cardBorder = SlidesShared.resolveElementStyle('card', s, 'borderColor', tone.border);
+                const cardRadius = SlidesShared.resolveElementStyle('card', s, 'borderRadius', 10);
+                const cardPad = SlidesShared.resolveElementStyle('card', s, 'padding', '1rem 1.2rem');
+                const radiusCss = typeof cardRadius === 'number' ? `${cardRadius}px` : String(cardRadius);
                 const cardTitle = el.data?.title
-                    ? `<div style="font-size:${titleSize}px;font-weight:700;color:${s.titleColor||tone.accent};border-bottom:1px solid ${tone.border};padding-bottom:0.5rem;margin-bottom:0.75rem;">${esc(el.data.title)}</div>`
+                    ? `<div style="font-size:${titleSize}px;font-weight:${titleWeight};color:${s.titleColor||tone.accent};border-bottom:1px solid ${cardBorder};padding-bottom:0.5rem;margin-bottom:0.75rem;">${esc(el.data.title)}</div>`
                     : '';
                 const liCls = el.data?.revealItems ? ' class="fragment"' : '';
                 const items = (el.data?.items || []).map(i => `<li${liCls}>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
-                content = `<div style="width:100%;height:100%;background:${tone.softBg};border:1px solid ${tone.border};border-left:3px solid ${tone.accent};border-radius:10px;padding:1rem 1.2rem;overflow:auto;box-sizing:border-box;">
+                content = `<div style="width:100%;height:100%;background:${cardFill};border:1px solid ${cardBorder};border-left:3px solid ${tone.accent};border-radius:${radiusCss};padding:${cardPad};overflow:auto;box-sizing:border-box;">
                     ${cardTitle}
                     <ul style="margin:0;padding-left:1.4em;font-size:${base}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>
                 </div>`;
@@ -481,17 +507,23 @@
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('table', s, opts.typography, 18);
                 const rows = el.data?.rows || [];
+                const headerBg = SlidesShared.resolveElementStyle('table', s, 'headerBg', 'color-mix(in srgb,var(--sl-primary) 60%,transparent)');
+                const headerColor = SlidesShared.resolveElementStyle('table', s, 'headerColor', '#fff');
+                const stripeBg = SlidesShared.resolveElementStyle('table', s, 'stripeBg', 'color-mix(in srgb,var(--sl-slide-bg) 70%,rgba(255,255,255,0.06))');
+                const cellBorder = SlidesShared.resolveElementStyle('table', s, 'borderColor', 'rgba(255,255,255,0.15)');
+                const cellPad = SlidesShared.resolveElementStyle('table', s, 'cellPadding', '6px 10px');
+                const tAlign = SlidesShared.resolveElementStyle('table', s, 'textAlign', 'left');
                 let tHtml = '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">';
                 rows.forEach((row, ri) => {
                     tHtml += '<tr>';
                     const tag = ri === 0 ? 'th' : 'td';
                     const bg = ri === 0
-                        ? `background:color-mix(in srgb,var(--sl-primary) 60%,transparent);font-weight:700;color:#fff;`
+                        ? `background:${headerBg};font-weight:700;color:${headerColor};`
                         : ri % 2 === 0
-                            ? 'background:color-mix(in srgb,var(--sl-slide-bg) 70%,rgba(255,255,255,0.06));'
+                            ? `background:${stripeBg};`
                             : 'background:color-mix(in srgb,var(--sl-slide-bg) 80%,rgba(255,255,255,0.03));';
                     (row || []).forEach(cell => {
-                        tHtml += `<${tag} style="border:1px solid rgba(255,255,255,0.15);padding:6px 10px;text-align:left;${bg}">${SlidesShared.formatInlineRichText(cell)}</${tag}>`;
+                        tHtml += `<${tag} style="border:1px solid ${cellBorder};padding:${cellPad};text-align:${tAlign};${bg}">${SlidesShared.formatInlineRichText(cell)}</${tag}>`;
                     });
                     tHtml += '</tr>';
                 });
@@ -584,30 +616,34 @@
             case 'smartart': {
                 const variant = el.data?.variant || 'process';
                 const items = SlidesShared.normalizeSmartArtItems(el.data?.items || [], []);
-                const color = el.style?.color || 'var(--sl-primary)';
+                const sa = el.style || {};
+                const color = sa.color || 'var(--sl-primary)';
+                const nodeBorderColor = SlidesShared.resolveElementStyle('smartart', sa, 'borderColor', color);
+                const nodeBorderW = SlidesShared.resolveElementStyle('smartart', sa, 'borderWidth', 2);
+                const fsCss = sa.fontSize ? `font-size:${SlidesShared.resolveElementFontSize('smartart', sa, opts.typography, 15)}px;` : '';
                 const count = items.length || 1;
                 // Simple HTML representation for Reveal.js
                 if (variant === 'process') {
                     const steps = items.map((item, i) => {
                         const arrow = i < items.length - 1 ? `<span style="color:${color};font-size:24px;opacity:0.7;margin:0 4px;">→</span>` : '';
-                        return `<span style="flex:1;padding:12px;border:2px solid ${color};border-radius:10px;text-align:center;background:color-mix(in srgb,${color} 8%,var(--sl-slide-bg));color:var(--sl-text);">${esc(item)}</span>${arrow}`;
+                        return `<span style="flex:1;padding:12px;border:${nodeBorderW}px solid ${nodeBorderColor};border-radius:10px;text-align:center;background:color-mix(in srgb,${color} 8%,var(--sl-slide-bg));color:var(--sl-text);${fsCss}">${esc(item)}</span>${arrow}`;
                     }).join('');
                     content = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;box-sizing:border-box;">${steps}</div>`;
                 } else if (variant === 'pyramid') {
                     const rows = items.map((item, i) => {
                         const w = 30 + 70 * (i + 1) / count;
-                        return `<div style="width:${w}%;padding:10px;border-radius:6px;text-align:center;color:var(--sl-text);background:color-mix(in srgb,${color} ${20+60*(count-i)/count}%,var(--sl-slide-bg));border:1px solid ${color};margin:0 auto;">${esc(item)}</div>`;
+                        return `<div style="width:${w}%;padding:10px;border-radius:6px;text-align:center;color:var(--sl-text);background:color-mix(in srgb,${color} ${20+60*(count-i)/count}%,var(--sl-slide-bg));border:1px solid ${nodeBorderColor};margin:0 auto;${fsCss}">${esc(item)}</div>`;
                     }).join('');
                     content = `<div style="width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;box-sizing:border-box;">${rows}</div>`;
                 } else if (variant === 'matrix') {
                     const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
                     const cells = items.map(item =>
-                        `<div style="padding:12px;border:2px solid ${color};border-radius:8px;text-align:center;color:var(--sl-text);background:color-mix(in srgb,${color} 8%,var(--sl-slide-bg));display:flex;align-items:center;justify-content:center;">${esc(item)}</div>`
+                        `<div style="padding:12px;border:${nodeBorderW}px solid ${nodeBorderColor};border-radius:8px;text-align:center;color:var(--sl-text);background:color-mix(in srgb,${color} 8%,var(--sl-slide-bg));display:flex;align-items:center;justify-content:center;${fsCss}">${esc(item)}</div>`
                     ).join('');
                     content = `<div style="width:100%;height:100%;display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;padding:12px;box-sizing:border-box;align-items:center;">${cells}</div>`;
                 } else {
                     // cycle / default — simple list
-                    const steps = items.map(item => `<span style="padding:8px 14px;border:2px solid ${color};border-radius:20px;color:var(--sl-text);background:color-mix(in srgb,${color} 10%,var(--sl-slide-bg));">${esc(item)}</span>`).join(' → ');
+                    const steps = items.map(item => `<span style="padding:8px 14px;border:${nodeBorderW}px solid ${nodeBorderColor};border-radius:20px;color:var(--sl-text);background:color-mix(in srgb,${color} 10%,var(--sl-slide-bg));${fsCss}">${esc(item)}</span>`).join(' → ');
                     content = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:12px;box-sizing:border-box;">${steps}</div>`;
                 }
                 break;

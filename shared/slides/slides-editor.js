@@ -243,6 +243,7 @@ class SlidesEditor {
         this._ensurePresentationDefaults();
         this._ensureTypographyDefaults();
         this._normalizeLegacyCanvasFontSizes();
+        this._normalizeLegacyCanvasStyles();
         this.selectedIndex = 0;
         this.selectedSlides = new Set([0]);
         this._slideSelectionAnchor = 0;
@@ -343,6 +344,43 @@ class SlidesEditor {
                 if (!Number.isFinite(fs)) continue;
                 if (Math.round(fs) === legacy) {
                     delete el.style.fontSize;
+                }
+            }
+        }
+    }
+
+    /**
+     * Normalisation des styles canvas au chargement :
+     *  1. formes : `borderColor`/`borderWidth` (jadis écrits sur le wrapper, invisibles
+     *     derrière le SVG) → `stroke`/`strokeWidth` quand ces derniers sont absents ;
+     *  2. élagage : suppression de toute clé `style` strictement égale au défaut du
+     *     schéma (`element-style-schema.js`) — decks minimaux, mêmes règles que
+     *     l'élagage `fontSize` ci-dessus.
+     */
+    _normalizeLegacyCanvasStyles() {
+        const ES = (typeof window !== 'undefined' && window.OEISlidesElementStyle)
+            || (typeof globalThis !== 'undefined' && globalThis.OEISlidesElementStyle) || null;
+        const slides = Array.isArray(this.data?.slides) ? this.data.slides : [];
+        for (const slide of slides) {
+            if (!slide || slide.type !== 'canvas' || !Array.isArray(slide.elements)) continue;
+            for (const el of slide.elements) {
+                if (!el || typeof el !== 'object' || !el.style || typeof el.style !== 'object') continue;
+                const s = el.style;
+                if (el.type === 'shape') {
+                    if ((s.stroke == null || s.stroke === '') && s.borderColor) s.stroke = s.borderColor;
+                    if ((s.strokeWidth == null || s.strokeWidth === '') && s.borderWidth != null) {
+                        const bw = parseFloat(s.borderWidth);
+                        if (Number.isFinite(bw)) s.strokeWidth = bw;
+                    }
+                    delete s.borderColor;
+                    delete s.borderWidth;
+                    delete s.borderStyle;
+                }
+                if (ES && typeof ES.defaultFor === 'function') {
+                    for (const key of Object.keys(s)) {
+                        const def = ES.defaultFor(el.type, key);
+                        if (def != null && String(s[key]) === String(def)) delete s[key];
+                    }
                 }
             }
         }

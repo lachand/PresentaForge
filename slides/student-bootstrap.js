@@ -21,6 +21,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/slides-special-live-runtime.js?v=1',
     '../shared/slides/slides-special-runtime.js?v=1',
     '../shared/slides/slides-typography.js?v=1',
+    '../shared/slides/element-style-schema.js?v=1',
     '../shared/slides/slides-core.js?v=33',
     '../shared/slides/slides-themes.js?v=1',
     '../shared/slides/slides-diagram-renderer.js?v=1',

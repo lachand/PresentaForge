@@ -272,7 +272,7 @@ class CanvasEditor {
                     ['Cellule', 'Cellule', 'Cellule'],
                     ['Cellule', 'Cellule', 'Cellule']
                 ];
-                return { ...base, data: { rows: defaultRows }, style: { color: 'var(--sl-text)', headerBg: 'var(--sl-primary)' } };
+                return { ...base, data: { rows: defaultRows }, style: { color: 'var(--sl-text)' } };
             }
             case 'video':
                 return { ...base, data: { src: '', embedUrl: '', alt: '' } };
@@ -1175,6 +1175,7 @@ class CanvasEditor {
         else div.style.removeProperty('transform');
         // Background fill (non-shape types; shapes use SVG fill internally)
         if (el.type !== 'shape') div.style.backgroundColor = el.style?.fill || '';
+        CanvasDomRuntime?.applyWrapperBoxStyle?.(div, el);
         const inner = document.createElement('div');
         inner.className = 'cel-inner';
         inner.innerHTML = this._renderContent(el);

@@ -75,6 +75,28 @@ class SlidesShared {
     static resolveElementFontSize(type, style, typography, fallback) { return window.OEISlidesTypography.resolveElementFontSize(type, style, typography, fallback); }
     static resolveCodeLineHeight(fontSizePx, fallback) { return window.OEISlidesTypography.resolveCodeLineHeight(fontSizePx, fallback); }
 
+    /* ── Element style schema — délégué à element-style-schema.js (optionnel : repli si absent) ── */
+
+    static get ElementStyle() {
+        return (typeof window !== 'undefined' && window.OEISlidesElementStyle)
+            || (typeof globalThis !== 'undefined' && globalThis.OEISlidesElementStyle)
+            || null;
+    }
+
+    /** `style[key]` si défini, sinon défaut du schéma, sinon `fallback` (valeur historique du renderer). */
+    static resolveElementStyle(type, style, key, fallback) {
+        const ES = SlidesShared.ElementStyle;
+        if (ES) return ES.resolve(type, style, key, fallback);
+        const v = style ? style[key] : undefined;
+        return (v !== undefined && v !== null && v !== '') ? v : fallback;
+    }
+
+    /** CSS de « boîte » (bordure / rayon / ombre) pour le wrapper positionné d'un élément. */
+    static wrapperBoxCss(style, type) {
+        const ES = SlidesShared.ElementStyle;
+        return ES ? ES.wrapperBoxCss(style, type) : '';
+    }
+
     /**
      * Build a normalized render options object used across editor/viewer/export/replay.
      * @param {any} data
@@ -198,6 +220,7 @@ class SlidesShared {
         const opacity = s.opacity ?? 0.25;
         const stroke = s.stroke || 'none';
         const sw = s.strokeWidth || 0;
+        const dash = s.dashArray ? ` stroke-dasharray="${s.dashArray}"` : '';
         const text = d.text || '';
         const fallbackFontSize = Number(baseFontSize);
         const finalFontSize = Number.isFinite(fallbackFontSize)
@@ -205,20 +228,30 @@ class SlidesShared {
             : 16;
         let svgInner = '';
         switch (shapeType) {
-            case 'ellipse': svgInner = `<ellipse cx="50%" cy="50%" rx="49%" ry="49%" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'triangle': svgInner = `<polygon points="50,2 98,98 2,98" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'diamond': svgInner = `<polygon points="50,2 98,50 50,98 2,50" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'hexagon': svgInner = `<polygon points="25,2 75,2 98,50 75,98 25,98 2,50" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'star': svgInner = `<polygon points="50,2 62,38 98,38 68,60 78,96 50,74 22,96 32,60 2,38 38,38" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'arrow-right': svgInner = `<polygon points="2,30 65,30 65,8 98,50 65,92 65,70 2,70" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'arrow-left': svgInner = `<polygon points="98,30 35,30 35,8 2,50 35,92 35,70 98,70" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'arrow-up': svgInner = `<polygon points="30,98 30,35 8,35 50,2 92,35 70,35 70,98" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'arrow-down': svgInner = `<polygon points="30,2 30,65 8,65 50,98 92,65 70,65 70,2" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            case 'rounded-rect': svgInner = `<rect x="2" y="2" width="96" height="96" rx="20" ry="20" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
-            default: svgInner = `<rect x="2" y="2" width="96" height="96" rx="${s.borderRadius||2}" ry="${s.borderRadius||2}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`; break;
+            case 'ellipse': svgInner = `<ellipse cx="50%" cy="50%" rx="49%" ry="49%" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'triangle': svgInner = `<polygon points="50,2 98,98 2,98" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'diamond': svgInner = `<polygon points="50,2 98,50 50,98 2,50" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'hexagon': svgInner = `<polygon points="25,2 75,2 98,50 75,98 25,98 2,50" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'star': svgInner = `<polygon points="50,2 62,38 98,38 68,60 78,96 50,74 22,96 32,60 2,38 38,38" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'arrow-right': svgInner = `<polygon points="2,30 65,30 65,8 98,50 65,92 65,70 2,70" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'arrow-left': svgInner = `<polygon points="98,30 35,30 35,8 2,50 35,92 35,70 98,70" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'arrow-up': svgInner = `<polygon points="30,98 30,35 8,35 50,2 92,35 70,35 70,98" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'arrow-down': svgInner = `<polygon points="30,2 30,65 8,65 50,98 92,65 70,65 70,2" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
+            case 'rounded-rect': {
+                const rr = SlidesShared.resolveElementStyle('shape', s, 'borderRadius', 20);
+                svgInner = `<rect x="2" y="2" width="96" height="96" rx="${rr}" ry="${rr}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`;
+                break;
+            }
+            default: svgInner = `<rect x="2" y="2" width="96" height="96" rx="${s.borderRadius||2}" ry="${s.borderRadius||2}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`; break;
         }
         const displayText = escapeText ? SlidesShared.esc(text) : text;
-        const textHtml = text ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:${s.color||'var(--sl-text,#fff)'};font-size:${SlidesShared.resolveElementFontSize('shape', s, typography, finalFontSize)}px;font-weight:${s.fontWeight||'normal'};text-align:center;padding:8px;pointer-events:none;">${displayText}</div>` : '';
+        const vAlign = { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[
+            SlidesShared.resolveElementStyle('shape', s, 'verticalAlign', 'middle')] || 'center';
+        const tAlign = SlidesShared.resolveElementStyle('shape', s, 'textAlign', 'center');
+        const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[tAlign] || 'center';
+        const pad = SlidesShared.resolveElementStyle('shape', s, 'padding', '8px');
+        const fam = s.fontFamily ? `font-family:${s.fontFamily};` : '';
+        const textHtml = text ? `<div style="position:absolute;inset:0;display:flex;align-items:${vAlign};justify-content:${justify};color:${s.color||'var(--sl-text,#fff)'};font-size:${SlidesShared.resolveElementFontSize('shape', s, typography, finalFontSize)}px;font-weight:${s.fontWeight||'normal'};text-align:${tAlign};${fam}padding:${pad};pointer-events:none;">${displayText}</div>` : '';
         return { svgInner, opacity, textHtml };
     }
 

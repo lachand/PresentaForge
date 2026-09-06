@@ -282,13 +282,15 @@ function updateFormatTabEnhanced() {
     if (opSlider && document.activeElement !== opSlider) opSlider.value = (s.opacity ?? 1) * 100;
     if (opLabel) opLabel.textContent = Math.round((s.opacity ?? 1) * 100) + '%';
 
-    // Border
+    // Border — pour une forme, refléter stroke/strokeWidth (portés par le SVG)
+    const isShape = el.type === 'shape';
     const bColor = document.getElementById('fmt-border-color');
-    if (bColor) bColor.value = colorToHex(s.borderColor || '#666666');
+    if (bColor) bColor.value = colorToHex((isShape ? s.stroke : s.borderColor) || '#666666');
     const bWidth = document.getElementById('fmt-border-width');
     const bwLabel = document.getElementById('fmt-border-width-label');
-    if (bWidth && document.activeElement !== bWidth) bWidth.value = parseInt(s.borderWidth) || 0;
-    if (bwLabel) bwLabel.textContent = (parseInt(s.borderWidth) || 0) + 'px';
+    const bwVal = parseInt(isShape ? s.strokeWidth : s.borderWidth) || 0;
+    if (bWidth && document.activeElement !== bWidth) bWidth.value = bwVal;
+    if (bwLabel) bwLabel.textContent = bwVal + 'px';
     const bRadius = document.getElementById('fmt-border-radius');
     const brLabel = document.getElementById('fmt-border-radius-label');
     if (bRadius && document.activeElement !== bRadius) bRadius.value = parseInt(s.borderRadius) || 0;
@@ -324,7 +326,7 @@ function updateFormatTabEnhanced() {
     const type = el.type;
     const textTypes = ['heading', 'text', 'list', 'code', 'highlight', 'definition', 'callout-box', 'exercise-block', 'mistake-fix', 'code-example', 'terminal-session', 'quote', 'card', 'table'];
     // Types where style.color has a visual effect in the renderer (shape text, latex formula, timer display…)
-    const colorTypes = [...textTypes, 'shape', 'latex', 'timer', 'before-after', 'rubric-block', 'rubrick-block', 'steps', 'pyramid'];
+    const colorTypes = [...textTypes, 'shape', 'latex', 'timer', 'smartart', 'before-after', 'rubric-block', 'rubrick-block', 'steps', 'pyramid'];
     document.getElementById('fmt-text-group').style.display = colorTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-paragraph-group').style.display = textTypes.includes(type) ? '' : 'none';
     document.getElementById('fmt-image-group').style.display = type === 'image' ? '' : 'none';
@@ -452,15 +454,22 @@ function bindFormatTabEnhanced() {
         });
     }
 
-    // Border
-    bindFmt('fmt-border-color', (runtimeCanvas, s, el) => runtimeCanvas.updateData(s.id, { style: { borderColor: el.value } }));
+    // Border — les formes portent leur contour via le SVG (stroke/strokeWidth),
+    // les autres types via la bordure CSS du wrapper (borderColor/borderWidth).
+    bindFmt('fmt-border-color', (runtimeCanvas, s, el) => {
+        const patch = s.type === 'shape' ? { stroke: el.value } : { borderColor: el.value };
+        runtimeCanvas.updateData(s.id, { style: patch });
+    });
     bindFmt('fmt-border-width', (runtimeCanvas, s, el) => {
-        runtimeCanvas.updateData(s.id, { style: { borderWidth: el.value + 'px', borderStyle: +el.value > 0 ? 'solid' : 'none' } });
+        const patch = s.type === 'shape'
+            ? { strokeWidth: +el.value }
+            : { borderWidth: el.value + 'px', borderStyle: +el.value > 0 ? 'solid' : 'none' };
+        runtimeCanvas.updateData(s.id, { style: patch });
         const label = document.getElementById('fmt-border-width-label');
         if (label) label.textContent = el.value + 'px';
     });
     bindFmt('fmt-border-radius', (runtimeCanvas, s, el) => {
-        runtimeCanvas.updateData(s.id, { style: { borderRadius: el.value + 'px' } });
+        runtimeCanvas.updateData(s.id, { style: { borderRadius: s.type === 'shape' ? +el.value : el.value + 'px' } });
         const label = document.getElementById('fmt-border-radius-label');
         if (label) label.textContent = el.value + 'px';
     });

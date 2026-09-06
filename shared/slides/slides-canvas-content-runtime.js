@@ -89,7 +89,16 @@
         switch (el.type) {
             case 'image': {
                 if (el.data?.src) {
-                    return `<img src="${escHtml(el.data.src)}" alt="${escHtml(el.data?.alt||'')}" style="width:100%;height:100%;object-fit:contain;">`;
+                    const is = el.style || {};
+                    const ES = (typeof window !== 'undefined' && window.OEISlidesElementStyle) || global.OEISlidesElementStyle || null;
+                    const fitMap = { contain: 'contain', cover: 'cover', fill: 'fill', stretch: 'fill' };
+                    const fitKey = ES ? ES.resolve('image', is, 'objectFit', 'contain') : (is.objectFit || 'contain');
+                    const fit = fitMap[fitKey] || 'contain';
+                    const rad = is.borderRadius != null && is.borderRadius !== ''
+                        ? `border-radius:${typeof is.borderRadius === 'number' ? is.borderRadius + 'px' : is.borderRadius};` : '';
+                    const flt = is.filter && is.filter !== 'none' ? `filter:${is.filter};` : '';
+                    const op = is.opacity != null && is.opacity !== '' ? `opacity:${is.opacity};` : '';
+                    return `<img src="${escHtml(el.data.src)}" alt="${escHtml(el.data?.alt||'')}" style="width:100%;height:100%;object-fit:${fit};${rad}${flt}${op}">`;
                 }
                 return `<div class="cel-image-placeholder">
                     <span class="cel-image-placeholder-icon" aria-hidden="true">

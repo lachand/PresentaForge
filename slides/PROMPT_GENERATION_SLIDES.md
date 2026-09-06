@@ -282,6 +282,26 @@ Animations : "none", "fade-in", "fade-up", "fade-down", "fade-left", "fade-right
 
 ── Types d'éléments canvas ──
 
+Propriétés de style communes (toutes lues depuis `style`, repli sur la valeur
+par défaut si absentes ; source de vérité : shared/slides/element-style-schema.js) :
+  • Wrapper (tous types sauf forme) : "borderColor", "borderWidth" (px), "borderRadius"
+    (px), "boxShadow" (true → ombre portée).
+  • Texte (heading/text/list/quote/…) : "fontSize", "fontWeight", "color", "fontFamily",
+    "fontStyle" (italic), "textTransform", "textAlign", "verticalAlign", "lineHeight",
+    "letterSpacing" (px), "background".
+  • shape : "fill", "opacity", "stroke", "strokeWidth", "dashArray" ("6 4"…),
+    "borderRadius", "color", "fontSize", "fontWeight", "fontFamily", "textAlign",
+    "verticalAlign", "padding".
+  • image : "objectFit" (contain/cover/fill), "filter" ("grayscale(1)"…),
+    "borderRadius", "opacity".
+  • table : "headerBg", "headerColor", "stripeBg", "borderColor", "cellPadding",
+    "textAlign", "fontSize", "color".
+  • card : "fill", "color", "fontSize", "titleColor", "titleSize", "titleWeight",
+    "borderColor", "borderRadius", "padding".
+  • smartart : "color", "fontSize", "borderColor", "borderWidth".
+  • connecteurs (slide.connectors[].style) : "stroke", "strokeWidth", "opacity",
+    "dashArray", "labelColor", "labelSize", "labelBg".
+
 ▸ heading — Titre
   data: { "text": "Mon titre" }
   style: { "fontSize": 52, "fontWeight": 800, "color": "var(--sl-heading)", "textAlign": "left", "fontFamily": "var(--sl-font-heading)", "verticalAlign": "top" }

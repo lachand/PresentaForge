@@ -29,6 +29,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     // Orchestrator (depends on all 4 sub-runtimes above)
     ['../shared/slides/slides-special-runtime.js?v=1'],
     ['../shared/slides/slides-typography.js?v=1'],
+    ['../shared/slides/element-style-schema.js?v=1'],
     ['../shared/slides/slides-core.js?v=33'],
     ['../shared/slides/slides-themes.js?v=1'],
     ['../shared/slides/slides-diagram-renderer.js?v=1'],
@@ -60,6 +61,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-dialog.js?v=3'],
     ['../shared/slides/ui-toast.js?v=1'],
     ['../shared/slides/editor-utils.js?v=9'],
+    ['../shared/slides/editor-color-field.js?v=1'],
     ['../shared/slides/editor-ribbon.js?v=1'],
     ['../shared/slides/editor-ai-settings.js?v=1'],
     ['../shared/slides/editor-runtime-state.js?v=1'],
