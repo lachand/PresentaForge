@@ -156,42 +156,98 @@
         return { bg, text };
     }
 
+    // Firestore plafonne un champ de document ET le document entier à ~1 Mio. Les
+    // decks avec images base64 dépassent largement → on découpe la chaîne JSON en
+    // fragments stockés dans des documents FRÈRES de la même collection
+    // (`<id>__pN`), chacun sous la limite. Documents frères (pas sous-collection)
+    // → couverts par les mêmes règles de sécurité que `<id>`. Ils n'ont pas de
+    // champ `modified` donc `listPresentations()` (qui fait `orderBy('modified')`)
+    // les ignore automatiquement. Un deck sous la limite reste en `json` inline
+    // (rétro-compatible : `chunks` absent ou 0).
+    const _CHUNK_BYTES = 768 * 1024;   // marge sous ~1 048 487 octets
+    const _partId = (id, i) => `${id}__p${i}`;
+
+    async function _loadChunked(col, id, docData) {
+        const n = Number(docData.chunks) || 0;
+        if (n <= 0) return JSON.parse(docData.json);
+        const parts = await Promise.all(
+            Array.from({ length: n }, (_, i) => col.doc(_partId(id, i)).get())
+        );
+        let json = '';
+        for (let i = 0; i < n; i++) {
+            if (!parts[i].exists) throw new Error(`Fragment ${i + 1}/${n} manquant`);
+            json += (parts[i].data() || {}).s || '';
+        }
+        return JSON.parse(json);
+    }
+
     async function loadPresentation(id) {
-        const doc = await _presCol().doc(id).get();
+        const col = _presCol();
+        const doc = await col.doc(id).get();
         if (!doc.exists) throw new Error('Présentation introuvable');
-        return JSON.parse(doc.data().json);
+        return _loadChunked(col, id, doc.data());
     }
 
     // Load a public presentation without requiring auth (uid must be provided in the share link)
     async function loadPublicPresentation(uid, id) {
         if (!_db) throw new Error('Firebase non initialisé');
-        const doc = await _db.collection('users').doc(uid).collection('presentations').doc(id).get();
+        const col = _db.collection('users').doc(uid).collection('presentations');
+        const doc = await col.doc(id).get();
         if (!doc.exists) throw new Error('Présentation introuvable');
         const data = doc.data();
         if (!data.public) throw new Error('Cette présentation n\'est pas publique');
-        return JSON.parse(data.json);
+        return _loadChunked(col, id, data);
+    }
+
+    /**
+     * Supprime les documents-fragments d'index >= keepFrom. Les fragments sont
+     * contigus (0..N-1) : on s'arrête au premier absent.
+     */
+    async function _clearParts(col, id, keepFrom, maxProbe = 128) {
+        for (let i = keepFrom; i < maxProbe; i++) {
+            const d = col.doc(_partId(id, i));
+            // eslint-disable-next-line no-await-in-loop
+            const snap = await d.get();
+            if (!snap.exists) break;
+            // eslint-disable-next-line no-await-in-loop
+            await d.delete();
+        }
     }
 
     async function savePresentation(presentationData, existingId, opts = {}) {
-        const id    = existingId || _presCol().doc().id;
+        const col   = _presCol();
+        const id    = existingId || col.doc().id;
         const title = (presentationData.metadata && presentationData.metadata.title) || 'Sans titre';
         const course = opts.course || (presentationData.metadata && presentationData.metadata.course) || '';
         const isPublic = typeof opts.public === 'boolean' ? opts.public : false;
         const thumb = _computeThumb(presentationData);
-        await _presCol().doc(id).set({
-            id,
-            title,
-            modified: new Date().toISOString(),
-            json: JSON.stringify(presentationData),
-            public: isPublic,
-            course,
-            thumb,
-        });
+        const json = JSON.stringify(presentationData);
+        const meta = { id, title, modified: new Date().toISOString(), public: isPublic, course, thumb };
+
+        const bytes = (typeof TextEncoder !== 'undefined') ? new TextEncoder().encode(json).length : json.length;
+
+        if (bytes <= _CHUNK_BYTES) {
+            await col.doc(id).set({ ...meta, json, chunks: 0 });
+            if (existingId) await _clearParts(col, id, 0); // efface d'anciens fragments
+            return id;
+        }
+
+        // Fragments D'ABORD, méta (chunks=N) ENSUITE — un `chunks` valide implique
+        // que les fragments existent.
+        const parts = [];
+        for (let i = 0; i < json.length; i += _CHUNK_BYTES) parts.push(json.slice(i, i + _CHUNK_BYTES));
+        for (let i = 0; i < parts.length; i++) {
+            await col.doc(_partId(id, i)).set({ s: parts[i] });
+        }
+        await col.doc(id).set({ ...meta, json: '', chunks: parts.length });
+        await _clearParts(col, id, parts.length); // supprime les fragments en trop
         return id;
     }
 
     async function deletePresentation(id) {
-        await _presCol().doc(id).delete();
+        const col = _presCol();
+        await _clearParts(col, id, 0);
+        await col.doc(id).delete();
     }
 
     // ── Export ────────────────────────────────────────────────────────────────
