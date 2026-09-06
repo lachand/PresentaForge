@@ -259,8 +259,9 @@
                 document.body.classList.remove('revise-offline');
                 const row = document.getElementById('room-input-row');
                 if (row) row.classList.add('visible');
-                setJoinStatus('Cours introuvable sur cet appareil. Importez votre fichier de révision.', 'error');
+                setJoinStatus('Cours introuvable sur cet appareil. Importez votre fichier de révision ci-dessous.', 'error');
                 renderReviseHome();
+                bindReviseImport();
                 return;
             }
 
@@ -315,11 +316,15 @@
             const section = document.getElementById('revise-list-section');
             const list = document.getElementById('revise-list');
             if (!section || !list) return;
+            const empty = document.getElementById('revise-list-empty');
             const store = window.OEIStudentStorage.create({ roomId: '' });
             const archives = store.listReviseArchives();
             list.textContent = '';
-            if (!archives.length) { section.setAttribute('hidden', ''); return; }
+            // La section (avec le bouton « Importer une révision ») est toujours
+            // affichée sur l'écran d'accueil ; seule la liste est conditionnelle.
             section.removeAttribute('hidden');
+            list.hidden = archives.length === 0;
+            if (empty) empty.hidden = archives.length > 0;
             archives.forEach(it => {
                 const li = document.createElement('li');
                 li.className = 'revise-list-item';

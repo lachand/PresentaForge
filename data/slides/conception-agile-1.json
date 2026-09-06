@@ -166,7 +166,10 @@
         "type": "text",
         "text": "<p style='text-align:center;font-style:italic;color:var(--sl-muted)'>Schéma « why it's never just the work » (davestewart.co.uk) — montré en cours, non reproduit ici (illustration attribuée, hors périmètre du dépôt public).</p>"
       },
-      "notes": "\"Why it's never just the work\" — l'iceberg du travail invisible : tests, communication, documentation, etc."
+      "notes": "\"Why it's never just the work\" — l'iceberg du travail invisible : tests, communication, documentation, etc.",
+      "keypoints": [
+        "Écrire du code n'est qu'une partie du travail : tests, communication, doc, coordination pèsent autant."
+      ]
     },
     {
       "type": "bullets",
@@ -276,7 +279,10 @@
           "alt": "Ariane 5 — vol 501, échec au décollage (1996)"
         }
       },
-      "notes": "1996 — vol inaugural, échec 37 secondes après le décollage, bug logiciel de conversion 64 bits vers 16 bits."
+      "notes": "1996 — vol inaugural, échec 37 secondes après le décollage, bug logiciel de conversion 64 bits vers 16 bits.",
+      "keypoints": [
+        "Ariane 5 : réutiliser du code (Ariane 4) sans revérifier ses hypothèses a suffi à détruire la fusée (dépassement d'entier)."
+      ]
     },
     {
       "type": "quote",
@@ -350,7 +356,11 @@
       "term": "Complexité et rigueur",
       "definition": "1. Les systèmes informatiques sont complexes et demandent des méthodes de conception pour être menés à bien.",
       "example": "2. Ces méthodes doivent combiner rigueur ET adaptation à l'inconnu et au changement.",
-      "notes": "C'est LE message à retenir de tout le cours."
+      "notes": "C'est LE message à retenir de tout le cours.",
+      "keypoints": [
+        "LA idée du cours : les systèmes informatiques sont complexes → il faut des méthodes de conception.",
+        "Ces méthodes doivent combiner rigueur ET adaptation à l'inconnu et au changement."
+      ]
     },
     {
       "type": "bullets",
@@ -447,6 +457,9 @@
             "order": 1
           }
         }
+      ],
+      "keypoints": [
+        "Bien concevoir, c'est aussi savoir écouter les utilisateurs, expérimenter, abstraire et travailler à plusieurs."
       ]
     },
     {
@@ -613,6 +626,10 @@
             "order": 2
           }
         }
+      ],
+      "keypoints": [
+        "Génie logiciel = ensemble de méthodes, techniques et outils pour produire et maintenir du logiciel de qualité.",
+        "Principes récurrents : rigueur, séparation des problèmes, modularité, abstraction, prévision du changement."
       ]
     },
     {
@@ -765,6 +782,9 @@
             "order": 2
           }
         }
+      ],
+      "keypoints": [
+        "Facteurs externes = ce que perçoit l'utilisateur : correction, robustesse, utilisabilité."
       ]
     },
     {
@@ -1007,6 +1027,10 @@
             "order": 3
           }
         }
+      ],
+      "keypoints": [
+        "Facteurs internes = ce qui aide le concepteur : lisibilité, modularité, réutilisabilité, vérifiabilité, portabilité.",
+        "Qualité externe et interne comptent toutes les deux : l'une se voit, l'autre rend la maintenance possible."
       ]
     },
     {
@@ -1089,7 +1113,10 @@
       "title": "Projet : définition",
       "term": "Projet",
       "definition": "Ensemble d'actions à entreprendre afin de répondre à un besoin défini (avec une qualité suffisante), dans un délai fixé, mobilisant des ressources humaines et matérielles, possédant un coût.",
-      "notes": "Bien insister sur les 4 dimensions : besoin, qualité, délai, coût/ressources."
+      "notes": "Bien insister sur les 4 dimensions : besoin, qualité, délai, coût/ressources.",
+      "keypoints": [
+        "Un projet = répondre à un besoin défini, avec une qualité suffisante, dans un délai fixé, à un coût donné."
+      ]
     },
     {
       "type": "comparison",
@@ -1108,7 +1135,11 @@
           "Assure la conception et la réalisation de l'ouvrage"
         ]
       },
-      "notes": "Bien distinguer qui commande (MOA) et qui réalise (MOE)."
+      "notes": "Bien distinguer qui commande (MOA) et qui réalise (MOE).",
+      "keypoints": [
+        "MOA (maître d'ouvrage) = le client : fixe objectifs, budget, délais.",
+        "MOE (maître d'œuvre) = le prestataire : conçoit et réalise l'ouvrage."
+      ]
     },
     {
       "type": "canvas",
@@ -1193,7 +1224,7 @@
       "title": "Conduite de projet",
       "term": "Conduite de projet",
       "definition": "Organisation méthodologique mise en œuvre pour faire en sorte que l'ouvrage réalisé par le maître d'œuvre réponde aux attentes du maître d'ouvrage dans les contraintes de délai, coût et qualité.",
-      "notes": ""
+      "notes": "Définition intermédiaire entre « projet » et « projet logiciel ». La conduite de projet est l'organisation méthodologique qui garantit que la MOE livre ce que la MOA attend, dans les contraintes délai/coût/qualité. Enchaîner sur les 4 casquettes du chef de projet."
     },
     {
       "type": "bullets",
@@ -1242,7 +1273,10 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Le cycle de vie va de la spécification jusqu'à l'exploitation et la maintenance. Insister : le choix d'un modèle de cycle de vie sert à organiser les phases et à guider le développeur ; ce n'est pas une contrainte administrative. Introduit la comparaison linéaire / non linéaire qui suit.",
+      "keypoints": [
+        "Le cycle de vie d'un logiciel va de la spécification jusqu'à l'exploitation et la maintenance."
+      ]
     },
     {
       "type": "canvas",
@@ -1287,7 +1321,10 @@
           "Itératif"
         ]
       },
-      "notes": "Poser le plan des slides suivantes."
+      "notes": "Poser le plan des slides suivantes.",
+      "keypoints": [
+        "Deux familles de cycles de vie : linéaires (cascade, V) et non linéaires (spirale, incrémental, itératif)."
+      ]
     },
     {
       "type": "canvas",
@@ -1379,6 +1416,9 @@
             "color": "var(--sl-text)"
           }
         }
+      ],
+      "keypoints": [
+        "Cascade : phases figées, flot descendant, tests seulement à la fin → n'est adapté que si les besoins sont clairs et stables."
       ]
     },
     {
@@ -1661,7 +1701,11 @@
         "Distinction entre activités trop stricte",
         "Modèle théoriquement parfait, mais inadapté aux humains"
       ],
-      "notes": "Ces chiffres justifient le passage aux méthodes agiles/itératives."
+      "notes": "Ces chiffres justifient le passage aux méthodes agiles/itératives.",
+      "keypoints": [
+        "Les besoins bougent : ~25 % des exigences sont modifiées et ~45 % des fonctions spécifiées ne servent jamais (Larman).",
+        "Figer les spécifications au début d'un projet est une illusion."
+      ]
     },
     {
       "type": "canvas",
@@ -1706,7 +1750,10 @@
           ]
         }
       ],
-      "notes": "Transition naturelle vers le modèle en spirale."
+      "notes": "Transition naturelle vers le modèle en spirale.",
+      "keypoints": [
+        "Réponse aux limites de la cascade : construire par incréments, intégrer le feedback en continu, gérer les risques."
+      ]
     },
     {
       "type": "canvas",
@@ -1804,7 +1851,10 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Poser la définition générale d'une méthode avant d'aborder les méthodes agiles. Une méthode capitalise l'expérience des projets passés et les règles du domaine ; elle définit des concepts de modélisation, une chronologie d'activités et des règles pour les participants. Une méthode se décrit par : des gens, des activités, des résultats.",
+      "keypoints": [
+        "Une méthode = une démarche reproductible pour obtenir des solutions fiables (concepts de modélisation + chronologie + règles)."
+      ]
     },
     {
       "type": "canvas",
@@ -1931,6 +1981,10 @@
             "order": 2
           }
         }
+      ],
+      "keypoints": [
+        "Méthodes agiles = adaptatives : itérations courtes, client proche, délais et coûts fixés mais portée flexible.",
+        "L'accent est mis sur les personnes : équipes auto-organisées, communication, processus révisé à chaque itération."
       ]
     },
     {
@@ -2024,6 +2078,10 @@
             ]
           }
         }
+      ],
+      "keypoints": [
+        "Les 5 grandes activités : spécification des besoins → analyse → conception → implémentation → tests.",
+        "Elles ne sont pas forcément séquentielles : en agile, elles se répètent à chaque itération."
       ]
     },
     {
@@ -2072,7 +2130,10 @@
           "<b>Non fonctionnelles</b> : performance, sûreté, portabilité, etc."
         ]
       },
-      "notes": ""
+      "notes": "La spécification des besoins est fondamentale mais difficile. Règle d'or : les informaticiens sont au service du client, pas l'inverse (conception participative). Distinguer les deux types d'exigences : fonctionnelles (ce que le système doit faire) et non fonctionnelles (performance, sûreté, portabilité…).",
+      "keypoints": [
+        "Exigences fonctionnelles = ce que le système doit faire ; non fonctionnelles = performance, sûreté, portabilité…"
+      ]
     },
     {
       "type": "canvas",
@@ -2139,6 +2200,9 @@
             "headerBg": "var(--sl-primary)"
           }
         }
+      ],
+      "keypoints": [
+        "FURPS = Functionality, Usability, Reliability, Performance, Supportability — une grille pour n'oublier aucune dimension."
       ]
     },
     {
@@ -2206,6 +2270,9 @@
             "headerBg": "var(--sl-primary)"
           }
         }
+      ],
+      "keypoints": [
+        "FURPS+ ajoute : implémentation, interface, exploitation, conditionnement, aspects juridiques."
       ]
     },
     {
@@ -2226,7 +2293,10 @@
           "Construction du système"
         ]
       },
-      "notes": "Une seule chose est sûre : l'analyse vient avant la conception. La frontière entre les deux reste floue."
+      "notes": "Une seule chose est sûre : l'analyse vient avant la conception. La frontière entre les deux reste floue.",
+      "keypoints": [
+        "Analyse = le QUOI (comprendre le problème et les besoins) ; conception = le COMMENT (construire la solution)."
+      ]
     },
     {
       "type": "split",
@@ -2249,7 +2319,10 @@
           "Impossible à réaliser sans outils"
         ]
       },
-      "notes": ""
+      "notes": "L'implémentation est l'activité la plus coûteuse. Les tests se déclinent en plusieurs niveaux : unitaires (classe, composant), système intégré, et non-régression (ce qui était valide doit le rester). Insister : tester sérieusement est impossible sans outils.",
+      "keypoints": [
+        "Trois niveaux de tests : unitaires, système intégré, et non-régression (ce qui marchait doit continuer à marcher)."
+      ]
     },
     {
       "type": "canvas",
@@ -2310,7 +2383,7 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Une méthode spécifie des activités et des artefacts ; les outils soutiennent le processus en pilotant les activités et en gérant les artefacts. Les outils sont plus ou moins intégrés à la méthode, inter-opérables, et achetés / fabriqués / adaptés."
     },
     {
       "type": "canvas",
@@ -2455,6 +2528,9 @@
             "order": 4
           }
         }
+      ],
+      "keypoints": [
+        "À chaque activité son outil : planification (Trello), versions (Git, SVN), documentation (Javadoc), maquettage (Figma), tests (JUnit)."
       ]
     },
     {
@@ -2467,7 +2543,7 @@
         "Outils de <b>communication</b>",
         "…"
       ],
-      "notes": ""
+      "notes": "Compléter le panorama : outils de modélisation (Draw.io pour UML), ateliers de génie logiciel (AGL), outils de vérification, outils de communication. L'idée : chaque activité du processus peut et doit être outillée."
     },
     {
       "type": "canvas",
@@ -2547,7 +2623,10 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Le cahier des charges spécifie le système à réaliser (fonctionnalités, contexte, contraintes de délai et de prix). C'est un document central : il permet de se mettre d'accord en interne, de lancer un appel d'offre, il fait partie du contrat client / prestataire et sert de guide au chef de projet.",
+      "keypoints": [
+        "Le cahier des charges : accord interne sur le système, base de l'appel d'offre et du contrat, guide du chef de projet."
+      ]
     },
     {
       "type": "bullets",
@@ -2557,7 +2636,7 @@
         "Analyser l'existant : organisation, documents utilisés, traitements effectués, données manipulées",
         "Proposer des solutions d'organisation, fonctionnelles et techniques répondant aux exigences et besoins exprimés"
       ],
-      "notes": ""
+      "notes": "Le cahier des charges fonctionnel précise les orientations et le périmètre du domaine, analyse l'existant (organisation, documents, traitements, données) et propose des solutions d'organisation, fonctionnelles et techniques répondant aux besoins exprimés."
     },
     {
       "type": "bullets",
@@ -2567,7 +2646,7 @@
         "Vérifier la faisabilité organisationnelle et technique",
         "Aboutir à un choix argumenté d'une solution type de développement"
       ],
-      "notes": ""
+      "notes": "Suite du cahier des charges fonctionnel : aboutir à une description globale du système (organisationnelle, fonctionnelle, technique, contraintes de sécurité et de performance, interfaces), vérifier la faisabilité organisationnelle et technique, et retenir une solution type argumentée."
     },
     {
       "type": "canvas",
@@ -2612,7 +2691,10 @@
         "type": "text",
         "text": "<p>Ne <b>pas</b> parler de réalisation technique dans les spécifications fonctionnelles.</p>"
       },
-      "notes": ""
+      "notes": "Les spécifications fonctionnelles décrivent les besoins métier : liste de fonctions attendues, scénarios / cas d'utilisation. Point de vigilance : ne jamais y parler de réalisation technique.",
+      "keypoints": [
+        "Spécifications fonctionnelles = besoins métier (le quoi) ; spécifications techniques = comment coder (le comment). Ne pas les mélanger."
+      ]
     },
     {
       "type": "split",
@@ -2631,7 +2713,7 @@
         "type": "text",
         "text": "<p>Le mélange <b>technique / métier</b> est facile à faire !</p>"
       },
-      "notes": ""
+      "notes": "Les spécifications techniques décrivent comment réaliser : liste de fonctions à coder, architecture. Le mélange technique / métier est un piège courant — le signaler explicitement aux étudiants pour leurs TP."
     },
     {
       "type": "canvas",
@@ -2793,7 +2875,10 @@
       "type": "quote",
       "quote": "Les systèmes informatiques sont complexes et demandent des méthodes de conception pour être menés à bien — des méthodes qui combinent rigueur et adaptation au changement.",
       "author": "Ce qu'il faut retenir de ce cours",
-      "notes": "Boucler sur LA chose à retenir présentée en introduction. Annoncer le prochain cours."
+      "notes": "Boucler sur LA chose à retenir présentée en introduction. Annoncer le prochain cours.",
+      "keypoints": [
+        "À retenir : concevoir un logiciel demande des méthodes qui combinent rigueur et adaptation au changement."
+      ]
     }
   ]
 }

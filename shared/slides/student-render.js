@@ -979,6 +979,13 @@
                 e.stopPropagation();
                 exportNotesPdf();
             });
+            document.getElementById('ssp-notes-mail-btn')?.addEventListener('click', () => document.getElementById('notes-mail-btn')?.click());
+            document.getElementById('notes-mail-btn')?.addEventListener('click', e => {
+                e.stopPropagation();
+                e.preventDefault();
+                _saveSlideNotes();
+                H.revision?.emailBundle?.();
+            });
         }
 
         // ── Notes PDF export — 1 A4 sheet per slide ──────

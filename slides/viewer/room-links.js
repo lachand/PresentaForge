@@ -82,6 +82,28 @@ export function buildStudentRoomUrl(options) {
 }
 
 /**
+ * Résout le deck d'un viewer ouvert avec `?file=__draft__`.
+ * Priorité au deck vivant exposé par la fenêtre parente
+ * (`window.opener.__oeiPresentDeck`) : toujours à jour et sans la limite de taille
+ * de localStorage — les gros decks (images en base64) débordaient silencieusement
+ * le quota, si bien que « Présenter » ouvrait un ancien deck ou rien. Repli sur le
+ * stockage persistant.
+ *
+ * @param {{ openerDeck?: any, readStored?: () => any }} [options]
+ * @returns {any|null}
+ */
+export function resolveDraftDeck(options = {}) {
+    const openerDeck = options && options.openerDeck;
+    try {
+        if (openerDeck && Array.isArray(openerDeck.slides)) {
+            return JSON.parse(JSON.stringify(openerDeck));
+        }
+    } catch (_) { /* opener cross-origin ou fermé */ }
+    const readStored = options && typeof options.readStored === 'function' ? options.readStored : null;
+    return readStored ? readStored() : null;
+}
+
+/**
  * @param {{
  *   roomActive: boolean,
  *   relayActive: boolean,

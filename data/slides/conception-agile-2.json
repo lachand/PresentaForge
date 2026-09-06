@@ -226,7 +226,10 @@
           }
         }
       ],
-      "notes": "Ce cours se concentre sur la partie droite du spectre : les méthodes agiles."
+      "notes": "Ce cours se concentre sur la partie droite du spectre : les méthodes agiles.",
+      "keypoints": [
+        "Un spectre des approches : « rien » → cascade → V → itératif (RUP) → agile, de la rigidité à l'adaptation."
+      ]
     },
     {
       "type": "comparison",
@@ -658,7 +661,7 @@
           "Responsabilité du succès non partagée"
         ]
       },
-      "notes": ""
+      "notes": "Bilan du modèle en V. Bénéfices : tâches clairement établies au début, responsabilisation grâce aux retours en cas d'erreur (chaque niveau de conception a son niveau de test). Limites : en pratique les tâches changent, et la responsabilité du succès reste peu partagée. Même reproche de fond que la cascade — la validation d'ensemble arrive tard."
     },
     {
       "type": "canvas",
@@ -802,7 +805,10 @@
         "Capacité de réponse rapide et souple au changement",
         "Orientation vers le <b>code</b> plutôt que la documentation"
       ],
-      "notes": "Transition vers l'agilité : ni « rien » (Rien), ni trop de process (cascade/V)."
+      "notes": "Transition vers l'agilité : ni « rien » (Rien), ni trop de process (cascade/V).",
+      "keypoints": [
+        "Agile = le minimum de méthode pour mener le projet tout en restant capable de répondre vite au changement ; priorité au code sur la doc."
+      ]
     },
     {
       "type": "bullets",
@@ -1074,7 +1080,10 @@
           ]
         }
       ],
-      "notes": "C'est le socle commun à toutes les méthodes agiles qui vont suivre (XP, Scrum, etc.)."
+      "notes": "C'est le socle commun à toutes les méthodes agiles qui vont suivre (XP, Scrum, etc.).",
+      "keypoints": [
+        "Socle commun à toutes les méthodes agiles : itérations courtes, client proche, délais/coûts fixés mais portée flexible, équipes auto-organisées."
+      ]
     },
     {
       "type": "bullets",
@@ -1228,7 +1237,11 @@
           }
         }
       ],
-      "notes": "Ce sont LES 4 valeurs à retenir par cœur — elles reviendront dans le quiz."
+      "notes": "Ce sont LES 4 valeurs à retenir par cœur — elles reviendront dans le quiz.",
+      "keypoints": [
+        "Les 4 valeurs du Manifeste : individus & interactions · logiciel opérationnel · collaboration client · réponse au changement.",
+        "Les éléments de droite (processus, doc, contrat, plan) gardent de la valeur, mais ceux de gauche priment."
+      ]
     },
     {
       "type": "bullets",
@@ -1241,7 +1254,10 @@
         "Construire des projets autour de personnes motivées, en leur faisant confiance",
         "La conversation en face à face est la méthode la plus efficace pour transmettre l'information"
       ],
-      "notes": "Traduction/adaptation des 6 premiers des 12 principes officiels (texte original en anglais sur agilemanifesto.org)."
+      "notes": "Traduction/adaptation des 6 premiers des 12 principes officiels (texte original en anglais sur agilemanifesto.org).",
+      "keypoints": [
+        "12 principes agiles, l'esprit : livrer tôt et souvent, accueillir le changement, rythme soutenable, excellence technique, simplicité."
+      ]
     },
     {
       "type": "bullets",
@@ -1267,7 +1283,10 @@
         "Modélisation en groupe, avec des outils simples et adaptés",
         "Les développeurs créent les modèles qu'ils développeront eux-mêmes"
       ],
-      "notes": "D'après Larman (2005, p.36-37). Fait le pont avec le cours de modélisation vu par ailleurs."
+      "notes": "D'après Larman (2005, p.36-37). Fait le pont avec le cours de modélisation vu par ailleurs.",
+      "keypoints": [
+        "En agile, on modélise pour comprendre et communiquer — juste ce qu'il faut, sur les parties difficiles, et ce sont les développeurs qui modélisent."
+      ]
     },
     {
       "type": "canvas",
@@ -1362,7 +1381,7 @@
         "Propagation mondiale grâce à Internet",
         "Implantation plus lente en France"
       ],
-      "notes": ""
+      "notes": "1996, Ward Cunningham et Kent Beck, sur le projet Chrysler C3 (système de paie). XP s'est diffusé mondialement via Internet, avec une adoption plus lente en France. C'est la plus ancienne des méthodes agiles « nommées »."
     },
     {
       "type": "bullets",
@@ -1374,7 +1393,10 @@
         "Bien-être de l'équipe",
         "Processus fluide et continu"
       ],
-      "notes": "Source : extremeprogramming.org. XP pousse à l'extrême des pratiques de bon sens."
+      "notes": "Source : extremeprogramming.org. XP pousse à l'extrême des pratiques de bon sens.",
+      "keypoints": [
+        "XP pousse à l'extrême des pratiques de bon sens : la dimension humaine d'abord, feedback rapide et constant, processus fluide et continu."
+      ]
     },
     {
       "type": "bullets",
@@ -1386,7 +1408,10 @@
         "Des tests automatiques garantissent un niveau de robustesse élevé",
         "Les développeurs améliorent sans cesse la structure interne du logiciel"
       ],
-      "notes": "D'après design-up.com/methodes/XP/"
+      "notes": "D'après design-up.com/methodes/XP/",
+      "keypoints": [
+        "En XP, le client pilote de près par cycles courts (1-2 semaines), l'équipe livre très tôt puis enchaîne les livraisons, avec des tests automatiques."
+      ]
     },
     {
       "type": "canvas",
@@ -1563,7 +1588,7 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Le comité de pilotage dirige les aspects stratégiques (objectifs, moyens). Le client interlocuteur est celui qui connaît le mieux le besoin, appuyé par un sponsor principal (DSI). En préparation, s'assurer de la clarté des objectifs, de leur compréhension par toutes les parties prenantes et de l'accord du client."
     },
     {
       "type": "bullets",
@@ -1581,7 +1606,7 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Le bien-être de l'équipe est une pratique humaniste de XP qui sert aussi à réduire les risques : rythme régulier, pas d'heures supplémentaires. But : éliminer le stress, les tensions internes, les tensions avec les donneurs d'ordres, et le risque de défection."
     },
     {
       "type": "canvas",
@@ -1726,7 +1751,10 @@
           }
         }
       ],
-      "notes": "6 profils dans une équipe XP — détaillés sur les 3 slides suivantes."
+      "notes": "6 profils dans une équipe XP — détaillés sur les 3 slides suivantes.",
+      "keypoints": [
+        "Une équipe XP, c'est 6 rôles : client, testeur, manager, coach, tracker, programmeur."
+      ]
     },
     {
       "type": "split",
@@ -1750,7 +1778,7 @@
           "Valide le fonctionnement du code et vérifie la non-régression"
         ]
       },
-      "notes": ""
+      "notes": "Rôles 1/3. Le client : membre à part entière de l'équipe, présence physique imposée, spécifie fonctionnalités et tests fonctionnels. Le testeur : un programmeur qui assiste le client, implémente les tests de recette au plus tôt et vérifie la non-régression."
     },
     {
       "type": "split",
@@ -1772,7 +1800,7 @@
           "A pour objectif de… se faire oublier"
         ]
       },
-      "notes": ""
+      "notes": "Rôles 2/3. Le manager : responsable de l'infrastructure de l'équipe (espace, outillage, documentation), lève les problèmes logistiques. Le coach : garant de l'application de XP, expert méthode et bon communicateur, dont l'objectif est de finir par se faire oublier."
     },
     {
       "type": "split",
@@ -1795,7 +1823,7 @@
           "Est aussi analyste et concepteur"
         ]
       },
-      "notes": ""
+      "notes": "Rôles 3/3. Le tracker : suit l'avancement des tâches dans l'itération, s'entretient souvent avec les programmeurs, détecte les dérives tôt. Le programmeur : estime la charge, implémente en s'appuyant sur les tests unitaires, et est aussi analyste et concepteur."
     },
     {
       "type": "bullets",
@@ -1818,7 +1846,10 @@
         },
         "Métaphore : une convention facile à retenir pour organiser le projet"
       ],
-      "notes": ""
+      "notes": "Pratiques 1/6. Le « jeu de la planification » : développeurs et clients planifient ensemble l'itération — les devs évaluent risques et efforts, les clients estiment la valeur et décident du contenu. Releases fréquentes : au début le plus petit ensemble utile, puis des prototypes enrichis. La métaphore donne un vocabulaire commun.",
+      "keypoints": [
+        "Le jeu de la planification : les développeurs estiment l'effort, les clients estiment la valeur et décident du contenu de l'itération."
+      ]
     },
     {
       "type": "bullets",
@@ -1847,7 +1878,10 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Pratiques 2/6. Conception simple : toujours la solution la plus simple qui passe les tests, pas de généricité spéculative. TDD : les tests avant le code (unitaires côté devs, acceptation côté client). Refactoring : simplification permanente pour garder le code propre.",
+      "keypoints": [
+        "Pratiques XP clés : conception simple, TDD (les tests avant le code), refactoring permanent."
+      ]
     },
     {
       "type": "bullets",
@@ -1866,7 +1900,10 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Pratique 3/6 : la programmation par paires. Tout le code de production est écrit à deux devant un même écran — l'un code, l'autre pense au système ; on échange les rôles et on tourne les binômes. Bénéfices : moins d'erreurs de conception, meilleure concentration, pas de dépendance à un seul développeur, circulation de la connaissance.",
+      "keypoints": [
+        "Programmation par paires : tout le code de production écrit à deux → moins d'erreurs, connaissance partagée, pas de point de dépendance unique."
+      ]
     },
     {
       "type": "bullets",
@@ -1887,7 +1924,10 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Pratiques 4/6. Propriété collective : quiconque voit une amélioration possible peut l'apporter, n'importe où, n'importe quand. Intégration continue : gestionnaire de versions (Git), au moins un build complet par jour, 100 % des tests au vert avant ET après l'intégration.",
+      "keypoints": [
+        "Intégration continue : au moins un build complet par jour, 100 % des tests au vert avant et après chaque intégration."
+      ]
     },
     {
       "type": "bullets",
@@ -1915,7 +1955,7 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Pratiques 5/6. Semaine de 40 h : les heures supplémentaires sont un signe de problème, pas une solution (moins d'erreurs de fatigue). Client sur place : accès permanent à un vrai utilisateur. Standards de codage : tout le monde code pareil, on ne devrait pas pouvoir dire qui a écrit quoi."
     },
     {
       "type": "bullets",
@@ -1936,7 +1976,7 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Pratiques 6/6. Règles : l'équipe décide de ses règles et peut les changer à tout moment. Espace de travail : tout le monde dans la même pièce (awareness), des tableaux muraux qui matérialisent la progression — user stories faites / à faire, résultats des tests."
     },
     {
       "type": "canvas",
@@ -2009,7 +2049,7 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Unification des savoirs 1/2. Avant le lancement : apprentissage théorique par un formateur pro, puis mise en pratique sur un projet pilote. Le vrai projet se fait en 2 phases : une phase coaching (chaque membre réalise son potentiel, épaulé par les coachs) puis une phase productive."
     },
     {
       "type": "bullets",
@@ -2019,7 +2059,7 @@
         "Éviter l'écueil 80/20 : les 20 % de connaissances les plus pointues coûtent 80 % de l'effort de formation",
         "Faire confiance au temps et à l'uniformisation progressive des compétences collectives"
       ],
-      "notes": ""
+      "notes": "Unification des savoirs 2/2. Objectif : rentabiliser l'investissement en montée en compétences. Éviter l'écueil 80/20 (les 20 % de connaissances les plus pointues coûtent 80 % de l'effort). Faire confiance au temps pour uniformiser progressivement les compétences de l'équipe."
     },
     {
       "type": "bullets",
@@ -2038,7 +2078,7 @@
         "Gestion continuelle du risque, estimation permanente des efforts",
         "Insistance sur les tests : facilite l'évolution et la maintenance"
       ],
-      "notes": ""
+      "notes": "Avantages d'XP : concepts simples et intégrés, peu de management (pas de procédures lourdes, peu de doc à maintenir, communication directe), programmation par paires, gestion continue du risque, et une forte insistance sur les tests qui facilite l'évolution et la maintenance."
     },
     {
       "type": "bullets",
@@ -2049,7 +2089,10 @@
         "Risque d'un code pas assez documenté — reprise difficile par des développeurs extérieurs",
         "Pas de design générique : pas d'anticipation des développements futurs"
       ],
-      "notes": "Transition naturelle vers Scrum, qui structure davantage la gestion de projet tout en restant agile."
+      "notes": "Transition naturelle vers Scrum, qui structure davantage la gestion de projet tout en restant agile.",
+      "keypoints": [
+        "XP ne passe pas à l'échelle : adapté aux petites équipes (≤ 10) ; au-delà il faut plus de structure et de doc → Scrum."
+      ]
     },
     {
       "type": "chapter",
@@ -2063,7 +2106,10 @@
       "term": "Scrum (la « mêlée », au rugby)",
       "definition": "Part de l'observation que le client change d'avis et de besoins en cours de projet : Scrum prend en compte l'aspect incertain de la gestion de projet avec une approche empirique.",
       "example": "Comme au rugby, l'équipe avance groupée, en se resynchronisant en permanence.",
-      "notes": ""
+      "notes": "Scrum (la « mêlée » au rugby) part de l'observation que le client change d'avis en cours de projet : c'est une approche empirique qui assume l'incertitude. L'image du rugby : l'équipe avance groupée et se resynchronise en permanence.",
+      "keypoints": [
+        "Scrum assume que le client changera d'avis : approche empirique, l'équipe avance groupée et se resynchronise en continu."
+      ]
     },
     {
       "type": "bullets",
@@ -2090,7 +2136,7 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Trois phases : (1) initiation — définir le Product Backlog (fonctionnalités priorisées) et l'architecture de haut niveau ; (2) développement — des sprints itératifs (classiquement 30 jours) qui améliorent le prototype ; (3) clôture — gestion de la fin de projet et livraison."
     },
     {
       "type": "canvas",
@@ -2294,6 +2340,9 @@
           },
           "label": "sprint suivant"
         }
+      ],
+      "keypoints": [
+        "Cycle Scrum : Product Backlog → Sprint Backlog → Sprint (2-4 semaines, mêlée quotidienne) → incrément potentiellement livrable."
       ]
     },
     {
@@ -2315,7 +2364,10 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Principes Scrum 1/2. Isolement de l'équipe : elle est protégée des influences extérieures nuisibles, et les besoins ne changent pas pendant un sprint en cours. Développement progressif : une solution livrée tous les 30 jours, avec des fonctionnalités opérationnelles à chaque fin de période.",
+      "keypoints": [
+        "Pendant un sprint en cours, les besoins ne bougent pas : l'équipe est isolée des perturbations extérieures."
+      ]
     },
     {
       "type": "bullets",
@@ -2336,7 +2388,7 @@
           ]
         }
       ],
-      "notes": ""
+      "notes": "Principes Scrum 2/2. Pouvoir à l'équipe : elle a les pleins pouvoirs pour réaliser les fonctionnalités, seule contrainte livrer une solution qui convient sous 30 jours. Contrôle du travail : quotidien (les gens vont bien, ça avance) et en fin de sprint (la solution répond-elle au besoin ?)."
     },
     {
       "type": "canvas",
@@ -2444,7 +2496,10 @@
           }
         }
       ],
-      "notes": ""
+      "notes": "Product Owner : responsable officiel du projet, gère et priorise le Product Backlog. Scrum Master : expert de l'application de Scrum, retire les obstacles de l'équipe. Scrum Team : l'équipe projet, auto-organisée. Management : décisions stratégiques.",
+      "keypoints": [
+        "Rôles Scrum : Product Owner (le quoi + backlog), Scrum Master (garant de la méthode, lève les obstacles), l'équipe (auto-organisée)."
+      ]
     },
     {
       "type": "canvas",
@@ -2641,7 +2696,10 @@
           }
         }
       ],
-      "notes": "Sprint = itération de 30 jours. À ces 6 pratiques s'ajoute la Sprint Retrospective (slide suivante)."
+      "notes": "Sprint = itération de 30 jours. À ces 6 pratiques s'ajoute la Sprint Retrospective (slide suivante).",
+      "keypoints": [
+        "Rituels Scrum : Sprint Planning (objectifs), Daily Scrum (synchro), Sprint Review (le produit), Sprint Retrospective (le processus)."
+      ]
     },
     {
       "type": "canvas",
@@ -2719,6 +2777,9 @@
             ]
           }
         }
+      ],
+      "keypoints": [
+        "Une user story = une fonctionnalité décrite du point de vue de l'utilisateur, pas une spécification technique."
       ]
     },
     {
@@ -3074,7 +3135,10 @@
           }
         }
       ],
-      "notes": "Le jeu de cartes reprend la suite de Fibonacci (approximativement) : plus les valeurs sont élevées, plus l'estimation est grossière (l'incertitude croît avec la taille)."
+      "notes": "Le jeu de cartes reprend la suite de Fibonacci (approximativement) : plus les valeurs sont élevées, plus l'estimation est grossière (l'incertitude croît avec la taille).",
+      "keypoints": [
+        "Planning poker : on estime la difficulté (pas le temps), sur une échelle type Fibonacci — l'incertitude croît avec la taille de la tâche."
+      ]
     },
     {
       "type": "canvas",
@@ -3114,7 +3178,7 @@
       "term": "Lean",
       "definition": "« Sans gras » (mais pas maigre non plus), « au plus juste » — méthode de gestion de production de chez Toyota, adaptée aux développements informatiques agiles.",
       "example": "Se concentre sur l'élimination des gaspillages à chaque étape du processus.",
-      "notes": ""
+      "notes": "Lean vient de la production Toyota, adapté au développement agile : « au plus juste », sans gras. L'idée centrale est d'éliminer les gaspillages à chaque étape du processus."
     },
     {
       "type": "bullets",
@@ -3128,7 +3192,10 @@
         "Intégrer la qualité dès la conception",
         "Considérer le produit dans sa globalité"
       ],
-      "notes": "7 principes à connaître — insister sur « décider aussi tard que possible », contre-intuitif au premier abord."
+      "notes": "7 principes à connaître — insister sur « décider aussi tard que possible », contre-intuitif au premier abord.",
+      "keypoints": [
+        "Lean : éliminer les gaspillages, décider au plus tard, livrer au plus vite, intégrer la qualité dès la conception."
+      ]
     },
     {
       "type": "canvas",
@@ -3478,7 +3545,10 @@
           }
         }
       ],
-      "notes": "Le nombre de cartes « en cours » (colonnes du milieu) est volontairement plafonné — c'est le cœur du principe de Kanban : limiter le travail en cours (WIP) pour fluidifier le flux global."
+      "notes": "Le nombre de cartes « en cours » (colonnes du milieu) est volontairement plafonné — c'est le cœur du principe de Kanban : limiter le travail en cours (WIP) pour fluidifier le flux global.",
+      "keypoints": [
+        "Kanban = flux continu (pas de sprint fixe) ; le cœur du principe est de limiter le travail en cours (WIP) pour fluidifier le flux global."
+      ]
     },
     {
       "type": "canvas",
@@ -3536,7 +3606,10 @@
       "type": "quote",
       "quote": "Il n'existe pas de baguette magique. Même si le développement incrémental permet de s'affranchir de beaucoup de problèmes, il y en aura toujours — mais d'ampleur plus faible, et mieux gérés. Toute méthode est adaptable et doit être adaptée ; mais lorsqu'on débute, mieux vaut ne pas trop s'écarter de la voie décrite, pour bien la comprendre d'abord.",
       "author": "Conclusion",
-      "notes": "Faire le lien avec la partie 1 : la rigueur et l'adaptation au changement restent les deux piliers, quelle que soit la méthode choisie."
+      "notes": "Faire le lien avec la partie 1 : la rigueur et l'adaptation au changement restent les deux piliers, quelle que soit la méthode choisie.",
+      "keypoints": [
+        "Aucune méthode n'est une baguette magique : toute méthode s'adapte, mais quand on débute, mieux vaut la suivre telle quelle pour bien la comprendre."
+      ]
     },
     {
       "type": "canvas",

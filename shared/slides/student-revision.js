@@ -355,13 +355,116 @@
             const slug = (payload.course && payload.course.title
                 ? (window.OEIStudentStorage?.slugify?.(payload.course.title) || 'cours')
                 : (storage.courseKey || H.roomId || 'cours'));
-            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `revision-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(url), 1500);
+            _downloadText(
+                JSON.stringify(payload, null, 2),
+                `revision-${slug}-${new Date().toISOString().slice(0, 10)}.json`,
+            );
+        }
+
+        function _downloadText(text, filename, mime = 'application/json') {
+            try {
+                const blob = new Blob([text], { type: mime });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1500);
+            } catch (_) { /* environnement sans Blob/URL : on ignore */ }
+        }
+
+        function _revisionToast(msg) {
+            const toast = document.getElementById('nudge-toast');
+            if (!toast) return;
+            toast.textContent = String(msg || '');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3600);
+        }
+
+        /** Notes du cours courant en texte brut, groupées par diapo. */
+        function _notesPlainText() {
+            const raw = storage.localGetJSON(storage.keys.notes, {}) || {};
+            const order = Object.keys(raw)
+                .map(Number)
+                .filter(n => Number.isFinite(n) && n >= 0)
+                .sort((a, b) => a - b);
+            if (!order.length) return '';
+            return order
+                .map(i => `— Diapo ${i + 1} —\n${String(raw[String(i)] || '').trim()}`)
+                .join('\n\n');
+        }
+
+        function _openMailDraft(subject, body) {
+            const href = `mailto:?subject=${encodeURIComponent(String(subject || ''))}`
+                + `&body=${encodeURIComponent(String(body || '').slice(0, 6000))}`;
+            try { location.href = href; } catch (_) {}
+        }
+
+        /**
+         * « M'envoyer mes notes par e-mail ». Sur mobile : `navigator.share` avec le
+         * fichier `.json` en pièce jointe (feuille de partage → Mail). Sinon : télécharge
+         * le `.json` et ouvre un brouillon d'e-mail avec le mode d'emploi d'import.
+         * Sans deck archivé : envoie au moins les notes en texte.
+         */
+        async function emailReviseBundle() {
+            revisionEnsureWeek();
+            saveRevisionState();
+            saveBookmarks();
+
+            const archiveTitle = typeof storage.loadReviseArchive === 'function'
+                ? (storage.loadReviseArchive()?.meta?.title || '')
+                : '';
+            const courseTitle = archiveTitle
+                || document.getElementById('header-title')?.textContent
+                || 'Cours';
+            const slug = window.OEIStudentStorage?.slugify?.(courseTitle)
+                || storage.courseKey || H.roomId || 'cours';
+            const stamp = new Date().toISOString().slice(0, 10);
+            const subject = `Mes notes — ${courseTitle}`;
+            const studentUrl = 'https://lachand.github.io/PresentaForge/slides/student.html';
+
+            let bundle = null;
+            if (typeof storage.buildReviseExport === 'function') bundle = storage.buildReviseExport();
+
+            if (bundle && bundle.deck) {
+                const json = JSON.stringify(bundle, null, 2);
+                const filename = `revision-${slug}-${stamp}.json`;
+
+                try {
+                    if (typeof File === 'function' && typeof navigator !== 'undefined' && navigator.canShare) {
+                        const file = new File([json], filename, { type: 'application/json' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: subject,
+                                text: `Mes notes de révision — ${courseTitle}. À rouvrir sur ordinateur : student.html → « Importer une révision ».`,
+                            });
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                }
+
+                _downloadText(json, filename);
+                _openMailDraft(subject, [
+                    `Mes notes de révision — ${courseTitle}.`,
+                    '',
+                    'Pour les rouvrir sur un ordinateur :',
+                    `1. Joins à cet e-mail le fichier « ${filename} » qui vient d'être téléchargé.`,
+                    `2. Ouvre ${studentUrl}`,
+                    '3. « Importer une révision » → choisis ce fichier.',
+                ].join('\n'));
+                _revisionToast('Fichier de révision téléchargé — joins-le à ton e-mail.');
+                return;
+            }
+
+            // Pas encore de deck archivé : au moins les notes en texte.
+            _openMailDraft(subject, [
+                `Mes notes — ${courseTitle}.`,
+                '',
+                _notesPlainText() || '(aucune note pour l\'instant)',
+            ].join('\n'));
         }
 
         function importRevisionProgress(rawPayload) {
@@ -553,6 +656,7 @@
             reloadForCourse,
             importProgress: importRevisionProgress,
             exportBundle: exportReviseBundle,
+            emailBundle: emailReviseBundle,
             bindControls,
         };
     }

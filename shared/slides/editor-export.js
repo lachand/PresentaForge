@@ -215,7 +215,11 @@ function _resolveExportTheme(data) {
 }
 
 function launchPresentation(mode, fromCurrent) {
-    _setStoredJson(_presentDataKey, editor.data);
+    const stored = _setStoredJson(_presentDataKey, editor.data);
+    // Les gros decks (images en base64) dépassent le quota localStorage : la
+    // fenêtre de présentation lira alors le deck directement via window.opener.
+    try { window.__oeiPresentDeck = editor.data; } catch (_) {}
+    if (!stored) console.warn('[present] deck non écrit en localStorage (quota ?) — relais via window.opener');
     const modeParam = mode === 'presenter' ? '&mode=presenter' : '';
     let slideHash = '';
     if (fromCurrent && editor.selectedIndex != null) {
@@ -223,7 +227,12 @@ function launchPresentation(mode, fromCurrent) {
         const visIdx = editor.data.slides.slice(0, editor.selectedIndex + 1).filter(s => !s.hidden).length - 1;
         if (visIdx >= 0) slideHash = '#/' + visIdx;
     }
-    window.open('viewer.html?file=__draft__' + modeParam + slideHash, '_blank');
+    const win = window.open('viewer.html?file=__draft__' + modeParam + slideHash, '_blank');
+    if (!win) {
+        notify(stored
+            ? 'Fenêtre de présentation bloquée — autorisez les pop-ups pour ce site.'
+            : 'Impossible de lancer la présentation : deck trop volumineux et pop-up bloquée.', 'error');
+    }
 }
 
 async function exportPNG() {

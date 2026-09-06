@@ -43,12 +43,14 @@
             <button id="join-btn" class="join-btn ui-btn ui-btn--primary"><span>Rejoindre</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button>
             <div id="join-status" class="status-msg"></div>
 
-            <!-- Reprendre une révision hors CM (peuplé depuis l'archive locale ;
-                 masqué s'il n'y a aucun cours enregistré). -->
+            <!-- Réviser hors CM : la liste des cours suivis est peuplée depuis
+                 l'archive locale ; le bouton d'import reste toujours visible pour
+                 pouvoir ouvrir un fichier partagé par le prof / un camarade. -->
             <section id="revise-list-section" hidden>
                 <h2 class="revise-list-title">Mes cours à réviser</h2>
-                <ul id="revise-list"></ul>
-                <button id="revise-import-btn" class="ui-btn" type="button">Importer une révision</button>
+                <ul id="revise-list" hidden></ul>
+                <p id="revise-list-empty" class="revise-list-empty">Aucun cours enregistré sur ce navigateur. Suis un cours en direct, ou importe un fichier de révision ci-dessous.</p>
+                <button id="revise-import-btn" class="ui-btn" type="button">Importer une révision (fichier .json)</button>
                 <input id="revise-import-file" type="file" accept="application/json" hidden>
             </section>
         </div>
@@ -232,6 +234,10 @@
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h3"/></svg>
                     Exporter PDF
                 </button>
+                <button id="notes-mail-btn" class="ui-btn" title="M'envoyer mes notes par e-mail">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+                    Par e-mail
+                </button>
             </summary>
             <div class="notes-body">
                 <textarea id="notes-area" class="ui-textarea" placeholder="Notez vos idées, définitions, questions…&#10;&#10;Astuce : vos notes sont sauvegardées automatiquement et resteront disponibles à votre prochain retour sur ce cours." spellcheck="true"></textarea>
@@ -325,10 +331,16 @@
             <div class="ssp-notes-wrap">
                 <div class="ssp-notes-header-row">
                     <div class="ssp-notes-label">Notes personnelles</div>
-                    <button class="ssp-notes-export-btn" id="ssp-notes-export-btn" title="Exporter mes notes en PDF">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h3"/></svg>
-                        Exporter PDF
-                    </button>
+                    <div class="ssp-notes-actions">
+                        <button class="ssp-notes-export-btn" id="ssp-notes-mail-btn" type="button" title="M'envoyer mes notes par e-mail">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+                            Par e-mail
+                        </button>
+                        <button class="ssp-notes-export-btn" id="ssp-notes-export-btn" title="Exporter mes notes en PDF">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h3"/></svg>
+                            Exporter PDF
+                        </button>
+                    </div>
                 </div>
                 <textarea id="notes-area-side" placeholder="Notez vos idées, définitions, questions…" spellcheck="true"></textarea>
             </div>

@@ -15,6 +15,7 @@ import {
     buildRemoteRoomUrl,
     buildStudentRoomUrl,
     computeRoomNetworkDiagnostics,
+    resolveDraftDeck,
 } from './viewer/room-links.js';
 import {
     buildRoomSnapshot,
@@ -279,8 +280,11 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
         const ViewerRuntime = createViewerAppState(window);
         let draftData = null;
         if (file === '__draft__') {
-            draftData = storageGetJSON(DRAFT_KEY, null);
+            let openerDeck = null;
+            try { openerDeck = window.opener && window.opener.__oeiPresentDeck; } catch (_) { /* cross-origin */ }
+            draftData = resolveDraftDeck({ openerDeck, readStored: () => storageGetJSON(DRAFT_KEY, null) });
             file = null;
+            try { if (draftData) window.__oeiPresentDeck = draftData; } catch (_) {} // relais fenêtre présentateur enfant
         }
 
         async function loadData() {
