@@ -16,7 +16,7 @@ import {
     buildStudentRoomUrl,
     computeRoomNetworkDiagnostics,
     resolveDraftDeck,
-} from './viewer/room-links.js';
+} from './viewer/room-links.js?v=2';
 import {
     buildRoomSnapshot,
 } from './viewer/room-bridge-snapshot.js';

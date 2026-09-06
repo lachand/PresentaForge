@@ -31,7 +31,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     // Student app modules (Lot 20 découpe de student-main.js)
     '../shared/slides/student-storage.js?v=2',
     '../shared/slides/student-render.js?v=4',
-    '../shared/slides/student-revision.js?v=6',
+    '../shared/slides/student-revision.js?v=7',
     '../shared/slides/student-quiz.js?v=2',
     '../shared/slides/student-transport.js?v=2',
     '../vendor/qrcode-generator/1.4.4/qrcode.min.js',

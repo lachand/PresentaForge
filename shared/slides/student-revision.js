@@ -421,7 +421,14 @@
                 || storage.courseKey || H.roomId || 'cours';
             const stamp = new Date().toISOString().slice(0, 10);
             const subject = `Mes notes — ${courseTitle}`;
-            const studentUrl = 'https://lachand.github.io/PresentaForge/slides/student.html';
+            // URL de cette page (peu importe l'hébergement) pour le mode d'emploi d'import.
+            const studentUrl = (() => {
+                try {
+                    const o = location.origin, p = location.pathname;
+                    if (o && o !== 'null' && p) return o + p;
+                } catch (_) {}
+                return 'student.html';
+            })();
 
             let bundle = null;
             if (typeof storage.buildReviseExport === 'function') bundle = storage.buildReviseExport();
@@ -430,6 +437,9 @@
                 const json = JSON.stringify(bundle, null, 2);
                 const filename = `revision-${slug}-${stamp}.json`;
 
+                // Feuille de partage native avec la pièce jointe (mobile + Chrome/Edge
+                // desktop récents) : « Mail » y reçoit directement le fichier. `mailto:`
+                // ne peut PAS porter de pièce jointe — d'où le repli téléchargement.
                 try {
                     if (typeof File === 'function' && typeof navigator !== 'undefined' && navigator.canShare) {
                         const file = new File([json], filename, { type: 'application/json' });
@@ -437,7 +447,7 @@
                             await navigator.share({
                                 files: [file],
                                 title: subject,
-                                text: `Mes notes de révision — ${courseTitle}. À rouvrir sur ordinateur : student.html → « Importer une révision ».`,
+                                text: `Mes notes de révision — ${courseTitle}. À rouvrir sur ordinateur : ${studentUrl} → « Importer une révision ».`,
                             });
                             return;
                         }
@@ -450,12 +460,13 @@
                 _openMailDraft(subject, [
                     `Mes notes de révision — ${courseTitle}.`,
                     '',
+                    `Joins à cet e-mail le fichier « ${filename} » qui vient d'être téléchargé.`,
+                    '',
                     'Pour les rouvrir sur un ordinateur :',
-                    `1. Joins à cet e-mail le fichier « ${filename} » qui vient d'être téléchargé.`,
-                    `2. Ouvre ${studentUrl}`,
-                    '3. « Importer une révision » → choisis ce fichier.',
+                    `1. Ouvre ${studentUrl}`,
+                    '2. « Importer une révision » → choisis ce fichier.',
                 ].join('\n'));
-                _revisionToast('Fichier de révision téléchargé — joins-le à ton e-mail.');
+                _revisionToast('Fichier téléchargé — glisse-le en pièce jointe de l\'e-mail.');
                 return;
             }
 
