@@ -15,7 +15,12 @@
     const REVISE_PREFIX = 'oei-v2-student-revise-';
     const REVISE_INDEX_KEY = `${REVISE_PREFIX}index`;
     const REVISE_INDEX_CAP = 8;
-    const DECK_MAX_BYTES = 2_000_000;
+    // Deck ≤ INLINE_MAX_BYTES → stocké tel quel dans localStorage (rapide, pas
+    // d'IndexedDB requis). Au-delà → IndexedDB (cf. deck-blob-store), le record
+    // localStorage ne gardant que la méta. DECK_MAX_BYTES = garde-fou absolu
+    // (un deck plus gros ne se rendrait pas correctement de toute façon).
+    const INLINE_MAX_BYTES = 256 * 1024;
+    const DECK_MAX_BYTES = 30 * 1024 * 1024;
 
     /**
      * Slugify a free-text string for use inside a storage key / URL param.
@@ -123,6 +128,9 @@
         };
 
         // ── Revision archive (per-course, keyed by courseKey) ─────────────
+        const _blobStore = root.OEIDeckBlobStore || null;
+        const _blobId = ck => `revise:${ck}`;
+
         const _reviseKeys = ck => {
             const base = `${REVISE_PREFIX}${ck}`;
             return { deck: `${base}-deck`, revision: `${base}-revision`, bookmarks: `${base}-bookmarks`, notes: `${base}-notes` };
@@ -137,6 +145,7 @@
         const _deleteArchiveKeys = ck => {
             const k = _reviseKeys(ck);
             localRemove(k.deck); localRemove(k.revision); localRemove(k.bookmarks); localRemove(k.notes);
+            if (_blobStore && _blobStore.available()) { _blobStore.delete(_blobId(ck)).catch(() => {}); }
         };
 
         const _upsertIndex = entry => {
@@ -225,11 +234,13 @@
 
             /**
              * Persist the deck + meta for the current course into its archive,
-             * and refresh the archive index (MRU, capped).
+             * and refresh the archive index (MRU, capped). Petit deck → inline
+             * dans localStorage ; gros deck → IndexedDB (le record localStorage
+             * ne garde que la méta + `store:'idb'`).
              * @param {{ deck:any, meta:{ title?:string, author?:string, slideCount?:number, roomId?:string } }} payload
-             * @returns {{ ok:boolean, reason?:string }}
+             * @returns {Promise<{ ok:boolean, reason?:string }>}
              */
-            saveReviseArchive(payload) {
+            async saveReviseArchive(payload) {
                 const ck = this.courseKey;
                 if (!ck) return { ok: false, reason: 'no-course-key' };
                 const deck = payload && payload.deck;
@@ -240,41 +251,70 @@
 
                 const k = _reviseKeys(ck);
                 const existing = localGetJSON(k.deck, null);
-                const meta = payload.meta || {};
+                const m = payload.meta || {};
                 const now = Date.now();
-                const record = {
-                    deck,
-                    meta: {
-                        title: toSafeString(meta.title, 200) || 'Présentation',
-                        author: toSafeString(meta.author, 120),
-                        slideCount: Number.isFinite(Number(meta.slideCount)) ? Math.max(0, Math.trunc(Number(meta.slideCount))) : deck.slides.length,
-                        roomId: toSafeString(meta.roomId, 200),
-                        firstSeenAt: (existing && existing.meta && Number(existing.meta.firstSeenAt)) || now,
-                        updatedAt: now,
-                    },
+                const meta = {
+                    title: toSafeString(m.title, 200) || 'Présentation',
+                    author: toSafeString(m.author, 120),
+                    slideCount: Number.isFinite(Number(m.slideCount)) ? Math.max(0, Math.trunc(Number(m.slideCount))) : deck.slides.length,
+                    roomId: toSafeString(m.roomId, 200),
+                    firstSeenAt: (existing && existing.meta && Number(existing.meta.firstSeenAt)) || now,
+                    updatedAt: now,
                 };
+
+                const hasIdb = !!(_blobStore && _blobStore.available());
+                const big = serialized.length > INLINE_MAX_BYTES;
+                let record;
+                if (hasIdb && (big || (existing && existing.store === 'idb'))) {
+                    const put = await _blobStore.put(_blobId(ck), deck, meta);
+                    if (put) record = { meta, store: 'idb' };
+                    else if (big) return { ok: false, reason: 'idb-write' };
+                    else record = { meta, deck };
+                } else if (big) {
+                    return { ok: false, reason: 'no-idb' };
+                } else {
+                    record = { meta, deck };
+                }
+
                 if (!localSetJSON(k.deck, record)) {
                     _purgeLeastRecent(ck);
                     if (!localSetJSON(k.deck, record)) return { ok: false, reason: 'quota' };
                 }
-                _upsertIndex({
-                    courseKey: ck,
-                    title: record.meta.title,
-                    author: record.meta.author,
-                    slideCount: record.meta.slideCount,
-                    updatedAt: now,
-                });
+                // Nettoyage d'un éventuel blob IDB orphelin si on repasse inline.
+                if (!record.store && hasIdb) { _blobStore.delete(_blobId(ck)).catch(() => {}); }
+                _upsertIndex({ courseKey: ck, title: meta.title, author: meta.author, slideCount: meta.slideCount, updatedAt: now });
                 return { ok: true };
             },
 
             /**
+             * Méta d'une archive (title/author/slideCount…). `deck` n'est présent
+             * que pour les archives stockées inline — pour le deck complet, voir
+             * `loadReviseDeck()` (async).
              * @param {string} [ck] - courseKey (defaults to the current one)
-             * @returns {{ deck:any, meta:object } | null}
+             * @returns {{ deck:any|null, meta:object } | null}
              */
             loadReviseArchive(ck) {
                 const key = ck ? _reviseKeys(ck).deck : this.keys.reviseDeck;
                 const rec = key ? localGetJSON(key, null) : null;
-                return (rec && rec.deck && Array.isArray(rec.deck.slides)) ? rec : null;
+                if (!rec || !rec.meta) return null;
+                return { meta: rec.meta, deck: (rec.deck && Array.isArray(rec.deck.slides)) ? rec.deck : null };
+            },
+
+            /**
+             * Deck complet d'une archive : inline si petit, sinon IndexedDB.
+             * @param {string} [ck] - courseKey (defaults to the current one)
+             * @returns {Promise<any|null>}
+             */
+            async loadReviseDeck(ck) {
+                const cku = ck || this.courseKey;
+                const key = ck ? _reviseKeys(ck).deck : this.keys.reviseDeck;
+                const rec = key ? localGetJSON(key, null) : null;
+                if (rec && rec.deck && Array.isArray(rec.deck.slides)) return rec.deck;
+                if (rec && rec.store === 'idb' && _blobStore && _blobStore.available() && cku) {
+                    const deck = await _blobStore.get(_blobId(cku));
+                    if (deck && Array.isArray(deck.slides)) return deck;
+                }
+                return null;
             },
 
             /** @returns {Array<{courseKey,title,author,slideCount,updatedAt}>} MRU order */
@@ -307,14 +347,16 @@
              * Serialize the current course's archive into a self-contained,
              * shareable bundle (carries the deck).
              * @param {string} [ck] - courseKey (defaults to current)
-             * @returns {object | null}
+             * @returns {Promise<object | null>}
              */
-            buildReviseExport(ck) {
+            async buildReviseExport(ck) {
                 const key = ck || this.courseKey;
                 if (!key) return null;
                 const k = _reviseKeys(key);
                 const rec = localGetJSON(k.deck, null);
-                if (!rec || !rec.deck) return null;
+                if (!rec || !rec.meta) return null;
+                const deck = await this.loadReviseDeck(key);
+                if (!deck) return null;
                 return {
                     type: 'presentaforge-revision',
                     v: 1,
@@ -324,7 +366,7 @@
                         author: rec.meta.author,
                         slideCount: rec.meta.slideCount,
                     },
-                    deck: rec.deck,
+                    deck,
                     bookmarks: localGetJSON(k.bookmarks, []) || [],
                     notes: localGetJSON(k.notes, {}) || {},
                     revision: localGetJSON(k.revision, {}) || {},
@@ -340,9 +382,9 @@
              *      depuis l'éditeur (le prof partage simplement le JSON du cours).
              *   3. `{ deck:{ slides:[…] } }` — deck enveloppé.
              * @param {any} payload - parsed file content
-             * @returns {{ ok:boolean, courseKey?:string, reason?:string }}
+             * @returns {Promise<{ ok:boolean, courseKey?:string, reason?:string }>}
              */
-            importReviseFile(payload) {
+            async importReviseFile(payload) {
                 if (!payload || typeof payload !== 'object') return { ok: false, reason: 'invalid' };
 
                 let deck = null;
@@ -360,7 +402,7 @@
                 const ck = courseKeyFromDeck(deck);
                 this.setCourseKey(ck);
                 const course = (bundle && bundle.course && typeof bundle.course === 'object') ? bundle.course : {};
-                const res = this.saveReviseArchive({
+                const res = await this.saveReviseArchive({
                     deck,
                     meta: { title: course.title || deck.metadata?.title, author: course.author || deck.metadata?.author, slideCount: deck.slides.length, roomId: '' },
                 });

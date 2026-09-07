@@ -336,12 +336,12 @@
          * notes + planning SM-2) → transfert vers un autre appareil. Repli sur
          * l'export SM-2 seul si l'archive du cours n'est pas disponible.
          */
-        function exportReviseBundle() {
+        async function exportReviseBundle() {
             revisionEnsureWeek();
             saveRevisionState();
             saveBookmarks();
             let payload = null;
-            if (typeof storage.buildReviseExport === 'function') payload = storage.buildReviseExport();
+            if (typeof storage.buildReviseExport === 'function') payload = await storage.buildReviseExport();
             if (!payload) {
                 payload = {
                     version: 2,
@@ -431,7 +431,7 @@
             })();
 
             let bundle = null;
-            if (typeof storage.buildReviseExport === 'function') bundle = storage.buildReviseExport();
+            if (typeof storage.buildReviseExport === 'function') bundle = await storage.buildReviseExport();
 
             if (bundle && bundle.deck) {
                 const json = JSON.stringify(bundle, null, 2);

@@ -15,8 +15,8 @@ import {
     buildRemoteRoomUrl,
     buildStudentRoomUrl,
     computeRoomNetworkDiagnostics,
-    resolveDraftDeck,
-} from './viewer/room-links.js?v=3';
+    resolveDraftView,
+} from './viewer/room-links.js?v=4';
 import {
     buildRoomSnapshot,
 } from './viewer/room-bridge-snapshot.js';
@@ -279,15 +279,18 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
         // Runtime state bridge: centralize state access while keeping legacy globals for compatibility.
         const ViewerRuntime = createViewerAppState(window);
         let draftData = null;
-        if (file === '__draft__') {
-            let openerDeck = null;
-            try { openerDeck = window.opener && window.opener.__oeiPresentDeck; } catch (_) { /* cross-origin */ }
-            draftData = resolveDraftDeck({ openerDeck, readStored: () => storageGetJSON(DRAFT_KEY, null) });
-            file = null;
-            try { if (draftData) window.__oeiPresentDeck = draftData; } catch (_) {} // relais fenêtre présentateur enfant
-        } else if (file) { try { delete window.__oeiPresentDeck; } catch (_) {} } // RC-C5 : pas de deck brouillon résiduel
+        const _draftPromise = file === '__draft__'
+            ? resolveDraftView({ storageGetJSON, draftKey: DRAFT_KEY, blobStore: window.OEIDeckBlobStore || null })
+            : null;
+        if (file === '__draft__') file = null;
+        else if (file) { try { delete window.__oeiPresentDeck; } catch (_) {} } // RC-C5 : pas de deck brouillon résiduel
 
         async function loadData() {
+            if (_draftPromise) {
+                draftData = await _draftPromise;
+                try { if (draftData) window.__oeiPresentDeck = draftData; } catch (_) {} // relais fenêtre présentateur enfant
+                return draftData;
+            }
             if (draftData) return draftData;
             if (file === '__firebase_public__' && window._firebasePublicLoad) return window._firebasePublicLoad();
             const res = await fetch(file);

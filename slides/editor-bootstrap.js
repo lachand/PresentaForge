@@ -11,6 +11,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
         '../shared/slides/storage.js?v=2',
     ],
     // Storage-dependent infrastructure (sequential)
+    ['../shared/slides/deck-blob-store.js?v=1'],
     ['../shared/slides/theme-runtime.js?v=1'],
     ['../shared/slides/widget-plugins.js?v=2'],
     ['../shared/slides/design-tokens.js?v=2'],
@@ -100,7 +101,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ],
     // Export pipeline (sequential: media → main → pptx+qr)
     ['../shared/slides/editor-export-media.js?v=1'],
-    ['../shared/slides/editor-export.js?v=20'],
+    ['../shared/slides/editor-export.js?v=21'],
     // Group 5: export siblings — both depend on export.js, not on each other
     [
         '../shared/slides/editor-export-pptx.js?v=1',

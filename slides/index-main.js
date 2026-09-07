@@ -40,11 +40,23 @@
     // ne voyait jamais le deck fraîchement choisi.
     const EDITOR_HANDOFF_KEY = Storage?.KEYS?.SLIDE_DRAFT || 'oei-v2-slide-draft';
     const VIEWER_PRESENT_KEY = Storage?.KEYS?.PRESENT_DATA || 'oei-v2-slide-present-data';
-    // Repli gros deck : si l'écriture PRESENT_DATA dépasse le quota localStorage,
-    // le viewer enfant (ouvert sans 'noopener') lit le deck via window.opener.
-    // Instantané figé, cohérent avec editor-export.launchPresentation().
-    const relayPresentDeck = rawOrObj => {
-        try { window.__oeiPresentDeck = typeof rawOrObj === 'string' ? JSON.parse(rawOrObj) : rawOrObj; } catch (_) {}
+    // Remise du deck au viewer enfant « Présenter » (ouvert sans 'noopener'),
+    // cohérent avec editor-export.launchPresentation() : IndexedDB (gros decks) +
+    // window.__oeiPresentDeck (mémoire) + stamp. Stamp écrit en SYNC ('opener'/'local'
+    // selon le succès de storageSetRaw fait par l'appelant), puis re-pointé 'idb'.
+    const relayPresentDeck = (rawOrObj, storedOk) => {
+        let deck = null;
+        try { deck = typeof rawOrObj === 'string' ? JSON.parse(rawOrObj) : rawOrObj; } catch (_) {}
+        if (!deck) return;
+        try { window.__oeiPresentDeck = deck; } catch (_) {}
+        const stampKey = `${VIEWER_PRESENT_KEY}-stamp`;
+        storageSetRaw(stampKey, JSON.stringify({ at: Date.now(), src: storedOk ? 'local' : 'opener' }));
+        const bs = window.OEIDeckBlobStore;
+        if (bs && typeof bs.available === 'function' && bs.available()) {
+            bs.put('__present__', deck, { at: Date.now() })
+                .then(ok => { if (ok) storageSetRaw(stampKey, JSON.stringify({ at: Date.now(), src: 'idb' })); })
+                .catch(() => {});
+        }
     };
     const LOCAL_KEY = Storage?.KEYS?.SLIDE_LIBRARY || 'oei-slide-library';
     const WORKDOCS_KEY = Storage?.KEYS?.SLIDE_WORKDOCS || 'oei-slide-workdocs';
@@ -333,8 +345,8 @@
         if (!deck || !deck.rawData) return;
         _touchDeckAccess(deck);
         if (mode === 'viewer') {
-            storageSetRaw(VIEWER_PRESENT_KEY, deck.rawData);
-            relayPresentDeck(deck.rawData);
+            const storedOk = storageSetRaw(VIEWER_PRESENT_KEY, deck.rawData);
+            relayPresentDeck(deck.rawData, storedOk);
             window.open('viewer.html?file=__draft__', '_blank');
             _localDecks = loadLocalDecks();
             renderLocalDecks();
@@ -768,8 +780,8 @@
         try {
             const data = await window.OEIFirebase.loadPresentation(p.id);
             if (mode === 'viewer') {
-                storageSetRaw(VIEWER_PRESENT_KEY, JSON.stringify(data));
-                relayPresentDeck(data);
+                const storedOk = storageSetRaw(VIEWER_PRESENT_KEY, JSON.stringify(data));
+                relayPresentDeck(data, storedOk);
                 window.open('viewer.html?file=__draft__', '_blank');
             } else {
                 // Passer l'ID Firebase à l'éditeur : il rechargera le contenu depuis

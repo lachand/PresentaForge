@@ -13,6 +13,8 @@
 /* editor-export.js — PNG, PDF, and HTML export with presenter mode; launchPresentation */
 const _exportStorage = window.OEIStorage || null;
 const _presentDataKey = _exportStorage?.KEYS?.PRESENT_DATA || 'oei-slide-present-data';
+const _presentStampKey = `${_presentDataKey}-stamp`;
+const _PRESENT_BLOB_ID = '__present__';
 const _mediaPipelineSettingsKey = _exportStorage?.KEYS?.MEDIA_PIPELINE_SETTINGS || 'oei-media-pipeline-settings';
 const _setStoredJson = (key, value) => {
     if (_exportStorage?.setJSON) return _exportStorage.setJSON(key, value);
@@ -215,12 +217,29 @@ function _resolveExportTheme(data) {
 }
 
 function launchPresentation(mode, fromCurrent) {
+    // Instantané FIGÉ (pas `editor.data` en direct — remplacé à chaque load/undo/redo).
+    let snapshot;
+    try { snapshot = JSON.parse(JSON.stringify(editor.data)); } catch (_) { snapshot = editor.data; }
+
+    // Remise du deck à la fenêtre de présentation, du plus robuste au plus limité :
+    //  1. IndexedDB (deck-blob-store) — aucune limite de taille, survit au F5 du viewer ;
+    //  2. window.__oeiPresentDeck — instantané en mémoire via window.opener ;
+    //  3. PRESENT_DATA (localStorage) — repli anciens viewers / quota permettant.
+    // `PRESENT_STAMP` (minuscule) dit au viewer OÙ est le deck frais. Écrit en SYNC
+    // (avant window.open, pour rester dans le geste utilisateur), puis re-pointé sur
+    // 'idb' quand le blob est écrit → un F5 du viewer relira depuis IndexedDB.
+    try { window.__oeiPresentDeck = snapshot; } catch (_) {}
     const stored = _setStoredJson(_presentDataKey, editor.data);
-    // Repli gros deck (quota localStorage) : la fenêtre de présentation lira le
-    // deck via window.opener. INSTANTANÉ FIGÉ, pas `editor.data` en direct — cette
-    // référence est remplacée à chaque load/undo/redo et servait un deck périmé.
-    try { window.__oeiPresentDeck = JSON.parse(JSON.stringify(editor.data)); } catch (_) {}
-    if (!stored) console.warn('[present] deck non écrit en localStorage (quota ?) — relais via window.opener');
+    _setStoredJson(_presentStampKey, { at: Date.now(), src: stored ? 'local' : 'opener' });
+    const blobStore = window.OEIDeckBlobStore;
+    if (blobStore && typeof blobStore.available === 'function' && blobStore.available()) {
+        blobStore.put(_PRESENT_BLOB_ID, snapshot, { at: Date.now() })
+            .then(ok => { if (ok) _setStoredJson(_presentStampKey, { at: Date.now(), src: 'idb' }); })
+            .catch(() => {});
+    } else if (!stored) {
+        console.warn('[present] deck non écrit (quota) et IndexedDB indisponible — relais window.opener seul');
+    }
+
     const modeParam = mode === 'presenter' ? '&mode=presenter' : '';
     let slideHash = '';
     if (fromCurrent && editor.selectedIndex != null) {
@@ -230,7 +249,8 @@ function launchPresentation(mode, fromCurrent) {
     }
     const win = window.open('viewer.html?file=__draft__' + modeParam + slideHash, '_blank');
     if (!win) {
-        notify(stored
+        const relayOk = stored || (blobStore && typeof blobStore.available === 'function' && blobStore.available());
+        notify(relayOk
             ? 'Fenêtre de présentation bloquée — autorisez les pop-ups pour ce site.'
             : 'Impossible de lancer la présentation : deck trop volumineux et pop-up bloquée.', 'error');
     }

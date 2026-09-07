@@ -110,6 +110,50 @@ export function resolveDraftDeck(options = {}) {
 }
 
 /**
+ * Résout le deck d'un viewer `?file=__draft__`, IndexedDB inclus (gros decks).
+ *
+ * Le presenter écrit un « stamp » (`<draftKey>-stamp`, minuscule) disant où est le
+ * deck frais : `src:'idb'` → deck-blob-store (aucune limite de taille, survit au
+ * F5 du viewer / à l'ouverture depuis une autre fenêtre). Repli : `PRESENT_DATA`
+ * puis `window.opener.__oeiPresentDeck` (cf. resolveDraftDeck).
+ *
+ * @param {{
+ *   storageGetJSON: (key: string, fallback?: any) => any,
+ *   draftKey: string,
+ *   blobStore?: { available: () => boolean, get: (id: string) => Promise<any> } | null,
+ *   presentBlobId?: string,
+ * }} options
+ * @returns {Promise<any|null>}
+ */
+export async function resolveDraftView(options = {}) {
+    const getJSON = typeof options?.storageGetJSON === 'function' ? options.storageGetJSON : (() => null);
+    const draftKey = String(options?.draftKey || '');
+    const blobStore = options?.blobStore || null;
+    const blobId = options?.presentBlobId || '__present__';
+
+    let openerDeck = null;
+    try { openerDeck = window.opener && window.opener.__oeiPresentDeck; } catch (_) { /* cross-origin */ }
+    const openerUsable = openerDeck && Array.isArray(openerDeck.slides) && openerDeck.slides.length;
+    const cloneOpener = () => { try { return JSON.parse(JSON.stringify(openerDeck)); } catch (_) { return null; } };
+
+    const stamp = draftKey ? getJSON(`${draftKey}-stamp`, null) : null;
+    if (stamp && stamp.src === 'idb' && blobStore && typeof blobStore.available === 'function' && blobStore.available()) {
+        try {
+            const deck = await blobStore.get(blobId);
+            if (deck && Array.isArray(deck.slides) && deck.slides.length) return deck;
+        } catch (_) { /* IDB illisible → repli */ }
+    }
+    // stamp 'opener' : PRESENT_DATA n'a PAS pu être écrit (quota) et le blob n'est
+    // pas encore prêt → le deck vivant de la fenêtre parente prime sur un
+    // PRESENT_DATA potentiellement périmé.
+    if (stamp && stamp.src === 'opener' && openerUsable) {
+        const clone = cloneOpener();
+        if (clone) return clone;
+    }
+    return resolveDraftDeck({ openerDeck, readStored: () => (draftKey ? getJSON(draftKey, null) : null) });
+}
+
+/**
  * @param {{
  *   roomActive: boolean,
  *   relayActive: boolean,

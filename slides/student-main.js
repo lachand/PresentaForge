@@ -248,14 +248,15 @@
         }
 
         // ── Mode révision hors salle ─────────────────────────────────────
-        function startOfflineRevise(courseKeyRaw) {
+        async function startOfflineRevise(courseKeyRaw) {
             const courseKey = String(courseKeyRaw || '').trim();
             document.body.classList.add('revise-offline');
 
             const storage = window.OEIStudentStorage.create({ roomId: '' });
             storage.setCourseKey(courseKey);
             const archive = storage.loadReviseArchive();
-            if (!courseKey || !archive || !archive.deck) {
+            const deck = courseKey && archive ? await storage.loadReviseDeck(courseKey) : null;
+            if (!courseKey || !archive || !deck) {
                 document.body.classList.remove('revise-offline');
                 const row = document.getElementById('room-input-row');
                 if (row) row.classList.add('visible');
@@ -298,7 +299,7 @@
             document.getElementById('header-title').textContent = courseTitle;
             document.title = courseTitle + ' — Révision';
 
-            H.render.applyInit({ type: ROOM_MSG.INIT, deck: archive.deck, currentIndex: 0 });
+            H.render.applyInit({ type: ROOM_MSG.INIT, deck, currentIndex: 0 });
             state.presenterIndex = Math.max(0, state.slidesHtml.length - 1);
 
             document.getElementById('join-screen').style.display = 'none';
@@ -370,14 +371,16 @@
                 try {
                     const parsed = JSON.parse(await f.text());
                     const store = window.OEIStudentStorage.create({ roomId: '' });
-                    const res = store.importReviseFile(parsed);
+                    const res = await store.importReviseFile(parsed);
                     if (res.ok) {
                         setJoinStatus('Révision importée ✓', 'info');
                         renderReviseHome();
                     } else {
                         const msg = {
                             'no-deck': 'Ce JSON n\'est pas un cours PresentaForge (ni un export de révision).',
-                            'deck-too-large': 'Cours trop volumineux pour la révision hors ligne (images ?).',
+                            'deck-too-large': 'Cours vraiment trop volumineux (> 30 Mo).',
+                            'no-idb': 'Ce navigateur ne peut pas stocker un cours de cette taille hors ligne.',
+                            'idb-write': 'Échec d\'écriture du cours sur cet appareil (espace disque ?).',
                             quota: 'Espace de stockage insuffisant sur cet appareil.',
                         }[res.reason] || 'Fichier de révision invalide.';
                         setJoinStatus(msg, 'error');
@@ -494,7 +497,7 @@
         // ── Archive de révision : à chaque room:init porteur d'un deck, on
         //    (re)scope le stockage favoris/notes/SM-2 sur l'identité du cours et
         //    on persiste le deck localement → révision possible hors salle. ──
-        function _archiveDeckForRevision(msg) {
+        async function _archiveDeckForRevision(msg) {
             const deck = msg && msg.deck;
             if (!deck || !Array.isArray(deck.slides) || typeof storage.setCourseKey !== 'function') return;
             try {
@@ -502,7 +505,7 @@
                 storage.setCourseKey(ck);
                 H.render.rebindCourseStorage();
                 H.revision.reloadForCourse();
-                const res = storage.saveReviseArchive({
+                const res = await storage.saveReviseArchive({
                     deck,
                     meta: {
                         title: msg.title || deck.metadata?.title || 'Présentation',

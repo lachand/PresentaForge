@@ -29,15 +29,16 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/ui-icons.js?v=2',
     '../shared/slides/student-runtime-bundle.js?v=1',
     // Student app modules (Lot 20 découpe de student-main.js)
-    '../shared/slides/student-storage.js?v=3',
+    '../shared/slides/deck-blob-store.js?v=1',
+    '../shared/slides/student-storage.js?v=4',
     '../shared/slides/student-render.js?v=4',
-    '../shared/slides/student-revision.js?v=7',
+    '../shared/slides/student-revision.js?v=8',
     '../shared/slides/student-quiz.js?v=2',
     '../shared/slides/student-init-transfer.js?v=1',
     '../shared/slides/student-transport.js?v=3',
     '../vendor/qrcode-generator/1.4.4/qrcode.min.js',
     '../vendor/peerjs/1.5.5/peerjs.min.js',
-    'student-main.js?v=10',
+    'student-main.js?v=11',
 ]);
 
 loadClassicScripts(STUDENT_BOOTSTRAP_SCRIPTS, {
