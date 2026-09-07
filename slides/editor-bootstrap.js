@@ -36,8 +36,8 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/slides-diagram-renderer.js?v=1'],
     ['../shared/slides/slides-renderer-canvas.js?v=4'],
     ['../shared/slides/slides-editor.js?v=14'],
-    ['../shared/slides/import-pipeline-bundle.js?v=2'],
-    ['../shared/slides/import-pipeline.js?v=6'],
+    ['../shared/slides/import-pipeline-bundle.js?v=3'],
+    ['../shared/slides/import-pipeline.js?v=7'],
     // Group 3: canvas sub-runtimes — each registers itself on window.OEISlidesCanvas*,
     // consumed only by slides-canvas.js below. No cross-dependencies between them.
     [

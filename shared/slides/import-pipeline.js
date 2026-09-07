@@ -61,6 +61,9 @@
     const toStr = importNormalization.toStr;
     const levelToArray = importNormalization.levelToArray;
     const normalizeListItems = importNormalization.normalizeListItems;
+    const normalizeBulletItems = typeof importNormalization.normalizeBulletItems === 'function'
+        ? importNormalization.normalizeBulletItems
+        : importNormalization.normalizeListItems;
     const stripHtmlToText = importNormalization.stripHtmlToText;
     const parseHtmlList = importNormalization.parseHtmlList;
 
@@ -868,7 +871,8 @@
         }
 
         if (type === 'bullets') {
-            out.items = normalizeListItems(out.items || [], ['Point principal']);
+            // Préserve les puces à sous-liste { text, sub:[…] } (rendu <ul> imbriqué).
+            out.items = normalizeBulletItems(out.items || [], ['Point principal']);
         }
 
         if (type === 'quiz' && Array.isArray(out.questions)) {
@@ -1128,6 +1132,8 @@
         parseSchemaVersion,
         inferSchemaVersion,
         normalizeListItems,
+        normalizeBulletItems,
+        normalizeSlide,
         parseHtmlList,
         detectIllustrationToken: _detectIllustrationToken,
         parseAssetRef: _parseAssetRef,
