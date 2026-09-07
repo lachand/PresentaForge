@@ -674,6 +674,7 @@
                 const quizOpts = el.data?.options || [];
                 const answer = el.data?.answer ?? 0;
                 const duration = el.data?.duration || 30;
+                const explanation = esc(String(el.data?.explanation || '').trim());
                 const label = esc(String(el.data?.label ?? 'Quiz').trim() || 'Quiz');
                 const roomId = 'ql-' + (el.id || Math.random().toString(36).slice(2, 9));
                 const optsHtml = quizOpts.map((o, i) =>
@@ -682,7 +683,7 @@
                         <span style="color:var(--sl-text,#cbd5e1);font-size:var(--sl-quiz-option-size,1rem);line-height:1.4;">${SlidesShared.formatInlineRichText(o)}</span>
                     </div>`
                 ).join('');
-                content = `<div class="${P}-quizlive-pending" data-room="${esc(roomId)}" data-answer="${answer}" data-duration="${duration}" style="width:100%;height:100%;display:flex;flex-direction:column;padding:16px;box-sizing:border-box;gap:12px;">
+                content = `<div class="${P}-quizlive-pending" data-room="${esc(roomId)}" data-answer="${answer}" data-duration="${duration}"${explanation ? ` data-explanation="${explanation}"` : ''} style="width:100%;height:100%;display:flex;flex-direction:column;padding:16px;box-sizing:border-box;gap:12px;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span style="display:inline-flex;width:18px;height:18px;color:var(--sl-primary,#818cf8);" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg></span>
                         <span style="font-size:var(--sl-label-size,0.8rem);font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.05em;line-height:1.3;">${label}</span>

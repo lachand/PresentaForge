@@ -863,10 +863,13 @@ class SlidesRenderer {
      *   includeSpecial?: boolean | 'passive',
      *   includeWidgets?: boolean,
      *   prefix?: 'sl'|'cel',
+     *   soloQuiz?: boolean,
      *   onError?: (phase: 'special'|'widgets', error: unknown) => void,
      * }} [options]
      *   - `includeSpecial: 'passive'` ne monte que les éléments non-interactifs (LaTeX,
      *     Mermaid, timer, quiz statique) — utilisé par la preview de l'éditeur.
+     *   - `soloQuiz: true` → les quiz-live deviennent auto-correctifs (révision hors-CM :
+     *     pas de présentateur, l'élève clique une réponse et voit le corrigé).
      * @returns {Promise<{ ok: boolean, errors: Array<{ phase: 'special'|'widgets', message: string }> }>}
      */
     static async mountRuntimeElements(container, revealInstance = null, options = {}) {
@@ -879,7 +882,7 @@ class SlidesRenderer {
         if (!container) return { ok: true, errors };
         if (includeSpecial) {
             try {
-                await SlidesRenderer.mountSpecialElements(container, { prefix: options?.prefix, passive: passiveSpecial });
+                await SlidesRenderer.mountSpecialElements(container, { prefix: options?.prefix, passive: passiveSpecial, soloQuiz: !!options?.soloQuiz });
             } catch (error) {
                 errors.push({ phase: 'special', message: String(error?.message || error || 'error') });
                 if (onError) {
@@ -904,7 +907,7 @@ class SlidesRenderer {
      * Mount special elements (LaTeX, Mermaid, Timer, Quiz) that require JS libraries or interaction.
      * Delegates to OEISlidesSpecialRuntime.
      * @param {HTMLElement|Element} container
-     * @param {{ prefix?: 'sl'|'cel', passive?: boolean }} [opts]
+     * @param {{ prefix?: 'sl'|'cel', passive?: boolean, soloQuiz?: boolean }} [opts]
      * @returns {Promise<void>}
      */
     static async mountSpecialElements(container, opts = {}) {
@@ -912,7 +915,7 @@ class SlidesRenderer {
         if (!runtime || typeof runtime.mountSpecialElements !== 'function') {
             throw new Error('OEISlidesSpecialRuntime.mountSpecialElements is required');
         }
-        return runtime.mountSpecialElements({ container, SlidesRenderer, prefix: opts?.prefix, passive: opts?.passive });
+        return runtime.mountSpecialElements({ container, SlidesRenderer, prefix: opts?.prefix, passive: opts?.passive, soloQuiz: !!opts?.soloQuiz });
     }
 
     /**

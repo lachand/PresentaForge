@@ -521,7 +521,8 @@
         // ── Runtime mount (special elements + widgets) ───
         function mountSlideRuntime(inner) {
             if (st.deckMode && window.SlidesRenderer && typeof window.SlidesRenderer.mountRuntimeElements === 'function') {
-                window.SlidesRenderer.mountRuntimeElements(inner, null, { includeSpecial: true, includeWidgets: true })
+                // Révision hors-CM : les quiz-live deviennent auto-correctifs (pas de présentateur).
+                window.SlidesRenderer.mountRuntimeElements(inner, null, { includeSpecial: true, includeWidgets: true, soloQuiz: !!H.reviseOffline })
                     .catch(err => console.warn('mountRuntimeElements (student):', err));
                 return;
             }

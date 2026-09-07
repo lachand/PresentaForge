@@ -153,6 +153,7 @@
         const ctx = {
             prefix,
             passive,
+            soloQuiz: !!context?.soloQuiz,
             SlidesRenderer,
             isAudienceReadOnly,
             audiencePolicy,

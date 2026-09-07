@@ -405,9 +405,9 @@ par défaut si absentes ; source de vérité : shared/slides/element-style-schem
   Taille par défaut : 620×400
 
 ▸ quiz-live — Quiz interactif en temps réel (P2P via PeerJS)
-  data: { "question": "Quelle est la réponse ?", "duration": 30, "answer": 0, "options": ["A", "B", "C", "D"] }
-  Affiche un QR code que les étudiants scannent pour répondre depuis leur téléphone.
-  Les résultats s'affichent en temps réel sous forme de barre chart.
+  data: { "question": "Quelle est la réponse ?", "duration": 30, "answer": 0, "options": ["A", "B", "C", "D"], "explanation": "Pourquoi c'est la bonne réponse." }
+  En séance : QR code que les étudiants scannent pour répondre depuis leur téléphone, résultats en barre chart temps réel.
+  En révision hors-CM (student.html?revise=…) : QCM auto-correctif — l'élève clique une option, voit tout de suite le corrigé + l'`explanation` (optionnelle mais recommandée pour la révision).
   duration en secondes (défaut: 30), answer = index 0-based de la bonne réponse.
   Taille par défaut : 700×500
 

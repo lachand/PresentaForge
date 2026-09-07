@@ -37,6 +37,54 @@
             const optionsEls = el.querySelectorAll(`.${P}-quizlive-option`);
             if (!btnStart) return;
 
+            // ── Mode auto-correctif (révision hors-CM : pas de présentateur) ──
+            if (ctx?.soloQuiz) {
+                btnStart.remove();
+                if (timerEl) timerEl.remove();
+                if (qrEl) qrEl.remove();
+                if (statusEl) statusEl.textContent = 'Choisis une réponse';
+                let answered = false;
+                optionsEls.forEach((opt, i) => {
+                    opt.setAttribute('role', 'button');
+                    opt.addEventListener('click', () => {
+                        if (answered) return;
+                        answered = true;
+                        const isRight = i === correctAnswer;
+                        optionsEls.forEach((o, j) => {
+                            o.style.pointerEvents = 'none';
+                            o.style.cursor = 'default';
+                            if (j === correctAnswer) {
+                                o.style.borderColor = '#34d399';
+                                o.style.background = 'color-mix(in srgb,#34d399 14%,transparent)';
+                            } else if (j === i) {
+                                o.style.borderColor = '#f87171';
+                                o.style.background = 'color-mix(in srgb,#f87171 12%,transparent)';
+                            } else {
+                                o.style.opacity = '0.5';
+                            }
+                        });
+                        if (statusEl) {
+                            statusEl.style.color = isRight ? '#34d399' : '#f87171';
+                            statusEl.style.fontWeight = '600';
+                            statusEl.textContent = isRight
+                                ? '✓ Bonne réponse'
+                                : `✗ La bonne réponse était ${String.fromCharCode(65 + correctAnswer)}`;
+                        }
+                        const expl = el.dataset.explanation || '';
+                        if (expl && resultsEl) {
+                            resultsEl.style.display = '';
+                            resultsEl.style.flex = '0 0 auto';
+                            resultsEl.style.fontSize = 'var(--sl-note-size,0.9rem)';
+                            resultsEl.style.color = 'var(--sl-muted,#94a3b8)';
+                            resultsEl.style.lineHeight = '1.5';
+                            resultsEl.style.paddingTop = '6px';
+                            resultsEl.textContent = expl;
+                        }
+                    });
+                });
+                return;
+            }
+
             let peer = null, connections = [], responses = {}, timerInterval = null, remaining = duration, quizActive = false;
 
             // Timer display with color feedback (vert → orange → rouge)
