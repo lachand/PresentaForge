@@ -6,7 +6,7 @@
     <!-- Chantier 8 (sécurité) — CSP stricte (enforce). Un CSP `Report-Only` via <meta>
          est ignoré par les navigateurs : politique appliquée directement, après
          extraction des scripts inline (plus aucun bloc JS dans le HTML). Voir docs/developer/SECURITY_MODEL.md. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' blob: https://*.firebaseapp.com; base-uri 'self'; form-action 'self'; object-src 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob: https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com; frame-src 'self' blob: https://*.firebaseapp.com https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com; base-uri 'self'; form-action 'self'; object-src 'none'">
     <title>presentaForge — Éditeur</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
