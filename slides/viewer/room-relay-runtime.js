@@ -165,7 +165,12 @@ export function createRoomRelayRuntime(params) {
         if (relayRoom.reconnectTimer) return;
         relayRoom.reconnectAttempts += 1;
         const delay = reconnectDelayMs(relayRoom.reconnectAttempts);
-        roomSetStatus(`Relay déconnecté, reconnexion…${reason ? ` (${reason})` : ''}`, 'warn');
+        if (relayRoom.reconnectAttempts >= 3) {
+            roomSetStatus('Relais injoignable — salle en P2P uniquement (peut échouer sur eduroam). Voir docs/developer/RELAY_DEPLOY.md.', 'warn');
+        } else {
+            roomSetStatus(`Relay déconnecté, reconnexion…${reason ? ` (${reason})` : ''}`, 'warn');
+        }
+        roomUpdatePanel();
         relayRoom.reconnectTimer = setTimeoutFn(() => {
             relayRoom.reconnectTimer = null;
             open(relayRoom.roomId);

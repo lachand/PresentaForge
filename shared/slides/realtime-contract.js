@@ -47,6 +47,12 @@
 
     const ROOM_MSG = Object.freeze({
         INIT: 'room:init',
+        // room:init découpé — gros decks (images base64) non livrables en un seul
+        // message PeerJS. Présentateur → étudiant : INIT_BEGIN (méta + checksum),
+        // puis N × INIT_CHUNK. Étudiant → présentateur : INIT_NACK (indices manquants).
+        INIT_BEGIN: 'room:init-begin',
+        INIT_CHUNK: 'room:init-chunk',
+        INIT_NACK: 'room:init-nack',
         WELCOME: 'room:welcome',
         HAND_LOWER: 'room:hand-lower',
         REMOTE_HELLO: 'remote:hello',
@@ -157,6 +163,23 @@
     // (SlidesRenderer). `slidesHtml` stays accepted as a 1-version fallback.
     const isDeckPayload = v => isObject(v) && Array.isArray(v.slides) && v.slides.length <= 5000;
 
+    /**
+     * FNV-1a 32-bit — hash rapide non cryptographique, identique des deux côtés,
+     * pour détecter la corruption d'un `room:init` réassemblé depuis ses chunks.
+     * @param {string} str
+     * @returns {number} entier non signé 32 bits
+     */
+    function fnv1a32(str) {
+        let h = 0x811c9dc5 >>> 0;
+        const s = String(str);
+        for (let i = 0; i < s.length; i++) {
+            const c = s.charCodeAt(i);
+            h = Math.imul(h ^ (c & 0xff), 0x01000193);
+            h = Math.imul(h ^ (c >>> 8), 0x01000193);
+        }
+        return h >>> 0;
+    }
+
     const SYNC_VALIDATORS = Object.freeze({
         [SYNC_MSG.GO_TO]: msg => isNonNegInt(msg.index),
         [SYNC_MSG.FRAGMENT_STEP]: msg => isNonNegInt(msg.slideIndex) && isInt(msg.fragmentIndex),
@@ -207,6 +230,18 @@
             && (msg.themeCSS == null || isString(msg.themeCSS, 250000))
             && (msg.slidesHtml == null || isStringArray(msg.slidesHtml, 2000, 500000))
             && (msg.deck == null || isDeckPayload(msg.deck)),
+        [ROOM_MSG.INIT_BEGIN]: msg => isString(msg.initId, 80)
+            && isNonNegInt(msg.n) && msg.n <= 8000
+            && isNonNegInt(msg.len)
+            && isNonNegInt(msg.checksum)
+            && (msg.title == null || isString(msg.title, 300))
+            && (msg.slideCount == null || isNonNegInt(msg.slideCount))
+            && (msg.currentIndex == null || isNonNegInt(msg.currentIndex))
+            && (msg.currentFragmentOrder == null || isInt(msg.currentFragmentOrder)),
+        [ROOM_MSG.INIT_CHUNK]: msg => isString(msg.initId, 80)
+            && isNonNegInt(msg.i) && msg.i <= 8000
+            && isString(msg.s, 262144),
+        [ROOM_MSG.INIT_NACK]: msg => isString(msg.initId, 80) && isIntArray(msg.missing, 8000),
         [ROOM_MSG.WELCOME]: msg => (msg.title == null || isString(msg.title, 240)) && (msg.peerId == null || isString(msg.peerId, 180)),
         [ROOM_MSG.HAND_LOWER]: () => true,
         [ROOM_MSG.REMOTE_HELLO]: msg => isString(msg.clientNonce || '', 200) && (msg.device == null || isString(msg.device, 120)),
@@ -385,5 +420,6 @@
         validateRoomMessage,
         explainSyncValidation,
         explainRoomValidation,
+        fnv1a32,
     });
 })(window);

@@ -83,24 +83,30 @@ export function buildStudentRoomUrl(options) {
 
 /**
  * Résout le deck d'un viewer ouvert avec `?file=__draft__`.
- * Priorité au deck vivant exposé par la fenêtre parente
- * (`window.opener.__oeiPresentDeck`) : toujours à jour et sans la limite de taille
- * de localStorage — les gros decks (images en base64) débordaient silencieusement
- * le quota, si bien que « Présenter » ouvrait un ancien deck ou rien. Repli sur le
- * stockage persistant.
+ *
+ * Priorité au **stockage persistant** (`PRESENT_DATA`) : il est écrit juste avant
+ * l'ouverture par le geste « Présenter » (éditeur ou accueil), donc frais par
+ * construction. `window.opener.__oeiPresentDeck` n'est qu'un **repli** pour le cas
+ * où l'écriture localStorage a échoué (gros deck / quota dépassé) — on ne le
+ * préfère plus inconditionnellement car c'était une référence potentiellement
+ * périmée (F5 du viewer, « Ouvrir depuis Firebase », 2ᵉ fenêtre Présenter :
+ * `window.opener` pointe encore l'éditeur avec l'ancien deck).
  *
  * @param {{ openerDeck?: any, readStored?: () => any }} [options]
  * @returns {any|null}
  */
 export function resolveDraftDeck(options = {}) {
+    const readStored = options && typeof options.readStored === 'function' ? options.readStored : null;
+    const stored = readStored ? readStored() : null;
+    if (stored && Array.isArray(stored.slides) && stored.slides.length) return stored;
+
     const openerDeck = options && options.openerDeck;
     try {
-        if (openerDeck && Array.isArray(openerDeck.slides)) {
+        if (openerDeck && Array.isArray(openerDeck.slides) && openerDeck.slides.length) {
             return JSON.parse(JSON.stringify(openerDeck));
         }
     } catch (_) { /* opener cross-origin ou fermé */ }
-    const readStored = options && typeof options.readStored === 'function' ? options.readStored : null;
-    return readStored ? readStored() : null;
+    return stored || null;
 }
 
 /**
@@ -108,23 +114,41 @@ export function resolveDraftDeck(options = {}) {
  *   roomActive: boolean,
  *   relayActive: boolean,
  *   relayConfigured: boolean,
+ *   relayReconnectAttempts?: number,
  * }} state
  */
 export function computeRoomNetworkDiagnostics(state) {
     const roomActive = !!state?.roomActive;
     const relayActive = !!state?.relayActive;
     const relayConfigured = !!state?.relayConfigured;
+    const relayAttempts = Math.max(0, Number(state?.relayReconnectAttempts) || 0);
+    // Relais configuré mais toujours pas connecté après plusieurs tentatives, salle
+    // ouverte → on considère qu'il est injoignable (app supprimée, URL erronée…) et
+    // que la salle repose entièrement sur le P2P — souvent bloqué sur eduroam.
+    const relayUnreachable = roomActive && relayConfigured && !relayActive && relayAttempts >= 3;
+
     const transportState = !roomActive ? 'Salle fermée' : (relayActive ? 'P2P + relay' : 'P2P');
-    const relayState = !relayConfigured
-        ? 'Relay non configuré'
-        : (relayActive ? 'Relay connecté' : (roomActive ? 'Relay en reconnexion' : 'Relay prêt'));
-    const hintText = relayConfigured
-        ? 'Si certains étudiants sont bloqués (ex: eduroam), partagez le lien "Forcer relay".'
-        : 'Ajoutez relayWs pour offrir un fallback réseau en plus du P2P.';
+    let relayState;
+    if (!relayConfigured) relayState = 'Relay non configuré';
+    else if (relayActive) relayState = 'Relay connecté';
+    else if (relayUnreachable) relayState = 'Relais injoignable';
+    else if (roomActive) relayState = 'Relay en reconnexion';
+    else relayState = 'Relay prêt';
+
+    let hintText;
+    if (relayUnreachable) {
+        hintText = 'P2P uniquement — peut échouer sur eduroam / réseau filtré. Redéploiement : docs/developer/RELAY_DEPLOY.md.';
+    } else if (relayConfigured) {
+        hintText = 'Si certains étudiants sont bloqués (ex: eduroam), partagez le lien "Forcer relay".';
+    } else {
+        hintText = 'Ajoutez relayWs pour offrir un fallback réseau en plus du P2P.';
+    }
+
     return {
         transportState,
         relayState,
-        statusText: `${transportState} · ${relayState}`,
+        statusText: relayUnreachable ? 'Relais injoignable — P2P uniquement' : `${transportState} · ${relayState}`,
         hintText,
+        relayUnreachable,
     };
 }

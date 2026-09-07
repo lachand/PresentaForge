@@ -707,6 +707,14 @@
                     && (st.transportMode === 'relay'
                         || reconnectAttempts >= RELAY_FALLBACK_ATTEMPT
                         || String(reason).includes('peer-unavailable')));
+            const _relayAvailable = !!(RELAY_OPTIONS.enabled && RELAY_OPTIONS.wsUrl);
+            // Signal clair à mi-parcours : le P2P ne passe pas et il n'y a pas de
+            // relais pour prendre le relais — sur réseau filtré (eduroam) c'est sans issue.
+            if (reconnectAttempts === RELAY_FALLBACK_ATTEMPT && !_relayAvailable && st.transportMode !== 'relay') {
+                const waitEl = document.getElementById('waiting-text');
+                if (waitEl) waitEl.textContent = 'Connexion P2P difficile — réseau filtré ? Aucun relais configuré : essayez 4G / partage de connexion.';
+                setConnectionDetail('P2P difficile · pas de relais', 'warn');
+            }
             if (reconnectAttempts >= MAX_RECONNECT) {
                 if (preferRelay && st.transportMode !== 'relay') {
                     connectViaRelay('fallback final');

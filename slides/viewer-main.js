@@ -7,7 +7,7 @@
         import { resolveRealtimeContract } from './viewer/runtime-contracts.js';
         import { createViewerAppState } from './viewer/app-state.js';
         import { createTopicEventBus } from './viewer/event-bus.js';
-        import { safePeerSend, broadcastPeers } from './viewer/room-transport.js';
+        import { safePeerSend, broadcastPeers, roomSendInitAuto, resendInitChunks } from './viewer/room-transport.js?v=2';
         import { postSyncMessage } from './viewer/audience-sync.js';
         import { initNormalModeToolbar } from './viewer/normal-mode-toolbar.js';
         import { applyStatusState, showFloatingReaction } from './viewer/room-ui.js';
@@ -16,7 +16,7 @@ import {
     buildStudentRoomUrl,
     computeRoomNetworkDiagnostics,
     resolveDraftDeck,
-} from './viewer/room-links.js?v=2';
+} from './viewer/room-links.js?v=3';
 import {
     buildRoomSnapshot,
 } from './viewer/room-bridge-snapshot.js';
@@ -105,7 +105,7 @@ import {
     createRoomRemoteControl,
     runRemotePresenterCommand,
 } from './viewer/room-remote-control.js';
-import { createRoomRelayRuntime } from './viewer/room-relay-runtime.js';
+import { createRoomRelayRuntime } from './viewer/room-relay-runtime.js?v=2';
 import {
     applyStudentFeedbackMessage,
     applyStudentHandMessage,
@@ -285,7 +285,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             draftData = resolveDraftDeck({ openerDeck, readStored: () => storageGetJSON(DRAFT_KEY, null) });
             file = null;
             try { if (draftData) window.__oeiPresentDeck = draftData; } catch (_) {} // relais fenêtre présentateur enfant
-        }
+        } else if (file) { try { delete window.__oeiPresentDeck; } catch (_) {} } // RC-C5 : pas de deck brouillon résiduel
 
         async function loadData() {
             if (draftData) return draftData;
@@ -617,13 +617,6 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
         function _roomBuildInitMessage() {
             if (!_presentationData) return null;
             const slides = (_presentationData.slides || []).filter(s => !s.hidden);
-            const opts = {
-                showSlideNumber: false,
-                footerText: null,
-                totalSlides: slides.length,
-                typography: SlidesShared.resolveTypographyDefaults(_presentationData.typography),
-                includeNotes: false,
-            };
             return {
                 type: ROOM_MSG.INIT,
                 title: _presentationData.metadata?.title || 'Présentation',
@@ -631,20 +624,17 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 currentIndex: _roomCurrentSlideIndex(),
                 currentFragmentOrder: _roomCurrentFragmentIndex(),
                 themeCSS: document.getElementById('sl-theme-css')?.textContent || '',
-                // Lot 20 : le JSON du deck — l'élève rend localement (SlidesRenderer + runtimes
-                // spéciaux : Mermaid / timers / LaTeX / quiz cloze). `slidesHtml` reste envoyé
-                // en repli 1 version pour les clients étudiants non mis à jour.
+                // Lot 20 : l'élève rend le deck localement (SlidesRenderer + runtimes
+                // spéciaux : Mermaid / timers / LaTeX / quiz cloze). Le HTML pré-rendu
+                // n'est plus embarqué (redondant + non livrable au-delà de ~1 Mo).
                 deck: _roomBuildDeckPayload(slides),
-                slidesHtml: slides.map((slide, i) => SlidesRenderer.renderSlide(slide, i, opts)),
                 whiteboard: _captureWhiteboardSyncState(),
             };
         }
 
         function _roomSendInit(conn) {
             if (!conn || !conn.open) return false;
-            const payload = _roomBuildInitMessage();
-            if (!payload) return false;
-            return safePeerSend(conn, payload);
+            return roomSendInitAuto(conn, _roomBuildInitMessage(), ROOM_MSG);
         }
 
         function _roomAck(conn, rid, ok = true, reason = '') {
@@ -823,6 +813,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 roomActive: _room.active,
                 relayActive: _relayRoom.active,
                 relayConfigured,
+                relayReconnectAttempts: _relayRoom.reconnectAttempts,
             });
 
             if (statusEl) statusEl.textContent = diagnostics.statusText;
@@ -1443,6 +1434,10 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     await _remoteHandleIncoming(conn, msg);
                     break;
                 }
+                case ROOM_MSG.INIT_NACK: {
+                    resendInitChunks(conn, msg, ROOM_MSG);
+                    break;
+                }
                 case ROOM_MSG.STUDENT_JOIN: {
                     _room.students[peerId] = createStudentJoinRecord({
                         msg,
@@ -2042,7 +2037,10 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             const audienceUrl = new URL(location.href);
             audienceUrl.searchParams.set('mode', 'audience');
             audienceUrl.searchParams.set('audienceMode', AUDIENCE_POLICY.mode || 'display');
-            const audienceWin = window.open(audienceUrl.toString(), 'oei-audience', 'noopener');
+            // Pas de 'noopener' : la fenêtre projecteur (même origine, notre code) doit
+            // pouvoir lire window.opener.__oeiPresentDeck en repli quand le quota
+            // localStorage a fait échouer l'écriture de PRESENT_DATA (gros deck).
+            const audienceWin = window.open(audienceUrl.toString(), 'oei-audience');
 
             let currentIndex = 0;
             let currentFragmentIndex = -1; // -1 = aucun fragment visible

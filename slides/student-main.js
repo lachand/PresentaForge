@@ -459,6 +459,8 @@
             syncRuntime: _syncStudentRuntime,
             syncTransportMode: _syncTransportMode,
             handleMessage,
+            setJoinStatus,
+            applyAssembledInit: msg => applyInitPayload(msg),
             setConnectionDetail: (text, tone) => H.transport.setConnectionDetail(text, tone),
             setConnectionState: (next, detail, tone) => H.transport.setConnectionState(next, detail, tone),
             setConnected: connected => H.transport.setConnected(connected),
@@ -467,6 +469,9 @@
         H.render = window.OEIStudentRender.create(H);
         H.revision = window.OEIStudentRevision.create(H);
         H.quiz = window.OEIStudentQuiz.create(H);
+        H.initTransfer = window.OEIStudentInitTransfer
+            ? window.OEIStudentInitTransfer.create(H)
+            : { handleBegin: () => false, handleChunk: () => false, isActive: () => false, reset: () => {} };
         H.transport = window.OEIStudentTransport.create(H);
 
         _syncStudentRuntime({
@@ -509,16 +514,34 @@
             }
         }
 
+        // Corps du `room:init` — appelé soit directement (message unique, petits
+        // decks / anciens présentateurs), soit par H.initTransfer une fois toutes
+        // les tranches réassemblées et le checksum vérifié.
+        function applyInitPayload(msg) {
+            H.render.applyInit(msg);
+            _archiveDeckForRevision(msg);
+            H.transport.setConnected(true);
+            H.render.applyInitDisplay(msg);
+            if (state.transportMode === 'relay') {
+                setTimeout(() => {
+                    if (state.connectionState === CONNECTION_STATE.CONNECTED) {
+                        H.transport.sendReliable({ type: ROOM_MSG.ACTIVITIES_REQUEST }, { maxRetries: 2, retryDelay: 1000 });
+                    }
+                }, 1200);
+            }
+        }
+
         // ── room:* message router ────────────────────────
         function handleMessage(msg) {
             if (!msg?.type) return;
             if (!validateRoomMessage(msg)) return;
             if (H.transport.isResyncPending() && (
                 msg.type === ROOM_MSG.INIT
+                || msg.type === ROOM_MSG.INIT_BEGIN
                 || msg.type === ROOM_MSG.SLIDE_CHANGE
                 || msg.type === ROOM_MSG.SLIDE_FRAGMENT
             )) {
-                H.transport.markResyncApplied(msg.type);
+                H.transport.markResyncApplied(msg.type === ROOM_MSG.INIT_BEGIN ? ROOM_MSG.INIT : msg.type);
             }
 
             if (H.quiz.handleRoomMessage(msg)) return;
@@ -536,18 +559,20 @@
                     break;
 
                 case ROOM_MSG.INIT:
-                    H.render.applyInit(msg);
-                    _archiveDeckForRevision(msg);
-                    H.transport.setConnected(true);
-                    H.render.applyInitDisplay(msg);
-                    if (state.transportMode === 'relay') {
-                        setTimeout(() => {
-                            if (state.connectionState === CONNECTION_STATE.CONNECTED) {
-                                H.transport.sendReliable({ type: ROOM_MSG.ACTIVITIES_REQUEST }, { maxRetries: 2, retryDelay: 1000 });
-                            }
-                        }, 1200);
-                    }
+                    H.initTransfer.reset();
+                    applyInitPayload(msg);
                     break;
+
+                case ROOM_MSG.INIT_BEGIN:
+                    H.initTransfer.handleBegin(msg);
+                    break;
+
+                case ROOM_MSG.INIT_CHUNK:
+                    H.initTransfer.handleChunk(msg);
+                    break;
+
+                case ROOM_MSG.INIT_NACK:
+                    break; // présentateur uniquement
 
                 case ROOM_MSG.SLIDE_CHANGE:
                     H.render.applyPresenterSlideChange(msg);

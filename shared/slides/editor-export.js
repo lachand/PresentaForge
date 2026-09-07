@@ -216,9 +216,10 @@ function _resolveExportTheme(data) {
 
 function launchPresentation(mode, fromCurrent) {
     const stored = _setStoredJson(_presentDataKey, editor.data);
-    // Les gros decks (images en base64) dépassent le quota localStorage : la
-    // fenêtre de présentation lira alors le deck directement via window.opener.
-    try { window.__oeiPresentDeck = editor.data; } catch (_) {}
+    // Repli gros deck (quota localStorage) : la fenêtre de présentation lira le
+    // deck via window.opener. INSTANTANÉ FIGÉ, pas `editor.data` en direct — cette
+    // référence est remplacée à chaque load/undo/redo et servait un deck périmé.
+    try { window.__oeiPresentDeck = JSON.parse(JSON.stringify(editor.data)); } catch (_) {}
     if (!stored) console.warn('[present] deck non écrit en localStorage (quota ?) — relais via window.opener');
     const modeParam = mode === 'presenter' ? '&mode=presenter' : '';
     let slideHash = '';
