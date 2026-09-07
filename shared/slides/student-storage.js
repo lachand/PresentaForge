@@ -332,28 +332,45 @@
             },
 
             /**
-             * Import a `presentaforge-revision` bundle : creates/replaces the
-             * archive for its deck and points the instance at it. v1 = replace.
+             * Import a revision file : creates/replaces the archive for its deck
+             * and points the instance at it. Accepts three shapes :
+             *   1. `{ type:'presentaforge-revision', deck, bookmarks, notes, revision }`
+             *      — bundle autonome élève→élève (favoris + notes + SM-2).
+             *   2. `{ schemaVersion, metadata, slides:[…] }` — deck brut exporté
+             *      depuis l'éditeur (le prof partage simplement le JSON du cours).
+             *   3. `{ deck:{ slides:[…] } }` — deck enveloppé.
              * @param {any} payload - parsed file content
              * @returns {{ ok:boolean, courseKey?:string, reason?:string }}
              */
             importReviseFile(payload) {
                 if (!payload || typeof payload !== 'object') return { ok: false, reason: 'invalid' };
-                if (payload.type !== 'presentaforge-revision') return { ok: false, reason: 'no-deck' };
-                const deck = payload.deck;
-                if (!deck || !Array.isArray(deck.slides)) return { ok: false, reason: 'no-deck' };
+
+                let deck = null;
+                let bundle = null;
+                if (payload.type === 'presentaforge-revision' && payload.deck && Array.isArray(payload.deck.slides)) {
+                    deck = payload.deck;
+                    bundle = payload;
+                } else if (Array.isArray(payload.slides)) {
+                    deck = payload;
+                } else if (payload.deck && Array.isArray(payload.deck.slides)) {
+                    deck = payload.deck;
+                }
+                if (!deck) return { ok: false, reason: 'no-deck' };
+
                 const ck = courseKeyFromDeck(deck);
                 this.setCourseKey(ck);
-                const course = (payload.course && typeof payload.course === 'object') ? payload.course : {};
+                const course = (bundle && bundle.course && typeof bundle.course === 'object') ? bundle.course : {};
                 const res = this.saveReviseArchive({
                     deck,
                     meta: { title: course.title || deck.metadata?.title, author: course.author || deck.metadata?.author, slideCount: deck.slides.length, roomId: '' },
                 });
                 if (!res.ok) return { ok: false, reason: res.reason };
                 const k = _reviseKeys(ck);
-                if (payload.revision && typeof payload.revision === 'object') localSetJSON(k.revision, payload.revision);
-                if (Array.isArray(payload.bookmarks)) localSetJSON(k.bookmarks, payload.bookmarks.map(String));
-                if (payload.notes && typeof payload.notes === 'object') localSetJSON(k.notes, payload.notes);
+                if (bundle) {
+                    if (bundle.revision && typeof bundle.revision === 'object') localSetJSON(k.revision, bundle.revision);
+                    if (Array.isArray(bundle.bookmarks)) localSetJSON(k.bookmarks, bundle.bookmarks.map(String));
+                    if (bundle.notes && typeof bundle.notes === 'object') localSetJSON(k.notes, bundle.notes);
+                }
                 return { ok: true, courseKey: ck };
             },
         };

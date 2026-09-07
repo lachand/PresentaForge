@@ -375,9 +375,12 @@
                         setJoinStatus('Révision importée ✓', 'info');
                         renderReviseHome();
                     } else {
-                        setJoinStatus(res.reason === 'no-deck'
-                            ? 'Ce fichier ne contient pas le cours — importez-le pendant une session.'
-                            : 'Fichier de révision invalide.', 'error');
+                        const msg = {
+                            'no-deck': 'Ce JSON n\'est pas un cours PresentaForge (ni un export de révision).',
+                            'deck-too-large': 'Cours trop volumineux pour la révision hors ligne (images ?).',
+                            quota: 'Espace de stockage insuffisant sur cet appareil.',
+                        }[res.reason] || 'Fichier de révision invalide.';
+                        setJoinStatus(msg, 'error');
                     }
                 } catch (_) {
                     setJoinStatus('Import impossible : JSON invalide.', 'error');
