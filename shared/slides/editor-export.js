@@ -228,13 +228,17 @@ function launchPresentation(mode, fromCurrent) {
     // `PRESENT_STAMP` (minuscule) dit au viewer OÙ est le deck frais. Écrit en SYNC
     // (avant window.open, pour rester dans le geste utilisateur), puis re-pointé sur
     // 'idb' quand le blob est écrit → un F5 du viewer relira depuis IndexedDB.
+    // Jeton unique de CE clic « Présenter » : porté par le stamp ET le blob IDB.
+    // Le viewer ne fait confiance au blob que si son jeton == celui du stamp
+    // (sinon l'écriture IDB de cette session n'a pas encore atterri → repli).
+    const presentToken = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     try { window.__oeiPresentDeck = snapshot; } catch (_) {}
     const stored = _setStoredJson(_presentDataKey, editor.data);
-    _setStoredJson(_presentStampKey, { at: Date.now(), src: stored ? 'local' : 'opener' });
+    _setStoredJson(_presentStampKey, { token: presentToken, at: Date.now(), src: stored ? 'local' : 'opener' });
     const blobStore = window.OEIDeckBlobStore;
     if (blobStore && typeof blobStore.available === 'function' && blobStore.available()) {
-        blobStore.put(_PRESENT_BLOB_ID, snapshot, { at: Date.now() })
-            .then(ok => { if (ok) _setStoredJson(_presentStampKey, { at: Date.now(), src: 'idb' }); })
+        blobStore.put(_PRESENT_BLOB_ID, snapshot, { token: presentToken, at: Date.now() })
+            .then(ok => { if (ok) _setStoredJson(_presentStampKey, { token: presentToken, at: Date.now(), src: 'idb' }); })
             .catch(() => {});
     } else if (!stored) {
         console.warn('[present] deck non écrit (quota) et IndexedDB indisponible — relais window.opener seul');

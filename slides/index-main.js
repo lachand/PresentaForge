@@ -49,12 +49,13 @@
         try { deck = typeof rawOrObj === 'string' ? JSON.parse(rawOrObj) : rawOrObj; } catch (_) {}
         if (!deck) return;
         try { window.__oeiPresentDeck = deck; } catch (_) {}
+        const token = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
         const stampKey = `${VIEWER_PRESENT_KEY}-stamp`;
-        storageSetRaw(stampKey, JSON.stringify({ at: Date.now(), src: storedOk ? 'local' : 'opener' }));
+        storageSetRaw(stampKey, JSON.stringify({ token, at: Date.now(), src: storedOk ? 'local' : 'opener' }));
         const bs = window.OEIDeckBlobStore;
         if (bs && typeof bs.available === 'function' && bs.available()) {
-            bs.put('__present__', deck, { at: Date.now() })
-                .then(ok => { if (ok) storageSetRaw(stampKey, JSON.stringify({ at: Date.now(), src: 'idb' })); })
+            bs.put('__present__', deck, { token, at: Date.now() })
+                .then(ok => { if (ok) storageSetRaw(stampKey, JSON.stringify({ token, at: Date.now(), src: 'idb' })); })
                 .catch(() => {});
         }
     };

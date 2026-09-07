@@ -112,15 +112,17 @@ export function resolveDraftDeck(options = {}) {
 /**
  * Résout le deck d'un viewer `?file=__draft__`, IndexedDB inclus (gros decks).
  *
- * Le presenter écrit un « stamp » (`<draftKey>-stamp`, minuscule) disant où est le
- * deck frais : `src:'idb'` → deck-blob-store (aucune limite de taille, survit au
- * F5 du viewer / à l'ouverture depuis une autre fenêtre). Repli : `PRESENT_DATA`
- * puis `window.opener.__oeiPresentDeck` (cf. resolveDraftDeck).
+ * Le geste « Présenter » écrit un « stamp » (`<draftKey>-stamp`, minuscule) portant
+ * un **jeton unique** de ce clic, et écrit le même jeton dans le blob IndexedDB.
+ * Le viewer ne fait confiance au blob que si son jeton == celui du stamp — sinon
+ * l'écriture IDB de cette session n'a pas encore atterri (ou c'est un vieux blob) →
+ * on retombe sur `PRESENT_DATA` (écrit en synchrone, fiable) puis
+ * `window.opener.__oeiPresentDeck` (instantané en mémoire).
  *
  * @param {{
  *   storageGetJSON: (key: string, fallback?: any) => any,
  *   draftKey: string,
- *   blobStore?: { available: () => boolean, get: (id: string) => Promise<any> } | null,
+ *   blobStore?: { available: () => boolean, get: Function, getRecord?: Function } | null,
  *   presentBlobId?: string,
  * }} options
  * @returns {Promise<any|null>}
@@ -130,27 +132,36 @@ export async function resolveDraftView(options = {}) {
     const draftKey = String(options?.draftKey || '');
     const blobStore = options?.blobStore || null;
     const blobId = options?.presentBlobId || '__present__';
+    const hasSlides = d => d && Array.isArray(d.slides) && d.slides.length;
 
     let openerDeck = null;
     try { openerDeck = window.opener && window.opener.__oeiPresentDeck; } catch (_) { /* cross-origin */ }
-    const openerUsable = openerDeck && Array.isArray(openerDeck.slides) && openerDeck.slides.length;
-    const cloneOpener = () => { try { return JSON.parse(JSON.stringify(openerDeck)); } catch (_) { return null; } };
+    const cloneOpener = () => { try { return hasSlides(openerDeck) ? JSON.parse(JSON.stringify(openerDeck)) : null; } catch (_) { return null; } };
 
     const stamp = draftKey ? getJSON(`${draftKey}-stamp`, null) : null;
-    if (stamp && stamp.src === 'idb' && blobStore && typeof blobStore.available === 'function' && blobStore.available()) {
+    const readStored = () => (draftKey ? getJSON(draftKey, null) : null);
+
+    // 1. Blob IndexedDB — uniquement si son jeton correspond à CE stamp.
+    if (stamp && stamp.token && blobStore && typeof blobStore.available === 'function' && blobStore.available()) {
         try {
-            const deck = await blobStore.get(blobId);
-            if (deck && Array.isArray(deck.slides) && deck.slides.length) return deck;
+            const getRec = typeof blobStore.getRecord === 'function' ? blobStore.getRecord.bind(blobStore) : null;
+            const rec = getRec ? await getRec(blobId) : null;
+            if (rec && rec.meta && rec.meta.token === stamp.token && hasSlides(rec.deck)) return rec.deck;
         } catch (_) { /* IDB illisible → repli */ }
     }
-    // stamp 'opener' : PRESENT_DATA n'a PAS pu être écrit (quota) et le blob n'est
-    // pas encore prêt → le deck vivant de la fenêtre parente prime sur un
-    // PRESENT_DATA potentiellement périmé.
-    if (stamp && stamp.src === 'opener' && openerUsable) {
-        const clone = cloneOpener();
-        if (clone) return clone;
+
+    // 2. Stamp 'local' → PRESENT_DATA a bien été écrit en synchrone à ce clic : fiable.
+    if (stamp && stamp.src === 'local') {
+        const s = readStored();
+        if (hasSlides(s)) return s;
     }
-    return resolveDraftDeck({ openerDeck, readStored: () => (draftKey ? getJSON(draftKey, null) : null) });
+
+    // 3. Deck vivant de la fenêtre parente (instantané figé posé en synchrone).
+    const clone = cloneOpener();
+    if (clone) return clone;
+
+    // 4. Dernier recours : PRESENT_DATA tel quel (vieux presenter sans stamp inclus).
+    return resolveDraftDeck({ openerDeck, readStored });
 }
 
 /**
