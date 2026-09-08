@@ -206,13 +206,17 @@ function _buildAIAdaptiveBalanceRules(tuning) {
 
 function _buildAISensitiveComponentRules() {
     return [
-        '- `split`: `left`/`right` avec `type` ∈ {bullets, text, code} (champs à plat) OU un type riche {image, video, latex, mermaid, table, highlight, card, definition, callout-box, quote, smartart, timeline-vertical, swot-grid, qrcode} avec les données dans `data`.',
+        '- `split`: `left`/`right` avec `type` ∈ {bullets, text, code} (champs à plat) OU un type riche {image, video, latex, mermaid, diagramme, table, highlight, card, definition, callout-box, quote, smartart, timeline-vertical, swot-grid, qrcode} avec les données dans `data`.',
+        '- `bullets`: `items` = tableau de chaînes OU d’objets `{text, sub:["...", "..."]}` (UN seul niveau d’imbrication).',
+        '- `highlight` (élément unique pour tout code — jamais `code`/`code-example`/`terminal-session`): `data.language` + `data.code` ; `data.highlights:[{lines,label}]` optionnel ; terminal = `language:"bash"`.',
         '- `smartart`: utiliser `data.variant` + `data.items` (éviter `data.type`).',
+        '- `widget`: `data.widget` = id du registre OEI (ex: sorting-quick, search-binary, struct-stack, net-tcp, sys-scheduling) + `data.config` optionnel.',
         '- `algo-stepper`: `data.steps` doit être un tableau d’objets `{title, detail, code}` (>= 3 étapes).',
-        '- `quiz-live`: `data.question`, `data.options` (2-5), `data.answer` (index), `data.duration` (secondes).',
-        '- `mcq-single`: `data.question`, `data.options` (3-6), `data.answer` (index).',
-        '- `mcq-multi`: `data.question`, `data.options` (3-6), `data.answers` (tableau d’index).',
+        '- `quiz-live`: `data.question`, `data.options` (2-5), `data.answer` (index), `data.duration` (secondes), `data.explanation` OBLIGATOIRE (corrigé affiché en révision + exports HTML).',
+        '- `mcq-single`: `data.question`, `data.options` (3-6), `data.answer` (index), `data.explanation`.',
+        '- `mcq-multi`: `data.question`, `data.options` (3-6), `data.answers` (tableau d’index), `data.explanation`.',
         '- `poll-likert`: `data.prompt`. `exit-ticket`: `data.title` + `data.prompts`.',
+        '- IMAGES: SVG base64 en priorité ; raster uniquement pour une photo (≤ 1400 px, JPEG q≈78, < 250 Ko) ; poids total du deck < 1,5 Mo.',
     ];
 }
 
@@ -223,7 +227,7 @@ function _buildAIPromptQualityGate(tuning, pipeline) {
     const jsonLine = tuning.strictJsonOnly
         ? '- Sortie finale: JSON pur uniquement, sans texte annexe.'
         : '- Sortie finale: JSON valide prioritaire, avec flexibilité sur la mise en forme.';
-    const preferredComponents = 'smartart, diagramme, card, definition, code-example, highlight, table, list, mermaid, quiz-live, mcq-single, mcq-multi, poll-likert, exit-ticket, postit-wall, rank-order, flashcards-auto, algo-stepper, code-compare, quote, shape';
+    const preferredComponents = 'highlight, smartart, diagramme, card, definition, table, list, mermaid, widget, quiz-live, mcq-single, mcq-multi, poll-likert, exit-ticket, algo-stepper, timeline-vertical, swot-grid, quote, shape';
     const adaptiveRules = _buildAIAdaptiveBalanceRules(tuning);
     const sensitiveComponentRules = _buildAISensitiveComponentRules();
     return [
@@ -240,21 +244,26 @@ function _buildAIPromptQualityGate(tuning, pipeline) {
         '- Chaque illustration doit être ciblée (utile pédagogiquement) et concise, pour servir de placeholder.',
         '- Préférer des intentions visuelles concrètes (photo/infographie/schéma/icône) plutôt que du texte brut.',
         'PASS 3 — GÉNÉRATION DU JSON PRESENTAFORGE:',
-        '- Générer un JSON complet importable avec notes + niveaux.',
+        '- Générer un JSON complet importable (schemaVersion: 2) avec notes + niveaux.',
         `- Utiliser au maximum les composants natifs existants: ${preferredComponents}.`,
+        '- Code source = élément canvas `highlight` (jamais `code`/`code-example`/`terminal-session`). QCM = élément canvas `quiz-live` (jamais slide `quiz`).',
         '- N’utiliser jamais un composant canvas `columns` (remplacer par `table`, `list`, `card` ou `split`).',
         '- Insérer des placeholders visuels explicites (pas de génération image distante).',
+        '- POIDS MÉDIA: SVG base64 léger ou placeholder ; jamais de base64 > 250 Ko ; deck total < 1,5 Mo.',
         '- Éviter `[object Object]`, objets vides et structures contradictoires.',
-        '- Respecter les formats sensibles (split/comparison/card/mcq/quiz/algo-stepper/smartart).',
+        '- Respecter les formats sensibles (split/comparison/card/mcq/quiz-live/algo-stepper/smartart/widget).',
         'FORMATS SENSIBLES DES COMPOSANTS:',
         ...sensitiveComponentRules,
         'PASS 4 — ENRICHISSEMENT COMPOSANTS:',
         '- Réduire le texte brut en faveur de composants adaptés.',
-        '- Vérifier l’équilibre texte/composants/illustrations.',
+        '- Convertir tout `code`/`code-example` restant en `highlight` ; toute slide `quiz` en `quiz-live`.',
+        '- Ajouter `data.explanation` à chaque `quiz-live`/`mcq-*` qui n’en a pas.',
+        '- Vérifier l’équilibre texte/composants/illustrations et le poids média.',
         'PASS 5 — VALIDATION & AUTO-CORRECTION:',
         jsonLine,
         schemaLine,
-        '- Vérifier IDs canvas, types supportés, échappement JSON, règles quiz.',
+        '- Vérifier IDs canvas, types supportés, échappement JSON, règles quiz, `explanation` sur les QCM.',
+        '- Vérifier le poids: aucune image base64 > 250 Ko, deck total < 1,5 Mo.',
     ].join('\n');
 }
 

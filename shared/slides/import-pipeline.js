@@ -17,7 +17,7 @@
     if (global.OEIImportPipeline) return;
 
     const SAFE_THEMES = new Set(['dark', 'light', 'beige', 'night', 'solarized', 'black', 'white', 'league', 'icom']);
-    const SUPPORTED_SLIDE_TYPES = new Set(['title', 'chapter', 'bullets', 'code', 'split', 'definition', 'comparison', 'image', 'quote', 'blank', 'quiz', 'canvas']);
+    const SUPPORTED_SLIDE_TYPES = new Set(['title', 'chapter', 'bullets', 'code', 'split', 'simulation', 'definition', 'comparison', 'image', 'quote', 'blank', 'quiz', 'canvas']);
     const CURRENT_SCHEMA_VERSION = 2;
     const AI_IMPORT_PIPELINE_KEY = global.OEIStorage?.KEYS?.AI_IMPORT_PIPELINE || 'oei-ai-import-pipeline';
     const AI_IMPORT_PIPELINE_DEFAULTS = Object.freeze({
@@ -33,7 +33,7 @@
     const CANVAS_TYPES = new Set([
         'heading', 'text', 'list', 'image', 'shape', 'table', 'definition', 'code-example', 'quote', 'card', 'highlight',
         'mermaid', 'diagramme', 'latex', 'smartart', 'qrcode', 'video', 'iframe', 'quiz-live', 'poll-likert',
-        'mcq-single', 'mcq-multi', 'rank-order', 'flashcards-auto', 'code', 'terminal-session', 'cloze', 'drag-drop'
+        'mcq-single', 'mcq-multi', 'rank-order', 'flashcards-auto', 'code', 'terminal-session', 'cloze', 'drag-drop', 'widget'
     ]);
 
     const esc = value => String(value ?? '')
@@ -873,6 +873,18 @@
         if (type === 'bullets') {
             // Préserve les puces à sous-liste { text, sub:[…] } (rendu <ul> imbriqué).
             out.items = normalizeBulletItems(out.items || [], ['Point principal']);
+        }
+
+        // Slide "simulation" : monte un widget OEI plein cadre. SlidesRenderer._simulation
+        // lit `slide.widget` + `slide.config` — on rapatrie ces champs s'ils ont été posés
+        // sous `data` par un générateur, et on garantit leur type.
+        if (type === 'simulation') {
+            out.widget = toStr(out.widget || (out.data && out.data.widget), '').trim();
+            out.config = (out.config && typeof out.config === 'object')
+                ? out.config
+                : ((out.data && typeof out.data.config === 'object') ? out.data.config : {});
+            if (out.data && typeof out.data === 'object') delete out.data;
+            if (!out.widget) pushWarn(report, path, 'Slide "simulation" sans identifiant de widget : à compléter dans l\'éditeur.');
         }
 
         if (type === 'quiz' && Array.isArray(out.questions)) {

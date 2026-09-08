@@ -3,13 +3,13 @@
 > Copie ce prompt dans Gemini, ChatGPT ou Claude, puis décris le contenu de ta présentation.
 > L'IA produira un JSON directement importable dans l'éditeur de slides.
 
-> **⚠️ Maintenance** : Ce prompt doit être mis à jour à chaque ajout de :
-> - Nouveau type d'élément canvas (section « Types d'éléments canvas ») — actuellement 19 types dont code-live et quiz-live
-> - Nouveau type de slide template (section « Slides template »)
-> - Nouvelle disposition / master (section « Dispositions / Masters »)
-> - Nouvelle variable CSS thème (section « Variables CSS »)
-> - Nouveau thème built-in (champ `theme` dans la structure racine)
-> - Nouvelle propriété racine (showSlideNumber, footerText, autoNumberChapters…)
+> **⚠️ Maintenance** : Ce prompt doit rester aligné sur les sources de vérité :
+> - Éléments canvas → `shared/slides/slides-renderer-canvas.js` (les `case` du switch)
+> - Widgets pédagogiques → `shared/components/base/WidgetRegistry.js` (`OEI_WIDGET_REGISTRY`)
+> - Types de slide + schéma → `tools/slides/deck-schema.json`
+> - Thèmes built-in → `shared/slides/slides-themes.js` (`SlidesThemes.BUILT_IN`)
+> À mettre à jour à chaque ajout de : élément canvas, slide template, widget, disposition,
+> variable CSS thème, thème built-in, propriété racine, ou changement du budget image.
 
 ---
 
@@ -24,12 +24,14 @@ RÈGLES :
 - IMPORTANT : Les chaînes JSON ne doivent JAMAIS contenir de retour à la ligne littéral. Toujours écrire les valeurs sur UNE SEULE LIGNE. Pour mettre du HTML multi-paragraphe, concaténer tout sur une seule ligne : "html": "<p>Premier paragraphe.</p><p>Deuxième paragraphe.</p>"
 - IMPORTANT : Les guillemets doubles à l'intérieur des chaînes JSON doivent être échappés avec un antislash : \"mot\". Ne jamais écrire "mot" sans échappement dans une valeur JSON. Préférer les guillemets français « » ou les apostrophes pour les citations dans le texte.
 - IMPORTANT : Dans les expressions LaTeX (champ "expression" de l'élément `latex`), chaque backslash LaTeX doit être doublé car la chaîne est dans du JSON. Exemples : `\frac` → `\\frac`, `\overline` → `\\overline`, `\sum` → `\\sum`, `\sigma` → `\\sigma`, `\sqrt` → `\\sqrt`, `\text` → `\\text`, `\binom` → `\\binom`, `\times` → `\\times`, `\cup` → `\\cup`, `\cap` → `\\cap`, `\approx` → `\\approx`, `\quad` → `\\quad`. Règle générale : tout `\commande` LaTeX devient `\\commande` en JSON.
-- Pour les images/illustrations, préfère les placeholders `asset://...` (ex: `asset://icon/usb?label=Clé USB`) qui seront matérialisés localement en base64 à l'import. Si tu fournis déjà une data URL base64 valide, elle est acceptée.
+- Pour les images/illustrations, préfère les placeholders `asset://...` (ex: `asset://icon/usb?label=Clé USB`) qui seront matérialisés localement en base64 à l'import. Si tu fournis déjà une data URL, privilégie du SVG (`data:image/svg+xml;base64,...`) — voir la section IMAGES ET POIDS DU DECK, dont les règles sont IMPÉRATIVES.
 - Utilise les variables CSS var(--sl-*) pour les couleurs (elles s'adaptent au thème).
 - Alterne entre slides template (title, bullets, code, etc.) et slides canvas pour varier le rythme.
 - Ajoute toujours des notes présentateur ("notes") pour guider l'orateur.
 - Les textes supportent le HTML inline : <b>, <code>, <em>, <br>, <span>.
 - Vise 10-20 slides pour une présentation de cours.
+- Le code source se met TOUJOURS dans un élément canvas `highlight` (jamais `code`, `code-example` ni `terminal-session`, qui sont dépréciés). Un terminal/shell = `highlight` avec `language: "bash"`.
+- Un QCM est TOUJOURS un élément canvas `quiz-live` (ou `mcq-single` / `mcq-multi`) dans une slide `canvas` — il n'existe pas de slide `type: "quiz"`. Chaque `quiz-live` doit porter un champ `explanation` (corrigé).
 - Après chaque section, insère un élément "quiz-live" dans une slide canvas pour poser un QCM interactif aux étudiants.
 - Pour les slides canvas, utilise les structures des dispositions prédéfinies (voir section "Dispositions / Masters").
 
@@ -60,6 +62,7 @@ STRUCTURE RACINE
 ═══════════════════════════════════════════════
 
 {
+  "schemaVersion": 2,
   "metadata": {
     "title": "Titre de la présentation",
     "author": "Auteur",
@@ -73,11 +76,37 @@ STRUCTURE RACINE
   "slides": [ ... ]
 }
 
+- "schemaVersion" — toujours 2 (obligatoire)
 - "showSlideNumber" — affiche le numéro de slide en bas à droite (défaut: false)
 - "footerText" — texte de pied de page affiché en bas à gauche (défaut: null)
 - "autoNumberChapters" — numérote automatiquement les slides "chapter" (01, 02…) sans avoir à remplir le champ "number" manuellement (défaut: false)
 
-Thèmes disponibles : "dark", "light", "academic", "terminal", "ocean"
+Thèmes disponibles : "dark", "light", "academic", "terminal", "ocean", "icom" ("icom" = thème maison ICOM Lyon 2)
+
+═══════════════════════════════════════════════
+IMAGES ET POIDS DU DECK (RÈGLES IMPÉRATIVES)
+═══════════════════════════════════════════════
+
+Un deck trop lourd casse la sauvegarde Firebase (limite ~1 Mo par champ Firestore),
+le canal « Présenter » (quota localStorage) et la synchronisation temps réel avec les
+étudiants (message `room:init` WebRTC). Respecte donc :
+
+1. SVG d'abord. Pour tout schéma, pictogramme, diagramme, courbe : génère du SVG en
+   base64 (`data:image/svg+xml;base64,...`). C'est vectoriel, quelques Ko, net à toute
+   taille. La plupart des illustrations pédagogiques n'ont PAS besoin d'être des photos.
+2. Raster (JPEG/PNG) uniquement pour une vraie photographie. Dans ce cas :
+   - dimension max 1400 px sur le grand côté,
+   - JPEG qualité ≈ 78 (PNG seulement pour du trait/texte à préserver),
+   - cible < 250 Ko par image.
+3. Poids total du deck visé : < 1,5 Mo (toutes images comprises).
+4. Ne colle JAMAIS une data URL base64 de plusieurs centaines de Ko / plusieurs Mo.
+   Si tu n'as pas d'image légère : utilise un placeholder `asset://icon/<nom>?label=...`
+   (matérialisé en petit SVG local à l'import) ou une URL HTTPS publique.
+5. `bgImage` (fond de slide) : même règle — SVG ou JPEG ≤ 250 Ko, sinon utilise `bg`
+   (couleur ou dégradé CSS).
+
+Pour recompresser un deck déjà trop lourd (côté dépôt) :
+`node tools/slides/optimize-deck-images.mjs --deck data/slides/<fichier>.json`
 
 ═══════════════════════════════════════════════
 PROPRIÉTÉS COMMUNES À TOUS LES SLIDES
@@ -127,8 +156,11 @@ SLIDES TEMPLATE (mise en page automatique)
   "note": "Note affichée à droite (encadrée)"  // optionnel
 }
 Les items apparaissent un par un (fragments Reveal.js).
+Sous-puces : un item peut être `{ "text": "...", "sub": ["...", "..."] }` — UN SEUL niveau
+d'imbrication, `sub` = tableau de chaînes simples. Cette structure est préservée à l'import
+(rendu en <ul> imbriqué). N'imbrique pas plus profond.
 
-▸ type: "code" — Slide de code
+▸ type: "code" — Slide de code (mise en page template ; pour du code DANS un canvas, utilise l'élément `highlight`)
 {
   "type": "code",
   "title": "Exemple",
@@ -164,6 +196,7 @@ Types de colonne (`left.type` / `right.type`) :
     - "video"            → data: { src }            (URL YouTube / Vimeo)
     - "latex"            → data: { expression }     (formule KaTeX)
     - "mermaid"          → data: { code }           (graphe Mermaid)
+    - "diagramme"        → data: { chartType, rows } (graphique de données — voir l'élément canvas)
     - "table"            → data: { rows: [["A","B"], ["1","2"]] }
     - "highlight"        → data: { code, language }
     - "card"             → data: { title, items: ["…"] }
@@ -371,7 +404,9 @@ par défaut si absentes ; source de vérité : shared/slides/element-style-schem
       { "lines": "2-3", "label": "Corps" }
     ]
   }
-  Élément principal pour tout code source. Utilise language: "bash" pour les scripts shell/terminal.
+  Élément UNIQUE pour tout code source. N'émets PAS `code`, `code-example` ni
+  `terminal-session` (dépréciés : encore rendus pour la rétro-compat, mais à ne plus créer).
+  Un terminal / des commandes shell = `highlight` avec `language: "bash"`.
   Sans "highlights" (ou highlights vide), affiche simplement le code avec coloration syntaxique.
   Les lignes sont en base 1. Formats : "1", "1-3", "1,3,5".
   Taille par défaut : 620×300
@@ -391,11 +426,15 @@ par défaut si absentes ; source de vérité : shared/slides/element-style-schem
 
 ▸ iframe — Page web intégrée
   data: { "url": "https://example.com", "title": "Doc" }
+  ⚠️ La CSP n'autorise en iframe que YouTube, Vimeo et Firebase. Un autre domaine sera bloqué
+  (cadre vide). Pour une vidéo, utilise l'élément `video`, pas `iframe`.
   Taille par défaut : 700×450
 
-▸ video — Vidéo YouTube/Vimeo
-  data: { "src": "https://youtube.com/watch?v=xxx", "embedUrl": "https://youtube.com/embed/xxx" }
-  Taille par défaut : 560×315
+▸ video — Vidéo YouTube / Vimeo
+  data: { "src": "https://www.youtube.com/watch?v=XXXXXXXXXXX" }
+  Formes d'URL acceptées : youtube.com/watch?v=…, youtu.be/…, vimeo.com/<id>.
+  L'`embedUrl` est déduite automatiquement ; YouTube est servi via youtube-nocookie.com.
+  Autorisé par la CSP. Taille par défaut : 560×315
 
 ▸ code-live — Éditeur de code exécutable en direct
   data: { "language": "python", "code": "print('hello')", "autoRun": false }
@@ -404,12 +443,26 @@ par défaut si absentes ; source de vérité : shared/slides/element-style-schem
   Si autoRun est true, le code s'exécute automatiquement au chargement.
   Taille par défaut : 620×400
 
-▸ quiz-live — Quiz interactif en temps réel (P2P via PeerJS)
+▸ quiz-live — Quiz interactif (temps réel en séance + auto-correctif hors séance)
   data: { "question": "Quelle est la réponse ?", "duration": 30, "answer": 0, "options": ["A", "B", "C", "D"], "explanation": "Pourquoi c'est la bonne réponse." }
   En séance : QR code que les étudiants scannent pour répondre depuis leur téléphone, résultats en barre chart temps réel.
-  En révision hors-CM (student.html?revise=…) : QCM auto-correctif — l'élève clique une option, voit tout de suite le corrigé + l'`explanation` (optionnelle mais recommandée pour la révision).
+  Hors séance (révision `student.html?revise=…` ET exports HTML autonome / offline / étudiant) :
+  QCM auto-correctif — l'élève clique une option, voit immédiatement le corrigé + l'`explanation`.
+  → `explanation` est OBLIGATOIRE : sans elle, le QCM n'a aucune correction hors séance.
   duration en secondes (défaut: 30), answer = index 0-based de la bonne réponse.
   Taille par défaut : 700×500
+
+▸ mcq-single / mcq-multi — QCM canvas (choix unique / choix multiples)
+  mcq-single : data: { "question": "...", "options": ["...", "..."], "answer": 1, "explanation": "..." }
+  mcq-multi  : data: { "question": "...", "options": ["...", "..."], "answers": [0, 2], "explanation": "..." }
+  `explanation` recommandée (affichée en révision). Taille par défaut : 640×420
+
+▸ widget — Widget pédagogique interactif OEI (visualiseur d'algo, de structure, de protocole…)
+  data: { "widget": "<id-du-registre>", "config": { ... } }
+  Taille par défaut : 800×420. Voir la section « WIDGETS PÉDAGOGIQUES OEI » pour la liste des IDs.
+  Exemple :
+  { "id": "el_w000001", "type": "widget", "x": 240, "y": 150, "w": 800, "h": 420, "z": 1,
+    "data": { "widget": "search-binary", "config": { "data": [2,5,8,12,16,23,38], "target": 23 } } }
 
 ── Connecteurs (flèches entre éléments) ──
 
@@ -453,27 +506,129 @@ Polices :
   var(--sl-font-mono)    — police code
 
 ═══════════════════════════════════════════════
+WIDGETS PÉDAGOGIQUES OEI
+═══════════════════════════════════════════════
+
+Bibliothèque de composants interactifs (visualiseurs d'algorithmes, de structures de
+données, de protocoles réseau…). À insérer comme élément canvas :
+
+  { "type": "widget", "x": 240, "y": 150, "w": 800, "h": 420, "z": 1,
+    "data": { "widget": "<id>", "config": { ... } } }
+
+- `config` est optionnel : chaque widget a des valeurs par défaut. Ne mets `config` que
+  pour personnaliser les données (le jeu à trier, la valeur à chercher, l'algorithme…).
+- Un seul widget par slide en général (ils prennent de la place et s'utilisent en démo).
+- Évite le slide `type: "simulation"` : préfère l'élément canvas `type: "widget"`
+  (plus robuste à l'import, positionnable, combinable avec un titre + du texte).
+- Liste vivante : le sélecteur « Insérer › Widget » de l'éditeur fait foi. IDs actuels :
+
+TRI
+  sorting-bubble     Tri à bulles [L1]        config: { "data": [64,34,25,12,22,11,90] }
+  sorting-insertion  Tri par insertion [L1]   config: { "data": [64,34,25,12,22,11,90] }
+  sorting-selection  Tri par sélection [L1]   config: { "data": [64,34,25,12,22,11,90] }
+  sorting-merge      Tri fusion [L2]          config: { "data": [64,34,25,12,22,11,90,48] }
+  sorting-quick      Tri rapide (QuickSort) [L2]   config: { "data": [64,34,25,12,22,11,90,48] }
+  sorting-counting   Tri par comptage [L2]    config: { "data": [4,2,7,1,3,5,0,6] }
+
+RECHERCHE
+  search-sequential  Recherche séquentielle [L1]  config: { "data": [2,5,8,12,16,23,38,56,72,91], "target": 23 }
+  search-binary      Recherche dichotomique [L1]  config: { "data": [2,5,8,12,16,23,38,56,72,91], "target": 23 }
+
+STRUCTURES DE DONNÉES
+  struct-stack        Pile (LIFO) [L1]          config: { "type": "stack" }
+  struct-queue        File (FIFO) [L1]          config: { "type": "queue" }
+  struct-linked-list  Liste chaînée [L2]        config: { "values": [3,7,1,9,4] }
+  struct-hash-table   Table de hachage [L2]     config: { "buckets": 8, "data": [14,7,21,3,28] }
+  bst-simulator       Arbre binaire de recherche [L2]  config: { "values": [50,30,70,20,40,60,80] }
+  struct-heap-min     Tas min (Min-Heap) [L2]   config: { "mode": "min", "data": [15,10,20,8,12,30] }
+  struct-heap-max     Tas max (Max-Heap) [L2]   config: { "mode": "max", "data": [8,10,12,15,20,30] }
+
+LOGIQUE
+  boolean-gates       Portes logiques [L1]      config: { "gates": ["AND","OR","NOT"], "showIntro": false }
+  boolean-simplifier  Simplificateur booléen [L1]
+  boolean-karnaugh    Tableau de Karnaugh [L2]
+
+RÉSEAU
+  net-tcp        Simulation TCP (handshake, scénarios) [L2]  config: { "scenario": "normal" }
+  net-ip-subnet  Calculateur IP / masque / CIDR [L2]         config: { "ip": "192.168.1.0/24" }
+  net-dns        Résolution DNS pas à pas [L1]
+
+SYSTÈMES
+  sys-scheduling   Ordonnancement CPU (FCFS/SJF/RR/priorité) [L2]  config: { "algorithm": "fcfs" }
+  sys-memory       Mémoire paginée (FIFO/LRU/optimal) [L2]  config: { "sequence": "7,0,1,2,0,3,0,4,2,3,0,3,2", "frames": 3 }
+  sys-pipeline     Pipeline processeur (aléas, forwarding) [L2]
+  sys-concurrency  Concurrence & interblocage [L2]
+
+WEB / JAVASCRIPT
+  dom-visualizer                   DOM Visualizer [L1]
+  events-flow-lab                  Lab événements [L1]           config: { "type": "events-flow-lab" }
+  events-eventloop-restaurant      Event loop (métaphore restaurant) [L1]  config: { "type": "events-eventloop-restaurant" }
+  events-delegation-standardiste   Délégation (métaphore standardiste) [L1]  config: { "type": "events-delegation-standardiste" }
+  events-multi-listeners           Multi-listeners [L1]          config: { "type": "events-multi-listeners" }
+  events-event-object              Objet événement [L1]          config: { "type": "events-event-object" }
+  events-propagation               Propagation (capture/bubbling) [L1]  config: { "type": "events-propagation" }
+  events-delegation                Délégation d'événements [L1]  config: { "type": "events-delegation" }
+  events-catalog                   Catalogue d'événements [L1]   config: { "type": "events-catalog" }
+
+GIT
+  git-zones               Zones Git (working / staging / repo) [L1]
+  git-dag                 DAG des commits [L1]
+  git-file-lifecycle      Cycle de vie d'un fichier [L1]
+  git-terminal            Terminal Git guidé [L1]
+  git-strategy-comparator Comparateur de stratégies de branche [L2]
+  git-conflict-editor     Éditeur de conflits de merge [L2]
+  git-flow-simulator      Gitflow Simulator [L2]
+  git-rebase-interactive  Rebase interactif [L2]
+  git-bisect              git bisect [L2]
+  git-reset-visualizer    git reset (soft/mixed/hard) [L2]
+  git-merge-comparison    Merge vs rebase [L2]
+  git-commit-signing      Signature de commits (GPG/SSH) [L3]
+  git-secret-scanning     Détection de secrets [L2]
+  git-filter-repo         Réécriture d'historique (filter-repo) [L3]
+
+GITHUB
+  github-pr-lifecycle     Cycle de vie d'une Pull Request [L1]
+  github-issue-tracker    Suivi d'issues [L1]
+  github-kanban           Tableau Kanban [L1]
+  github-roadmap          Roadmap GitHub [L1]
+  git-branch-protection   Règles de protection de branche [L2]
+  codeowners-simulator    CODEOWNERS [L2]
+  dependabot-alert        Alerte Dependabot [L2]
+  secret-leak-timeline    Chronologie d'une fuite de secret [L2]
+
+GITHUB ACTIONS
+  github-actions-widget       Anatomie d'un YAML Actions [L2]
+  workflow-trigger-simulator  Déclencheurs de workflow [L2]
+  job-dependency-graph        Graphe de dépendances de jobs [L2]
+  matrix-builder              Matrix build [L2]
+  git-cicd-pipeline           Pipeline CI/CD complet [L2]
+
+DIVERS
+  slides-embed  Présentation PresentaForge intégrée  config: { "file": "data/slides/exemple.json", "height": 480 }
+
+═══════════════════════════════════════════════
 BONNES PRATIQUES
 ═══════════════════════════════════════════════
 
 1. Commence par un slide "title", puis alterne chapitres + contenu.
-2. Utilise "bullets" pour les listes, "code" pour le code, "canvas" pour les layouts complexes.
+2. Utilise "bullets" pour les listes, l'élément canvas "highlight" pour le code, "canvas" pour les layouts complexes.
 3. Sur les slides canvas, centre les éléments : x = (1280 - w) / 2.
 4. Les IDs doivent être uniques : "el_" + 7 chars alphanumériques aléatoires.
 5. Préfère var(--sl-*) aux couleurs en dur.
 6. Ajoute des "notes" présentateur à chaque slide.
 7. Utilise les connecteurs pour les diagrammes et flux.
-8. Pour les images/schémas, génère du SVG en base64 (plus léger que PNG).
+8. Illustrations : SVG en base64 en priorité ; raster (JPEG ≤ 1400 px, q≈78, < 250 Ko) seulement pour une photo. Poids total du deck < 1,5 Mo. Voir « IMAGES ET POIDS DU DECK ».
 9. Pour les animations, numérote "order" séquentiellement (0, 1, 2...).
 10. Termine par un slide "quote" ou "title" de conclusion.
-11. Après chaque grande section, insère un élément "quiz-live" dans une slide canvas pour poser un QCM interactif aux étudiants (ils répondent depuis leur téléphone).
+11. Après chaque grande section, insère un élément "quiz-live" (avec "explanation") dans une slide canvas.
 12. Pour les slides canvas, reproduis les structures des dispositions prédéfinies (par ex. « Titre + Contenu », « 2 colonnes », « Code + Explication »). Exemple de "Titre + Contenu" en canvas :
     - heading à x:60, y:40, w:1160, h:70
     - shape (barre accent) à x:60, y:115, w:200, h:4
     - text à x:60, y:140, w:1160, h:520
 13. Active "autoNumberChapters": true pour numéroter automatiquement les slides chapitre (01, 02…) sans remplir le champ "number" manuellement.
 14. Utilise "code-live" pour des exercices de programmation interactifs (Python via Pyodide ou JavaScript).
-15. Utilise "quiz-live" pour des sondages en temps réel où les étudiants répondent depuis leur téléphone.
+15. Pour un sujet algo / structures / réseau / systèmes / Git : place un élément "widget" (voir « WIDGETS PÉDAGOGIQUES OEI ») plutôt qu'un long texte ou un schéma statique.
+16. Chaque "quiz-live" et chaque "mcq-single"/"mcq-multi" porte une "explanation" (corrigé affiché en révision et dans les exports HTML).
 
 ═══════════════════════════════════════════════
 FONCTIONNALITÉS DE PRÉSENTATION
@@ -492,6 +647,7 @@ EXEMPLE COMPLET (3 slides)
 ═══════════════════════════════════════════════
 
 {
+  "schemaVersion": 2,
   "metadata": { "title": "Les variables en Python", "author": "Prof", "created": "2026-03-02" },
   "theme": "dark",
   "slides": [
@@ -559,7 +715,18 @@ EXEMPLE COMPLET (3 slides)
         {
           "id": "el_qz00001", "type": "quiz-live",
           "x": 140, "y": 60, "w": 1000, "h": 600, "z": 1,
-          "data": { "question": "Quel est le type de la variable <code>x</code> après <code>x = 3.14</code> ?", "duration": 30, "answer": 1, "options": ["int", "float", "str", "bool"] }
+          "data": { "question": "Quel est le type de la variable <code>x</code> après <code>x = 3.14</code> ?", "duration": 30, "answer": 1, "options": ["int", "float", "str", "bool"], "explanation": "3.14 est un littéral décimal : Python crée un <code>float</code>. <code>int</code> serait 3, <code>str</code> nécessiterait des guillemets." }
+        }
+      ]
+    },
+    {
+      "type": "canvas",
+      "notes": "Démo : dérouler la recherche dichotomique pas à pas.",
+      "elements": [
+        {
+          "id": "el_wd00001", "type": "widget",
+          "x": 240, "y": 150, "w": 800, "h": 420, "z": 1,
+          "data": { "widget": "search-binary", "config": { "data": [2, 5, 8, 12, 16, 23, 38, 56, 72, 91], "target": 23 } }
         }
       ]
     }

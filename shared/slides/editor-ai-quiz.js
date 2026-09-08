@@ -127,15 +127,16 @@ function _buildGeminiQuizAugmentPrompt({ tuning, presentation }) {
         'Tu ne réécris pas toute la présentation.',
         'Réponds uniquement en JSON valide (sans markdown).',
         'Schéma JSON strict de sortie:',
-        '{"quizzes":[{"afterSlide":1,"quizType":"mcq-single|mcq-multi|quiz-live|poll-likert|exit-ticket|cloze","title":"...","question":"...","options":["..."],"answer":0,"answers":[0,2],"duration":30,"prompt":"...","prompts":["..."],"sentence":"...","blanks":["..."]}]}',
+        '{"quizzes":[{"afterSlide":1,"quizType":"quiz-live|mcq-single|mcq-multi|poll-likert|exit-ticket|cloze","title":"...","question":"...","options":["..."],"answer":0,"answers":[0,2],"duration":30,"explanation":"...","prompt":"...","prompts":["..."],"sentence":"...","blanks":["..."]}]}',
         'Règles:',
         `- Nombre de quiz attendu: environ ${target}.`,
         `- Stratégie de placement: ${strategy}`,
         '- `afterSlide` est 1-based et doit être entre 1 et le nombre de slides existantes.',
-        '- `quizType` doit être l’un des types autorisés du schéma.',
+        '- `quizType` doit être l’un des types autorisés du schéma. Par défaut `quiz-live`.',
         '- Questions courtes, actionnables, liées au contenu de la slide précédente.',
-        '- Pour mcq-single/quiz-live: options (3-5), answer = index valide.',
+        '- Pour quiz-live/mcq-single: options (3-5), answer = index valide.',
         '- Pour mcq-multi: options (4-6), answers = tableau d’index (>=2).',
+        '- Pour quiz-live/mcq-single/mcq-multi: `explanation` OBLIGATOIRE (corrigé affiché en révision hors-cours et dans les exports HTML autonomes).',
         '- Pour exit-ticket: utiliser prompts (2-4) plutôt que options.',
         '- Pour cloze: fournir sentence + blanks.',
         `Contexte de la présentation (${slideCount} slides):`,
@@ -176,6 +177,7 @@ function _normalizeQuizAugmentPlan(payload, totalSlides, tuning) {
         const prompts = _normalizeQuizChoiceItems(entry?.prompts, [question || 'Qu’avez-vous retenu ?', 'Quelle notion reste floue ?']);
         const sentence = String(entry?.sentence || question || '').trim();
         const blanks = _normalizeQuizChoiceItems(entry?.blanks, []);
+        const explanation = String(entry?.explanation || entry?.explication || '').replace(/\s+/g, ' ').trim();
         return {
             afterSlide,
             quizType,
@@ -185,6 +187,7 @@ function _normalizeQuizAugmentPlan(payload, totalSlides, tuning) {
             answer,
             answers,
             duration,
+            explanation,
             prompt: String(entry?.prompt || question || '').trim(),
             prompts,
             sentence,
@@ -206,6 +209,7 @@ function _buildQuizCanvasElementData(spec) {
             question: spec.question || 'Sélectionnez les réponses correctes.',
             options: spec.options.slice(0, 6),
             answers,
+            ...(spec.explanation ? { explanation: spec.explanation } : {}),
         };
     }
     if (type === 'quiz-live') {
@@ -215,6 +219,7 @@ function _buildQuizCanvasElementData(spec) {
             options: spec.options.slice(0, 5),
             answer: spec.answer,
             duration: spec.duration,
+            ...(spec.explanation ? { explanation: spec.explanation } : {}),
         };
     }
     if (type === 'poll-likert') {
@@ -241,6 +246,7 @@ function _buildQuizCanvasElementData(spec) {
         question: spec.question || 'Choisissez la meilleure réponse.',
         options: spec.options.slice(0, 6),
         answer: spec.answer,
+        ...(spec.explanation ? { explanation: spec.explanation } : {}),
     };
 }
 
