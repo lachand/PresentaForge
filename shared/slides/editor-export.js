@@ -705,18 +705,55 @@ async function _buildSpecialRuntimeInline() {
 }
 
 /* Bootstrap : monte les éléments spéciaux (LaTeX, Mermaid, timer, quiz statique,
- * code-live, quiz-live…) via le runtime unifié. Rejoué à chaque changement de slide. */
+ * code-live, quiz-live…) via le runtime unifié. Rejoué à chaque changement de slide.
+ * `soloQuiz:true` — un export HTML n'a ni présentateur ni salle : les quiz-live
+ * deviennent auto-correctifs (clic sur une option → corrigé immédiat). */
 const _SPECIAL_MOUNT_BOOTSTRAP = `(function(){
   function mountAll(){
     ['reveal-root','presenter-view'].forEach(function(id){
       var root=document.getElementById(id);
       if(!root||!window.SlidesRenderer||typeof window.SlidesRenderer.mountSpecialElements!=='function')return;
-      try{window.SlidesRenderer.mountSpecialElements(root);}catch(e){console.error('[OEI] mountSpecialElements',e);}
+      try{window.SlidesRenderer.mountSpecialElements(root,{soloQuiz:true});}catch(e){console.error('[OEI] mountSpecialElements',e);}
     });
   }
   window._mountSpecial=mountAll;
   mountAll();
   if(typeof Reveal!=='undefined'&&Reveal.addEventListener)Reveal.addEventListener('slidechanged',mountAll);
+})();`;
+
+/* Quiz-live auto-correctif — script minimal SANS dépendance (export étudiant : ni
+ * SlidesRenderer ni runtime). Reprend la logique de la branche soloQuiz de
+ * slides-special-quiz-runtime.js. */
+const _QUIZ_SELFCHECK_INLINE = `(function(){
+  function bind(scope){
+    (scope||document).querySelectorAll('.sl-quizlive-pending,.cel-quizlive-pending').forEach(function(el){
+      if(el.dataset.selfcheckBound)return; el.dataset.selfcheckBound='1';
+      var P=el.className.indexOf('cel-')>-1?'cel':'sl';
+      var ans=parseInt(el.dataset.answer,10)||0, done=false;
+      var start=el.querySelector('.'+P+'-quizlive-start'), timer=el.querySelector('.'+P+'-quizlive-timer');
+      var status=el.querySelector('.'+P+'-quizlive-status'), results=el.querySelector('.'+P+'-quizlive-results');
+      var qr=el.querySelector('.'+P+'-quizlive-qr'), opts=el.querySelectorAll('.'+P+'-quizlive-option');
+      if(start)start.remove(); if(timer)timer.remove(); if(qr)qr.remove();
+      if(status)status.textContent='Choisis une réponse';
+      opts.forEach(function(opt,i){
+        opt.style.cursor='pointer';
+        opt.addEventListener('click',function(){
+          if(done)return; done=true; var ok=i===ans;
+          opts.forEach(function(o,j){
+            o.style.pointerEvents='none'; o.style.cursor='default';
+            if(j===ans){o.style.borderColor='#34d399';o.style.background='color-mix(in srgb,#34d399 14%,transparent)';}
+            else if(j===i){o.style.borderColor='#f87171';o.style.background='color-mix(in srgb,#f87171 12%,transparent)';}
+            else o.style.opacity='0.5';
+          });
+          if(status){status.style.color=ok?'#34d399':'#f87171';status.style.fontWeight='600';
+            status.textContent=ok?'\\u2713 Bonne réponse':('\\u2717 La bonne réponse était '+String.fromCharCode(65+ans));}
+          var expl=el.dataset.explanation||'';
+          if(expl&&results){results.style.display='';results.style.fontSize='0.9rem';results.style.color='var(--sl-muted,#94a3b8)';results.style.lineHeight='1.5';results.style.paddingTop='6px';results.textContent=expl;}
+        });
+      });
+    });
+  }
+  bind(document);
 })();`;
 
 /* ── Export HTML ────────────────────────────────────────── */
@@ -1917,6 +1954,7 @@ window.addEventListener('load', function() {
         if (window.hljs) try { window.hljs.highlightElement(el); } catch(_) {}
     });
 });
+${_QUIZ_SELFCHECK_INLINE}
 </script>
 </body></html>`;
     return {
