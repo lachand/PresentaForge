@@ -150,7 +150,8 @@
     <h2 class="fbm-title">Connexion</h2>
     <button class="fbm-close" id="fbm-close">&#x2715;</button>
   </div>
-  <p class="fbm-desc">Connectez-vous avec votre compte Firebase (email/mot de passe).</p>
+  <p class="fbm-desc">Connectez-vous avec votre compte Firebase (email/mot de passe — <strong>pas</strong> « se connecter avec Google »).</p>
+  ${(() => { const ie = window.OEIFirebase && window.OEIFirebase.getInitError && window.OEIFirebase.getInitError(); return ie ? `<div class="fbm-error" style="display:block">SDK Firebase non chargé (${_esc(ie)}). Un bloqueur de pub ou un réseau filtré empêche l'accès à <code>gstatic.com</code> — désactivez-le sur ce site puis rechargez la page.</div>` : ''; })()}
   ${savedUser ? `<div class="fbm-saved-user">Dernier compte : <strong>${_esc(savedUser.email)}</strong></div>` : ''}
   <div class="fbm-field">
     <label class="fbm-label">Email</label>
@@ -376,11 +377,16 @@
     function _authError(code) {
         const map = {
             'auth/invalid-credential':         'Email ou mot de passe incorrect.',
+            'auth/invalid-login-credentials':  'Email ou mot de passe incorrect.',
             'auth/user-not-found':             'Aucun compte avec cet email.',
             'auth/wrong-password':             'Mot de passe incorrect.',
             'auth/too-many-requests':          'Trop de tentatives. Réessayez plus tard.',
             'auth/invalid-email':              'Email invalide.',
-            'auth/network-request-failed':     'Erreur réseau. Vérifiez votre connexion.',
+            'auth/user-disabled':              'Ce compte est désactivé.',
+            'auth/operation-not-allowed':      'Connexion e-mail/mot de passe désactivée sur le projet Firebase.',
+            'auth/network-request-failed':     'Erreur réseau. Vérifiez votre connexion (VPN, proxy, bloqueur de pub ?).',
+            'auth/timeout':                    'Firebase n\'a pas répondu — réseau bloqué, navigation privée, ou stockage du navigateur désactivé. Réessayez, ou dans une fenêtre normale.',
+            'auth/sdk-unavailable':            'Le SDK Firebase ne s\'est pas chargé (gstatic.com bloqué par un bloqueur de pub / réseau filtré, ou hors-ligne). Désactivez le bloqueur sur ce site puis rechargez.',
         };
         return map[code] || 'Erreur de connexion (' + (code || 'inconnue') + ').';
     }

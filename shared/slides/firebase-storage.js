@@ -57,8 +57,13 @@
 
     // ── Init & session ────────────────────────────────────────────────────────
 
+    let _initError = null; // renseigné si _loadSDK / initializeApp échoue (gstatic bloqué…)
+
     async function _init() {
         await _loadSDK();
+        if (typeof firebase === 'undefined' || !firebase.initializeApp) {
+            throw new Error('SDK Firebase indisponible (gstatic.com bloqué ?)');
+        }
         if (_app) {
             try { await firebase.app().delete(); } catch {}
             _app = null; _auth = null; _db = null; _user = null;
@@ -66,6 +71,7 @@
         _app  = firebase.initializeApp(FIREBASE_CONFIG);
         _auth = firebase.auth();
         _db   = firebase.firestore();
+        _initError = null;
     }
 
     // Promise qui se résout quand l'état auth Firebase est connu (connecté ou non)
@@ -73,7 +79,8 @@
         try {
             await _init();
             await new Promise((resolve) => {
-                const unsub = _auth.onAuthStateChanged((user) => {
+                let unsub = () => {};
+                unsub = _auth.onAuthStateChanged((user) => {
                     _user = user;
                     if (user) {
                         localStorage.setItem(LS_USER_KEY, JSON.stringify({ email: user.email, uid: user.uid }));
@@ -81,20 +88,61 @@
                     unsub();
                     resolve();
                 });
+                // Filet : si onAuthStateChanged ne se déclenche jamais (storage HS), on
+                // ne bloque pas indéfiniment l'ouverture de la modale.
+                setTimeout(resolve, 8000);
             });
             return !!_user;
         } catch (e) {
-            console.warn('[OEIFirebase] Auto-init failed:', e.message);
-            document.dispatchEvent(new CustomEvent('oei:firebase-init-failed', { detail: { message: e.message } }));
+            _initError = e && e.message ? e.message : String(e);
+            console.warn('[OEIFirebase] Auto-init failed:', _initError);
+            document.dispatchEvent(new CustomEvent('oei:firebase-init-failed', { detail: { message: _initError } }));
             return false;
         }
     })();
 
+    function getInitError() { return _initError; }
+
     // ── Auth ──────────────────────────────────────────────────────────────────
 
+    // Le SDK compat peut se bloquer AVANT même de faire la requête réseau si le
+    // stockage local est indisponible (navigation privée, storage bloqué, quota,
+    // IndexedDB HS). On choisit la persistance la plus robuste disponible, et on
+    // borne l'appel dans le temps pour ne jamais laisser le bouton figé.
+    let _persistenceSet = false;
+    async function _ensureAuthPersistence() {
+        if (_persistenceSet || !_auth || !firebase?.auth?.Auth?.Persistence) return;
+        const P = firebase.auth.Auth.Persistence;
+        for (const mode of [P.LOCAL, P.SESSION, P.NONE]) {
+            try { await _auth.setPersistence(mode); _persistenceSet = true; return; }
+            catch (_) { /* essaie le mode suivant */ }
+        }
+    }
+
     async function signIn(email, password) {
-        if (!_auth) throw new Error('Firebase non initialisé');
-        const cred = await _auth.signInWithEmailAndPassword(email, password);
+        if (!_auth) {
+            // 2ᵉ chance : le 1ᵉʳ chargement du SDK a pu échouer (gstatic lent/bloqué).
+            try { await _init(); } catch (_) {}
+        }
+        if (!_auth) {
+            const e = new Error('Le SDK Firebase ne s\'est pas chargé (gstatic.com bloqué par un bloqueur de pub / un réseau filtré, ou pas de connexion).');
+            e.code = 'auth/sdk-unavailable';
+            throw e;
+        }
+        await _ensureAuthPersistence();
+        const TIMEOUT_MS = (typeof window !== 'undefined' && Number(window.__OEI_FB_SIGNIN_TIMEOUT_MS) > 0)
+            ? Number(window.__OEI_FB_SIGNIN_TIMEOUT_MS) : 20000;
+        let timer;
+        const cred = await Promise.race([
+            _auth.signInWithEmailAndPassword(email, password),
+            new Promise((_, reject) => {
+                timer = setTimeout(() => {
+                    const e = new Error('La connexion Firebase n\'a pas répondu (réseau bloqué ou stockage du navigateur indisponible ?).');
+                    e.code = 'auth/timeout';
+                    reject(e);
+                }, TIMEOUT_MS);
+            }),
+        ]).finally(() => clearTimeout(timer));
         _user = cred.user;
         localStorage.setItem(LS_USER_KEY, JSON.stringify({ email: _user.email, uid: _user.uid }));
         return _user;
@@ -282,6 +330,7 @@
     window.OEIFirebase = {
         ready,
         isReady,
+        getInitError,
         getUser,
         getLastUser,
         signIn,
