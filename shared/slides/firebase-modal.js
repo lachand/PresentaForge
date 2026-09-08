@@ -150,9 +150,14 @@
     <h2 class="fbm-title">Connexion</h2>
     <button class="fbm-close" id="fbm-close">&#x2715;</button>
   </div>
-  <p class="fbm-desc">Connectez-vous avec votre compte Firebase (email/mot de passe — <strong>pas</strong> « se connecter avec Google »).</p>
+  <p class="fbm-desc">Connectez-vous avec votre compte Firebase.</p>
   ${(() => { const ie = window.OEIFirebase && window.OEIFirebase.getInitError && window.OEIFirebase.getInitError(); return ie ? `<div class="fbm-error" style="display:block">SDK Firebase non chargé (${_esc(ie)}). Un bloqueur de pub ou un réseau filtré empêche l'accès à <code>gstatic.com</code> — désactivez-le sur ce site puis rechargez la page.</div>` : ''; })()}
   ${savedUser ? `<div class="fbm-saved-user">Dernier compte : <strong>${_esc(savedUser.email)}</strong></div>` : ''}
+  <button class="fbm-btn fbm-btn-google" id="fbm-google">
+    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.5 0 24 0 14.6 0 6.4 5.4 2.6 13.2l7.9 6.2C12.3 13.7 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.3-4.6 7l7.1 5.5c4.2-3.9 6.6-9.6 6.6-16z"/><path fill="#FBBC05" d="M10.5 28.4c-.5-1.4-.8-2.9-.8-4.4s.3-3 .8-4.4l-7.9-6.2C1 16.6 0 20.2 0 24s1 7.4 2.6 10.6l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.3-4.5 2.1-8.8 2.1-6.4 0-11.7-4.2-13.5-9.9l-7.9 6.2C6.4 42.6 14.6 48 24 48z"/></svg>
+    Se connecter avec Google
+  </button>
+  <div class="fbm-divider"><span>ou</span></div>
   <div class="fbm-field">
     <label class="fbm-label">Email</label>
     <input class="fbm-input" id="fbm-email" type="email" placeholder="vous@exemple.com" value="${_esc(savedUser ? savedUser.email : '')}">
@@ -162,13 +167,19 @@
     <input class="fbm-input" id="fbm-password" type="password" placeholder="••••••••">
   </div>
   <div class="fbm-error" id="fbm-auth-error" style="display:none"></div>
+  <div class="fbm-success" id="fbm-auth-info" style="display:none"></div>
   <div class="fbm-actions">
+    <button class="fbm-btn fbm-btn-ghost fbm-btn-sm" id="fbm-forgot">Mot de passe oublié ?</button>
     <button class="fbm-btn fbm-btn-primary" id="fbm-signin">Se connecter</button>
   </div>
 </div>`);
 
         overlay.querySelector('#fbm-close').onclick = _close;
         overlay.querySelector('#fbm-back').onclick  = () => _viewConfig(ctx);
+
+        // Identifiant Google en attente de liaison à un compte e-mail/mot de passe
+        // (erreur auth/account-exists-with-different-credential).
+        let _pendingGoogleCred = null;
 
         const doSignIn = async () => {
             const email    = overlay.querySelector('#fbm-email').value.trim();
@@ -177,7 +188,12 @@
             const btn = overlay.querySelector('#fbm-signin');
             btn.disabled = true; btn.textContent = 'Connexion…';
             try {
-                await window.OEIFirebase.signIn(email, password);
+                if (_pendingGoogleCred) {
+                    await window.OEIFirebase.linkGoogleToPassword(email, password, _pendingGoogleCred);
+                    _pendingGoogleCred = null;
+                } else {
+                    await window.OEIFirebase.signIn(email, password);
+                }
                 _viewList(ctx);
             } catch (e) {
                 btn.disabled = false; btn.textContent = 'Se connecter';
@@ -185,7 +201,47 @@
             }
         };
 
+        const doGoogle = async () => {
+            const btn = overlay.querySelector('#fbm-google');
+            btn.disabled = true;
+            _hide('fbm-auth-error'); _hide('fbm-auth-info');
+            try {
+                const u = await window.OEIFirebase.signInWithGoogle();
+                if (u) { _viewList(ctx); return; }
+                // u === null → redirection en cours, la page va naviguer.
+                btn.disabled = false;
+            } catch (e) {
+                btn.disabled = false;
+                if (e && e.code === 'auth/account-exists-with-different-credential') {
+                    _pendingGoogleCred = e.credential || null;
+                    const em = (e.email || (e.customData && e.customData.email) || '').trim();
+                    if (em) overlay.querySelector('#fbm-email').value = em;
+                    _showInfo(overlay, 'Un compte e-mail/mot de passe existe déjà pour cette adresse. Saisissez votre mot de passe puis « Se connecter » pour lier Google (une seule fois).');
+                    setTimeout(() => overlay.querySelector('#fbm-password').focus(), 50);
+                    return;
+                }
+                _showError('fbm-auth-error', _authError(e.code));
+            }
+        };
+
+        const doForgot = async () => {
+            const email = overlay.querySelector('#fbm-email').value.trim();
+            if (!email) { _showError('fbm-auth-error', 'Saisissez d\'abord votre email, puis cliquez « Mot de passe oublié ? ».'); return; }
+            const btn = overlay.querySelector('#fbm-forgot');
+            btn.disabled = true;
+            _hide('fbm-auth-error');
+            try {
+                await window.OEIFirebase.sendPasswordReset(email);
+                _showInfo(overlay, 'Email de réinitialisation envoyé à ' + email + ' (pensez à vérifier les spams). Suivez le lien pour définir un nouveau mot de passe, puis reconnectez-vous ici.');
+            } catch (e) {
+                btn.disabled = false;
+                _showError('fbm-auth-error', _authError(e.code));
+            }
+        };
+
         overlay.querySelector('#fbm-signin').onclick = doSignIn;
+        overlay.querySelector('#fbm-google').onclick = doGoogle;
+        overlay.querySelector('#fbm-forgot').onclick = doForgot;
         overlay.querySelector('#fbm-password').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') doSignIn();
         });
@@ -363,6 +419,19 @@
         el.style.display = 'block';
     }
 
+    function _hide(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    }
+
+    // Message d'information non bloquant (lié / reset envoyé…), rendu dans #fbm-auth-info.
+    function _showInfo(overlay, msg) {
+        const el = overlay.querySelector('#fbm-auth-info');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
     function _showSuccess(overlay, html) {
         let el = overlay.querySelector('.fbm-success');
         if (!el) {
@@ -387,6 +456,12 @@
             'auth/network-request-failed':     'Erreur réseau. Vérifiez votre connexion (VPN, proxy, bloqueur de pub ?).',
             'auth/timeout':                    'Firebase n\'a pas répondu — réseau bloqué, navigation privée, ou stockage du navigateur désactivé. Réessayez, ou dans une fenêtre normale.',
             'auth/sdk-unavailable':            'Le SDK Firebase ne s\'est pas chargé (gstatic.com bloqué par un bloqueur de pub / réseau filtré, ou hors-ligne). Désactivez le bloqueur sur ce site puis rechargez.',
+            'auth/popup-blocked':              'La fenêtre Google a été bloquée par le navigateur. Autorisez les pop-ups pour ce site, ou réessayez (on bascule alors en redirection).',
+            'auth/popup-closed-by-user':       'Fenêtre Google fermée avant la fin de la connexion.',
+            'auth/cancelled-popup-request':    'Une autre fenêtre de connexion est déjà ouverte.',
+            'auth/account-exists-with-different-credential': 'Un compte e-mail/mot de passe existe déjà pour cette adresse. Connectez-vous avec le mot de passe (ou réinitialisez-le) pour lier Google.',
+            'auth/unauthorized-domain':        'Ce domaine n\'est pas autorisé pour la connexion Google dans la console Firebase (Authentication → Settings → Authorized domains).',
+            'auth/missing-email':              'Saisissez d\'abord votre email.',
         };
         return map[code] || 'Erreur de connexion (' + (code || 'inconnue') + ').';
     }

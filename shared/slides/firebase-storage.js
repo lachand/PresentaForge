@@ -78,6 +78,9 @@
     const _readyPromise = (async () => {
         try {
             await _init();
+            // Si on revient d'une connexion Google par redirection, récupérer le résultat
+            // (et signaler une éventuelle erreur) avant de résoudre l'état auth.
+            await _handleRedirectResult();
             await new Promise((resolve) => {
                 let unsub = () => {};
                 unsub = _auth.onAuthStateChanged((user) => {
@@ -148,12 +151,75 @@
         return _user;
     }
 
+    // Connexion « Se connecter avec Google » (pop-up ; repli redirection si bloquée).
+    async function signInWithGoogle() {
+        if (!_auth) { try { await _init(); } catch (_) {} }
+        if (!_auth || typeof firebase === 'undefined' || !firebase.auth || !firebase.auth.GoogleAuthProvider) {
+            const e = new Error('Le SDK Firebase ne s\'est pas chargé (gstatic.com bloqué, ou hors-ligne).');
+            e.code = 'auth/sdk-unavailable';
+            throw e;
+        }
+        await _ensureAuthPersistence();
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try { provider.setCustomParameters({ prompt: 'select_account' }); } catch (_) {}
+        let cred;
+        try {
+            cred = await _auth.signInWithPopup(provider);
+        } catch (e) {
+            if (e && e.code === 'auth/popup-blocked') {
+                // Pop-up bloquée par le navigateur → bascule en redirection plein écran.
+                await _auth.signInWithRedirect(provider);
+                return null; // la page navigue ; le retour est traité par _handleRedirectResult()
+            }
+            throw e;
+        }
+        _user = cred.user;
+        localStorage.setItem(LS_USER_KEY, JSON.stringify({ email: _user.email, uid: _user.uid }));
+        return _user;
+    }
+
+    // Récupère le résultat d'une connexion Google par redirection (au retour sur la page).
+    async function _handleRedirectResult() {
+        if (!_auth || typeof _auth.getRedirectResult !== 'function') return null;
+        try {
+            const res = await _auth.getRedirectResult();
+            if (res && res.user) {
+                _user = res.user;
+                localStorage.setItem(LS_USER_KEY, JSON.stringify({ email: _user.email, uid: _user.uid }));
+                return _user;
+            }
+        } catch (e) {
+            document.dispatchEvent(new CustomEvent('oei:firebase-redirect-error', { detail: { code: e.code, message: e.message } }));
+        }
+        return null;
+    }
+
     async function signOut() {
         if (!_auth) return;
         await _auth.signOut();
         _user = null;
         _currentId = null;
         localStorage.removeItem(LS_USER_KEY);
+    }
+
+    // Envoi d'un e-mail de réinitialisation de mot de passe.
+    async function sendPasswordReset(email) {
+        if (!_auth) { try { await _init(); } catch (_) {} }
+        if (!_auth) { const e = new Error('SDK Firebase indisponible.'); e.code = 'auth/sdk-unavailable'; throw e; }
+        await _auth.sendPasswordResetEmail(String(email || '').trim());
+    }
+
+    // Lie un identifiant Google en attente (erreur account-exists-with-different-credential)
+    // au compte e-mail/mot de passe existant. Après ça, la connexion Google fonctionne seule.
+    async function linkGoogleToPassword(email, password, pendingCred) {
+        if (!_auth) throw new Error('Firebase non initialisé');
+        await _auth.signInWithEmailAndPassword(String(email || '').trim(), password);
+        if (pendingCred && _auth.currentUser && typeof _auth.currentUser.linkWithCredential === 'function') {
+            try { await _auth.currentUser.linkWithCredential(pendingCred); } catch (_) { /* déjà lié / non critique */ }
+        }
+        _user = _auth.currentUser;
+        if (_user) localStorage.setItem(LS_USER_KEY, JSON.stringify({ email: _user.email, uid: _user.uid }));
+        return _user;
     }
 
     function getUser()   { return _user; }
@@ -334,6 +400,9 @@
         getUser,
         getLastUser,
         signIn,
+        signInWithGoogle,
+        linkGoogleToPassword,
+        sendPasswordReset,
         signOut,
         getCurrentId,
         setCurrentId,

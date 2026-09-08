@@ -556,7 +556,8 @@ body.dark {
     padding: 6px 12px;
     border-radius: 8px;
 }
-.fbm-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.fbm-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 4px; }
+.fbm-actions .fbm-btn-ghost { margin-right: auto; }
 .fbm-btn {
     padding: 8px 18px;
     border-radius: 8px;
@@ -577,6 +578,32 @@ body.dark {
 .fbm-btn-danger { background: var(--danger-light, #ffebee); color: var(--danger, #c62828); }
 .fbm-btn-danger:hover:not(:disabled) { background: var(--danger, #c62828); color: #fff; }
 .fbm-btn-sm { padding: 5px 10px; font-size: 0.75rem; }
+.fbm-btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    background: var(--surface, #fff);
+    color: var(--on-surface, #1a1c1e);
+    border: 1px solid var(--outline, #c3c7cf);
+}
+.fbm-btn-google:hover:not(:disabled) { background: var(--surface-container-low, #f8f2ef); }
+.fbm-btn-google svg { flex: none; }
+.fbm-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0;
+    font-size: 0.75rem;
+    color: var(--on-surface-variant, #6f7378);
+}
+.fbm-divider::before, .fbm-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--outline-variant, #d7dae0);
+}
 .fbm-error {
     font-size: 0.8125rem;
     color: var(--danger, #c62828);
