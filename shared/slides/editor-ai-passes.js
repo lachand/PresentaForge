@@ -41,6 +41,7 @@
     const _computeAIQuizTarget = S.computeAIQuizTarget;
 
     const _callGeminiGenerate = _client._callGeminiGenerate;
+    const _callAITextGenerate = _client._callAITextGenerate || (({ apiKey, model, prompt, temperature, timeoutMs }) => _client._callGeminiGenerate({ apiKey, model, prompt, temperature, timeoutMs }));
     const _callGeminiGenerateImage = _client._callGeminiGenerateImage;
     const _supportsNativeGeminiImageModel = _client._supportsNativeGeminiImageModel;
     const _extractImageResultFromGemini = _client._extractImageResultFromGemini;
@@ -325,11 +326,15 @@ async function _materializePass3ImagesOneByOne({
     brief,
     tuning,
     pipeline,
-    gemini,
+    ai,
     runner,
     pass = 3,
     strictSelection = false,
 }) {
+    // La génération d'images est spécifique à Gemini. Avec le fournisseur Claude
+    // (ou image gen désactivée), on n'insère que des placeholders visuels.
+    const gemini = ai || {};
+    const imageGenAvailable = AI_IMAGE_GENERATION_ENABLED && String(gemini.provider || 'gemini') !== 'claude';
     const parsed = _tryParseJsonLoose(outputText);
     if (!parsed.ok || !parsed.value || typeof parsed.value !== 'object') {
         return { text: outputText, payload: null, mediaReport: { planned: 0, generated: 0, failed: 0 }, generatedItems: [] };
@@ -353,7 +358,7 @@ async function _materializePass3ImagesOneByOne({
         return { text: text || outputText, payload: nextPayload, mediaReport: { planned: 0, generated: 0, failed: 0 }, generatedItems: [] };
     }
 
-    if (!AI_IMAGE_GENERATION_ENABLED) {
+    if (!imageGenAvailable) {
         let placeholderCount = 0;
         let generatedId = 0;
         const generatedItems = [];
@@ -758,11 +763,12 @@ function _buildGeminiPassPrompt(pass, { brief, tuning, pipeline, previous, promp
     ].join('\n\n');
 }
 
-async function _runGeminiFivePassFlow({ brief, tuning, pipeline, gemini }) {
-    if (!gemini?.apiKey) {
-        notify('Clé API Gemini manquante', 'error');
+async function _runGeminiFivePassFlow({ brief, tuning, pipeline, ai }) {
+    if (!ai?.apiKey) {
+        notify('Clé API manquante', 'error');
         return;
     }
+    const providerLabel = String(ai.provider || 'gemini').toLowerCase() === 'claude' ? 'Claude' : 'Gemini';
     if (!String(brief || '').trim()) {
         notify('Ajoute un brief pour lancer le pipeline IA', 'warning');
         return;
@@ -795,12 +801,14 @@ async function _runGeminiFivePassFlow({ brief, tuning, pipeline, gemini }) {
                 refinePrompt: opts.refinePrompt || '',
                 currentDraft: opts.currentDraft || '',
             });
-            return _callGeminiGenerate({
-                apiKey: gemini.apiKey,
-                model: gemini.model,
+            return _callAITextGenerate({
+                provider: ai.provider,
+                apiKey: ai.apiKey,
+                model: ai.model,
                 prompt,
-                temperature: gemini.temperature,
-                timeoutMs: gemini.requestTimeoutMs,
+                temperature: ai.temperature,
+                timeoutMs: ai.requestTimeoutMs,
+                maxTokens: ai.maxTokens,
             });
         };
         const applyPass3MediaWithRecovery = async (jsonText) => {
@@ -821,7 +829,7 @@ async function _runGeminiFivePassFlow({ brief, tuning, pipeline, gemini }) {
                         brief,
                         tuning,
                         pipeline,
-                        gemini,
+                        ai,
                         runner,
                         pass: 3,
                         strictSelection: pass2SelectionMode && !forceAutoTargets,
@@ -943,10 +951,10 @@ async function _runGeminiFivePassFlow({ brief, tuning, pipeline, gemini }) {
                         stepValidation: false,
                     },
                 });
-                const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: `Gemini ${gemini.model}` });
+                const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: `${providerLabel} ${ai.model}` });
                 if (!ok) throw _makeAIPassCancelledError('import-final');
                 editor.load(result.data);
-                notify(`Pipeline Gemini terminé (${gemini.model})`, 'success');
+                notify(`Pipeline ${providerLabel} terminé (${ai.model})`, 'success');
                 break;
             } catch (err) {
                 if (isCancelledError(err)) {

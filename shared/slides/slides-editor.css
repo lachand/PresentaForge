@@ -3536,6 +3536,10 @@ input[type="number"]::-webkit-outer-spin-button {
     gap: 5px;
 }
 
+.ai-tuning-field[hidden] {
+    display: none;
+}
+
 .ai-tuning-field-full {
     grid-column: 1 / -1;
 }

@@ -30,7 +30,7 @@
     const _escapeHtmlAi = S.escapeHtmlAi;
     const _tryParseJsonLoose = S.tryParseJsonLoose;
     const _computeAIQuizTarget = S.computeAIQuizTarget;
-    const _callGeminiGenerate = _client._callGeminiGenerate;
+    const _callAITextGenerate = _client._callAITextGenerate || (({ apiKey, model, prompt, temperature, timeoutMs }) => _client._callGeminiGenerate({ apiKey, model, prompt, temperature, timeoutMs }));
 
 const _AI_QUIZ_COMPONENT_TYPES = new Set([
     'mcq-single',
@@ -310,11 +310,12 @@ function _insertQuizSlidesIntoPresentation(presentation, plan) {
     return { data: next, inserted };
 }
 
-async function _runGeminiQuizAugmentFlow({ tuning, gemini }) {
-    if (!gemini?.apiKey) {
-        notify('Ajoute d’abord la clé API Gemini', 'warning');
+async function _runGeminiQuizAugmentFlow({ tuning, ai }) {
+    if (!ai?.apiKey) {
+        notify('Ajoute d’abord la clé API du fournisseur IA', 'warning');
         return;
     }
+    const providerLabel = String(ai.provider || 'gemini').toLowerCase() === 'claude' ? 'Claude' : 'Gemini';
     const current = window.editor?.data;
     const totalSlides = Array.isArray(current?.slides) ? current.slides.length : 0;
     if (!current || totalSlides === 0) {
@@ -324,18 +325,20 @@ async function _runGeminiQuizAugmentFlow({ tuning, gemini }) {
     const prompt = _buildGeminiQuizAugmentPrompt({ tuning, presentation: current });
     try {
         notify('IA: génération de quiz à partir des slides existantes…', 'info');
-        const raw = await _callGeminiGenerate({
-            apiKey: gemini.apiKey,
-            model: gemini.model,
+        const raw = await _callAITextGenerate({
+            provider: ai.provider,
+            apiKey: ai.apiKey,
+            model: ai.model,
             prompt,
-            temperature: Math.max(0.1, Math.min(0.8, Number(gemini.temperature) || 0.3)),
-            timeoutMs: gemini.requestTimeoutMs,
+            temperature: Math.max(0.1, Math.min(0.8, Number(ai.temperature) || 0.3)),
+            timeoutMs: ai.requestTimeoutMs,
+            maxTokens: ai.maxTokens,
         });
         const parsed = _tryParseJsonLoose(raw);
         if (!parsed.ok) throw new Error(parsed.error || 'JSON de quiz invalide');
         const plan = _normalizeQuizAugmentPlan(parsed.value, totalSlides, tuning);
         if (!plan.length) {
-            notify('Aucun quiz exploitable renvoyé par Gemini', 'warning');
+            notify(`Aucun quiz exploitable renvoyé par ${providerLabel}`, 'warning');
             return;
         }
 

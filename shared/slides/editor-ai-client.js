@@ -158,6 +158,72 @@ async function _callGeminiGenerate({ apiKey, model, prompt, temperature, timeout
     }
 }
 
+function _extractClaudeText(payload) {
+    const blocks = Array.isArray(payload?.content) ? payload.content : [];
+    const parts = [];
+    blocks.forEach((block) => {
+        if (block && block.type === 'text' && typeof block.text === 'string') parts.push(block.text);
+    });
+    return parts.join('\n').trim();
+}
+
+// Appel texte Anthropic (Messages API). L'accès navigateur direct requiert
+// l'en-tête `anthropic-dangerous-direct-browser-access` ; la clé reste locale
+// (localStorage), même posture qu'avec Gemini.
+async function _callClaudeGenerate({ apiKey, model, prompt, system, temperature, timeoutMs, maxTokens }) {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    try {
+        const body = {
+            model: String(model || ''),
+            max_tokens: Math.max(1024, Math.min(64000, Math.trunc(Number(maxTokens) || 32000))),
+            temperature: Math.max(0, Math.min(1, Number.isFinite(Number(temperature)) ? Number(temperature) : 0.3)),
+            messages: [{ role: 'user', content: String(prompt || '') }],
+        };
+        const sys = String(system || '').trim();
+        if (sys) body.system = sys;
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': String(apiKey || ''),
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true',
+            },
+            signal: controller?.signal,
+            body: JSON.stringify(body),
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            const msg = String(payload?.error?.message || payload?.error?.type || `HTTP ${res.status}`).trim();
+            throw new Error(msg || 'Erreur Claude');
+        }
+        const text = _extractClaudeText(payload);
+        if (!text) {
+            const stop = String(payload?.stop_reason || '').trim();
+            throw new Error(stop ? `Réponse Claude vide (stop: ${stop})` : 'Réponse Claude vide');
+        }
+        return _stripCodeFences(text);
+    } catch (err) {
+        if (err?.name === 'AbortError') {
+            const timeoutLabel = Number.isFinite(Number(timeoutMs)) ? `${Math.trunc(Number(timeoutMs))} ms` : 'délai imparti';
+            throw new Error(`Timeout Claude (${timeoutLabel})`);
+        }
+        throw err;
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
+}
+
+// Aiguillage fournisseur pour les passes texte (plan, JSON, validation, quiz).
+// La génération d'images reste spécifique à Gemini (voir editor-ai-passes.js).
+async function _callAITextGenerate({ provider, apiKey, model, prompt, system, temperature, timeoutMs, maxTokens }) {
+    if (String(provider || 'gemini').toLowerCase() === 'claude') {
+        return _callClaudeGenerate({ apiKey, model, prompt, system, temperature, timeoutMs, maxTokens });
+    }
+    return _callGeminiGenerate({ apiKey, model, prompt, temperature, timeoutMs });
+}
+
 async function _callGeminiGenerateImage({ apiKey, model, prompt, temperature, timeoutMs }) {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
@@ -352,6 +418,9 @@ function _describeGeminiImageError(err, timeoutMs) {
         _summarizeGeminiCandidateParts,
         _callGeminiGenerate,
         _callGeminiGenerateImage,
+        _extractClaudeText,
+        _callClaudeGenerate,
+        _callAITextGenerate,
         _supportsNativeGeminiImageModel,
         _toBase64Utf8,
         _svgToDataUrl,
@@ -361,6 +430,7 @@ function _describeGeminiImageError(err, timeoutMs) {
         _describeGeminiImageError,
         testUtils: Object.freeze({
             extractGeminiText: _extractGeminiText,
+            extractClaudeText: _extractClaudeText,
             summarizeGeminiCandidateParts: _summarizeGeminiCandidateParts,
             supportsNativeGeminiImageModel: _supportsNativeGeminiImageModel,
             svgToDataUrl: _svgToDataUrl,

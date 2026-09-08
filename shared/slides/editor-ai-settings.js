@@ -19,7 +19,10 @@
     const AI_PROMPT_TUNING_KEY = storage?.KEYS?.AI_PROMPT_TUNING || 'oei-ai-prompt-tuning';
     const AI_IMPORT_PIPELINE_KEY = storage?.KEYS?.AI_IMPORT_PIPELINE || 'oei-ai-import-pipeline';
     const AI_GEMINI_SETTINGS_KEY = storage?.KEYS?.AI_GEMINI_SETTINGS || 'oei-ai-gemini-settings';
+    const AI_CLAUDE_SETTINGS_KEY = storage?.KEYS?.AI_CLAUDE_SETTINGS || 'oei-ai-claude-settings';
+    const AI_PROVIDER_KEY = storage?.KEYS?.AI_PROVIDER || 'oei-ai-provider';
     const AI_IMAGE_GENERATION_ENABLED = false;
+    const AI_PROVIDERS = Object.freeze(['gemini', 'claude']);
 
     const AI_PROMPT_DEFAULTS = Object.freeze({
         targetSlides: 16,
@@ -60,6 +63,21 @@
         requestTimeoutMs: 90000,
         temperature: 0.3,
         briefTemplate: 'Génère un cours structuré, progressif et très visuel sur le sujet suivant.',
+    });
+
+    const AI_CLAUDE_MODELS = Object.freeze([
+        'claude-sonnet-5',
+        'claude-opus-5',
+        'claude-haiku-4-5-20251001',
+    ]);
+
+    const AI_CLAUDE_DEFAULTS = Object.freeze({
+        apiKey: '',
+        model: 'claude-sonnet-5',
+        requestTimeoutMs: 120000,
+        temperature: 0.3,
+        maxTokens: 32000,
+        briefTemplate: AI_GEMINI_DEFAULTS.briefTemplate,
     });
 
     const _readJSON = (key, fallback = null) => {
@@ -203,22 +221,81 @@
         return merged;
     }
 
+    function _sanitizeAIClaudeSettings(raw = {}) {
+        const src = (raw && typeof raw === 'object') ? raw : {};
+        const model = AI_CLAUDE_MODELS.includes(String(src.model || ''))
+            ? String(src.model)
+            : AI_CLAUDE_DEFAULTS.model;
+        const timeout = Number(src.requestTimeoutMs);
+        const temp = Number(src.temperature);
+        const maxTokens = Number(src.maxTokens);
+        return {
+            apiKey: String(src.apiKey || '').trim(),
+            model,
+            requestTimeoutMs: Number.isFinite(timeout)
+                ? Math.max(5000, Math.min(600000, Math.trunc(timeout)))
+                : AI_CLAUDE_DEFAULTS.requestTimeoutMs,
+            temperature: Number.isFinite(temp)
+                ? Math.max(0, Math.min(1, temp))
+                : AI_CLAUDE_DEFAULTS.temperature,
+            maxTokens: Number.isFinite(maxTokens)
+                ? Math.max(1024, Math.min(64000, Math.trunc(maxTokens)))
+                : AI_CLAUDE_DEFAULTS.maxTokens,
+            briefTemplate: String(src.briefTemplate || AI_CLAUDE_DEFAULTS.briefTemplate).trim().slice(0, 500),
+        };
+    }
+
+    function getAIClaudeSettings() {
+        return _sanitizeAIClaudeSettings(_readJSON(AI_CLAUDE_SETTINGS_KEY, AI_CLAUDE_DEFAULTS));
+    }
+
+    function setAIClaudeSettings(next = {}) {
+        const current = getAIClaudeSettings();
+        const merged = _sanitizeAIClaudeSettings({ ...current, ...(next || {}) });
+        _writeJSON(AI_CLAUDE_SETTINGS_KEY, merged);
+        return merged;
+    }
+
+    function _sanitizeAIProvider(value) {
+        const v = (value && typeof value === 'object') ? value.provider : value;
+        return AI_PROVIDERS.includes(String(v)) ? String(v) : 'gemini';
+    }
+
+    function getAIProvider() {
+        return _sanitizeAIProvider(_readJSON(AI_PROVIDER_KEY, 'gemini'));
+    }
+
+    function setAIProvider(next) {
+        const v = _sanitizeAIProvider(next);
+        _writeJSON(AI_PROVIDER_KEY, v);
+        return v;
+    }
+
     const api = Object.freeze({
         AI_IMAGE_GENERATION_ENABLED,
+        AI_PROVIDERS,
         AI_PROMPT_DEFAULTS,
         AI_IMPORT_PIPELINE_DEFAULTS,
         AI_GEMINI_MODELS,
         AI_GEMINI_IMAGE_MODELS,
         AI_GEMINI_DEFAULTS,
+        AI_CLAUDE_MODELS,
+        AI_CLAUDE_DEFAULTS,
         sanitizeAIPromptTuningSettings: _sanitizeAIPromptTuningSettings,
         sanitizeAIImportPipelineSettings: _sanitizeAIImportPipelineSettings,
         sanitizeAIGeminiSettings: _sanitizeAIGeminiSettings,
+        sanitizeAIClaudeSettings: _sanitizeAIClaudeSettings,
+        sanitizeAIProvider: _sanitizeAIProvider,
         getAIPromptTuningSettings,
         setAIPromptTuningSettings,
         getAIImportPipelineSettings,
         setAIImportPipelineSettings,
         getAIGeminiSettings,
         setAIGeminiSettings,
+        getAIClaudeSettings,
+        setAIClaudeSettings,
+        getAIProvider,
+        setAIProvider,
     });
 
     root.OEIEditorAISettings = api;
@@ -230,4 +307,5 @@
     root.setAIImportPipelineSettings = setAIImportPipelineSettings;
     root.getAIGeminiSettings = getAIGeminiSettings;
     root.setAIGeminiSettings = setAIGeminiSettings;
+    // Claude / provider : accessibles via OEIEditorAISettings.* uniquement (pas d'alias global).
 })(window);

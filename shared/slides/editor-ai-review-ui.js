@@ -34,15 +34,47 @@
     const AI_GEMINI_MODELS = _editorAiSettings.AI_GEMINI_MODELS;
     const AI_GEMINI_IMAGE_MODELS = _editorAiSettings.AI_GEMINI_IMAGE_MODELS;
     const AI_GEMINI_DEFAULTS = _editorAiSettings.AI_GEMINI_DEFAULTS;
+    const AI_CLAUDE_MODELS = _editorAiSettings.AI_CLAUDE_MODELS || ['claude-sonnet-5'];
+    const AI_CLAUDE_DEFAULTS = _editorAiSettings.AI_CLAUDE_DEFAULTS || { apiKey: '', model: 'claude-sonnet-5', requestTimeoutMs: 120000, temperature: 0.3, maxTokens: 32000, briefTemplate: '' };
     const _sanitizeAIPromptTuningSettings = _editorAiSettings.sanitizeAIPromptTuningSettings;
     const _sanitizeAIImportPipelineSettings = _editorAiSettings.sanitizeAIImportPipelineSettings;
     const _sanitizeAIGeminiSettings = _editorAiSettings.sanitizeAIGeminiSettings;
+    const _sanitizeAIClaudeSettings = _editorAiSettings.sanitizeAIClaudeSettings || ((v) => ({ ...AI_CLAUDE_DEFAULTS, ...(v || {}) }));
+    const _sanitizeAIProvider = _editorAiSettings.sanitizeAIProvider || ((v) => (String((v && v.provider) || v) === 'claude' ? 'claude' : 'gemini'));
     const getAIPromptTuningSettings = _editorAiSettings.getAIPromptTuningSettings;
     const setAIPromptTuningSettings = _editorAiSettings.setAIPromptTuningSettings;
     const getAIImportPipelineSettings = _editorAiSettings.getAIImportPipelineSettings;
     const setAIImportPipelineSettings = _editorAiSettings.setAIImportPipelineSettings;
     const getAIGeminiSettings = _editorAiSettings.getAIGeminiSettings;
     const setAIGeminiSettings = _editorAiSettings.setAIGeminiSettings;
+    const getAIClaudeSettings = _editorAiSettings.getAIClaudeSettings || (() => ({ ...AI_CLAUDE_DEFAULTS }));
+    const setAIClaudeSettings = _editorAiSettings.setAIClaudeSettings || ((v) => ({ ...AI_CLAUDE_DEFAULTS, ...(v || {}) }));
+    const getAIProvider = _editorAiSettings.getAIProvider || (() => 'gemini');
+    const setAIProvider = _editorAiSettings.setAIProvider || ((v) => _sanitizeAIProvider(v));
+
+    // Bundle d'identifiants normalisé consommé par les flux (passes + quiz-augment).
+    const _resolveAICredentials = (provider, geminiCfg, claudeCfg) => {
+        if (String(provider).toLowerCase() === 'claude') {
+            return {
+                provider: 'claude',
+                apiKey: claudeCfg.apiKey,
+                model: claudeCfg.model,
+                temperature: claudeCfg.temperature,
+                requestTimeoutMs: claudeCfg.requestTimeoutMs,
+                maxTokens: claudeCfg.maxTokens,
+                briefTemplate: claudeCfg.briefTemplate,
+            };
+        }
+        return {
+            provider: 'gemini',
+            apiKey: geminiCfg.apiKey,
+            model: geminiCfg.model,
+            imageModel: geminiCfg.imageModel,
+            temperature: geminiCfg.temperature,
+            requestTimeoutMs: geminiCfg.requestTimeoutMs,
+            briefTemplate: geminiCfg.briefTemplate,
+        };
+    };
 
     const notify = S.notify;
     const esc = S.esc;
@@ -638,6 +670,8 @@ function _openAIPromptTuningModal() {
     const tuning = getAIPromptTuningSettings();
     const pipeline = getAIImportPipelineSettings();
     const gemini = getAIGeminiSettings();
+    const claude = getAIClaudeSettings();
+    const provider = getAIProvider();
     const imageGenDisabled = !AI_IMAGE_GENERATION_ENABLED;
     const imageGenDisabledAttr = imageGenDisabled ? 'disabled' : '';
     const modelOptions = AI_GEMINI_MODELS
@@ -646,6 +680,10 @@ function _openAIPromptTuningModal() {
     const imageModelOptions = AI_GEMINI_IMAGE_MODELS
         .map((model) => `<option value="${model}" ${gemini.imageModel === model ? 'selected' : ''}>${model}</option>`)
         .join('');
+    const claudeModelOptions = AI_CLAUDE_MODELS
+        .map((model) => `<option value="${model}" ${claude.model === model ? 'selected' : ''}>${model}</option>`)
+        .join('');
+    const brief = provider === 'claude' ? (claude.briefTemplate || gemini.briefTemplate) : gemini.briefTemplate;
     const overlay = document.createElement('div');
     overlay.className = 'ai-tuning-overlay';
     overlay.innerHTML = `
@@ -762,33 +800,58 @@ function _openAIPromptTuningModal() {
                     <label class="ai-tuning-check"><input id="ai-strict-schema" type="checkbox" ${tuning.strictSchema ? 'checked' : ''}> Schéma strict</label>
                 </div>
                 <div class="ai-tuning-field ai-tuning-field-full">
-                    <label class="ai-tuning-label">Gemini — connexion</label>
-                    <div class="ai-tuning-help">La clé API est stockée localement sur cette machine (localStorage).</div>
+                    <label class="ai-tuning-label" for="ai-provider">Fournisseur IA</label>
+                    <select class="ai-tuning-select ui-select" id="ai-provider">
+                        <option value="gemini" ${provider === 'gemini' ? 'selected' : ''}>Google Gemini</option>
+                        <option value="claude" ${provider === 'claude' ? 'selected' : ''}>Anthropic Claude</option>
+                    </select>
+                    <div class="ai-tuning-help">La clé API est stockée localement sur cette machine (localStorage) et envoyée directement au fournisseur depuis le navigateur.</div>
                 </div>
-                <div class="ai-tuning-field ai-tuning-field-full">
+                <div class="ai-tuning-field ai-tuning-field-full" data-provider-group="gemini">
                     <label class="ai-tuning-label" for="ai-gemini-key">Clé API Gemini</label>
                     <input class="ai-tuning-input ui-input" id="ai-gemini-key" type="password" autocomplete="off" placeholder="AIza..." value="${esc(gemini.apiKey)}">
                 </div>
-                <div class="ai-tuning-field">
+                <div class="ai-tuning-field" data-provider-group="gemini">
                     <label class="ai-tuning-label" for="ai-gemini-model">Modèle Gemini</label>
                     <select class="ai-tuning-select ui-select" id="ai-gemini-model">${modelOptions}</select>
                 </div>
-                <div class="ai-tuning-field">
+                <div class="ai-tuning-field" data-provider-group="gemini">
                     <label class="ai-tuning-label" for="ai-gemini-image-model">Modèle Gemini (passe images/SVG)</label>
                     <select class="ai-tuning-select ui-select" id="ai-gemini-image-model" ${imageGenDisabledAttr}>${imageModelOptions}</select>
                 </div>
-                <div class="ai-tuning-field">
+                <div class="ai-tuning-field" data-provider-group="gemini">
                     <label class="ai-tuning-label" for="ai-gemini-timeout">Timeout Gemini (ms)</label>
                     <input class="ai-tuning-input ui-input" id="ai-gemini-timeout" type="number" min="5000" max="300000" value="${gemini.requestTimeoutMs}">
                 </div>
-                <div class="ai-tuning-field">
+                <div class="ai-tuning-field" data-provider-group="gemini">
                     <label class="ai-tuning-label" for="ai-gemini-temperature">Température</label>
                     <input class="ai-tuning-input ui-input" id="ai-gemini-temperature" type="number" min="0" max="1.5" step="0.1" value="${gemini.temperature}">
                 </div>
+                <div class="ai-tuning-field ai-tuning-field-full" data-provider-group="claude">
+                    <label class="ai-tuning-label" for="ai-claude-key">Clé API Claude (Anthropic)</label>
+                    <input class="ai-tuning-input ui-input" id="ai-claude-key" type="password" autocomplete="off" placeholder="sk-ant-..." value="${esc(claude.apiKey)}">
+                    <div class="ai-tuning-help">Console Anthropic → API Keys. Claude ne génère pas d'images : la passe visuelle insère des placeholders / SVG.</div>
+                </div>
+                <div class="ai-tuning-field" data-provider-group="claude">
+                    <label class="ai-tuning-label" for="ai-claude-model">Modèle Claude</label>
+                    <select class="ai-tuning-select ui-select" id="ai-claude-model">${claudeModelOptions}</select>
+                </div>
+                <div class="ai-tuning-field" data-provider-group="claude">
+                    <label class="ai-tuning-label" for="ai-claude-maxtokens">Tokens max (sortie)</label>
+                    <input class="ai-tuning-input ui-input" id="ai-claude-maxtokens" type="number" min="1024" max="64000" step="1024" value="${claude.maxTokens}">
+                </div>
+                <div class="ai-tuning-field" data-provider-group="claude">
+                    <label class="ai-tuning-label" for="ai-claude-timeout">Timeout Claude (ms)</label>
+                    <input class="ai-tuning-input ui-input" id="ai-claude-timeout" type="number" min="5000" max="600000" value="${claude.requestTimeoutMs}">
+                </div>
+                <div class="ai-tuning-field" data-provider-group="claude">
+                    <label class="ai-tuning-label" for="ai-claude-temperature">Température</label>
+                    <input class="ai-tuning-input ui-input" id="ai-claude-temperature" type="number" min="0" max="1" step="0.1" value="${claude.temperature}">
+                </div>
                 <div class="ai-tuning-field ai-tuning-field-full">
                     <label class="ai-tuning-label" for="ai-gemini-brief">Brief de génération (pipeline 5 passes)</label>
-                    <textarea class="ai-tuning-input ui-textarea ai-tuning-textarea" id="ai-gemini-brief" rows="5" placeholder="Sujet, public, objectifs, contraintes, style...">${esc(gemini.briefTemplate)}</textarea>
-                    <div class="ai-tuning-help">Ce brief sera enrichi avec le contexte éditeur + règles de génération, puis envoyé à Gemini sur 5 passes avec validation humaine à chaque étape.</div>
+                    <textarea class="ai-tuning-input ui-textarea ai-tuning-textarea" id="ai-gemini-brief" rows="5" placeholder="Sujet, public, objectifs, contraintes, style...">${esc(brief)}</textarea>
+                    <div class="ai-tuning-help">Ce brief sera enrichi avec le contexte éditeur + règles de génération, puis envoyé au fournisseur choisi sur 5 passes avec validation humaine à chaque étape.</div>
                 </div>
             </div>
             <div class="ai-tuning-actions">
@@ -796,7 +859,7 @@ function _openAIPromptTuningModal() {
                 <button type="button" class="tb-btn ui-btn" data-ai-cancel>Annuler</button>
                 <button type="button" class="tb-btn ui-btn tb-btn-lg" data-ai-save>Enregistrer</button>
                 <button type="button" class="tb-btn ui-btn tb-btn-lg" data-ai-run-quiz-augment>Ajouter des quiz aux slides courantes</button>
-                <button type="button" class="tb-btn ui-btn tb-btn-lg" data-ai-run>Lancer pipeline Gemini (5 passes)</button>
+                <button type="button" class="tb-btn ui-btn tb-btn-lg" data-ai-run>Lancer le pipeline (5 passes)</button>
             </div>
         </div>
     `;
@@ -828,7 +891,17 @@ function _openAIPromptTuningModal() {
     overlay.querySelector('#ai-quiz-mode')?.addEventListener('change', syncQuizModeControls);
     syncQuizModeControls();
 
+    const syncProviderControls = () => {
+        const active = String(overlay.querySelector('#ai-provider')?.value || 'gemini');
+        overlay.querySelectorAll('[data-provider-group]').forEach((el) => {
+            el.hidden = el.getAttribute('data-provider-group') !== active;
+        });
+    };
+    overlay.querySelector('#ai-provider')?.addEventListener('change', syncProviderControls);
+    syncProviderControls();
+
     const readValues = () => ({
+        provider: _sanitizeAIProvider(overlay.querySelector('#ai-provider')?.value),
         tuning: _sanitizeAIPromptTuningSettings({
             targetSlides: Number(overlay.querySelector('#ai-target-slides')?.value),
             durationMinutes: Number(overlay.querySelector('#ai-duration-minutes')?.value),
@@ -862,62 +935,77 @@ function _openAIPromptTuningModal() {
             temperature: Number(overlay.querySelector('#ai-gemini-temperature')?.value),
             briefTemplate: overlay.querySelector('#ai-gemini-brief')?.value,
         }),
+        claude: _sanitizeAIClaudeSettings({
+            apiKey: overlay.querySelector('#ai-claude-key')?.value,
+            model: overlay.querySelector('#ai-claude-model')?.value,
+            maxTokens: Number(overlay.querySelector('#ai-claude-maxtokens')?.value),
+            requestTimeoutMs: Number(overlay.querySelector('#ai-claude-timeout')?.value),
+            temperature: Number(overlay.querySelector('#ai-claude-temperature')?.value),
+            briefTemplate: overlay.querySelector('#ai-gemini-brief')?.value,
+        }),
     });
 
     overlay.querySelector('[data-ai-close]')?.addEventListener('click', close);
     overlay.querySelector('[data-ai-cancel]')?.addEventListener('click', close);
+    const persistConnection = (values) => {
+        setAIPromptTuningSettings(values.tuning);
+        setAIImportPipelineSettings(values.pipeline);
+        setAIGeminiSettings(values.gemini);
+        setAIClaudeSettings(values.claude);
+        setAIProvider(values.provider);
+    };
+    const providerKeyField = (provider) => (provider === 'claude' ? '#ai-claude-key' : '#ai-gemini-key');
+    const activeCreds = (values) => _resolveAICredentials(values.provider, values.gemini, values.claude);
+
     overlay.querySelector('[data-ai-reset]')?.addEventListener('click', () => {
         setAIPromptTuningSettings(AI_PROMPT_DEFAULTS);
         setAIImportPipelineSettings(AI_IMPORT_PIPELINE_DEFAULTS);
         setAIGeminiSettings(AI_GEMINI_DEFAULTS);
+        setAIClaudeSettings(AI_CLAUDE_DEFAULTS);
+        setAIProvider('gemini');
         close();
         notify('Réglages IA réinitialisés', 'info');
     });
     overlay.querySelector('[data-ai-save]')?.addEventListener('click', () => {
-        const values = readValues();
-        setAIPromptTuningSettings(values.tuning);
-        setAIImportPipelineSettings(values.pipeline);
-        setAIGeminiSettings(values.gemini);
+        persistConnection(readValues());
         close();
         notify('Réglages IA enregistrés', 'success');
     });
     overlay.querySelector('[data-ai-run]')?.addEventListener('click', async () => {
         const values = readValues();
-        if (!values.gemini.apiKey) {
-            notify('Ajoute d’abord la clé API Gemini', 'warning');
-            overlay.querySelector('#ai-gemini-key')?.focus();
+        const creds = activeCreds(values);
+        if (!creds.apiKey) {
+            notify('Ajoute d’abord la clé API du fournisseur choisi', 'warning');
+            overlay.querySelector(providerKeyField(values.provider))?.focus();
             return;
         }
-        if (!String(values.gemini.briefTemplate || '').trim()) {
+        if (!String(creds.briefTemplate || '').trim()) {
             notify('Ajoute un brief de génération', 'warning');
             overlay.querySelector('#ai-gemini-brief')?.focus();
             return;
         }
-        setAIPromptTuningSettings(values.tuning);
-        setAIImportPipelineSettings(values.pipeline);
-        setAIGeminiSettings(values.gemini);
+        persistConnection(values);
         close();
         await _runGeminiFivePassFlow({
-            brief: values.gemini.briefTemplate,
+            brief: creds.briefTemplate,
             tuning: values.tuning,
             pipeline: values.pipeline,
-            gemini: values.gemini,
+            ai: creds,
         });
     });
     overlay.querySelector('[data-ai-run-quiz-augment]')?.addEventListener('click', async () => {
         const values = readValues();
-        if (!values.gemini.apiKey) {
-            notify('Ajoute d’abord la clé API Gemini', 'warning');
-            overlay.querySelector('#ai-gemini-key')?.focus();
+        const creds = activeCreds(values);
+        if (!creds.apiKey) {
+            notify('Ajoute d’abord la clé API du fournisseur choisi', 'warning');
+            overlay.querySelector(providerKeyField(values.provider))?.focus();
             return;
         }
-        setAIPromptTuningSettings(values.tuning);
-        setAIImportPipelineSettings(values.pipeline);
-        setAIGeminiSettings(values.gemini);
+        persistConnection(values);
         close();
         await _runGeminiQuizAugmentFlow({
             tuning: values.tuning,
-            gemini: values.gemini,
+            ai: creds,
         });
     });
 
