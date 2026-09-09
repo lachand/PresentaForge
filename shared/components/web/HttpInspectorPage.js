@@ -132,7 +132,7 @@ class HttpInspectorPage extends ConceptPage {
     addHeader() {
         const row = document.createElement('div');
         row.className = 'header-row';
-        row.innerHTML = '<input type="text" class="input" placeholder="Cle"><input type="text" class="input" placeholder="Valeur"><button class="btn-remove" onclick="removeHeader(this)">&times;</button>';
+        row.innerHTML = '<input type="text" class="input" placeholder="Cle"><input type="text" class="input" placeholder="Valeur"><button class="btn-remove" data-inline-onclick="removeHeader(this)">&times;</button>';
         this.requestHeaders.appendChild(row);
     }
 

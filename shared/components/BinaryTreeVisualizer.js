@@ -619,10 +619,10 @@ const BST_WIDGET_TEMPLATE = `
         <div class="controls-section-title">Operations</div>
         <div class="controls-group">
             <input type="number" id="inputValue" placeholder="Valeur (entier)" class="input">
-            <button onclick="page.insertValue()" class="btn btn-primary">Inserer</button>
-            <button onclick="page.deleteValue()" class="btn btn-secondary">Supprimer</button>
-            <button onclick="page.searchValue()" class="btn btn-primary">Rechercher</button>
-            <button onclick="page.resetTree()" class="btn btn-secondary">Reinitialiser</button>
+            <button data-inline-onclick="page.insertValue()" class="btn btn-primary">Inserer</button>
+            <button data-inline-onclick="page.deleteValue()" class="btn btn-secondary">Supprimer</button>
+            <button data-inline-onclick="page.searchValue()" class="btn btn-primary">Rechercher</button>
+            <button data-inline-onclick="page.resetTree()" class="btn btn-secondary">Reinitialiser</button>
         </div>
     </div>
 
@@ -640,10 +640,10 @@ const BST_WIDGET_TEMPLATE = `
     <div class="controls-section">
         <div class="controls-section-title">Parcours</div>
         <div class="controls-group">
-            <button onclick="page.startTraversal('inorder')" class="btn btn-primary" id="btn-inorder">Infixe</button>
-            <button onclick="page.startTraversal('preorder')" class="btn btn-primary" id="btn-preorder">Prefixe</button>
-            <button onclick="page.startTraversal('postorder')" class="btn btn-primary" id="btn-postorder">Suffixe</button>
-            <button onclick="page.startTraversal('bfs')" class="btn btn-primary" id="btn-bfs">Largeur (BFS)</button>
+            <button data-inline-onclick="page.startTraversal('inorder')" class="btn btn-primary" id="btn-inorder">Infixe</button>
+            <button data-inline-onclick="page.startTraversal('preorder')" class="btn btn-primary" id="btn-preorder">Prefixe</button>
+            <button data-inline-onclick="page.startTraversal('postorder')" class="btn btn-primary" id="btn-postorder">Suffixe</button>
+            <button data-inline-onclick="page.startTraversal('bfs')" class="btn btn-primary" id="btn-bfs">Largeur (BFS)</button>
         </div>
     </div>
 

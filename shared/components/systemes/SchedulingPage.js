@@ -58,7 +58,7 @@ class SchedulingPage extends ConceptPage {
                 <td><input type="number" value="${p.arrival}" min="0"></td>
                 <td><input type="number" value="${p.burst}" min="1"></td>
                 <td><input type="number" value="${p.priority}" min="0"></td>
-                <td><button class="btn-remove" onclick="removeProcess(${idx})" title="Supprimer">&times;</button></td>
+                <td><button class="btn-remove" data-inline-onclick="page.removeProcess(${idx})" title="Supprimer">&times;</button></td>
             </tr>`;
         });
     }

@@ -601,7 +601,7 @@ class RoutingSimulatorPage extends ConceptPage {
             const topo = TOPOLOGIES[currentTopo];
             const sel = document.getElementById('route-selector');
             sel.innerHTML = topo.nodes.map((n, i) =>
-                `<button class="route-chip ${i === 0 ? 'active' : ''}" onclick="showRouteTable('${n.id}')">${n.label}</button>`
+                `<button class="route-chip ${i === 0 ? 'active' : ''}" data-inline-onclick="showRouteTable('${n.id}')">${n.label}</button>`
             ).join('');
         }
 

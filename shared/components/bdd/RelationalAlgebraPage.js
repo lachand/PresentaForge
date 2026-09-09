@@ -94,8 +94,8 @@ class RelationalAlgebraPage extends ConceptPage {
         header.innerHTML = `
             <h3>${selectedTable} <span class="badge badge-primary">${t.rows.length} lignes</span></h3>
             <div class="table-actions">
-                <button onclick="addRow('${selectedTable}')">+ Ligne</button>
-                <button onclick="deleteTable('${selectedTable}')">Supprimer table</button>
+                <button data-inline-onclick="addRow('${selectedTable}')">+ Ligne</button>
+                <button data-inline-onclick="deleteTable('${selectedTable}')">Supprimer table</button>
             </div>
         `;
         card.appendChild(header);
@@ -134,7 +134,7 @@ class RelationalAlgebraPage extends ConceptPage {
             });
             if (editable) {
                 const td = document.createElement('td');
-                td.innerHTML = `<button style="font-size:0.7rem;padding:0.2rem 0.4rem;border:1px solid var(--border);border-radius:4px;background:var(--card);cursor:pointer;font-family:var(--font);margin-right:0.2rem;" onclick="editRow('${tableName}',${ri})">Modifier</button><button style="font-size:0.7rem;padding:0.2rem 0.4rem;border:1px solid var(--danger);border-radius:4px;background:var(--card);cursor:pointer;font-family:var(--font);color:var(--danger);" onclick="deleteRow('${tableName}',${ri})">Suppr.</button>`;
+                td.innerHTML = `<button style="font-size:0.7rem;padding:0.2rem 0.4rem;border:1px solid var(--border);border-radius:4px;background:var(--card);cursor:pointer;font-family:var(--font);margin-right:0.2rem;" data-inline-onclick="editRow('${tableName}',${ri})">Modifier</button><button style="font-size:0.7rem;padding:0.2rem 0.4rem;border:1px solid var(--danger);border-radius:4px;background:var(--card);cursor:pointer;font-family:var(--font);color:var(--danger);" data-inline-onclick="deleteRow('${tableName}',${ri})">Suppr.</button>`;
                 tr.appendChild(td);
             }
             tbody.appendChild(tr);
@@ -193,8 +193,8 @@ class RelationalAlgebraPage extends ConceptPage {
             html += `<div class="field"><label>${f}</label><input type="text" id="modalField${i}" value="${values[i] || ''}"></div>`;
         });
         html += `<div class="modal-actions">
-            <button class="btn btn-secondary" style="min-width:auto;font-size:0.85rem;" onclick="closeModal()">Annuler</button>
-            <button class="btn btn-primary" style="min-width:auto;font-size:0.85rem;" onclick="submitModal()">Valider</button>
+            <button class="btn btn-secondary" style="min-width:auto;font-size:0.85rem;" data-inline-onclick="closeModal()">Annuler</button>
+            <button class="btn btn-primary" style="min-width:auto;font-size:0.85rem;" data-inline-onclick="submitModal()">Valider</button>
         </div>`;
         modal.innerHTML = html;
         overlay.style.display = 'flex';
@@ -234,7 +234,7 @@ class RelationalAlgebraPage extends ConceptPage {
                     <input type="text" id="selCondition" placeholder="age > 20" style="font-family:var(--font-mono);">
                 </div>
                 <div style="margin-top:0.5rem;">
-                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" onclick="executeSelection()">Ex&eacute;cuter &sigma;</button>
+                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" data-inline-onclick="executeSelection()">Ex&eacute;cuter &sigma;</button>
                 </div>
                 <div class="feedback" id="selFeedback"></div>
             `;
@@ -245,14 +245,14 @@ class RelationalAlgebraPage extends ConceptPage {
                 <h4>&pi; Projection — Garder certaines colonnes</h4>
                 <div class="field-group">
                     <label>Table source</label>
-                    <select id="projTable" onchange="updateProjCols()">${tNames.map(n => `<option value="${n}" ${n===tName?'selected':''}>${n}</option>`).join('')}</select>
+                    <select id="projTable" data-inline-onchange="updateProjCols()">${tNames.map(n => `<option value="${n}" ${n===tName?'selected':''}>${n}</option>`).join('')}</select>
                 </div>
                 <div class="field-group">
                     <label>Colonnes &agrave; garder</label>
                     <div class="checkbox-group" id="projCols"></div>
                 </div>
                 <div style="margin-top:0.5rem;">
-                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" onclick="executeProjection()">Ex&eacute;cuter &pi;</button>
+                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" data-inline-onclick="executeProjection()">Ex&eacute;cuter &pi;</button>
                 </div>
                 <div class="feedback" id="projFeedback"></div>
             `;
@@ -273,7 +273,7 @@ class RelationalAlgebraPage extends ConceptPage {
                     <input type="text" id="joinCond" placeholder="id = id_etudiant" style="font-family:var(--font-mono);">
                 </div>
                 <div style="margin-top:0.5rem;">
-                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" onclick="executeJoin()">Ex&eacute;cuter &#x2A1D;</button>
+                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" data-inline-onclick="executeJoin()">Ex&eacute;cuter &#x2A1D;</button>
                 </div>
                 <div class="feedback" id="joinFeedback"></div>
             `;
@@ -291,7 +291,7 @@ class RelationalAlgebraPage extends ConceptPage {
                     <select id="setT2">${tNames.map((n,i) => `<option value="${n}" ${i===Math.min(1,tNames.length-1)?'selected':''}>${n}</option>`).join('')}</select>
                 </div>
                 <div style="margin-top:0.5rem;">
-                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" onclick="executeSetOp('${op}')">Ex&eacute;cuter ${symbol}</button>
+                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" data-inline-onclick="executeSetOp('${op}')">Ex&eacute;cuter ${symbol}</button>
                 </div>
                 <div class="feedback" id="setFeedback"></div>
             `;
@@ -307,7 +307,7 @@ class RelationalAlgebraPage extends ConceptPage {
                     <select id="prodT2">${tNames.map((n,i) => `<option value="${n}" ${i===Math.min(1,tNames.length-1)?'selected':''}>${n}</option>`).join('')}</select>
                 </div>
                 <div style="margin-top:0.5rem;">
-                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" onclick="executeProduct()">Ex&eacute;cuter &times;</button>
+                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" data-inline-onclick="executeProduct()">Ex&eacute;cuter &times;</button>
                 </div>
                 <div class="feedback" id="prodFeedback"></div>
             `;
@@ -327,7 +327,7 @@ class RelationalAlgebraPage extends ConceptPage {
                     <input type="text" id="renNew" placeholder="nouveau_nom">
                 </div>
                 <div style="margin-top:0.5rem;">
-                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" onclick="executeRename()">Ex&eacute;cuter &rho;</button>
+                    <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" data-inline-onclick="executeRename()">Ex&eacute;cuter &rho;</button>
                 </div>
                 <div class="feedback" id="renFeedback"></div>
             `;
@@ -343,7 +343,9 @@ class RelationalAlgebraPage extends ConceptPage {
         t.columns.forEach((col, i) => {
             const lbl = document.createElement('label');
             lbl.className = 'checked';
-            lbl.innerHTML = `<input type="checkbox" value="${col}" checked onchange="this.parentElement.classList.toggle('checked', this.checked)"> ${col}`;
+            lbl.innerHTML = `<input type="checkbox" value="${col}" checked> ${col}`;
+            const cb = lbl.querySelector('input');
+            cb.addEventListener('change', () => lbl.classList.toggle('checked', cb.checked));
             container.appendChild(lbl);
         });
     }
@@ -686,8 +688,8 @@ class RelationalAlgebraPage extends ConceptPage {
             header.className = 'table-header';
             header.innerHTML = `<h3>${sourceName} <span class="badge badge-primary">${t.rows.length} lignes</span></h3>
                 <div class="table-actions">
-                    <button onclick="addRow('${sourceName}')">+ Ligne</button>
-                    <button onclick="deleteTable('${sourceName}')">Supprimer table</button>
+                    <button data-inline-onclick="addRow('${sourceName}')">+ Ligne</button>
+                    <button data-inline-onclick="deleteTable('${sourceName}')">Supprimer table</button>
                 </div>`;
             card.appendChild(header);
             card.appendChild(buildTableHTML(t, sourceName, true, highlightedSourceRows));

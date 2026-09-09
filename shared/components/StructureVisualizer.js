@@ -36,9 +36,9 @@ class StructureVisualizer extends SimulationPage {
         return '' +
             '<div class="controls">' +
                 '<input type="text" id="input" placeholder="' + placeholder + '" class="input">' +
-                '<button class="btn btn-primary" onclick="page.' + actionAdd + '()">' + labelAdd + '</button>' +
-                '<button class="btn btn-accent" onclick="page.' + actionRemove + '()">' + labelRemove + '</button>' +
-                '<button class="btn btn-secondary" onclick="page.reset()">Reinitialiser</button>' +
+                '<button class="btn btn-primary" data-inline-onclick="page.' + actionAdd + '()">' + labelAdd + '</button>' +
+                '<button class="btn btn-accent" data-inline-onclick="page.' + actionRemove + '()">' + labelRemove + '</button>' +
+                '<button class="btn btn-secondary" data-inline-onclick="page.reset()">Reinitialiser</button>' +
             '</div>' +
             '<div class="speed-control">' +
                 '<label for="speedSlider">Vitesse de simulation :</label>' +

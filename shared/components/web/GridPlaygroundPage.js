@@ -348,7 +348,7 @@ class GridPlaygroundPage extends ConceptPage {
         });
 
         const output = document.getElementById('code-output');
-        output.innerHTML = '<button class="copy-btn" onclick="copyCode()" id="copy-btn">Copier</button>' + css;
+        output.innerHTML = '<button class="copy-btn" data-inline-onclick="page.copyCode()" id="copy-btn">Copier</button>' + css;
     }
 
     esc(value) {
