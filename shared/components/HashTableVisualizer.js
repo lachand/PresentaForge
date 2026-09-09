@@ -73,10 +73,6 @@ class HashTableVisualizer extends SimulationPage {
         }
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     /**
      * Affiche les étapes du calcul de hash
@@ -540,7 +536,14 @@ class HashTableWidget {
         this._bindControls();
     }
 
+    /** Empêche tout rendu différé après démontage et vide le conteneur (revue §C4). */
+    destroy() {
+        this._destroyed = true;
+        if (this.root) this.root.innerHTML = '';
+    }
+
     _render() {
+        if (this._destroyed) return;
         const tableEl = this.root.querySelector('.htw-table');
         if (!tableEl) return;
         tableEl.innerHTML = '';

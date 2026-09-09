@@ -28,10 +28,6 @@ class ProbabilityFrequencyPage extends SimulationPage {
         select.addEventListener('change', () => this.changeScenario(select.value));
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     getScenarioMap() {
         const scenarioConfig = this.data?.visualization?.config?.scenarios || {};

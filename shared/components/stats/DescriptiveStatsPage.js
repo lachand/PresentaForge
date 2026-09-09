@@ -9,10 +9,6 @@ class DescriptiveStatsPage extends SimulationPage {
         this.summary = null;
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     reset() {
         const defaultData = this.data?.visualization?.config?.defaultData;

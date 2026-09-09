@@ -69,10 +69,6 @@ class QuickSortVisualizer extends SimulationPage {
         this.updatePanels();
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     getSwapAnimationDuration() {
         const base = this.getCurrentDelay();
@@ -511,8 +507,15 @@ class QuickSortWidget {
         if (btn) btn.textContent = '▶ Lancer';
     }
 
+    /** Libère le timer de lecture et vide le conteneur (revue §C4). */
+    destroy() {
+        this._destroyed = true;
+        this._stop();
+        if (this.root) this.root.innerHTML = '';
+    }
+
     _run() {
-        if (!this.isRunning || this.done) { this._stop(); return; }
+        if (this._destroyed || !this.isRunning || this.done) { this._stop(); return; }
         this._step();
         if (!this.done) this._timer = setTimeout(() => this._run(), 500);
     }

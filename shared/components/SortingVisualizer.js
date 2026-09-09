@@ -46,30 +46,6 @@ class SortingVisualizer extends SimulationPage {
         this.reset();
     }
 
-    bindPedagogyModeToggle() {
-        const toggle = document.getElementById('pedagogyModeToggle');
-        if (!toggle || typeof window === 'undefined') return;
-
-        const storageKey = 'oei_pedagogy_mode_' + window.location.pathname;
-        const applyMode = (expert) => {
-            document.body.classList.toggle('mode-expert', expert);
-            try {
-                localStorage.setItem(storageKey, expert ? 'expert' : 'novice');
-            } catch (error) {
-                // ignore storage errors
-            }
-        };
-
-        try {
-            const saved = localStorage.getItem(storageKey);
-            toggle.checked = saved === 'expert';
-        } catch (error) {
-            toggle.checked = false;
-        }
-
-        applyMode(toggle.checked);
-        toggle.addEventListener('change', () => applyMode(toggle.checked));
-    }
 
     randomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -266,10 +242,6 @@ class SortingVisualizer extends SimulationPage {
         this.updateMetricsPanel();
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     getSwapAnimationDuration() {
         const base = this.getCurrentDelay();
@@ -850,8 +822,15 @@ class SortingWidget {
         if (btn) btn.textContent = '▶ Lancer';
     }
 
+    /** Libère le timer de lecture et vide le conteneur (revue §C4). */
+    destroy() {
+        this._destroyed = true;
+        this._stop();
+        if (this.root) this.root.innerHTML = '';
+    }
+
     _run() {
-        if (!this.isRunning || this.done) { this._stop(); return; }
+        if (this._destroyed || !this.isRunning || this.done) { this._stop(); return; }
         this._step();
         if (!this.done) this._timer = setTimeout(() => this._run(), 500);
     }

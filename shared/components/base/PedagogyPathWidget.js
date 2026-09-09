@@ -68,7 +68,8 @@ class PedagogyPathWidget {
         const statusClass = normalized.status ? ` pedagogy-path__item--${this.escape(normalized.status)}` : '';
         let html = `<li class="pedagogy-path__item${statusClass}">`;
         if (normalized.path) {
-            html += `<a class="pedagogy-path__link" href="${this.escape(normalized.path)}">${this.escape(normalized.title)}</a>`;
+            const href = (typeof HtmlSafe !== 'undefined') ? HtmlSafe.url(normalized.path) : normalized.path;
+            html += `<a class="pedagogy-path__link" href="${this.escape(href)}">${this.escape(normalized.title)}</a>`;
         } else {
             html += `<span class="pedagogy-path__text">${this.escape(normalized.title)}</span>`;
         }
@@ -129,14 +130,10 @@ class PedagogyPathWidget {
     }
 
     escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return String(text).replace(/[&<>"']/g, (m) => map[m]);
+        if (typeof HtmlSafe !== 'undefined') return HtmlSafe.escape(text);
+        return String(text == null ? '' : text).replace(/[&<>"']/g, (m) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]
+        ));
     }
 }
 

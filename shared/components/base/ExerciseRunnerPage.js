@@ -254,42 +254,15 @@ class ExerciseRunnerPage extends ConceptPage {
     }
 
     resolveQuestionHint(question) {
-        if (!question || typeof question !== 'object') return '';
-        const inlineHint = this.sanitizeHintText(question.hint);
-        if (inlineHint) return inlineHint;
-        const incorrectHint = this.sanitizeHintText(question.hintIncorrect);
-        if (incorrectHint) return incorrectHint;
-        const goal = typeof question.learningGoal === 'string' ? question.learningGoal.trim() : '';
-        if (!goal) return '';
-        return `Reviens a l'objectif de la question: ${goal}`;
+        return (typeof ExerciseQuestionTypes !== 'undefined')
+            ? ExerciseQuestionTypes.resolveQuestionHint(question)
+            : '';
     }
 
     sanitizeHintText(value) {
-        if (typeof value !== 'string') return '';
-        let text = value.trim();
-        if (!text) return '';
-
-        const leakTokens = [
-            ' Indice lexical:',
-            ' Debut attendu:',
-            ' Fin attendue:',
-            " Point d'ancrage:",
-            ' Cible:',
-            ' Champs prioritaires:',
-            ' Appui utile:',
-            ' Ecarte la piste ',
-            ' Nombre de reponses correctes attendu:'
-        ];
-        leakTokens.forEach((token) => {
-            const idx = text.indexOf(token);
-            if (idx !== -1) text = text.slice(0, idx).trim();
-        });
-
-        const firstSentence = text.match(/^.*?[.!?](?:\s|$)/);
-        if (firstSentence && firstSentence[0]) {
-            text = firstSentence[0].trim();
-        }
-        return text;
+        return (typeof ExerciseQuestionTypes !== 'undefined')
+            ? ExerciseQuestionTypes.sanitizeHintText(value)
+            : (typeof value === 'string' ? value.trim() : '');
     }
 
     submitAnswer() {

@@ -4,28 +4,60 @@ class ExerciseQuestionTypes {
     }
 
     static escape(text) {
+        if (typeof HtmlSafe !== 'undefined') return HtmlSafe.escape(text);
         const div = document.createElement('div');
         div.textContent = text == null ? '' : String(text);
         return div.innerHTML;
     }
 
+    /**
+     * Formatage riche assaini pour les `prompt`/`scenario` d'exercice.
+     * Remplace l'ancien strip-tags maison qui laissait passer `style=` (revue §A4).
+     */
     static safeHtml(text) {
-        if (text == null) return '';
-        const str = String(text);
-        const allowedTags = ['code', 'b', 'i', 'em', 'strong', 'br', 'div', 'span', 'sub', 'sup'];
-        const tagPattern = allowedTags.map(t => `${t}`).join('|');
-        const allowedRe = new RegExp(`<(/?(?:${tagPattern}))(?:\\s+(?:class|id|style)="[^"]*")*\\s*/?>`, 'gi');
-        const placeholders = [];
-        const withPlaceholders = str.replace(allowedRe, (match) => {
-            placeholders.push(match);
-            return `\x00PH${placeholders.length - 1}\x00`;
-        });
-        const escaped = ExerciseQuestionTypes.escape(withPlaceholders);
-        return escaped.replace(/\x00PH(\d+)\x00/g, (_, idx) => placeholders[Number(idx)]);
+        if (text == null || text === '') return '';
+        if (typeof HtmlSafe !== 'undefined') return HtmlSafe.rich(text);
+        return ExerciseQuestionTypes.escape(text);
     }
 
     static normalizeArray(values) {
         return (Array.isArray(values) ? values : []).map((v) => ExerciseQuestionTypes.normalize(v));
+    }
+
+    /**
+     * Nettoie un texte d'indice : retire les jetons révélateurs (« Debut attendu: »…)
+     * et ne garde que la première phrase. Mutualisé depuis ConceptPage/ExerciseRunnerPage
+     * (copies byte-identiques — revue §C6).
+     */
+    static sanitizeHintText(value) {
+        if (typeof value !== 'string') return '';
+        let text = value.trim();
+        if (!text) return '';
+
+        const leakTokens = [
+            ' Indice lexical:', ' Debut attendu:', ' Fin attendue:', " Point d'ancrage:",
+            ' Cible:', ' Champs prioritaires:', ' Appui utile:', ' Ecarte la piste ',
+            ' Nombre de reponses correctes attendu:',
+        ];
+        leakTokens.forEach((token) => {
+            const idx = text.indexOf(token);
+            if (idx !== -1) text = text.slice(0, idx).trim();
+        });
+
+        const firstSentence = text.match(/^.*?[.!?](?:\s|$)/);
+        if (firstSentence && firstSentence[0]) text = firstSentence[0].trim();
+        return text;
+    }
+
+    /** Indice affichable pour une question (hint → hintIncorrect → learningGoal). */
+    static resolveQuestionHint(question) {
+        if (!question || typeof question !== 'object') return '';
+        const inlineHint = ExerciseQuestionTypes.sanitizeHintText(question.hint);
+        if (inlineHint) return inlineHint;
+        const incorrectHint = ExerciseQuestionTypes.sanitizeHintText(question.hintIncorrect);
+        if (incorrectHint) return incorrectHint;
+        const goal = typeof question.learningGoal === 'string' ? question.learningGoal.trim() : '';
+        return goal ? `Reviens a l'objectif de la question: ${goal}` : '';
     }
 
     /**

@@ -134,10 +134,6 @@ class LinkedListVisualizer extends SimulationPage {
         this.clearHighlight();
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     setTraversalPointers(prev, current, next) {
         this.pointerState = { prev, current, next };
@@ -582,7 +578,14 @@ class LinkedListWidget {
         this._bindControls();
     }
 
+    /** Empêche tout rendu différé après démontage et vide le conteneur (revue §C4). */
+    destroy() {
+        this._destroyed = true;
+        if (this.root) this.root.innerHTML = '';
+    }
+
     _render() {
+        if (this._destroyed) return;
         const zone = this.root.querySelector('.llw-list-zone');
         if (!zone) return;
         if (this._nodes.length === 0) {

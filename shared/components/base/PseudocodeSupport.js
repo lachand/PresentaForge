@@ -3,6 +3,7 @@
  */
 const PseudocodeSupport = {
     escapeHtml(text) {
+        if (typeof HtmlSafe !== 'undefined') return HtmlSafe.escape(text);
         const div = document.createElement('div');
         div.textContent = text == null ? '' : String(text);
         return div.innerHTML;
@@ -182,16 +183,18 @@ const PseudocodeSupport = {
             return autoKeywordHighlight ? this.highlightKeywordTokens(escaped, options) : escaped;
         }
 
-        // Autoriser un sous-ensemble de balises de mise en forme utilises dans les JSON.
-        const stripped = raw.replace(/<\/?(span|code|strong|em|mark)\b[^>]*>/gi, '');
+        // Autoriser un sous-ensemble de balises de mise en forme utilisées dans les JSON.
+        const stripped = raw.replace(/<\/?(span|code|strong|em|mark|b|i|kbd|sub|sup)\b[^>]*>/gi, '');
         if (stripped.includes('<') || stripped.includes('>')) {
             const escaped = this.escapeHtml(raw);
             return autoKeywordHighlight ? this.highlightKeywordTokens(escaped, options) : escaped;
         }
 
-        const hasInlineMarkup = /<\/?(span|code|strong|em|mark)\b[^>]*>/i.test(raw);
+        const hasInlineMarkup = /<\/?(span|code|strong|em|mark|b|i|kbd|sub|sup)\b[^>]*>/i.test(raw);
         if (hasInlineMarkup) {
-            return raw;
+            // Assainir le formatage inline plutôt que de le renvoyer brut (revue §A4 :
+            // `<span onmouseover=…>` survivait à l'ancien contrôle).
+            return (typeof HtmlSafe !== 'undefined') ? HtmlSafe.richInline(raw) : this.escapeHtml(raw);
         }
 
         return autoKeywordHighlight ? this.highlightKeywordTokens(raw, options) : raw;

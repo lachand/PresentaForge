@@ -126,10 +126,6 @@ class DictionaryVisualizer extends SimulationPage {
         this.store = this.stores.ordered;
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     syncStoreSelection() {
         const select = document.getElementById('dict-backend-mode');

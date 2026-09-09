@@ -111,10 +111,6 @@ class BinaryTreeVisualizer extends SimulationPage {
         this.lastDeleteGuide = null;
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     findNodeWithParent(value) {
         let parent = null;

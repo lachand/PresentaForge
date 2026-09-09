@@ -24,6 +24,17 @@ class CourseRenderer {
         this.cacheSignature = '';
     }
 
+    /** HTML riche assaini (formatage de cours). Repli : tout échapper. */
+    safe(html) {
+        return (typeof HtmlSafe !== 'undefined') ? HtmlSafe.rich(html) : this.escapeHtml(html);
+    }
+
+    /** URL au schéma vérifié, échappée pour un attribut. */
+    safeUrl(href) {
+        const value = (typeof HtmlSafe !== 'undefined') ? HtmlSafe.url(href) : String(href || '');
+        return this.escapeHtml(value);
+    }
+
     /**
      * Génère le HTML complet du cours
      * @returns {string} HTML du cours
@@ -128,7 +139,7 @@ class CourseRenderer {
                 const relation = this.escapeHtml(link.relation || 'Lié à');
                 const concept = this.escapeHtml(link.concept || link.id || 'Concept');
                 const path = typeof link.path === 'string' ? link.path : '';
-                const href = path ? this.escapeHtml(path) : '';
+                const href = path ? this.safeUrl(path) : '';
                 const why = link.why ? this.escapeHtml(link.why) : '';
                 html += '<li>';
                 html += `<span class="pedago-chip">${relation}</span> `;
@@ -151,7 +162,7 @@ class CourseRenderer {
 
     renderFlexibleExtra(value) {
         if (typeof value === 'string') {
-            return `<p class="section-description">${value}</p>`;
+            return `<p class="section-description">${this.safe(value)}</p>`;
         }
 
         if (Array.isArray(value)) {
@@ -167,13 +178,13 @@ class CourseRenderer {
         if (value && typeof value === 'object') {
             if (Array.isArray(value.etapes) && value.etapes.length > 0) {
                 let html = '';
-                if (value.contexte) html += `<p class="section-description">${value.contexte}</p>`;
+                if (value.contexte) html += `<p class="section-description">${this.safe(value.contexte)}</p>`;
                 html += '<ol class="pedago-list pedago-list--ordered">';
                 value.etapes.forEach(step => {
                     html += `<li>${this.renderFlexibleListItem(step)}</li>`;
                 });
                 html += '</ol>';
-                if (value.validation) html += `<p class="section-description"><strong>Validation:</strong> ${value.validation}</p>`;
+                if (value.validation) html += `<p class="section-description"><strong>Validation:</strong> ${this.safe(value.validation)}</p>`;
                 return html;
             }
 
@@ -189,7 +200,7 @@ class CourseRenderer {
     }
 
     renderFlexibleListItem(item) {
-        if (typeof item === 'string') return item;
+        if (typeof item === 'string') return this.safe(item);
         if (item && typeof item === 'object') {
             const entries = [];
             Object.entries(item).forEach(([k, v]) => {
@@ -202,7 +213,7 @@ class CourseRenderer {
     }
 
     renderInlineValue(value) {
-        if (typeof value === 'string') return value;
+        if (typeof value === 'string') return this.safe(value);
         if (Array.isArray(value)) return value.map(v => this.renderInlineValue(v)).join(', ');
         if (value && typeof value === 'object') {
             return Object.entries(value)
@@ -246,15 +257,15 @@ class CourseRenderer {
     renderContentItem(item) {
         switch (item.type) {
             case 'paragraph':
-                return `<p class="section-description">${item.text}</p>`;
+                return `<p class="section-description">${this.safe(item.text)}</p>`;
 
             case 'list':
                 return this.renderList(item);
 
             case 'heading': {
-                const level = item.level || 3;
+                const level = Math.min(6, Math.max(1, parseInt(item.level, 10) || 3));
                 const style = level === 3 ? 'style="color:var(--primary);margin-top:1.5rem;"' : '';
-                return `<h${level} ${style}>${item.text}</h${level}>`;
+                return `<h${level} ${style}>${this.safe(item.text)}</h${level}>`;
             }
 
             case 'code':
@@ -282,7 +293,7 @@ class CourseRenderer {
         let html = `<${tag} style="text-align:left; margin-bottom:1.2rem; line-height:1.8; padding-left: 3em;">`;
 
         item.items.forEach(listItem => {
-            html += `<li>${listItem}</li>`;
+            html += `<li>${this.safe(listItem)}</li>`;
         });
 
         html += `</${tag}>`;
@@ -311,7 +322,7 @@ class CourseRenderer {
             html += `<strong>${item.title}</strong><br>`;
         }
 
-        html += item.content;
+        html += this.safe(item.content);
         html += '</div>';
 
         return html;
@@ -323,14 +334,10 @@ class CourseRenderer {
      * @returns {string} Texte échappé
      */
     escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return String(text == null ? '' : text).replace(/[&<>"']/g, m => map[m]);
+        if (typeof HtmlSafe !== 'undefined') return HtmlSafe.escape(text);
+        return String(text == null ? '' : text).replace(/[&<>"']/g, (m) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]
+        ));
     }
 }
 

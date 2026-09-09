@@ -54,6 +54,29 @@
             ],
             allowStyle: true,
         },
+        // Cours — formatage inline uniquement (pseudocode, prompts d'exercice courts).
+        // `class` conservé (surlignage mots-clés, badges), pas d'attributs événementiels.
+        'course-inline': {
+            tags: ['b', 'strong', 'i', 'em', 'u', 'code', 'kbd', 'samp', 'var', 'mark',
+                'sub', 'sup', 's', 'del', 'ins', 'abbr', 'span', 'br', 'wbr'],
+            attr: ['class', 'title'],
+            allowStyle: false,
+        },
+        // Contenu de cours (revue 2026-09 §A3) : formatage riche autorisé, mais PAS
+        // `style` (vecteur d'injection), PAS d'images ni de médias distants.
+        course: {
+            tags: [
+                'a', 'abbr', 'b', 'blockquote', 'br', 'caption', 'cite', 'code', 'col', 'colgroup',
+                'dd', 'del', 'dl', 'dt', 'em', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'ins', 'kbd', 'li',
+                'mark', 'ol', 'p', 'pre', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup',
+                'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'u', 'ul', 'var', 'wbr',
+            ],
+            attr: [
+                'class', 'colspan', 'datetime', 'dir', 'headers', 'href', 'lang', 'rowspan',
+                'scope', 'span', 'start', 'title', 'type',
+            ],
+            allowStyle: false,
+        },
     };
 
     const VOID_TAGS = new Set(['br', 'hr', 'img', 'col', 'wbr']);

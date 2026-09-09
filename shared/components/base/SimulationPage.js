@@ -117,19 +117,22 @@ class SimulationPage extends SimulationPageBase {
      * @returns {string} HTML des contrôles
      */
     generateControls() {
+        const esc = (v) => (typeof HtmlSafe !== 'undefined' ? HtmlSafe.escape(v) : String(v == null ? '' : v));
+        const ident = (v) => String(v || '').replace(/[^A-Za-z0-9_-]/g, '');
         let html = '<div class="controls">';
 
         this.data.controls.forEach(ctrl => {
             if (ctrl.type === 'button') {
-                const style = ctrl.style || 'primary';
-                const action = ctrl.action || '';
-                html += `<button class="btn btn-${style}" onclick="page.${action}()">${ctrl.label}</button>`;
+                const style = ident(ctrl.style || 'primary');
+                const action = ident(ctrl.action);
+                // pont data-inline-on* (pas d'onclick inline — compatible CSP stricte)
+                html += `<button class="btn btn-${style}" data-inline-onclick="page.${action}()">${esc(ctrl.label)}</button>`;
             } else if (ctrl.type === 'input') {
-                html += `<input type="text" id="${ctrl.id}" placeholder="${ctrl.placeholder}" class="input">`;
+                html += `<input type="text" id="${esc(ctrl.id)}" placeholder="${esc(ctrl.placeholder)}" class="input">`;
             } else if (ctrl.type === 'select') {
-                html += `<select id="${ctrl.id}" class="input">`;
+                html += `<select id="${esc(ctrl.id)}" class="input">`;
                 ctrl.options.forEach(opt => {
-                    html += `<option value="${opt.value}">${opt.label}</option>`;
+                    html += `<option value="${esc(opt.value)}">${esc(opt.label)}</option>`;
                 });
                 html += `</select>`;
             }
@@ -241,6 +244,45 @@ class SimulationPage extends SimulationPageBase {
      */
     stop() {
         this.state.running = false;
+    }
+
+    /**
+     * Délai courant (ms) selon le SpeedController, éventuellement multiplié.
+     * Mutualisé depuis les 16 visualiseurs qui le recopiaient (revue §C1).
+     * @param {number} [multiplier=1]
+     * @returns {number}
+     */
+    getCurrentDelay(multiplier = 1) {
+        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
+        return Math.max(0, Math.round(base * multiplier));
+    }
+
+    /**
+     * Bascule « mode expert » (masque les aides). Case #pedagogyModeToggle facultative.
+     * Mutualisé depuis SortingVisualizer / SearchVisualizer (revue §C1).
+     */
+    bindPedagogyModeToggle() {
+        const toggle = document.getElementById('pedagogyModeToggle');
+        if (!toggle || typeof window === 'undefined') return;
+
+        const storageKey = 'oei_pedagogy_mode_' + window.location.pathname;
+        const applyMode = (expert) => {
+            document.body.classList.toggle('mode-expert', expert);
+            try {
+                localStorage.setItem(storageKey, expert ? 'expert' : 'novice');
+            } catch (error) {
+                // stockage indisponible (navigation privée) — sans conséquence
+            }
+        };
+
+        try {
+            toggle.checked = localStorage.getItem(storageKey) === 'expert';
+        } catch (error) {
+            toggle.checked = false;
+        }
+
+        applyMode(toggle.checked);
+        toggle.addEventListener('change', () => applyMode(toggle.checked));
     }
 
     /**

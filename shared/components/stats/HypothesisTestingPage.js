@@ -31,10 +31,6 @@ class HypothesisTestingPage extends SimulationPage {
         });
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     reset() {
         const cfg = this.data?.visualization?.config || {};

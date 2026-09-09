@@ -280,7 +280,7 @@ class ConceptPage {
                 const desc = document.createElement('p');
                 desc.className = 'section-description';
                 desc.style.margin = '0 0 0.75rem';
-                desc.innerHTML = block.description;
+                desc.innerHTML = (typeof HtmlSafe !== 'undefined') ? HtmlSafe.rich(block.description) : this.escapeHtml(block.description);
                 container.appendChild(desc);
             }
         } else {
@@ -298,7 +298,7 @@ class ConceptPage {
                 if (block.description) {
                     const desc = document.createElement('p');
                     desc.className = 'section-description';
-                    desc.innerHTML = block.description;
+                    desc.innerHTML = (typeof HtmlSafe !== 'undefined') ? HtmlSafe.rich(block.description) : this.escapeHtml(block.description);
                     head.appendChild(desc);
                 }
                 tagged.appendChild(head);
@@ -642,6 +642,7 @@ class ConceptPage {
     }
 
     escapeHtml(text) {
+        if (typeof HtmlSafe !== 'undefined') return HtmlSafe.escape(text);
         const div = document.createElement('div');
         div.textContent = text == null ? '' : String(text);
         return div.innerHTML;
@@ -785,42 +786,15 @@ class InlineExerciseWidget {
     }
 
     resolveQuestionHint(question) {
-        if (!question || typeof question !== 'object') return '';
-        const inlineHint = this.sanitizeHintText(question.hint);
-        if (inlineHint) return inlineHint;
-        const incorrectHint = this.sanitizeHintText(question.hintIncorrect);
-        if (incorrectHint) return incorrectHint;
-        const goal = typeof question.learningGoal === 'string' ? question.learningGoal.trim() : '';
-        if (!goal) return '';
-        return `Reviens a l'objectif de la question: ${goal}`;
+        return (typeof ExerciseQuestionTypes !== 'undefined')
+            ? ExerciseQuestionTypes.resolveQuestionHint(question)
+            : '';
     }
 
     sanitizeHintText(value) {
-        if (typeof value !== 'string') return '';
-        let text = value.trim();
-        if (!text) return '';
-
-        const leakTokens = [
-            ' Indice lexical:',
-            ' Debut attendu:',
-            ' Fin attendue:',
-            " Point d'ancrage:",
-            ' Cible:',
-            ' Champs prioritaires:',
-            ' Appui utile:',
-            ' Ecarte la piste ',
-            ' Nombre de reponses correctes attendu:'
-        ];
-        leakTokens.forEach((token) => {
-            const idx = text.indexOf(token);
-            if (idx !== -1) text = text.slice(0, idx).trim();
-        });
-
-        const firstSentence = text.match(/^.*?[.!?](?:\s|$)/);
-        if (firstSentence && firstSentence[0]) {
-            text = firstSentence[0].trim();
-        }
-        return text;
+        return (typeof ExerciseQuestionTypes !== 'undefined')
+            ? ExerciseQuestionTypes.sanitizeHintText(value)
+            : (typeof value === 'string' ? value.trim() : '');
     }
 
     renderHeader() {

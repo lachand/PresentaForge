@@ -313,10 +313,6 @@ class MergeSortVisualizer extends SimulationPage {
         return true;
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     async addSplitLevel(depth, left, right) {
         if (!this.splitLevels[depth]) this.splitLevels[depth] = [];
@@ -749,8 +745,15 @@ class MergeSortWidget {
         if (btn) btn.textContent = '\u25B6 Lancer';
     }
 
+    /** Libère le timer de lecture et vide le conteneur (revue §C4). */
+    destroy() {
+        this._destroyed = true;
+        this._stop();
+        if (this.root) this.root.innerHTML = '';
+    }
+
     _run() {
-        if (!this.isRunning || this.done) { this._stop(); return; }
+        if (this._destroyed || !this.isRunning || this.done) { this._stop(); return; }
         this._step();
         if (!this.done) this._timer = setTimeout(() => this._run(), 650);
     }

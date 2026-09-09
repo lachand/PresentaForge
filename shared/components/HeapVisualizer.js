@@ -47,10 +47,6 @@ class HeapVisualizer extends SimulationPage {
         this.bindHoverSync();
     }
 
-    getCurrentDelay(multiplier = 1) {
-        const base = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        return Math.max(0, Math.round(base * multiplier));
-    }
 
     getSwapAnimationDuration() {
         const base = this.getCurrentDelay();
@@ -755,7 +751,14 @@ class HeapWidget {
         this._bindControls();
     }
 
+    /** Empêche tout rendu différé après démontage et vide le conteneur (revue §C4). */
+    destroy() {
+        this._destroyed = true;
+        if (this.root) this.root.innerHTML = '';
+    }
+
     _render() {
+        if (this._destroyed) return;
         const arr = this._heap;
 
         // Array view
