@@ -273,10 +273,10 @@ function sleep(ms) {
 
 // Initialize with simple example
 loadExample('simple');
-        window.loadExample = loadExample;
-        window.runPipeline = runPipeline;
-        window.stepPipeline = stepPipeline;
-        window.resetPipeline = resetPipeline;
+        this.loadExample = loadExample;
+        this.runPipeline = runPipeline;
+        this.stepPipeline = stepPipeline;
+        this.resetPipeline = resetPipeline;
     }
 }
 

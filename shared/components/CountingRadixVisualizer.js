@@ -599,8 +599,12 @@ class CountingRadixWidget {
     constructor(container, config = {}) {
         this.root = container;
         const defaultData = [4, 2, 7, 1, 3, 5, 0, 6];
-        this.originalData = Array.isArray(config.data) && config.data.length > 0
-            ? config.data.map(Number).filter(v => v >= 0).slice(0, 12) : defaultData;
+        const cleaned = Array.isArray(config.data)
+            ? config.data.map(Number).filter(v => Number.isFinite(v) && v >= 0).slice(0, 12)
+            : [];
+        // Le tri par comptage n'accepte que des entiers >= 0 ; sans donnée valide, on retombe
+        // sur le jeu par défaut (sinon Math.max(...[]) => -Infinity => RangeError).
+        this.originalData = cleaned.length > 0 ? cleaned : defaultData;
         this._timer = null;
         this.isRunning = false;
         this._resetState();

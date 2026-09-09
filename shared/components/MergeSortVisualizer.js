@@ -35,18 +35,10 @@ class MergeSortVisualizer extends SimulationPage {
         const blocks = this.data?.pseudocode || this.data?.pseudoCode;
         if (!Array.isArray(blocks) || blocks.length === 0) return;
 
-        const ids = [
-            'line-fn-merge-sort', 'line-base-case', 'line-return-base', 'line-mid',
-            'line-split-left', 'line-split-right', 'line-return-merge', 'line-empty',
-            'line-fn-merge', 'line-init-result', 'line-while', 'line-compare',
-            'line-take-left', 'line-else', 'line-take-right', 'line-concat', 'line-return-result'
-        ];
-
-        let cursor = 0;
         const lines = [];
         blocks.forEach((block) => {
-            (block.lines || []).forEach((line) => {
-                const id = ids[cursor] || '';
+            (block.lines || []).forEach((line, localIdx) => {
+                const id = (Array.isArray(block.lineIds) && block.lineIds[localIdx]) || '';
                 const attr = id ? (' id="' + id + '"') : '';
                 const content = (typeof PseudocodeSupport !== 'undefined')
                     ? PseudocodeSupport.renderLineContent(line, {
@@ -55,7 +47,6 @@ class MergeSortVisualizer extends SimulationPage {
                     })
                     : this.escapeHtml(line);
                 lines.push('<span class="line"' + attr + '>' + content + '</span>');
-                cursor++;
             });
         });
         host.innerHTML = lines.join('');

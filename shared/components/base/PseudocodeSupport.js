@@ -232,9 +232,17 @@ const PseudocodeSupport = {
         const blocks = this.getBlocks(data);
         if (blocks.length === 0) return false;
 
-        const lineIdBuilder = typeof options.lineIdBuilder === 'function'
+        // Priorité : ids explicites portés par le JSON (`block.lineIds[i]`, source unique
+        // depuis la revue §C10) ; sinon le builder fourni ; sinon un id générique.
+        const fallbackBuilder = typeof options.lineIdBuilder === 'function'
             ? options.lineIdBuilder
             : ((block, lineIndex, lineNumber) => `line${lineNumber}`);
+        const lineIdBuilder = (block, lineIndex, lineNumber) => {
+            if (Array.isArray(block.lineIds)) {
+                return block.lineIds[lineIndex] || '';
+            }
+            return fallbackBuilder(block, lineIndex, lineNumber);
+        };
 
         const renderOptions = {
             ...options,
@@ -251,7 +259,8 @@ const PseudocodeSupport = {
 
             (block.lines || []).forEach((line, lineIndex) => {
                 const lineId = lineIdBuilder(block, lineIndex, lineNumber);
-                html += '<span class="line" id="' + this.escapeHtml(lineId) + '">' + this.renderLineContent(line, renderOptions) + '</span>';
+                const idAttr = lineId ? ' id="' + this.escapeHtml(lineId) + '"' : '';
+                html += '<span class="line"' + idAttr + '>' + this.renderLineContent(line, renderOptions) + '</span>';
                 lineNumber += 1;
             });
 

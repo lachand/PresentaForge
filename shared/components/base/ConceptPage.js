@@ -2,29 +2,22 @@
  * ConceptPage - Base class for concept pages with JSON course loading.
  */
 // Widget registry: use shared OEI_WIDGET_REGISTRY (loaded via WidgetRegistry.js).
-// If not present, lazy-load it. No more inline fallback copy.
+// Chargement paresseux via OEIUtils.loadScript (source unique — revue §C7).
 let _widgetRegistryPromise = null;
 function _ensureWidgetRegistry() {
     if (typeof OEI_WIDGET_REGISTRY !== 'undefined' && window.OEI_WIDGET_REGISTRY) {
         return Promise.resolve(window.OEI_WIDGET_REGISTRY);
     }
     if (!_widgetRegistryPromise) {
-        _widgetRegistryPromise = new Promise((resolve) => {
-            const script = document.createElement('script');
-            // Resolve path: find any script whose src contains ConceptPage.js → same directory
-            const cpScript = Array.from(document.scripts).find(s => s.src && /ConceptPage\.js/i.test(s.src));
-            if (cpScript) {
-                script.src = cpScript.src.replace(/ConceptPage\.js(\?.*)?$/i, 'WidgetRegistry.js');
-            } else {
-                script.src = 'shared/components/base/WidgetRegistry.js';
-            }
-            script.onload = () => resolve(window.OEI_WIDGET_REGISTRY || {});
-            script.onerror = () => {
-                console.warn('WidgetRegistry.js could not be loaded — widgets will be unavailable');
-                resolve({});
-            };
-            document.head.appendChild(script);
-        });
+        const cpScript = Array.from(document.scripts).find((s) => s.src && /ConceptPage\.js/i.test(s.src));
+        const url = cpScript
+            ? cpScript.src.replace(/ConceptPage\.js(\?.*)?$/i, 'WidgetRegistry.js')
+            : 'shared/components/base/WidgetRegistry.js';
+        _widgetRegistryPromise = OEIUtils.loadScript(url, { globalName: 'OEI_WIDGET_REGISTRY' })
+            .then((ok) => {
+                if (!ok) console.warn('WidgetRegistry.js indisponible — widgets désactivés');
+                return window.OEI_WIDGET_REGISTRY || {};
+            });
     }
     return _widgetRegistryPromise;
 }
@@ -66,90 +59,18 @@ class ConceptPage {
         this.destroy();
         await this.loadData();
         this.applyMetadata();
-        // Ensure widget registry is available (lazy-load if needed)
-        _ensureWidgetRegistry();
+        // Ensure widget registry is available (lazy-load if needed) BEFORE rendering,
+        // sinon renderUnifiedContent voit un registre vide → "Widget non supporté".
+        await _ensureWidgetRegistry();
         await ConceptPage._loadKaTeX();
         await this.renderUnifiedContent();
         this._renderMath();
     }
 
-    static _resolveProjectRootUrl() {
-        if (typeof document === 'undefined') return null;
-        const current = document.currentScript;
-        const fallback = Array.from(document.scripts).find((s) => /shared\/components\/base\/ConceptPage\.js($|\?)/.test(s.src || ''));
-        const source = current && current.src ? current.src : (fallback ? fallback.src : '');
-        if (!source) return null;
-        try {
-            return new URL(source.replace(/shared\/components\/base\/ConceptPage\.js($|\?.*)/, ''), window.location.href);
-        } catch (error) {
-            return null;
-        }
-    }
-
     static async _loadKaTeX() {
-        if (typeof window === 'undefined') return;
-        if (window.renderMathInElement) return;
-        if (!ConceptPage._katexPromise) {
-            ConceptPage._katexPromise = (async () => {
-                const rootUrl = ConceptPage._resolveProjectRootUrl();
-                const cssUrl = rootUrl ? new URL('shared/vendor/katex/katex.min.css', rootUrl).toString() : 'shared/vendor/katex/katex.min.css';
-                const coreJsUrl = rootUrl ? new URL('shared/vendor/katex/katex.min.js', rootUrl).toString() : 'shared/vendor/katex/katex.min.js';
-                const autoRenderJsUrl = rootUrl ? new URL('shared/vendor/katex/auto-render.min.js', rootUrl).toString() : 'shared/vendor/katex/auto-render.min.js';
-
-                if (!document.querySelector('link[data-katex-core]')) {
-                    const link = document.createElement('link');
-                    link.rel = 'stylesheet';
-                    link.setAttribute('data-katex-core', '1');
-                    link.href = cssUrl;
-                    document.head.appendChild(link);
-                }
-                await new Promise((resolve) => {
-                    if (window.katex) {
-                        resolve();
-                        return;
-                    }
-                    const existing = document.querySelector('script[data-katex-core]');
-                    if (existing) {
-                        existing.addEventListener('load', () => resolve(), { once: true });
-                        existing.addEventListener('error', () => resolve(), { once: true });
-                        return;
-                    }
-
-                    const script = document.createElement('script');
-                    script.src = coreJsUrl;
-                    script.setAttribute('data-katex-core', '1');
-                    script.onload = resolve;
-                    script.onerror = () => {
-                        console.warn('KaTeX core failed to load');
-                        resolve();
-                    };
-                    document.head.appendChild(script);
-                });
-                await new Promise((resolve) => {
-                    if (window.renderMathInElement) {
-                        resolve();
-                        return;
-                    }
-                    const existing = document.querySelector('script[data-katex-autorender]');
-                    if (existing) {
-                        existing.addEventListener('load', () => resolve(), { once: true });
-                        existing.addEventListener('error', () => resolve(), { once: true });
-                        return;
-                    }
-
-                    const script = document.createElement('script');
-                    script.src = autoRenderJsUrl;
-                    script.setAttribute('data-katex-autorender', '1');
-                    script.onload = resolve;
-                    script.onerror = () => {
-                        console.warn('KaTeX auto-render failed to load');
-                        resolve();
-                    };
-                    document.head.appendChild(script);
-                });
-            })();
-        }
-        return ConceptPage._katexPromise;
+        if (typeof window === 'undefined') return true;
+        // Délègue au chargeur d'assets unique (OEIUtils.loadKaTeX) — revue §C7.
+        return OEIUtils.loadKaTeX();
     }
 
     _renderMath() {
@@ -665,31 +586,8 @@ class ConceptPage {
         if (!cacheKey || !globalName || !scriptPath) return false;
         if (typeof window !== 'undefined' && window[globalName]) return true;
         if (typeof document === 'undefined') return false;
-
-        if (!ConceptPage._assetPromises) ConceptPage._assetPromises = {};
-        if (ConceptPage._assetPromises[cacheKey]) return ConceptPage._assetPromises[cacheKey];
-
-        const scriptName = scriptPath.split('/').pop();
-        ConceptPage._assetPromises[cacheKey] = new Promise((resolve) => {
-            const existing = Array.from(document.scripts).find((s) => (s.src || '').includes(scriptName));
-            if (existing) {
-                if (window[globalName]) {
-                    resolve(true);
-                    return;
-                }
-                existing.addEventListener('load', () => resolve(Boolean(window[globalName])), { once: true });
-                existing.addEventListener('error', () => resolve(false), { once: true });
-                return;
-            }
-
-            const script = document.createElement('script');
-            script.src = this.resolveSharedScriptPath(scriptPath);
-            script.onload = () => resolve(Boolean(window[globalName]));
-            script.onerror = () => resolve(false);
-            document.head.appendChild(script);
-        });
-
-        return ConceptPage._assetPromises[cacheKey];
+        // Chargeur d'assets unique (OEIUtils.loadScript) — revue §C7.
+        return OEIUtils.loadScript(this.resolveSharedScriptPath(scriptPath), { globalName });
     }
 
     resolveSharedScriptPath(scriptPath) {

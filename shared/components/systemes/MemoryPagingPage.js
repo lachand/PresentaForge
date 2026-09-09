@@ -445,11 +445,11 @@ function updateInfo(text) {
 
 // Initialize
 resetSimulation();
-        window.switchAlgorithm = switchAlgorithm;
-        window.runSimulation = runSimulation;
-        window.stepSimulation = stepSimulation;
-        window.resetSimulation = resetSimulation;
-        window.loadExample = loadExample;
+        this.switchAlgorithm = switchAlgorithm;
+        this.runSimulation = runSimulation;
+        this.stepSimulation = stepSimulation;
+        this.resetSimulation = resetSimulation;
+        this.loadExample = loadExample;
     }
 }
 

@@ -55,6 +55,43 @@ class AlgorithmExpertEngine {
         }
     }
 
+    /**
+     * Égalité « valeur » façon Python : les listes/tuples et dictionnaires sont
+     * comparés par contenu (et non par identité comme le ferait `===`).
+     */
+    pyEquals(a, b) {
+        if (a === b) return true;
+        if (a == null || b == null) return a === b;
+
+        const aArr = Array.isArray(a);
+        const bArr = Array.isArray(b);
+        if (aArr || bArr) {
+            if (!aArr || !bArr || a.length !== b.length) return false;
+            return a.every((item, i) => this.pyEquals(item, b[i]));
+        }
+
+        const aSet = a instanceof Set;
+        const bSet = b instanceof Set;
+        if (aSet || bSet) {
+            if (!aSet || !bSet || a.size !== b.size) return false;
+            for (const item of a) {
+                if (!b.has(item)) return false;
+            }
+            return true;
+        }
+
+        if (typeof a === 'object' && typeof b === 'object') {
+            const keysA = Object.keys(a);
+            const keysB = Object.keys(b);
+            if (keysA.length !== keysB.length) return false;
+            return keysA.every((key) => (
+                Object.prototype.hasOwnProperty.call(b, key) && this.pyEquals(a[key], b[key])
+            ));
+        }
+
+        return false;
+    }
+
     executeProgram(program, inputValues, contract = []) {
         const entry = program.order[0];
         if (!entry) throw new Error('Aucune fonction détectée.');
@@ -1294,9 +1331,20 @@ class AlgorithmExpertEngine {
     }
 
     stripComments(line) {
-        const index = line.indexOf('#');
-        if (index < 0) return line;
-        return line.slice(0, index);
+        // Ne coupe sur '#' que hors chaîne (sinon `c = "#ff0000"` casse le parse).
+        let inString = null;
+        for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (inString) {
+                if (ch === '\\') { i += 1; continue; }
+                if (ch === inString) inString = null;
+            } else if (ch === '"' || ch === '\'') {
+                inString = ch;
+            } else if (ch === '#') {
+                return line.slice(0, i);
+            }
+        }
+        return line;
     }
 
     evaluateExpression(expression, frame, runtime, depth) {
@@ -1477,6 +1525,10 @@ class AlgorithmExpertEngine {
             return node;
         };
 
+        // Grammaire Python : u_expr ::= power | ('-'|'+'|'not') u_expr
+        //                    power  ::= primary ['**' u_expr]
+        // => `**` lie plus fort que l'unaire à SA GAUCHE (-2 ** 2 == -(2**2) == -4)
+        //    mais l'unaire à droite lui appartient (2 ** -1 == 0.5) ; associatif à droite.
         const parseUnary = () => {
             if (matchValue('not')) {
                 return { type: 'unary', op: 'not', arg: parseUnary() };
@@ -1487,7 +1539,16 @@ class AlgorithmExpertEngine {
             if (matchValue('+')) {
                 return { type: 'unary', op: '+', arg: parseUnary() };
             }
-            return parsePrimary();
+            return parsePower();
+        };
+
+        const parsePower = () => {
+            const base = parsePrimary();
+            if (peek().value === '**') {
+                consume();
+                return { type: 'binary', op: '**', left: base, right: parseUnary() };
+            }
+            return base;
         };
 
         const parseMul = () => {
@@ -1680,7 +1741,7 @@ class AlgorithmExpertEngine {
             }
 
             const twoChars = src.slice(i, i + 2);
-            if (['==', '!=', '<=', '>=', '//'].includes(twoChars)) {
+            if (['==', '!=', '<=', '>=', '//', '**'].includes(twoChars)) {
                 tokens.push({ type: 'operator', value: twoChars });
                 i += 2;
                 continue;
@@ -2047,16 +2108,16 @@ class AlgorithmExpertEngine {
 
         if (node.type === 'binary') {
             if (node.op === 'and') {
+                // Python : `a and b` renvoie `a` s'il est faux, sinon `b` (pas un booléen).
                 const left = this.evaluateAst(node.left, frame, runtime, depth);
-                if (!this.toTruthValue(left)) return false;
-                const right = this.evaluateAst(node.right, frame, runtime, depth);
-                return this.toTruthValue(right);
+                if (!this.toTruthValue(left)) return left;
+                return this.evaluateAst(node.right, frame, runtime, depth);
             }
             if (node.op === 'or') {
+                // Python : `a or b` renvoie `a` s'il est vrai, sinon `b`.
                 const left = this.evaluateAst(node.left, frame, runtime, depth);
-                if (this.toTruthValue(left)) return true;
-                const right = this.evaluateAst(node.right, frame, runtime, depth);
-                return this.toTruthValue(right);
+                if (this.toTruthValue(left)) return left;
+                return this.evaluateAst(node.right, frame, runtime, depth);
             }
 
             const left = this.evaluateAst(node.left, frame, runtime, depth);
@@ -2118,13 +2179,24 @@ class AlgorithmExpertEngine {
                 return leftNum / rightNum;
             }
 
+            if (node.op === '**') {
+                const leftNum = this.asFiniteNumber(left, runtime, '**');
+                const rightNum = this.asFiniteNumber(right, runtime, '**');
+                const power = leftNum ** rightNum;
+                if (!Number.isFinite(power)) {
+                    throw this.createExpertError('E_OP_TYPE', 'Résultat de puissance non fini.', runtime);
+                }
+                return power;
+            }
+
             if (node.op === '//') {
                 const leftNum = this.asFiniteNumber(left, runtime, '//');
                 const rightNum = this.asFiniteNumber(right, runtime, '//');
                 if (rightNum === 0) {
                     throw this.createExpertError('E_ZERO_DIV', 'Division entière par zéro interdite.', runtime);
                 }
-                return Math.trunc(leftNum / rightNum);
+                // Python : division entière plancher (-7 // 2 == -4).
+                return Math.floor(leftNum / rightNum);
             }
 
             if (node.op === '%') {
@@ -2133,11 +2205,12 @@ class AlgorithmExpertEngine {
                 if (rightNum === 0) {
                     throw this.createExpertError('E_ZERO_DIV', 'Modulo par zéro interdit.', runtime);
                 }
-                return leftNum % rightNum;
+                // Python : le résultat suit le signe du diviseur (-7 % 3 == 2).
+                return ((leftNum % rightNum) + rightNum) % rightNum;
             }
 
-            if (node.op === '==') return left === right;
-            if (node.op === '!=') return left !== right;
+            if (node.op === '==') return this.pyEquals(left, right);
+            if (node.op === '!=') return !this.pyEquals(left, right);
             if (['<', '<=', '>', '>='].includes(node.op) && runtime.strictTyping) {
                 if (typeof left !== typeof right) {
                     throw this.createExpertError(
@@ -2220,4 +2293,8 @@ class AlgorithmExpertEngine {
 
 if (typeof window !== 'undefined') {
     window.AlgorithmExpertEngine = AlgorithmExpertEngine;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = AlgorithmExpertEngine;
 }

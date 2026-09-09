@@ -28,6 +28,19 @@ class ExerciseQuestionTypes {
         return (Array.isArray(values) ? values : []).map((v) => ExerciseQuestionTypes.normalize(v));
     }
 
+    /**
+     * JSON.parse tolérant : renvoie `fallback` au lieu de lever sur une entrée corrompue.
+     * Utilisé pour les champs cachés (guided-construction) dont la valeur transite par le DOM.
+     */
+    static safeJsonParse(raw, fallback) {
+        try {
+            const parsed = JSON.parse(raw);
+            return parsed == null ? fallback : parsed;
+        } catch (_) {
+            return fallback;
+        }
+    }
+
     static shuffleArray(values) {
         const copy = Array.isArray(values) ? [...values] : [];
         for (let i = copy.length - 1; i > 0; i--) {
@@ -167,7 +180,7 @@ class ExerciseQuestionTypes {
                 evaluate(question, answer) {
                     const expected = (Array.isArray(question.answer) ? question.answer : []).map((v) => String(v)).sort();
                     const actual = (Array.isArray(answer) ? answer : []).map((v) => String(v)).sort();
-                    const ok = expected.length === actual.length && expected.every((v, i) => v === actual[i]);
+                    const ok = expected.length > 0 && expected.length === actual.length && expected.every((v, i) => v === actual[i]);
                     const expectedText = expected.map((idx) => (question.options || [])[Number(idx)]).filter(Boolean).join(' | ');
                     let hint = '';
                     if (!ok) {
@@ -271,10 +284,11 @@ class ExerciseQuestionTypes {
                     const expected = Array.isArray(question.answer) ? question.answer.map((v) => String(v)) : [];
                     const actualIds = (answer || []).map((row) => String(row.id));
                     const actualLabels = (answer || []).map((row) => String(row.label));
-                    const okByIds = expected.length && expected.every((v, i) => String(v) === actualIds[i]);
-                    const okByLabels = expected.length && expected.every((v, i) => String(v) === actualLabels[i]);
+                    const hasExpectation = expected.length > 0;
+                    const okByIds = hasExpectation && expected.every((v, i) => String(v) === actualIds[i]);
+                    const okByLabels = hasExpectation && expected.every((v, i) => String(v) === actualLabels[i]);
                     return {
-                        ok: okByIds || okByLabels,
+                        ok: Boolean(okByIds || okByLabels),
                         expectedText: expected.join(' -> ')
                     };
                 }
@@ -319,7 +333,8 @@ class ExerciseQuestionTypes {
                 },
                 evaluate(question, answer) {
                     const expected = question.answer || {};
-                    const ok = Object.keys(expected).every((k) => String(answer?.[k] ?? '') === String(expected[k]));
+                    const keys = Object.keys(expected);
+                    const ok = keys.length > 0 && keys.every((k) => String(answer?.[k] ?? '') === String(expected[k]));
                     const expectedText = Object.entries(expected).map(([k, v]) => `${k}=>${v}`).join(', ');
                     return { ok, expectedText };
                 }
@@ -365,7 +380,8 @@ class ExerciseQuestionTypes {
                 },
                 evaluate(question, answer) {
                     const expected = question.answer || {};
-                    const ok = Object.keys(expected).every((k) => String(answer?.[k] ?? '') === String(expected[k]));
+                    const keys = Object.keys(expected);
+                    const ok = keys.length > 0 && keys.every((k) => String(answer?.[k] ?? '') === String(expected[k]));
                     const expectedText = Object.entries(expected).map(([k, v]) => `${k}=>${v}`).join(', ');
                     return { ok, expectedText };
                 }
@@ -397,15 +413,20 @@ class ExerciseQuestionTypes {
                     const context = ExerciseQuestionTypes.resolveBindContext(pageOrContext, maybeContext);
                     const listenerOptions = ExerciseQuestionTypes.getBindOptions(context);
 
+                    const readTokens = () => {
+                        const parsed = ExerciseQuestionTypes.safeJsonParse(hidden.value || '[]', []);
+                        return Array.isArray(parsed) ? parsed : [];
+                    };
+
                     const repaint = () => {
-                        const tokens = JSON.parse(hidden.value || '[]');
+                        const tokens = readTokens();
                         target.innerHTML = tokens.map((t) => `<span class="builder-chip">${ExerciseQuestionTypes.escape(t)}</span>`).join('');
                     };
 
                     container.addEventListener('click', (event) => {
                         const tokenBtn = event.target.closest('.btn-token');
                         if (tokenBtn) {
-                            const tokens = JSON.parse(hidden.value || '[]');
+                            const tokens = readTokens();
                             tokens.push(tokenBtn.dataset.token);
                             hidden.value = JSON.stringify(tokens);
                             repaint();
@@ -414,7 +435,7 @@ class ExerciseQuestionTypes {
                         const actionBtn = event.target.closest('[data-action]');
                         if (!actionBtn) return;
                         const action = actionBtn.dataset.action;
-                        const tokens = JSON.parse(hidden.value || '[]');
+                        const tokens = readTokens();
                         if (action === 'undo') tokens.pop();
                         if (action === 'clear') tokens.length = 0;
                         hidden.value = JSON.stringify(tokens);
@@ -423,7 +444,8 @@ class ExerciseQuestionTypes {
                 },
                 read(container) {
                     const raw = container.querySelector('#guided-answer')?.value || '[]';
-                    const tokens = JSON.parse(raw);
+                    const parsed = ExerciseQuestionTypes.safeJsonParse(raw, []);
+                    const tokens = Array.isArray(parsed) ? parsed : [];
                     if (!tokens.length) return { ok: false, error: 'Construisez une réponse avant validation.' };
                     return { ok: true, value: tokens };
                 },
@@ -473,7 +495,8 @@ class ExerciseQuestionTypes {
                 evaluate(question, answer) {
                     const expected = question.answer || {};
                     const accepted = question.accepted || {};
-                    const ok = Object.keys(expected).every((key) => {
+                    const keys = Object.keys(expected);
+                    const ok = keys.length > 0 && keys.every((key) => {
                         const allowed = Array.isArray(accepted[key]) ? accepted[key] : [];
                         return ExerciseQuestionTypes.acceptedMatch(answer?.[key], expected[key], allowed);
                     });
@@ -646,6 +669,11 @@ class ExerciseQuestionTypes {
                     const expectedUpdates = expected.updates || {};
                     const answerUpdates = answer.updates || {};
 
+                    // Une question sans étape attendue est une erreur d'auteur : ne pas valider.
+                    if (!expectedNext && Object.keys(expectedUpdates).length === 0) {
+                        return { ok: false, expectedText: '(étape attendue non renseignée)' };
+                    }
+
                     const nextOk = String(answer.nextNode || '') === expectedNext;
                     const updateOk = Object.keys(expectedUpdates).every((node) => {
                         const exp = expectedUpdates[node] || {};
@@ -751,9 +779,10 @@ class ExerciseQuestionTypes {
                     return { ok: true, value };
                 },
                 evaluate(question, answer) {
+                    const tasks = Array.isArray(question.tasks) ? question.tasks : [];
                     const details = [];
-                    let ok = true;
-                    for (const [idx, task] of (question.tasks || []).entries()) {
+                    let ok = tasks.length > 0;
+                    for (const [idx, task] of tasks.entries()) {
                         const key = String(task.id || `task_${idx}`);
                         const taskAnswer = answer?.[key];
                         const accepted = Array.isArray(task.accepted) ? task.accepted : [];
@@ -777,6 +806,10 @@ class ExerciseQuestionTypes {
     static get(type) {
         return ExerciseQuestionTypes.registry[type] || null;
     }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ExerciseQuestionTypes;
 }
 
 if (typeof window !== 'undefined') {

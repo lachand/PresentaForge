@@ -14,50 +14,13 @@
  * - doStep() : Exécuter une étape (optionnel pour simulations pas-à-pas)
  * - render() : Mettre à jour l'affichage
  */
-const SimulationPageBase = typeof ConceptPage !== 'undefined'
-    ? ConceptPage
-    : class {
-        constructor(dataPath, options = {}) {
-            this.dataPath = dataPath;
-            this.courseContainerId = options.courseContainerId || 'course-container';
-            this.pageTitleId = options.pageTitleId || null;
-            this.pageTitlePrefix = options.pageTitlePrefix || '';
-            this.strictLoading = options.strictLoading === true;
-            this.data = null;
-        }
-
-        async loadData() {
-            if (!this.dataPath) return;
-            const response = await fetch(this.dataPath);
-            if (!response.ok) {
-                throw new Error('HTTP error ' + response.status);
-            }
-            this.data = await response.json();
-        }
-
-        applyMetadata() {
-            if (!this.data || !this.data.metadata) return;
-
-            if (this.data.metadata.title) {
-                document.title = this.data.metadata.title + ' — Outils Enseignement';
-            }
-
-            if (this.pageTitleId && this.data.metadata.title) {
-                const titleEl = document.getElementById(this.pageTitleId);
-                if (titleEl) {
-                    titleEl.textContent = this.pageTitlePrefix + this.data.metadata.title;
-                }
-            }
-        }
-
-        renderCourse() {
-            if (!this.data || !this.data.course || typeof CourseRenderer === 'undefined') return;
-            const container = document.getElementById(this.courseContainerId);
-            if (!container) return;
-            const renderer = new CourseRenderer(this.data.course);
-            container.innerHTML = renderer.render();
-        }
-    };
+// SimulationPage étend toujours ConceptPage. Toutes les pages HTML chargent
+// ConceptPage.js avant SimulationPage.js ; l'ancien repli anonyme (jamais atteint)
+// a été retiré au profit d'une erreur explicite si la dépendance manque.
+if (typeof ConceptPage === 'undefined') {
+    throw new Error('SimulationPage requiert ConceptPage.js — à charger avant SimulationPage.js');
+}
+const SimulationPageBase = ConceptPage;
 
 class SimulationPage extends SimulationPageBase {
     /**
@@ -95,6 +58,11 @@ class SimulationPage extends SimulationPageBase {
             this.destroy();
             await this.loadData();
             this.applyMetadata();
+            // Attendre le registre de widgets avant tout rendu de contenu unifié
+            // (fonction globale déclarée par ConceptPage.js, chargé avant ce fichier).
+            if (typeof _ensureWidgetRegistry === 'function') {
+                await _ensureWidgetRegistry();
+            }
             await ConceptPage._loadKaTeX();
             await this.setupCourse();
             this._renderMath();
@@ -105,7 +73,12 @@ class SimulationPage extends SimulationPageBase {
             this.setupLearningTools();
         } catch (error) {
             console.error('Erreur lors de l\'initialisation:', error);
-            alert('Erreur lors du chargement de la page. Vérifiez la console pour plus de détails.');
+            const msg = 'Impossible de charger cette page de simulation. Réessayez ou consultez la console pour le détail.';
+            if (typeof OEIUtils !== 'undefined' && typeof OEIUtils.showPageError === 'function') {
+                OEIUtils.showPageError(msg);
+            } else {
+                console.warn(msg);
+            }
         }
     }
 
@@ -180,6 +153,12 @@ class SimulationPage extends SimulationPageBase {
      * Configure le contrôleur de vitesse
      */
     setupSpeedController() {
+        // Libérer l'instance précédente pour éviter d'empiler des écouteurs sur le slider
+        if (this.speedCtrl && typeof this.speedCtrl.destroy === 'function') {
+            this.speedCtrl.destroy();
+        }
+        this.speedCtrl = null;
+
         // Vérifier que le SpeedController existe dans OEIUtils
         if (typeof OEIUtils !== 'undefined' && OEIUtils.SpeedController) {
             this.speedCtrl = new OEIUtils.SpeedController();
@@ -198,28 +177,11 @@ class SimulationPage extends SimulationPageBase {
             return;
         }
 
-        if (typeof PseudocodeSupport !== 'undefined') {
-            PseudocodeSupport.renderFromData(this.data, {
-                containerId: 'pseudocode-container',
-                lineIdBuilder: (func, idx) => `${func.name}-line${idx}`
-            });
-            return;
-        }
-
-        if (this.data.pseudocode && this.data.pseudocode.length > 0) {
-            let html = '<div class="card algorithm-code">';
-            this.data.pseudocode.forEach(func => {
-                func.lines.forEach((line, idx) => {
-                    const lineId = `${func.name}-line${idx}`;
-                    html += `<span class="line" id="${lineId}">${line}</span>`;
-                });
-                if (this.data.pseudocode.length > 1) {
-                    html += '<span class="line"></span>';
-                }
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        }
+        // PseudocodeSupport est toujours chargé par les pages de simulation.
+        PseudocodeSupport.renderFromData(this.data, {
+            containerId: 'pseudocode-container',
+            lineIdBuilder: (func, idx) => `${func.name}-line${idx}`
+        });
     }
 
     // ============================================
@@ -482,6 +444,10 @@ class SimulationPage extends SimulationPageBase {
     destroy() {
         this.stop();
         this.teardownLearningTools();
+        if (this.speedCtrl && typeof this.speedCtrl.destroy === 'function') {
+            this.speedCtrl.destroy();
+        }
+        this.speedCtrl = null;
         if (typeof super.destroy === 'function') {
             super.destroy();
         }

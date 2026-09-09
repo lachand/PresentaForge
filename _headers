@@ -1,7 +1,10 @@
 # En-têtes HTTP pour hébergement statique compatible (Netlify, Cloudflare Pages).
-# GitHub Pages ignore ce fichier → la CSP y est portée par <meta http-equiv> dans les
-# pages slides/*.html (chantier 8). Ce fichier ajoute ce qu'un <meta> ne peut pas faire :
-# frame-ancestors, nosniff, Referrer-Policy, et un point de collecte des rapports CSP.
+# GitHub Pages ignore ce fichier → la CSP est portée par <meta http-equiv> dans CHAQUE
+# page : slides/*.html depuis le chantier 8 ; pages cours/outils depuis la revue 2026-09
+# (CSP stricte `script-src 'self'`, cf. docs/developer/SECURITY_MODEL.md).
+# Ce fichier n'ajoute au niveau /* que ce qu'un <meta> ne peut pas faire (nosniff,
+# Referrer-Policy, COOP). La CSP des pages cours/outils reste dans leur <meta> pour
+# éviter toute interaction avec les blocs /slides/*.html plus spécifiques ci-dessous.
 # Voir docs/developer/SECURITY_MODEL.md.
 
 /*

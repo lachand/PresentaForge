@@ -15,21 +15,12 @@ class GridPlaygroundPage extends ConceptPage {
 
     async init() {
         await super.init();
-        this.bindInlineCompatibility();
         this.createDefaults();
         this.update();
         window.addEventListener('resize', () => {
             const container = document.getElementById('grid-container');
             if (container) this.drawGridLines(container);
         });
-    }
-
-    bindInlineCompatibility() {
-        window.addGridItem = this.addGridItem.bind(this);
-        window.resetGridItems = this.resetGridItems.bind(this);
-        window.updateItemProp = this.updateItemProp.bind(this);
-        window.update = this.update.bind(this);
-        window.copyCode = this.copyCode.bind(this);
     }
 
     createDefaults() {

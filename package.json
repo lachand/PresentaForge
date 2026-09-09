@@ -1,10 +1,15 @@
 {
-  "name": "oei-slides-tooling",
+  "name": "oei-plateforme",
   "private": true,
-  "description": "Tooling QA + documentation pour le runtime Slides OEI",
+  "description": "Plateforme pédagogique OEI — outillage QA (contenu de cours, composants, slides)",
   "scripts": {
     "docs:api": "typedoc --options typedoc.json",
     "docs:api:check": "typedoc --options typedoc.json --emit none",
+    "lint": "eslint . --max-warnings 90",
+    "lint:fix": "eslint . --fix",
+    "check:syntax": "node tools/check-syntax.mjs",
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "qa:content": "node tools/lint-course-content.js --strict-metadata && npm run check:syntax && npm run lint && node tools/audit-global-assignments.mjs && npm run test:unit && node tools/generate-index-catalog.js && node tools/check-catalog-integrity.js",
     "qa:slides:metrics": "node tools/slides/refactor-metrics.mjs --check",
     "qa:slides": "bash tools/ui-inline-audit.sh . && node tools/security/inline-expression-audit.mjs && node tools/security/innerhtml-audit.mjs && node tools/slides/deck-schema-validate.mjs && node tools/slides/refactor-guard.mjs && npm run qa:slides:metrics && node --test tests/slides/*.test.mjs && npm run docs:api:check",
     "qa:slides:visual": "MODE=compare bash tools/slides/capture-render-matrix.sh",
@@ -19,6 +24,8 @@
     "ws": "^8.19.0"
   },
   "devDependencies": {
+    "eslint": "^9.39.5",
+    "globals": "^15.15.0",
     "pixelmatch": "^6.0.0",
     "pngjs": "^7.0.0",
     "typedoc": "^0.27.9"

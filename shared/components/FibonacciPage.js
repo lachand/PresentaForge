@@ -6,17 +6,12 @@ class FibonacciPage extends SimulationPage {
     }
 
     async init() {
-        console.log('FibonacciPage: init start');
         await super.init();
-        console.log('FibonacciPage: super.init() finished');
         this.visualizer = new FibonacciVisualizer(document.getElementById('fib-visualization-container'));
-        console.log('FibonacciPage: visualizer created');
         this.setMode(this.currentMode); // Set initial mode
-        console.log('FibonacciPage: initial setMode called');
     }
 
     setupControls() {
-        console.log('FibonacciPage: setupControls start');
         const container = document.getElementById('controls-container');
         if (!container) {
             console.warn('Controls container not found');
@@ -35,24 +30,23 @@ class FibonacciPage extends SimulationPage {
                 </div>
                 <button id="btn-run" class="btn btn-primary">Lancer</button>
                 <button id="btn-reset" class="btn btn-secondary">Réinitialiser</button>
-            </div>`;
-            
+            </div>
+            <div class="feedback error" id="fib-feedback" role="alert" aria-live="polite"></div>`;
+
         this.nInput = document.getElementById('fib-n');
         this.runBtn = document.getElementById('btn-run');
         this.resetBtn = document.getElementById('btn-reset');
         this.modeSwitchContainer = document.getElementById('fib-mode-switcher');
-        console.log('FibonacciPage: modeSwitchContainer is', this.modeSwitchContainer);
-
+        this.feedbackEl = document.getElementById('fib-feedback');
 
         this.runBtn.addEventListener('click', this.run.bind(this));
         this.resetBtn.addEventListener('click', this.reset.bind(this));
-        
+
         if (this.modeSwitchContainer) {
             this.modeSwitchContainer.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('click', (e) => this.setMode(e.target.dataset.mode));
             });
         }
-        console.log('FibonacciPage: setupControls end');
     }
 
     setupPseudocode() {
@@ -60,12 +54,11 @@ class FibonacciPage extends SimulationPage {
     }
 
     setMode(mode) {
-        console.log('FibonacciPage: setMode called with', mode);
         if (!mode) return;
         this.currentMode = mode;
 
         if (!this.modeSwitchContainer) {
-            console.error('setMode called but modeSwitchContainer is null!');
+            console.warn('FibonacciPage.setMode: conteneur de bascule de mode absent');
             return;
         }
         this.modeSwitchContainer.querySelectorAll('button').forEach(btn => {
@@ -107,10 +100,13 @@ class FibonacciPage extends SimulationPage {
 
     async run() {
         if (this.state.running) return;
-        
+
+        if (this.feedbackEl) this.feedbackEl.textContent = '';
         const n = parseInt(this.nInput.value, 10);
         if (isNaN(n) || n < 0 || n > 12) {
-            alert("Veuillez entrer un nombre entre 0 et 12 pour une visualisation optimale.");
+            const msg = 'Entrez un nombre entier entre 0 et 12 pour une visualisation lisible.';
+            if (this.feedbackEl) this.feedbackEl.textContent = msg;
+            else console.warn(msg);
             return;
         }
 

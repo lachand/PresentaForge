@@ -9,18 +9,8 @@ class FlexboxPlaygroundPage extends ConceptPage {
 
     async init() {
         await super.init();
-        this.bindInlineCompatibility();
         this.createDefaultItems();
         this.update();
-    }
-
-    bindInlineCompatibility() {
-        window.addItem = this.addItem.bind(this);
-        window.removeItem = this.removeItem.bind(this);
-        window.resetItems = this.resetItems.bind(this);
-        window.updateItemProp = this.updateItemProp.bind(this);
-        window.update = this.update.bind(this);
-        window.copyCode = this.copyCode.bind(this);
     }
 
     createDefaultItems() {

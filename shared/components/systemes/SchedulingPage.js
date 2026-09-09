@@ -447,14 +447,14 @@ class SchedulingPage extends ConceptPage {
     loadExample();
     onAlgoChange();
     renderPseudocode('fcfs');
-        window.addProcess = addProcess;
-        window.loadExample = loadExample;
-        window.onAlgoChange = onAlgoChange;
-        window.onAlgoChange2 = onAlgoChange2;
-        window.runSimulation = runSimulation;
-        window.resetSimulation = resetSimulation;
-        window.switchTab = switchTab;
-        window.removeProcess = removeProcess;
+        this.addProcess = addProcess;
+        this.loadExample = loadExample;
+        this.onAlgoChange = onAlgoChange;
+        this.onAlgoChange2 = onAlgoChange2;
+        this.runSimulation = runSimulation;
+        this.resetSimulation = resetSimulation;
+        this.switchTab = switchTab;
+        this.removeProcess = removeProcess;
     }
 }
 

@@ -251,10 +251,11 @@ class CourseRenderer {
             case 'list':
                 return this.renderList(item);
 
-            case 'heading':
+            case 'heading': {
                 const level = item.level || 3;
                 const style = level === 3 ? 'style="color:var(--primary);margin-top:1.5rem;"' : '';
                 return `<h${level} ${style}>${item.text}</h${level}>`;
+            }
 
             case 'code':
                 return this.renderCode(item);

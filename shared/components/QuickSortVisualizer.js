@@ -36,17 +36,10 @@ class QuickSortVisualizer extends SimulationPage {
         const blocks = this.data?.pseudocode || this.data?.pseudoCode;
         if (!Array.isArray(blocks) || blocks.length === 0) return;
 
-        const ids = [
-            '', 'if-low-high', 'partition-call', 'recursion-left', 'recursion-right',
-            '', '', 'pivot-setup', 'index-setup', 'for-loop', 'if-condition',
-            'increment-i', 'swap-elements', 'final-swap', 'return-pivot'
-        ];
-
         const lines = [];
-        let cursor = 0;
         blocks.forEach((block) => {
-            (block.lines || []).forEach((line) => {
-                const id = ids[cursor] || '';
+            (block.lines || []).forEach((line, localIdx) => {
+                const id = (Array.isArray(block.lineIds) && block.lineIds[localIdx]) || '';
                 const attr = id ? (' id="' + id + '"') : '';
                 const content = (typeof PseudocodeSupport !== 'undefined')
                     ? PseudocodeSupport.renderLineContent(line, {
@@ -55,7 +48,6 @@ class QuickSortVisualizer extends SimulationPage {
                     })
                     : this.escapeHtml(line);
                 lines.push('<span class="line"' + attr + '>' + content + '</span>');
-                cursor++;
             });
         });
 
