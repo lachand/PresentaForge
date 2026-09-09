@@ -384,8 +384,40 @@
              * @param {any} payload - parsed file content
              * @returns {Promise<{ ok:boolean, courseKey?:string, reason?:string }>}
              */
+            /**
+             * Bundle multi-cours d'une séance : `{ type:'presentaforge-revision-multi',
+             * courses:[ <buildReviseExport>… ] }`. Repli sur `[]` si aucun courseKey.
+             * @param {string[]} courseKeys
+             * @returns {Promise<{ type:string, v:number, exportedAt:string, courses:object[] }>}
+             */
+            async buildMultiReviseExport(courseKeys) {
+                const keys = Array.isArray(courseKeys) ? courseKeys.filter(k => typeof k === 'string' && k) : [];
+                const courses = [];
+                for (const ck of keys) {
+                    // eslint-disable-next-line no-await-in-loop
+                    const one = await this.buildReviseExport(ck);
+                    if (one) courses.push(one);
+                }
+                return { type: 'presentaforge-revision-multi', v: 1, exportedAt: new Date().toISOString(), courses };
+            },
+
             async importReviseFile(payload) {
                 if (!payload || typeof payload !== 'object') return { ok: false, reason: 'invalid' };
+
+                // Bundle multi-cours (séance entière) : on rejoue l'import unitaire pour chacun.
+                if (payload.type === 'presentaforge-revision-multi' && Array.isArray(payload.courses)) {
+                    const courseKeys = [];
+                    let lastReason = 'no-deck';
+                    for (const course of payload.courses) {
+                        // eslint-disable-next-line no-await-in-loop
+                        const r = await this.importReviseFile(course);
+                        if (r.ok && r.courseKey) courseKeys.push(r.courseKey);
+                        else lastReason = r.reason || lastReason;
+                    }
+                    return courseKeys.length
+                        ? { ok: true, count: courseKeys.length, courseKeys }
+                        : { ok: false, reason: lastReason };
+                }
 
                 let deck = null;
                 let bundle = null;

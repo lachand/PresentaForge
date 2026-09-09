@@ -1852,8 +1852,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 const frags = Array.from(currentSlide.querySelectorAll('.fragment'));
                 const idx = frags.indexOf(fragmentEl);
                 if (idx >= 0) return idx;
-                const dataIdx = toIntOrNull(fragmentEl?.dataset?.fragmentIndex ?? fragmentEl?.getAttribute?.('data-fragment-index'));
-                return dataIdx;
+                return toIntOrNull(fragmentEl?.dataset?.fragmentIndex ?? fragmentEl?.getAttribute?.('data-fragment-index'));
             };
             deck.addEventListener('slidechanged', e => {
                 _whiteboard?.onSlideChange(e.indexh);
@@ -2135,6 +2134,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 sourceFile: file || '__draft__',
                 slides,
                 data,
+                recordingStore: window.OEISessionRecordingStore,
                 normalizeReplaySessionExport,
                 buildReplayStandaloneHtmlFn: buildReplayStandaloneHtml,
                 slidesRenderer: SlidesRenderer,

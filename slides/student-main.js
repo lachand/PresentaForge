@@ -373,7 +373,7 @@
                     const store = window.OEIStudentStorage.create({ roomId: '' });
                     const res = await store.importReviseFile(parsed);
                     if (res.ok) {
-                        setJoinStatus('Révision importée ✓', 'info');
+                        setJoinStatus(res.count > 1 ? `${res.count} cours importés ✓` : 'Révision importée ✓', 'info');
                         renderReviseHome();
                     } else {
                         const msg = {
@@ -480,6 +480,32 @@
             : { handleBegin: () => false, handleChunk: () => false, isActive: () => false, reset: () => {} };
         H.transport = window.OEIStudentTransport.create(H);
 
+        // ── Suivi des decks de la séance en cours (cet onglet) ──────────────
+        // Le prof peut pousser plusieurs decks : on retient les courseKey vus,
+        // pour proposer un export « toute la séance ». sessionStorage → survit à
+        // un rafraîchissement, meurt à la fermeture de l'onglet.
+        const _sessionKey = 'oei-v2-student-session-' + toSafeString(roomId || 'na', 80);
+        H.sessionCourseKeys = (() => {
+            try {
+                const raw = sessionStorage.getItem(_sessionKey);
+                const arr = raw ? JSON.parse(raw) : [];
+                return new Set(Array.isArray(arr) ? arr.filter(x => typeof x === 'string') : []);
+            } catch (_) { return new Set(); }
+        })();
+        H.trackSessionCourse = ck => {
+            const key = toSafeString(ck, 120);
+            if (!key || H.sessionCourseKeys.has(key)) return;
+            H.sessionCourseKeys.add(key);
+            try { sessionStorage.setItem(_sessionKey, JSON.stringify([...H.sessionCourseKeys])); } catch (_) {}
+        };
+        H.sessionCourses = () => {
+            const list = (typeof storage.listReviseArchives === 'function') ? storage.listReviseArchives() : [];
+            const byKey = new Map(list.map(e => [e.courseKey, e]));
+            return [...H.sessionCourseKeys]
+                .map(ck => byKey.get(ck) || { courseKey: ck, title: 'Cours', slideCount: 0 })
+                .map(e => ({ courseKey: e.courseKey, title: e.title || 'Cours', slideCount: e.slideCount || 0 }));
+        };
+
         _syncStudentRuntime({
             roomId,
             pseudo: state.pseudo,
@@ -500,6 +526,9 @@
         async function _archiveDeckForRevision(msg) {
             const deck = msg && msg.deck;
             if (!deck || !Array.isArray(deck.slides) || typeof storage.setCourseKey !== 'function') return;
+            // Flush la note en cours AVANT le re-scope : sinon la dernière frappe sur
+            // le deck précédent (timer autosave 600 ms) serait perdue / mal rangée.
+            try { H.render.saveSlideNotes?.(); } catch (_) {}
             try {
                 const ck = window.OEIStudentStorage.courseKeyFromDeck(deck);
                 storage.setCourseKey(ck);
@@ -515,6 +544,7 @@
                     },
                 });
                 if (!res.ok) console.warn('[revise] archive non persistée:', res.reason);
+                else H.trackSessionCourse(ck);
             } catch (err) {
                 console.warn('[revise] archive impossible:', err);
             }

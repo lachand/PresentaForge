@@ -336,10 +336,26 @@
          * notes + planning SM-2) → transfert vers un autre appareil. Repli sur
          * l'export SM-2 seul si l'archive du cours n'est pas disponible.
          */
-        async function exportReviseBundle() {
+        /** Liste des courseKey de la séance en cours (cet onglet), ou []. */
+        function _sessionCourseKeys() {
+            try { return (typeof H.sessionCourses === 'function') ? H.sessionCourses().map(c => c.courseKey) : []; }
+            catch (_) { return []; }
+        }
+
+        async function exportReviseBundle(opts = {}) {
             revisionEnsureWeek();
             saveRevisionState();
             saveBookmarks();
+            if (opts && opts.scope === 'session' && typeof storage.buildMultiReviseExport === 'function') {
+                const keys = _sessionCourseKeys();
+                if (keys.length > 1) {
+                    const multi = await storage.buildMultiReviseExport(keys);
+                    if (multi && multi.courses && multi.courses.length) {
+                        _downloadText(JSON.stringify(multi, null, 2), `revision-seance-${new Date().toISOString().slice(0, 10)}.json`);
+                        return;
+                    }
+                }
+            }
             let payload = null;
             if (typeof storage.buildReviseExport === 'function') payload = await storage.buildReviseExport();
             if (!payload) {
@@ -406,10 +422,47 @@
          * le `.json` et ouvre un brouillon d'e-mail avec le mode d'emploi d'import.
          * Sans deck archivé : envoie au moins les notes en texte.
          */
-        async function emailReviseBundle() {
+        async function emailReviseBundle(opts = {}) {
             revisionEnsureWeek();
             saveRevisionState();
             saveBookmarks();
+
+            const stamp = new Date().toISOString().slice(0, 10);
+            const studentUrlEarly = (() => {
+                try { const o = location.origin, p = location.pathname; if (o && o !== 'null' && p) return o + p; } catch (_) {}
+                return 'student.html';
+            })();
+
+            // Séance entière : bundle multi-cours.
+            if (opts && opts.scope === 'session' && typeof storage.buildMultiReviseExport === 'function') {
+                const keys = _sessionCourseKeys();
+                if (keys.length > 1) {
+                    const multi = await storage.buildMultiReviseExport(keys);
+                    if (multi && multi.courses && multi.courses.length) {
+                        const json = JSON.stringify(multi, null, 2);
+                        const filename = `revision-seance-${stamp}.json`;
+                        const subject = `Mes notes — séance (${multi.courses.length} cours)`;
+                        try {
+                            if (typeof File === 'function' && typeof navigator !== 'undefined' && navigator.canShare) {
+                                const file = new File([json], filename, { type: 'application/json' });
+                                if (navigator.canShare({ files: [file] })) {
+                                    await navigator.share({ files: [file], title: subject, text: `Mes notes de révision (séance). À rouvrir : ${studentUrlEarly} → « Importer une révision ».` });
+                                    return;
+                                }
+                            }
+                        } catch (err) { if (err && err.name === 'AbortError') return; }
+                        _downloadText(json, filename);
+                        _openMailDraft(subject, [
+                            `Mes notes de révision — séance entière (${multi.courses.length} cours).`, '',
+                            `Joins à cet e-mail le fichier « ${filename} » qui vient d'être téléchargé.`, '',
+                            'Pour les rouvrir sur un ordinateur :', `1. Ouvre ${studentUrlEarly}`,
+                            '2. « Importer une révision » → choisis ce fichier.',
+                        ].join('\n'));
+                        _revisionToast('Fichier téléchargé — glisse-le en pièce jointe de l\'e-mail.');
+                        return;
+                    }
+                }
+            }
 
             const archiveTitle = typeof storage.loadReviseArchive === 'function'
                 ? (storage.loadReviseArchive()?.meta?.title || '')
@@ -419,7 +472,6 @@
                 || 'Cours';
             const slug = window.OEIStudentStorage?.slugify?.(courseTitle)
                 || storage.courseKey || H.roomId || 'cours';
-            const stamp = new Date().toISOString().slice(0, 10);
             const subject = `Mes notes — ${courseTitle}`;
             // URL de cette page (peu importe l'hébergement) pour le mode d'emploi d'import.
             const studentUrl = (() => {
@@ -480,6 +532,18 @@
 
         function importRevisionProgress(rawPayload) {
             if (!rawPayload || typeof rawPayload !== 'object') return false;
+            // Bundle multi-cours (séance entière) : chaque cours devient une archive
+            // à part → on route vers le stockage, sans toucher au cours courant.
+            if (rawPayload.type === 'presentaforge-revision-multi' && Array.isArray(rawPayload.courses)) {
+                if (typeof storage.importReviseFile === 'function') {
+                    storage.importReviseFile(rawPayload).then(res => {
+                        _revisionToast(res && res.ok
+                            ? `${res.count} cours importé${res.count > 1 ? 's' : ''} — voir « Mes cours à réviser ».`
+                            : 'Import de la séance impossible.');
+                    }).catch(() => _revisionToast('Import de la séance impossible.'));
+                }
+                return true;
+            }
             // Bundle autonome « presentaforge-revision » : favoris + notes + SM-2
             // fusionnés dans le cours courant (le deck est déjà chargé).
             if (rawPayload.type === 'presentaforge-revision') {
@@ -633,7 +697,10 @@
             document.getElementById('revision-mark-review')?.addEventListener('click', () => markRevision('review'));
             document.getElementById('revision-mark-known')?.addEventListener('click', () => markRevision('known'));
             document.getElementById('revision-mark-easy')?.addEventListener('click', () => markRevision('easy'));
-            document.getElementById('revision-export')?.addEventListener('click', exportReviseBundle);
+            document.getElementById('revision-export')?.addEventListener('click', () => {
+                if (typeof H.render?.pickExportScope === 'function') H.render.pickExportScope(scope => exportReviseBundle({ scope }));
+                else exportReviseBundle();
+            });
             document.getElementById('revision-import')?.addEventListener('click', () => {
                 document.getElementById('revision-import-file')?.click();
             });

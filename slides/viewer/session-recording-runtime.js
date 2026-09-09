@@ -100,6 +100,15 @@ export function createSessionRecordingRuntime(params = {}) {
         ? params.getFragments
         : (() => []);
     const renderCurrentSlide = (typeof params.renderCurrentSlide === 'function') ? params.renderCurrentSlide : (() => {});
+    const getThemeCss = (typeof params.getThemeCss === 'function') ? params.getThemeCss : (() => '');
+    // Magasin IndexedDB pour le brouillon d'enregistrement (persistance + reprise).
+    // Absent / indisponible → repli silencieux sur le comportement mémoire.
+    const recordingStore = params.recordingStore
+        || (params.windowRef && params.windowRef.OEISessionRecordingStore)
+        || (typeof window !== 'undefined' ? window.OEISessionRecordingStore : null)
+        || null;
+    const DRAFT_FLUSH_MS = 15000;
+    const _draftAvailable = () => !!(recordingStore && typeof recordingStore.available === 'function' && recordingStore.available());
     const esc = (typeof params.escapeHtml === 'function')
         ? params.escapeHtml
         : (value => String(value ?? '')
@@ -277,6 +286,13 @@ export function createSessionRecordingRuntime(params = {}) {
         labelTimer: null,
         exportBusy: false,
         exportMessage: '',
+        // Persistance brouillon (IndexedDB)
+        draftChunkIndex: 0,
+        pendingDraftChunks: [],
+        draftFlushTimer: null,
+        exported: false,
+        recoveredDraft: null,
+        recoveryButtons: [],
     };
 
     const recStatusEl = () => doc?.getElementById('pv-rec-status') || null;
@@ -493,6 +509,7 @@ export function createSessionRecordingRuntime(params = {}) {
         if (state.mediaRecorder && state.mediaRecorder.state === 'recording' && typeof state.mediaRecorder.pause === 'function') {
             try { state.mediaRecorder.pause(); } catch (_) {}
         }
+        Promise.resolve(_flushDraft()).catch(() => {});
         setLiveCaption('');
         updateUi();
     };
@@ -559,6 +576,75 @@ export function createSessionRecordingRuntime(params = {}) {
         };
     };
 
+    // ── Persistance brouillon (IndexedDB) ────────────────────────────────
+    const _sessionFromDraftMeta = (meta, slideCount = 0) => {
+        const started = Number(meta.startedAt) || Date.now();
+        const ended = Number(meta.stopAt) || Number(meta.updatedAt) || Date.now();
+        return {
+            version: 2,
+            createdAt: new Date(started).toISOString(),
+            endedAt: new Date(ended).toISOString(),
+            durationMs: Math.max(0, Number(meta.durationMs) || 0),
+            wallDurationMs: Math.max(0, ended - started),
+            pausedMs: Math.max(0, Number(meta.pausedAccumMs) || 0),
+            presentation: {
+                title: String(meta.title || params.title || ''),
+                source: String(meta.sourceFile || params.sourceFile || '__draft__'),
+                slideCount: slideCount || 0,
+            },
+            events: Array.isArray(meta.events) ? meta.events : [],
+            captions: Array.isArray(meta.captions) ? meta.captions : [],
+            autoNotesBySlide: (meta.autoNotesBySlide && typeof meta.autoNotesBySlide === 'object') ? meta.autoNotesBySlide : {},
+            hasAudio: Number(meta.chunkCount) > 0,
+            audioMimeType: meta.audioMimeType || 'audio/webm',
+            audioBitsPerSecond: Number(meta.audioBitsPerSecond) || 0,
+            audioCodec: meta.audioCodec || '',
+        };
+    };
+
+    const _flushDraft = async () => {
+        if (!_draftAvailable()) return;
+        try {
+            if (state.pendingDraftChunks.length && typeof Blob === 'function') {
+                const type = state.audioMimeType || 'audio/webm';
+                const blob = new Blob(state.pendingDraftChunks, { type });
+                state.pendingDraftChunks = [];
+                if (blob && blob.size > 0) await recordingStore.appendChunk(state.draftChunkIndex++, blob);
+            }
+            await recordingStore.updateMeta({
+                stopAt: state.stopAt || 0,
+                pausedAccumMs: state.pausedAccumMs || 0,
+                durationMs: recordElapsedMs(now()),
+                audioMimeType: state.audioMimeType || 'audio/webm',
+                audioBitsPerSecond: Number(state.audioBitsPerSecond) || 0,
+                audioCodec: state.audioCodecLabel || '',
+                events: state.events.slice(),
+                captions: state.captions.slice(),
+                autoNotesBySlide: JSON.parse(JSON.stringify(state.autoNotesBySlide || {})),
+                chunkCount: state.draftChunkIndex,
+            });
+        } catch (_) { /* repli silencieux */ }
+    };
+
+    const _scheduleDraftFlush = () => {
+        if (state.draftFlushTimer) clearTimeoutFn(state.draftFlushTimer);
+        state.draftFlushTimer = setTimeoutFn(() => {
+            state.draftFlushTimer = null;
+            if (!state.active) return;
+            Promise.resolve(_flushDraft()).finally(_scheduleDraftFlush);
+        }, DRAFT_FLUSH_MS);
+    };
+
+    const _discardDraft = () => {
+        state.exported = true;
+        state.recoveredDraft = null;
+        if (state.draftFlushTimer) { clearTimeoutFn(state.draftFlushTimer); state.draftFlushTimer = null; }
+        if (_draftAvailable()) { Promise.resolve(recordingStore.clearDraft()).catch(() => {}); }
+        _removeRecoveryBar();
+    };
+
+    const hasUnsavedWork = () => !!(state.active || (state.lastSession && !state.exported));
+
     const startSessionRecording = async () => {
         if (state.active) return;
         stopReplay();
@@ -578,11 +664,30 @@ export function createSessionRecordingRuntime(params = {}) {
         state.audioBitsPerSecond = 0;
         state.audioCodecLabel = '';
         state.lastSession = null;
+        state.draftChunkIndex = 0;
+        state.pendingDraftChunks = [];
+        state.exported = false;
+        state.recoveredDraft = null;
+        _removeRecoveryBar();
         recordEvent('record:start', {
             index: getCurrentIndex(),
             fragmentIndex: getCurrentFragmentIndex(),
         });
         updateUi();
+
+        // Brouillon persistant : purge l'ancien, fige le deck. (best-effort, non bloquant)
+        if (_draftAvailable()) {
+            Promise.resolve(recordingStore.startDraft({
+                title: String(params.title || ''),
+                sourceFile: String(params.sourceFile || '__draft__'),
+                startedAt: state.startAt,
+            }, {
+                slides: Array.isArray(params.slides) ? params.slides : [],
+                data: params.data || null,
+                themeCss: getThemeCss(),
+            })).catch(() => {});
+            _scheduleDraftFlush();
+        }
 
         if (nav?.mediaDevices?.getUserMedia && typeof MediaRecorder !== 'undefined') {
             try {
@@ -592,8 +697,18 @@ export function createSessionRecordingRuntime(params = {}) {
                 state.audioMimeType = recorderSetup.mimeType || 'audio/webm';
                 state.audioBitsPerSecond = Number(recorderSetup.bitsPerSecond || recordAudioTargetBps) || recordAudioTargetBps;
                 state.audioCodecLabel = audioCodecLabelFromMime(state.audioMimeType);
+                if (_draftAvailable()) {
+                    Promise.resolve(recordingStore.updateMeta({
+                        audioMimeType: state.audioMimeType,
+                        audioBitsPerSecond: state.audioBitsPerSecond,
+                        audioCodec: state.audioCodecLabel,
+                    })).catch(() => {});
+                }
                 state.mediaRecorder.ondataavailable = ev => {
-                    if (ev.data && ev.data.size > 0) state.audioChunks.push(ev.data);
+                    if (ev.data && ev.data.size > 0) {
+                        state.audioChunks.push(ev.data);
+                        state.pendingDraftChunks.push(ev.data);
+                    }
                 };
                 state.mediaRecorder.onstop = () => {
                     if (state.audioChunks.length) {
@@ -607,6 +722,8 @@ export function createSessionRecordingRuntime(params = {}) {
                         state.lastSession.audioBitsPerSecond = Number(state.audioBitsPerSecond || recordAudioTargetBps) || recordAudioTargetBps;
                         state.lastSession.audioCodec = state.audioCodecLabel || audioCodecLabelFromMime(state.audioMimeType);
                     }
+                    // Dernière tranche audio (arrivée après le flush manuel du stop).
+                    if (!state.exported) Promise.resolve(_flushDraft()).catch(() => {});
                     updateUi();
                 };
                 state.mediaRecorder.start(1000);
@@ -638,6 +755,8 @@ export function createSessionRecordingRuntime(params = {}) {
             clearTimeoutFn(state.labelTimer);
             state.labelTimer = null;
         }
+        if (state.draftFlushTimer) { clearTimeoutFn(state.draftFlushTimer); state.draftFlushTimer = null; }
+        Promise.resolve(_flushDraft()).catch(() => {});
         stopSpeechRecognition();
         if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
             try { state.mediaRecorder.stop(); } catch (_) {}
@@ -749,6 +868,7 @@ export function createSessionRecordingRuntime(params = {}) {
             const ext = audioExtFromMime(state.audioMimeType);
             downloadBlob(state.audioBlob, `${base}.${ext}`);
         }
+        _discardDraft();
     };
 
     const buildReplayStandaloneHtml = ({ session, audioDataUrl = '' }) => {
@@ -787,6 +907,7 @@ export function createSessionRecordingRuntime(params = {}) {
             const htmlBlob = new Blob([html], { type: 'text/html' });
             const saved = await saveBlob(saveTarget, htmlBlob, `${base}.html`);
             setExportMessage(saved ? 'Replay HTML exporté' : 'Export replay annulé');
+            if (saved) _discardDraft();
         } catch (err) {
             console.error('Replay export error:', err);
             setExportMessage(`Erreur export replay: ${err?.message || 'inconnue'}`);
@@ -795,6 +916,109 @@ export function createSessionRecordingRuntime(params = {}) {
             updateUi();
         }
     };
+
+    // ── Reprise d'un enregistrement inachevé (après fermeture accidentelle) ──
+    function _removeRecoveryBar() {
+        const el = doc && doc.getElementById('pv-rec-recovery');
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+    }
+
+    function _renderRecoveryBar(meta) {
+        if (!doc) return;
+        _removeRecoveryBar();
+        const anchor = recStatusEl();
+        if (!anchor || !anchor.parentNode) return;
+        const when = (() => { try { return new Date(Number(meta.startedAt) || Date.now()).toLocaleString('fr-FR'); } catch (_) { return ''; } })();
+        const dur = formatClock(Number(meta.durationMs) || 0);
+        const nEv = Array.isArray(meta.events) ? meta.events.length : 0;
+        // Construction DOM sans innerHTML (audit sécurité) — valeurs jamais interpolées en HTML.
+        const bar = doc.createElement('div');
+        bar.id = 'pv-rec-recovery';
+        bar.className = 'pv-rec-recovery';
+        const msg = doc.createElement('div');
+        msg.className = 'pv-rec-recovery-msg';
+        msg.textContent = `Enregistrement inachevé retrouvé — ${meta.title || 'séance'} (${when} · ${dur} · ${nEv} évènement${nEv > 1 ? 's' : ''})`;
+        const actions = doc.createElement('div');
+        actions.className = 'pv-rec-recovery-actions';
+        const mkBtn = (label, fn) => {
+            const b = doc.createElement('button');
+            b.type = 'button';
+            b.textContent = label;
+            b.addEventListener('click', fn);
+            actions.appendChild(b);
+            return b;
+        };
+        mkBtn('Exporter le replay', () => _recoverExport('replay'));
+        mkBtn('Audio + JSON', () => _recoverExport('raw'));
+        mkBtn('Supprimer', () => { _discardDraft(); });
+        bar.appendChild(msg);
+        bar.appendChild(actions);
+        anchor.parentNode.insertBefore(bar, anchor);
+        state.recoveryButtons = Array.from(actions.children || []);
+    }
+
+    async function _recoverExport(mode) {
+        const meta = state.recoveredDraft;
+        if (!meta || !_draftAvailable()) return;
+        const busyBtns = Array.isArray(state.recoveryButtons) ? state.recoveryButtons : [];
+        busyBtns.forEach(b => { b.disabled = true; });
+        try {
+            const [chunks, deck] = await Promise.all([recordingStore.loadDraftChunks(), recordingStore.loadDraftDeck()]);
+            const type = meta.audioMimeType || 'audio/webm';
+            const audioBlob = (chunks && chunks.length && typeof Blob === 'function') ? new Blob(chunks, { type }) : null;
+            const slideCount = (deck && Array.isArray(deck.slides)) ? deck.slides.length : 0;
+            const session = _sessionFromDraftMeta(meta, slideCount);
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const base = `${safeFilePart(meta.title || params.title)}-recupere-${stamp}`;
+            if (mode === 'replay') {
+                const audioDataUrl = await blobToDataUrl(audioBlob);
+                const html = params.buildReplayStandaloneHtmlFn({
+                    title: String(meta.title || params.title || ''),
+                    slides: (deck && deck.slides && deck.slides.length) ? deck.slides : (Array.isArray(params.slides) ? params.slides : []),
+                    data: (deck && deck.data) || params.data,
+                    session,
+                    audioDataUrl,
+                    themeCss: (deck && deck.themeCss) || getThemeCss(),
+                    slidesRenderer: params.slidesRenderer,
+                    slidesShared: params.slidesShared,
+                });
+                downloadBlob(new Blob([html], { type: 'text/html' }), `${base}.html`);
+            } else {
+                const sessionExport = params.normalizeReplaySessionExport(session, {
+                    title: String(meta.title || params.title || ''),
+                    slideCount,
+                    hasAudio: !!audioBlob,
+                    audioMimeType: type,
+                    audioCodec: meta.audioCodec || audioCodecLabelFromMime(type),
+                });
+                downloadBlob(new Blob([JSON.stringify(sessionExport, null, 2)], { type: 'application/json' }), `${base}.json`);
+                if (audioBlob) downloadBlob(audioBlob, `${base}.${audioExtFromMime(type)}`);
+            }
+            _discardDraft();
+        } catch (err) {
+            console.error('Recovery export error:', err);
+            busyBtns.forEach(b => { b.disabled = false; });
+        }
+    }
+
+    const checkForRecovery = async () => {
+        if (!_draftAvailable() || state.active) return;
+        let meta = null;
+        try { meta = await recordingStore.getDraftMeta(); } catch (_) { return; }
+        if (!meta || meta.finalized || !(Number(meta.chunkCount) > 0) || state.active) return;
+        state.recoveredDraft = meta;
+        _renderRecoveryBar(meta);
+    };
+
+    if (win && typeof win.addEventListener === 'function') {
+        win.addEventListener('beforeunload', ev => {
+            if (!hasUnsavedWork()) return;
+            try { _flushDraft(); } catch (_) { /* best-effort */ }
+            ev.preventDefault();
+            ev.returnValue = '';
+        });
+    }
+    Promise.resolve(checkForRecovery()).catch(() => {});
 
     return {
         state,
@@ -811,6 +1035,8 @@ export function createSessionRecordingRuntime(params = {}) {
         stopReplay,
         exportSessionRecording,
         exportReplayStandalone,
+        hasUnsavedWork,
+        checkForRecovery,
     };
 }
 

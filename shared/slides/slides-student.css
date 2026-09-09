@@ -492,6 +492,23 @@ body {
 }
 .nav-sync-menu-item svg { width: 15px; height: 15px; flex-shrink: 0; }
 .nav-sync-menu-item:hover { background: var(--primary-fixed); color: var(--primary); }
+
+/* Sélecteur « ce cours / toute la séance » pour les exports quand le prof a poussé plusieurs decks */
+.export-scope-menu {
+    position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 1000; min-width: 220px;
+    display: flex; flex-direction: column; gap: 4px; padding: 6px;
+    background: var(--surface-container-lowest, #fff);
+    border: 1px solid var(--outline-variant, #c1c7d2);
+    border-radius: var(--radius-md, 0.75rem);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+}
+.export-scope-menu button {
+    font: inherit; font-size: 0.85rem; text-align: left;
+    padding: 10px 12px; border: none; border-radius: var(--radius-sm, 0.5rem);
+    background: none; color: var(--on-surface, #1a1c1e); cursor: pointer;
+}
+.export-scope-menu button:hover { background: var(--primary-fixed, #d2e4ff); color: var(--primary, #00508d); }
 #bookmark-count {
     font-size: 0.64rem;
     margin-left: 2px;

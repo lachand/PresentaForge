@@ -483,6 +483,35 @@
         }
 
         /**
+         * Rend un deck (JSON) en HTML de slides + CSS de thème — pur, sans mutation
+         * de `st` ni du DOM. Réutilisé par `applyInit` (deck courant) et l'export PDF
+         * « toute la séance » (chaque deck archivé).
+         * @returns {{ slidesHtml:string[], themeCss:string, models:any[] }}
+         */
+        function _renderDeckHtml(deck) {
+            if (!deck || !Array.isArray(deck.slides) || !_canRenderDeck()) return { slidesHtml: [], themeCss: '', models: [] };
+            const models = deck.slides.filter(s => s && !s.hidden);
+            const opts = window.SlidesShared.buildRenderOptions(
+                Object.assign({}, deck, { slides: models }),
+                { includeNotes: false, showSlideNumber: false, footerText: null },
+            );
+            const slidesHtml = models.map((s, i) => {
+                try { return window.SlidesRenderer.renderSlide(s, i, opts); }
+                catch (_) { return ''; }
+            });
+            let themeCss = '';
+            try {
+                const themeData = window.OEIDesignTokens?.resolvePresentationTheme
+                    ? window.OEIDesignTokens.resolvePresentationTheme(deck)
+                    : (typeof deck.theme === 'string'
+                        ? (window.SlidesThemes.BUILT_IN[deck.theme] || window.SlidesThemes.BUILT_IN.dark)
+                        : (deck.theme || window.SlidesThemes.BUILT_IN.dark));
+                themeCss = window.SlidesThemes.generateCSS(themeData);
+            } catch (_) {}
+            return { slidesHtml, themeCss, models };
+        }
+
+        /**
          * Apply a `room:init` payload. Prefers `msg.deck` (JSON) → renders locally via
          * SlidesRenderer so Mermaid / timers / LaTeX / quiz cloze mount. Falls back to
          * `msg.slidesHtml` (pre-rendered, 1-version compat).
@@ -493,16 +522,11 @@
                 : null;
             if (deck && _canRenderDeck()) {
                 st.deckMode = true;
-                st.slideModels = deck.slides.filter(s => s && !s.hidden);
-                st.renderOpts = window.SlidesShared.buildRenderOptions(
-                    Object.assign({}, deck, { slides: st.slideModels }),
-                    { includeNotes: false, showSlideNumber: false, footerText: null },
-                );
+                const rendered = _renderDeckHtml(deck);
+                st.slideModels = rendered.models;
+                st.renderOpts = null;
                 _applyDeckTheme(deck);
-                st.slidesHtml = st.slideModels.map((s, i) => {
-                    try { return window.SlidesRenderer.renderSlide(s, i, st.renderOpts); }
-                    catch (_) { return ''; }
-                });
+                st.slidesHtml = rendered.slidesHtml;
             } else {
                 st.deckMode = false;
                 st.slideModels = [];
@@ -978,37 +1002,58 @@
             document.getElementById('ssp-notes-export-btn')?.addEventListener('click', () => document.getElementById('notes-export-btn')?.click());
             document.getElementById('notes-export-btn')?.addEventListener('click', e => {
                 e.stopPropagation();
-                exportNotesPdf();
+                _pickExportScope(scope => exportNotesPdf({ scope }));
             });
             document.getElementById('ssp-notes-mail-btn')?.addEventListener('click', () => document.getElementById('notes-mail-btn')?.click());
             document.getElementById('notes-mail-btn')?.addEventListener('click', e => {
                 e.stopPropagation();
                 e.preventDefault();
                 _saveSlideNotes();
-                H.revision?.emailBundle?.();
+                _pickExportScope(scope => H.revision?.emailBundle?.({ scope }));
             });
         }
 
+        /**
+         * Si la séance en cours contient plusieurs decks, propose « Ce cours » /
+         * « Toute la séance (N cours) » via un mini-menu. Sinon → 'course' direct.
+         */
+        function _pickExportScope(cb) {
+            const n = (typeof H.sessionCourses === 'function') ? H.sessionCourses().length : 1;
+            if (n <= 1) { cb('course'); return; }
+            document.getElementById('export-scope-menu')?.remove();
+            const menu = document.createElement('div');
+            menu.id = 'export-scope-menu';
+            menu.className = 'export-scope-menu';
+            const mk = (label, scope) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.textContent = label;
+                b.addEventListener('click', () => { menu.remove(); cb(scope); });
+                menu.appendChild(b);
+            };
+            mk('Ce cours', 'course');
+            mk(`Toute la séance (${n} cours)`, 'session');
+            document.body.appendChild(menu);
+            setTimeout(() => {
+                document.addEventListener('click', function close() {
+                    menu.remove();
+                    document.removeEventListener('click', close);
+                }, { once: true });
+            }, 0);
+        }
+
         // ── Notes PDF export — 1 A4 sheet per slide ──────
-        function exportNotesPdf() {
-            _saveSlideNotes();
-            if (!st.slidesHtml.length) { alert('Aucune slide chargée.'); return; }
-            const title = document.getElementById('header-title')?.textContent || 'Présentation';
-            const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            const rawThemeCSS = document.getElementById('presentation-theme')?.textContent || '';
-            const printThemeCSS = rawThemeCSS.replace(/#slide-inner/g, '.slide-inner-print');
-            const score = H.quiz.getScore();
-            const pages = st.slidesHtml.map((slideHtml, i) => {
-                const slideNotes = _notesData[String(i)] || '';
-                const notesHtml = slideNotes
-                    ? slideNotes.split('\n').map(line =>
-                        line.trim() ? `<p>${esc(line)}</p>` : '<p class="print-empty-line"></p>'
-                    ).join('')
-                    : '<p class="no-note">—</p>';
-                return `<div class="slide-page">
+        function _notesToHtml(slideNotes) {
+            return slideNotes
+                ? slideNotes.split('\n').map(line => (line.trim() ? `<p>${esc(line)}</p>` : '<p class="print-empty-line"></p>')).join('')
+                : '<p class="no-note">—</p>';
+        }
+        function _slidePagesHtml(slidesHtml, notesByIndex, headerTitle) {
+            const total = slidesHtml.length;
+            return slidesHtml.map((slideHtml, i) => `<div class="slide-page">
   <div class="page-header">
-    <span class="slide-num">Slide ${i + 1} / ${st.slidesHtml.length}</span>
-    <span class="slide-title-hdr">${esc(title)}</span>
+    <span class="slide-num">Slide ${i + 1} / ${total}</span>
+    <span class="slide-title-hdr">${esc(headerTitle)}</span>
     <span class="student-name">${esc(st.pseudo || 'Étudiant')}</span>
   </div>
   <div class="slide-frame-print">
@@ -1016,10 +1061,44 @@
   </div>
   <div class="notes-section">
     <div class="notes-label">Notes</div>
-    <div class="notes-content">${notesHtml}</div>
+    <div class="notes-content">${_notesToHtml(notesByIndex[String(i)] || '')}</div>
   </div>
-</div>`;
-            }).join('\n');
+</div>`).join('\n');
+        }
+        async function exportNotesPdf(opts = {}) {
+            _saveSlideNotes();
+            const scope = (opts && opts.scope === 'session') ? 'session' : 'course';
+            const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const score = H.quiz.getScore();
+            let title = document.getElementById('header-title')?.textContent || 'Présentation';
+            let printThemeCSS = '';
+            let pages = '';
+            if (scope === 'session' && typeof H.sessionCourses === 'function') {
+                const courses = H.sessionCourses();
+                const totalSlides = courses.reduce((n, c) => n + (Number(c.slideCount) || 0), 0);
+                if (totalSlides > 150 && !window.confirm(`La séance totalise ~${totalSlides} slides — le PDF sera volumineux. Continuer ?`)) return;
+                title = `Séance — ${courses.length} cours`;
+                const sections = [];
+                for (let ci = 0; ci < courses.length; ci++) {
+                    const c = courses[ci];
+                    // eslint-disable-next-line no-await-in-loop
+                    const exp = (typeof H.storage?.buildReviseExport === 'function') ? await H.storage.buildReviseExport(c.courseKey) : null;
+                    if (!exp || !exp.deck) continue;
+                    const rendered = _renderDeckHtml(exp.deck);
+                    if (!rendered.slidesHtml.length) continue;
+                    printThemeCSS += String(rendered.themeCss || '')
+                        .replace(/:root\s*\{/g, `.course-${ci}{`)
+                        .replace(/\.reveal/g, `.course-${ci} .slide-inner-print`) + '\n';
+                    sections.push(`<div class="course-divider">${esc(c.title || (exp.course && exp.course.title) || 'Cours')}</div>`
+                        + `<div class="course-${ci}">${_slidePagesHtml(rendered.slidesHtml, exp.notes || {}, c.title || 'Cours')}</div>`);
+                }
+                if (!sections.length) { alert('Aucun cours de la séance à exporter.'); return; }
+                pages = sections.join('\n');
+            } else {
+                if (!st.slidesHtml.length) { alert('Aucune slide chargée.'); return; }
+                printThemeCSS = (document.getElementById('presentation-theme')?.textContent || '').replace(/#slide-inner/g, '.slide-inner-print');
+                pages = _slidePagesHtml(st.slidesHtml, _notesData, title);
+            }
 
             const scoreLine = (score.quizCount > 0 || score.score > 0)
                 ? `<div class="cover-score">${score.score > 0 ? `<span>${score.score.toLocaleString()} pts</span>` : ''}${score.quizCount > 0 ? `<span>${score.quizCorrect}/${score.quizCount} quiz</span>` : ''}</div>`
@@ -1049,6 +1128,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .notes-content { line-height: 1.7; color: #334155; font-size: 0.88rem; }
 .notes-content p { margin-bottom: 3px; }
 .no-note { color: #cbd5e1; font-style: italic; }
+.course-divider { break-before: page; padding: 40px 0 8px; margin-bottom: 8px; border-bottom: 2px solid #6366f1; font-size: 1.25rem; font-weight: 800; color: #1e293b; }
+.course-divider:first-of-type { break-before: auto; }
 ${printThemeCSS}
 </style></head><body>
 <div class="cover-page">
@@ -1120,6 +1201,8 @@ window.addEventListener('load', function() {
             currentSlideCheckpointLocked,
             enforceCheckpointBeforeNext,
             getQuizSlides: () => _quizSlides,
+            exportNotesPdf,
+            pickExportScope: _pickExportScope,
             saveSlideNotes: _saveSlideNotes,
             getNotesData: () => _notesData,
             getSlides: () => st.slidesHtml,

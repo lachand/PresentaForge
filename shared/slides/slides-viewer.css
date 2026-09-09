@@ -1426,6 +1426,34 @@
         .pv-rec-live.active {
             display: block;
         }
+        .pv-rec-recovery {
+            border: 1px solid var(--warning, #f59e0b);
+            border-radius: var(--radius-md, 0.75rem);
+            background: var(--warning-container, rgba(245,158,11,0.14));
+            color: var(--on-surface, #e6e8ec);
+            font-size: 0.72rem;
+            line-height: 1.45;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+        }
+        .pv-rec-recovery-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .pv-rec-recovery-actions button {
+            font: inherit;
+            font-size: 0.68rem;
+            border: 1px solid var(--outline, #c1c7d2);
+            border-radius: var(--radius-sm, 0.5rem);
+            background: var(--surface, #1b1f24);
+            color: inherit;
+            padding: 4px 9px;
+            cursor: pointer;
+        }
+        .pv-rec-recovery-actions button:hover { border-color: var(--primary, #00508d); }
+        .pv-rec-recovery-actions button:disabled { opacity: 0.5; cursor: default; }
         .pv-notes-auto {
             margin-top: 12px;
             border-top: 1px dashed var(--outline-variant, rgba(193,199,210,0.20));
