@@ -228,21 +228,31 @@ class ConceptPage {
         const root = document.createElement('div');
         root.className = 'chapters-block';
 
+        const accUid = `chap-${Math.random().toString(36).slice(2, 8)}`;
         chapters.forEach((chapter, i) => {
             const item = document.createElement('div');
             item.className = 'chapters-item';
 
+            const bodyId = `${accUid}-body-${i}`;
+            const isOpen = chapter.open === true || i === 0;
+
             const header = document.createElement('button');
             header.className = 'chapters-header';
             header.type = 'button';
+            header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            header.setAttribute('aria-controls', bodyId);
             header.innerHTML = `
                 <span class="chapters-num">${String(i + 1).padStart(2, '0')}</span>
-                <span class="chapters-title">${chapter.title || `Chapitre ${i + 1}`}</span>
-                <svg class="chapters-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 4 10 8 6 12"/></svg>
+                <span class="chapters-title">${this.escapeHtml(chapter.title || `Chapitre ${i + 1}`)}</span>
+                <svg class="chapters-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 4 10 8 6 12"/></svg>
             `;
 
             const body = document.createElement('div');
             body.className = 'chapters-body';
+            body.id = bodyId;
+            body.setAttribute('role', 'region');
+            body.setAttribute('aria-labelledby', `${accUid}-head-${i}`);
+            header.id = `${accUid}-head-${i}`;
 
             if (Array.isArray(chapter.sections) && chapter.sections.length) {
                 const renderer = new CourseRenderer(
@@ -252,10 +262,12 @@ class ConceptPage {
                 body.insertAdjacentHTML('beforeend', renderer.render());
             }
 
-            const isOpen = chapter.open === true || i === 0;
             if (isOpen) item.classList.add('open');
 
-            header.addEventListener('click', () => item.classList.toggle('open'));
+            header.addEventListener('click', () => {
+                const open = item.classList.toggle('open');
+                header.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
 
             item.appendChild(header);
             item.appendChild(body);
@@ -325,16 +337,26 @@ class ConceptPage {
         // Conteneur principal
         const tabsRoot = document.createElement('div');
         tabsRoot.className = 'content-tabs-block';
+        const uid = `tabs-${Math.random().toString(36).slice(2, 8)}`;
 
-        // Barre d'onglets
+        // Barre d'onglets (motif ARIA tablist — revue §D3)
         const bar = document.createElement('div');
         bar.className = 'content-tabs-bar';
-        panels.forEach((panel, i) => {
+        bar.setAttribute('role', 'tablist');
+        bar.setAttribute('aria-label', tabsLabel);
+        const tabBtns = panels.map((panel, i) => {
             const btn = document.createElement('button');
+            btn.type = 'button';
             btn.className = 'content-tab-btn' + (i === 0 ? ' active' : '');
             btn.textContent = panel.tab || `Onglet ${i + 1}`;
             btn.dataset.tabIdx = i;
+            btn.id = `${uid}-tab-${i}`;
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+            btn.setAttribute('aria-controls', `${uid}-panel-${i}`);
+            btn.tabIndex = i === 0 ? 0 : -1;
             bar.appendChild(btn);
+            return btn;
         });
         tabsRoot.appendChild(bar);
 
@@ -346,6 +368,10 @@ class ConceptPage {
             const el = document.createElement('div');
             el.className = 'content-tab-panel' + (i === 0 ? ' active' : '');
             el.dataset.tabIdx = i;
+            el.id = `${uid}-panel-${i}`;
+            el.setAttribute('role', 'tabpanel');
+            el.setAttribute('aria-labelledby', `${uid}-tab-${i}`);
+            el.tabIndex = 0;
             panelsContainer.appendChild(el);
             return el;
         });
@@ -379,20 +405,34 @@ class ConceptPage {
 
         await mountPanel(0);
 
-        // Gestion des clics sur les onglets
-        bar.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.content-tab-btn');
-            if (!btn) return;
-            const idx = parseInt(btn.dataset.tabIdx, 10);
-
-            bar.querySelectorAll('.content-tab-btn').forEach((b, i) => {
+        const activate = async (idx, focusTab) => {
+            tabBtns.forEach((b, i) => {
                 b.classList.toggle('active', i === idx);
+                b.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+                b.tabIndex = i === idx ? 0 : -1;
             });
-            panelEls.forEach((p, i) => {
-                p.classList.toggle('active', i === idx);
-            });
-
+            panelEls.forEach((p, i) => p.classList.toggle('active', i === idx));
             await mountPanel(idx);
+            if (focusTab) tabBtns[idx].focus();
+        };
+
+        bar.addEventListener('click', (e) => {
+            const btn = e.target.closest('.content-tab-btn');
+            if (btn) activate(parseInt(btn.dataset.tabIdx, 10), false);
+        });
+
+        // Navigation clavier (flèches / Home / End) — motif ARIA tablist
+        bar.addEventListener('keydown', (e) => {
+            const current = tabBtns.findIndex((b) => b.getAttribute('aria-selected') === 'true');
+            let next = null;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (current + 1) % tabBtns.length;
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (current - 1 + tabBtns.length) % tabBtns.length;
+            else if (e.key === 'Home') next = 0;
+            else if (e.key === 'End') next = tabBtns.length - 1;
+            if (next !== null) {
+                e.preventDefault();
+                activate(next, true);
+            }
         });
     }
 
@@ -429,7 +469,7 @@ class ConceptPage {
                 <button class="btn btn-secondary" data-role="next">Suivante</button>
                 <button class="btn btn-secondary" data-role="reset">Réinitialiser</button>
             </div>
-            <div class="feedback" data-role="feedback"></div>
+            <div class="feedback" data-role="feedback" role="status" aria-live="polite"></div>
         `;
         mount.appendChild(panel);
 

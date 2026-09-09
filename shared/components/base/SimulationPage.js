@@ -357,7 +357,7 @@ class SimulationPage extends SimulationPageBase {
                 <span class="learning-step" id="learning-current-step">Ligne courante : --</span>
             </div>
             <div class="learning-step" id="learning-click-hint">Astuce: cliquez sur une ligne de pseudo-code pour obtenir "quoi" et "pourquoi".</div>
-            <div class="learning-feedback" id="explain-output">Cliquez sur une ligne de pseudo-code pour afficher son explication.</div>
+            <div class="learning-feedback" id="explain-output" role="status" aria-live="polite">Cliquez sur une ligne de pseudo-code pour afficher son explication.</div>
         `;
 
         host.appendChild(wrapper);
@@ -454,7 +454,13 @@ class SimulationPage extends SimulationPageBase {
         lines.forEach((line) => {
             line.classList.add('line-clickable');
             line.title = 'Cliquer pour voir quoi/pourquoi';
-            line.addEventListener('click', () => this.selectExplainedLine(line.id), listenerOptions);
+            line.setAttribute('role', 'button');
+            line.setAttribute('tabindex', '0');
+            const trigger = () => this.selectExplainedLine(line.id);
+            line.addEventListener('click', trigger, listenerOptions);
+            line.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger(); }
+            }, listenerOptions);
         });
     }
 

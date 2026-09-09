@@ -86,6 +86,10 @@ class ExerciseRunnerPage extends ConceptPage {
         this.scoreEl = document.getElementById(id('scoreId', 'exercise-score'));
         this.questionContainer = document.getElementById(id('questionContainerId', 'question-container'));
         this.feedbackEl = document.getElementById(id('feedbackId', 'exercise-feedback'));
+        if (this.feedbackEl) {
+            this.feedbackEl.setAttribute('role', 'status');
+            this.feedbackEl.setAttribute('aria-live', 'polite');
+        }
 
         this.btnPrev = document.getElementById(id('prevButtonId', 'btn-prev'));
         this.btnNext = document.getElementById(id('nextButtonId', 'btn-next'));

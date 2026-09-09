@@ -268,16 +268,18 @@ class ExerciseQuestionTypes {
                     return `
                         <div class="question-title">${ExerciseQuestionTypes.safeHtml(question.prompt)}</div>
                         <div class="ordering-list" data-role="ordering-list">
-                            ${baseItems.map((item, idx) => `
+                            ${baseItems.map((item, idx) => {
+                                const lbl = ExerciseQuestionTypes.escape(item.label);
+                                return `
                                 <div class="ordering-item" data-item-id="${ExerciseQuestionTypes.escape(item.id)}">
-                                    <div class="ordering-rank">${idx + 1}</div>
-                                    <div class="ordering-label">${ExerciseQuestionTypes.escape(item.label)}</div>
+                                    <div class="ordering-rank" aria-hidden="true">${idx + 1}</div>
+                                    <div class="ordering-label">${lbl}</div>
                                     <div class="ordering-actions">
-                                        <button class="btn btn-secondary btn-order" data-action="up" type="button">↑</button>
-                                        <button class="btn btn-secondary btn-order" data-action="down" type="button">↓</button>
+                                        <button class="btn btn-secondary btn-order" data-action="up" type="button" aria-label="Monter : ${lbl}">↑</button>
+                                        <button class="btn btn-secondary btn-order" data-action="down" type="button" aria-label="Descendre : ${lbl}">↓</button>
                                     </div>
-                                </div>
-                            `).join('')}
+                                </div>`;
+                            }).join('')}
                         </div>
                         <div class="hint">Utilisez ↑/↓ pour remettre dans le bon ordre.</div>
                     `;
@@ -339,8 +341,8 @@ class ExerciseQuestionTypes {
                                 const value = answers[id] || '';
                                 return `
                                     <div class="matching-row">
-                                        <div class="matching-left">${ExerciseQuestionTypes.escape(label)}</div>
-                                        <select class="input matching-select" data-left-id="${ExerciseQuestionTypes.escape(id)}">
+                                        <div class="matching-left" id="ml-${ExerciseQuestionTypes.escape(id)}">${ExerciseQuestionTypes.escape(label)}</div>
+                                        <select class="input matching-select" data-left-id="${ExerciseQuestionTypes.escape(id)}" aria-label="Associer : ${ExerciseQuestionTypes.escape(label)}">
                                             <option value="">-- Associer --</option>
                                             ${right.map((opt) => {
                                                 const val = String(opt.id ?? opt);
@@ -387,7 +389,7 @@ class ExerciseQuestionTypes {
                                 return `
                                     <div class="matching-row">
                                         <div class="matching-left">${ExerciseQuestionTypes.escape(label)}</div>
-                                        <select class="input classification-select" data-item-id="${ExerciseQuestionTypes.escape(id)}">
+                                        <select class="input classification-select" data-item-id="${ExerciseQuestionTypes.escape(id)}" aria-label="Classer : ${ExerciseQuestionTypes.escape(label)}">
                                             <option value="">-- Catégorie --</option>
                                             ${categories.map((opt, i) => {
                                                 const optId = String(opt.id ?? i);
@@ -573,7 +575,7 @@ class ExerciseQuestionTypes {
                                     <div class="api-header-row">
                                         <input class="input api-header-key" data-row="${idx}" placeholder="Header" value="${ExerciseQuestionTypes.escape(row.key || '')}">
                                         <input class="input api-header-value" data-row="${idx}" placeholder="Valeur" value="${ExerciseQuestionTypes.escape(row.value || '')}">
-                                        <button type="button" class="btn btn-secondary api-remove-row" data-row="${idx}">×</button>
+                                        <button type="button" class="btn btn-secondary api-remove-row" data-row="${idx}" aria-label="Retirer cette ligne">×</button>
                                     </div>
                                 `).join('')}
                             </div>
@@ -601,7 +603,7 @@ class ExerciseQuestionTypes {
                             row.innerHTML = `
                                 <input class="input api-header-key" data-row="${idx}" placeholder="Header">
                                 <input class="input api-header-value" data-row="${idx}" placeholder="Valeur">
-                                <button type="button" class="btn btn-secondary api-remove-row" data-row="${idx}">×</button>
+                                <button type="button" class="btn btn-secondary api-remove-row" data-row="${idx}" aria-label="Retirer cette ligne">×</button>
                             `;
                             root.appendChild(row);
                             rebuild();

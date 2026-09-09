@@ -366,9 +366,18 @@ const PseudocodeSupport = {
         lines.forEach((line) => {
             line.classList.add('line-clickable');
             line.title = options.clickTitle || 'Cliquer pour voir quoi/pourquoi';
-            line.addEventListener('click', () => {
-                lines.forEach((el) => el.classList.remove('inspected'));
+            // Rendre la ligne opérable au clavier (revue §D3)
+            line.setAttribute('role', 'button');
+            line.setAttribute('tabindex', '0');
+            line.setAttribute('aria-label', `Ligne : ${line.textContent.trim().replace(/\s+/g, ' ')} — voir quoi et pourquoi`);
+
+            const select = () => {
+                lines.forEach((el) => {
+                    el.classList.remove('inspected');
+                    el.setAttribute('aria-pressed', 'false');
+                });
                 line.classList.add('inspected');
+                line.setAttribute('aria-pressed', 'true');
 
                 const lineId = line.id;
                 const lineText = line.textContent.trim().replace(/\s+/g, ' ');
@@ -385,6 +394,14 @@ const PseudocodeSupport = {
 
                 if (onSelect) {
                     onSelect({ lineId, lineText, explanation, line });
+                }
+            };
+
+            line.addEventListener('click', select, listenerOptions);
+            line.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    select();
                 }
             }, listenerOptions);
         });
