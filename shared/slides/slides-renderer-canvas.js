@@ -660,10 +660,10 @@
                         <button class="${P}-codelive-clear" style="pointer-events:auto;padding:4px 10px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-muted,#64748b);font-size:0.7rem;cursor:pointer;">Effacer</button>
                     </div>
                     <div style="display:flex;flex:1;min-height:0;">
-                        <div class="${P}-codelive-editor" style="flex:1;min-width:0;position:relative;overflow:hidden;"><textarea class="${P}-codelive-code" style="width:100%;height:100%;background:var(--sl-slide-bg,#141620);color:var(--sl-text,#cbd5e1);border:none;padding:12px;font-family:var(--sl-font-mono,monospace);font-size:14px;resize:none;outline:none;box-sizing:border-box;tab-size:4;">${code}</textarea></div>
-                        <div class="${P}-codelive-output" style="flex:0 0 40%;border-left:1px solid var(--sl-border,#2d3347);background:color-mix(in srgb,var(--sl-slide-bg,#141620) 80%,#000);display:flex;flex-direction:column;">
+                        <div class="${P}-codelive-editor" style="flex:1;min-width:0;position:relative;overflow:hidden;"><textarea class="${P}-codelive-code" style="width:100%;height:100%;background:var(--sl-slide-bg,#141620);color:var(--sl-heading,#e2e8f0);border:none;padding:12px;font-family:var(--sl-font-mono,monospace);font-size:14px;resize:none;outline:none;box-sizing:border-box;tab-size:4;">${code}</textarea></div>
+                        <div class="${P}-codelive-output" style="flex:0 0 40%;border-left:1px solid var(--sl-border,#2d3347);background:var(--sl-code-bg,#0d1117);display:flex;flex-direction:column;">
                             <div style="padding:4px 10px;font-size:0.65rem;color:var(--sl-muted,#64748b);text-transform:uppercase;border-bottom:1px solid var(--sl-border,#2d3347);">Sortie</div>
-                            <pre class="${P}-codelive-console" style="flex:1;margin:0;padding:10px;font-size:13px;color:var(--sl-text,#cbd5e1);font-family:var(--sl-font-mono,monospace);overflow:auto;white-space:pre-wrap;"></pre>
+                            <pre class="${P}-codelive-console" style="flex:1;margin:0;padding:10px;font-size:13px;color:var(--sl-code-text,#e2e8f0);background:var(--sl-code-bg,#0d1117);font-family:var(--sl-font-mono,monospace);overflow:auto;white-space:pre-wrap;"></pre>
                         </div>
                     </div>
                 </div>`;

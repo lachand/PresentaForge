@@ -78,26 +78,33 @@
                     appendOutput('❌ Sandbox JavaScript indisponible dans ce navigateur\n', '#f87171');
                     return;
                 }
-                const workerSource = [
-                    'const _s=(v)=>{if(typeof v==="string") return v; try{return JSON.stringify(v);}catch(_){return String(v);}};',
-                    'const _logs=[];',
-                    'const _push=(type,args)=>{_logs.push({type,text:Array.from(args||[]).map(_s).join(" ")});};',
-                    'console.log=(...a)=>_push("log",a);',
-                    'console.warn=(...a)=>_push("warn",a);',
-                    'console.error=(...a)=>_push("error",a);',
-                    'self.onmessage=async(ev)=>{',
-                    '  const code=String(ev?.data?.code||"");',
-                    '  try {',
-                    '    let result=(0,eval)(code);',
-                    '    if (result && typeof result.then==="function") result=await result;',
-                    '    self.postMessage({ok:true,logs:_logs,result:result===undefined?"__oei_undefined__":_s(result)});',
-                    '  } catch (err) {',
-                    '    self.postMessage({ok:false,logs:_logs,error:err?.message||String(err)});',
-                    '  }',
-                    '};'
-                ].join('\n');
+                // Le code utilisateur est *inliné* dans la source du worker (chargée via blob:),
+                // il n'est jamais évalué comme une chaîne (pas de `eval` / `new Function`) :
+                // compatible avec une CSP `script-src` sans `'unsafe-eval'` (`worker-src blob:` suffit).
+                // Le worker isole l'exécution : thread séparé, pas de DOM, terminable sur timeout.
+                const PREAMBLE =
+                    'const __oeiS=(v)=>{if(typeof v==="string")return v;try{return JSON.stringify(v);}catch(_){return String(v);}};'
+                    + 'const __oeiLogs=[];'
+                    + 'const __oeiPush=(t,a)=>{__oeiLogs.push({type:t,text:Array.from(a||[]).map(__oeiS).join(" ")});};'
+                    + 'console.log=(...a)=>__oeiPush("log",a);console.info=(...a)=>__oeiPush("log",a);'
+                    + 'console.debug=(...a)=>__oeiPush("log",a);'
+                    + 'console.warn=(...a)=>__oeiPush("warn",a);console.error=(...a)=>__oeiPush("error",a);'
+                    + '(async()=>{try{';
+                const EPILOGUE =
+                    '\n;self.postMessage({ok:true,logs:__oeiLogs});'
+                    + '}catch(err){self.postMessage({ok:false,logs:__oeiLogs,error:(err&&err.message)||String(err)});}})();';
+                // Ligne 1 = préambule (une seule ligne) ; le code utilisateur commence ligne 2.
+                const workerSource = PREAMBLE + '\n' + String(code || '') + EPILOGUE;
                 const workerUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
-                const worker = new Worker(workerUrl);
+                let worker;
+                try {
+                    worker = new Worker(workerUrl);
+                } catch (e) {
+                    URL.revokeObjectURL(workerUrl);
+                    appendOutput(`❌ ${String(e?.message || e)}\n`, '#f87171');
+                    emitOutput();
+                    return;
+                }
                 let settled = false;
                 const closeWorker = () => {
                     if (settled) return;
@@ -107,12 +114,13 @@
                 };
                 const timeout = setTimeout(() => {
                     closeWorker();
-                    appendOutput('❌ Exécution interrompue (timeout)\n', '#f87171');
+                    appendOutput('❌ Exécution interrompue (timeout 2.5 s — boucle infinie ?)\n', '#f87171');
+                    emitOutput();
                 }, 2500);
                 const colorForType = (type) => {
                     if (type === 'error') return '#f87171';
                     if (type === 'warn') return '#fbbf24';
-                    return 'var(--sl-text,#cbd5e1)';
+                    return 'var(--sl-code-text,#e2e8f0)';
                 };
                 worker.onmessage = (event) => {
                     clearTimeout(timeout);
@@ -120,7 +128,7 @@
                     const logs = Array.isArray(payload.logs) ? payload.logs : [];
                     logs.forEach(log => appendOutput(`${String(log.text || '')}\n`, colorForType(log.type)));
                     if (payload.ok) {
-                        if (payload.result !== '__oei_undefined__') appendOutput(`→ ${String(payload.result)}\n`, '#a5b4fc');
+                        if (!_outputText) appendOutput('(aucune sortie — utilise console.log(...) pour afficher une valeur)\n', 'var(--sl-muted,#64748b)');
                     } else {
                         appendOutput(`❌ ${String(payload.error || 'Erreur JavaScript')}\n`, '#f87171');
                     }
@@ -130,10 +138,11 @@
                 worker.onerror = (event) => {
                     clearTimeout(timeout);
                     closeWorker();
-                    appendOutput(`❌ Sandbox JavaScript: ${String(event?.message || 'Erreur worker')}\n`, '#f87171');
+                    event?.preventDefault?.();
+                    const line = (event && Number.isFinite(event.lineno) && event.lineno > 1) ? ` (ligne ${event.lineno - 1})` : '';
+                    appendOutput(`❌ ${String(event?.message || 'Erreur — vérifie la syntaxe')}${line}\n`, '#f87171');
                     emitOutput();
                 };
-                worker.postMessage({ code: String(code || '') });
             };
 
             const runPython = async (code) => {
@@ -162,7 +171,7 @@
                 if (!global._slPyodide) return;
                 consoleEl.textContent = '';
                 try {
-                    global._slPyodide.setStdout({ batched: (text) => appendOutput(text + '\n', 'var(--sl-text,#cbd5e1)') });
+                    global._slPyodide.setStdout({ batched: (text) => appendOutput(text + '\n', 'var(--sl-code-text,#e2e8f0)') });
                     global._slPyodide.setStderr({ batched: (text) => appendOutput(text + '\n', '#f87171') });
                     const result = await global._slPyodide.runPythonAsync(code);
                     if (result !== undefined && result !== null) appendOutput('→ ' + String(result) + '\n', '#a5b4fc');
