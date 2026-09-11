@@ -19,6 +19,66 @@
         });
     };
 
+    const HLJS_CSS_HREF = '../vendor/highlightjs/11.9.0/styles/github-dark.min.css';
+    const HLJS_JS_SRC = '../vendor/highlightjs/11.9.0/highlight.min.js';
+
+    /** Charge hljs (CSS + script) si besoin, puis appelle `apply`. Pas d'effet si déjà chargé. */
+    const ensureHljs = (windowRef, documentRef, loadScriptFn, apply) => {
+        if (windowRef.hljs) { apply(); return; }
+        if (documentRef && !documentRef.querySelector?.(`link[href="${HLJS_CSS_HREF}"]`)) {
+            const link = documentRef.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = HLJS_CSS_HREF;
+            documentRef.head?.appendChild?.(link);
+        }
+        const loadFn = typeof loadScriptFn === 'function' ? loadScriptFn : (src => loadScript(src, { documentRef }));
+        loadFn(HLJS_JS_SRC).then(apply).catch(() => {});
+    };
+
+    /**
+     * Superpose un <pre><code> surligné (hljs) à un <textarea> transparent, remis à
+     * jour à chaque frappe — le textarea porte le curseur natif, le <pre> les couleurs.
+     * @param {{ textarea: HTMLTextAreaElement, pre: HTMLElement, codeEl: HTMLElement,
+     *           getLanguage: () => string, windowRef?: object, documentRef?: object,
+     *           loadScript?: function }} context
+     * @returns {function} render — force un nouveau rendu (ex. changement de langage).
+     */
+    const mountLiveHighlight = (context = {}) => {
+        const { textarea, pre, codeEl } = context;
+        if (!textarea || !pre || !codeEl) return () => {};
+        const windowRef = context.windowRef || root;
+        const documentRef = context.documentRef || root.document;
+        const getLanguage = typeof context.getLanguage === 'function' ? context.getLanguage : () => '';
+
+        const render = () => {
+            const code = textarea.value;
+            const lang = getLanguage() || '';
+            if (windowRef.hljs) {
+                try {
+                    const result = lang && lang !== 'text'
+                        ? windowRef.hljs.highlight(code, { language: lang, ignoreIllegals: true })
+                        : windowRef.hljs.highlightAuto(code);
+                    codeEl.className = lang ? `language-${lang}` : '';
+                    codeEl.innerHTML = `${result.value}\n`;
+                    return;
+                } catch (_) { /* repli texte brut ci-dessous */ }
+            }
+            codeEl.textContent = `${code}\n`;
+        };
+
+        const syncScroll = () => {
+            pre.scrollTop = textarea.scrollTop;
+            pre.scrollLeft = textarea.scrollLeft;
+        };
+
+        textarea.addEventListener('input', render);
+        textarea.addEventListener('scroll', syncScroll);
+        render();
+        if (!windowRef.hljs) ensureHljs(windowRef, documentRef, context.loadScript, render);
+
+        return render;
+    };
+
     const highlightCodeBlock = (context = {}) => {
         const div = context.div;
         if (!div) return;
@@ -88,28 +148,17 @@
             });
         };
 
-        if (windowRef.hljs) {
-            apply();
-            return;
-        }
-
-        const cssHref = '../vendor/highlightjs/11.9.0/styles/github-dark.min.css';
-        const jsSrc = '../vendor/highlightjs/11.9.0/highlight.min.js';
-        if (documentRef && !documentRef.querySelector?.(`link[href="${cssHref}"]`)) {
-            const link = documentRef.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = cssHref;
-            documentRef.head?.appendChild?.(link);
-        }
-        loadScriptFn(jsSrc).then(apply).catch(() => {});
+        ensureHljs(windowRef, documentRef, loadScriptFn, apply);
     };
 
     root.OEISlidesCanvasCodeRuntime = Object.freeze({
         loadScript,
         highlightCodeBlock,
+        mountLiveHighlight,
         testUtils: Object.freeze({
             loadScript,
             highlightCodeBlock,
+            mountLiveHighlight,
         }),
     });
 })(window);

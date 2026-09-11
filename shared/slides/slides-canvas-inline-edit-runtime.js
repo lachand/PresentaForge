@@ -197,25 +197,44 @@
     };
 
     /**
-     * Démarre l'édition inline d'un élément code (textarea brute).
-     * @param {{ editor: object }} ctx
+     * Démarre l'édition inline d'un élément code : textarea transparent superposé à un
+     * <pre> surligné hljs (mountLiveHighlight), remis à jour à chaque frappe.
+     * @param {{ editor: object, mountLiveHighlight?: function }} ctx
      * @param {HTMLElement} div
      * @param {object} el
      */
     const startInlineEditCode = (ctx, div, el) => {
         const editor = ctx?.editor;
+        const mountLiveHighlight = ctx?.mountLiveHighlight;
         if (!editor || !div || !el) return;
         if (div.classList.contains('editing')) return;
         div.classList.add('editing');
         const inner = div.querySelector('.cel-inner');
 
+        const lang = el.data?.language || 'text';
+        const wrap = document.createElement('div');
+        wrap.className = 'cel-code-edit-wrap';
+
+        const pre = document.createElement('pre');
+        pre.className = 'cel-code-edit-highlight';
+        pre.setAttribute('aria-hidden', 'true');
+        const codeEl = document.createElement('code');
+        pre.appendChild(codeEl);
+
         const textarea = document.createElement('textarea');
         textarea.className = 'cel-code-edit';
         textarea.value = el.data?.code || '';
         textarea.spellcheck = false;
+
+        wrap.appendChild(pre);
+        wrap.appendChild(textarea);
         inner.innerHTML = '';
-        inner.appendChild(textarea);
+        inner.appendChild(wrap);
         textarea.focus();
+
+        const renderHighlight = typeof mountLiveHighlight === 'function'
+            ? mountLiveHighlight({ textarea, pre, codeEl, getLanguage: () => lang })
+            : null;
 
         let committed = false;
 
@@ -239,6 +258,7 @@
                 const start = textarea.selectionStart, end = textarea.selectionEnd;
                 textarea.value = textarea.value.substring(0, start) + '    ' + textarea.value.substring(end);
                 textarea.selectionStart = textarea.selectionEnd = start + 4;
+                renderHighlight?.();
             }
             if (e.key === 'Escape') { e.preventDefault(); revert(); }
             if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); textarea.blur(); }
@@ -265,14 +285,16 @@
     ];
 
     /**
-     * Démarre l'édition inline d'un élément code surligné ("highlight") : code + langage.
+     * Démarre l'édition inline d'un élément code surligné ("highlight") : code + langage,
+     * textarea transparent superposé à un <pre> surligné hljs (mountLiveHighlight).
      * Les zones surlignées restent gérées dans le panneau de propriétés (trop complexe pour un overlay inline).
-     * @param {{ editor: object }} ctx
+     * @param {{ editor: object, mountLiveHighlight?: function }} ctx
      * @param {HTMLElement} div
      * @param {object} el
      */
     const startInlineEditHighlight = (ctx, div, el) => {
         const editor = ctx?.editor;
+        const mountLiveHighlight = ctx?.mountLiveHighlight;
         if (!editor || !div || !el) return;
         if (div.classList.contains('editing')) return;
         div.classList.add('editing');
@@ -292,16 +314,32 @@
             select.appendChild(opt);
         });
 
+        const codeWrap = document.createElement('div');
+        codeWrap.className = 'cel-code-edit-wrap';
+
+        const pre = document.createElement('pre');
+        pre.className = 'cel-code-edit-highlight';
+        pre.setAttribute('aria-hidden', 'true');
+        const codeEl = document.createElement('code');
+        pre.appendChild(codeEl);
+
         const textarea = document.createElement('textarea');
         textarea.className = 'cel-code-edit';
         textarea.value = el.data?.code || '';
         textarea.spellcheck = false;
 
+        codeWrap.appendChild(pre);
+        codeWrap.appendChild(textarea);
         wrapper.appendChild(select);
-        wrapper.appendChild(textarea);
+        wrapper.appendChild(codeWrap);
         inner.innerHTML = '';
         inner.appendChild(wrapper);
         textarea.focus();
+
+        const renderHighlight = typeof mountLiveHighlight === 'function'
+            ? mountLiveHighlight({ textarea, pre, codeEl, getLanguage: () => select.value })
+            : null;
+        select.addEventListener('change', () => renderHighlight?.());
 
         let committed = false;
 
@@ -328,6 +366,7 @@
                 const start = textarea.selectionStart, end = textarea.selectionEnd;
                 textarea.value = textarea.value.substring(0, start) + '    ' + textarea.value.substring(end);
                 textarea.selectionStart = textarea.selectionEnd = start + 4;
+                renderHighlight?.();
             }
             if (e.key === 'Escape') { e.preventDefault(); revert(); }
             if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); textarea.blur(); }

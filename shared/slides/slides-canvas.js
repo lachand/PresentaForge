@@ -520,17 +520,34 @@ class CanvasEditor {
 /* ── Inline editing ── */
 .cel-inline-edit { outline: none !important; cursor: text !important; }
 .cel.editing { cursor: text; outline: 2px solid #f472b6 !important; }
+/* Superposition textarea transparent + <pre> surligné hljs, alignés au pixel près
+   (mêmes police/taille/interligne/padding/retour à la ligne des deux côtés) : le
+   textarea porte le curseur natif et la saisie, le <pre> en dessous porte les
+   couleurs — remis à jour à chaque frappe (voir CanvasCodeRuntime.mountLiveHighlight). */
+.cel-code-edit-wrap { position:relative; width:100%; height:100%; }
+.cel-highlight-edit-wrap .cel-code-edit-wrap { flex:1; min-height:0; }
+.cel-code-edit-highlight,
 .cel-code-edit {
-    width:100%; height:100%; resize:none; border:none; outline:none; display:block;
-    background:var(--sl-code-bg,#0d1117); color:var(--sl-code-text,#e2e8f0);
-    font-family:var(--sl-font-mono,monospace); font-size:13px; line-height:1.6;
-    padding:0.75rem 1rem; box-sizing:border-box; tab-size:4;
+    position:absolute; inset:0; margin:0; box-sizing:border-box;
+    width:100%; height:100%;
+    font-family:var(--sl-font-mono,monospace); font-size:13px; line-height:1.6; tab-size:4;
+    white-space:pre-wrap; word-break:break-word;
+    padding:0.75rem 1rem;
 }
+.cel-code-edit-highlight {
+    pointer-events:none; overflow:hidden;
+    background:var(--sl-code-bg,#0d1117); color:var(--sl-code-text,#e2e8f0);
+}
+.cel-code-edit-highlight code { background:transparent; }
+.cel-code-edit {
+    resize:none; border:none; outline:none; display:block; overflow:auto;
+    background:transparent; color:transparent; caret-color:var(--sl-code-text,#e2e8f0);
+}
+.cel-code-edit::selection { background:rgba(129,140,248,0.35); }
 .cel-highlight-edit-wrap {
     display:flex; flex-direction:column; width:100%; height:100%;
     background:var(--sl-code-bg,#0d1117);
 }
-.cel-highlight-edit-wrap .cel-code-edit { flex:1; min-height:0; }
 .cel-hl-lang-select {
     flex:none; border:none; outline:none; cursor:pointer;
     background:var(--sl-code-bg,#0d1117); color:var(--sl-code-text,#e2e8f0);
@@ -1565,6 +1582,15 @@ class CanvasEditor {
         });
     }
 
+    _mountLiveHighlight(opts) {
+        return CanvasCodeRuntime.mountLiveHighlight({
+            ...opts,
+            windowRef: window,
+            documentRef: document,
+            loadScript: src => this._loadScript(src),
+        });
+    }
+
     /* ── Events ───────────────────────────────────────────── */
 
     _bindElementEvents(div, id) {
@@ -1587,11 +1613,17 @@ class CanvasEditor {
     }
 
     _startInlineEditCode(div, el) {
-        CanvasInlineEditRuntime.startInlineEditCode({ editor: this }, div, el);
+        CanvasInlineEditRuntime.startInlineEditCode({
+            editor: this,
+            mountLiveHighlight: opts => this._mountLiveHighlight(opts),
+        }, div, el);
     }
 
     _startInlineEditHighlight(div, el) {
-        CanvasInlineEditRuntime.startInlineEditHighlight({ editor: this }, div, el);
+        CanvasInlineEditRuntime.startInlineEditHighlight({
+            editor: this,
+            mountLiveHighlight: opts => this._mountLiveHighlight(opts),
+        }, div, el);
     }
 
     _startInlineEditDefinition(div, el) {
