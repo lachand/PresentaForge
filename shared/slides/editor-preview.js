@@ -274,6 +274,18 @@ function mountCanvasEditor(slide) {
         });
         _setPreviewCanvasEditor(canvasEditor);
         canvasEditor.onDblClick = (el, e) => openCanvasPopover(el, e);
+        canvasEditor.onElementDblClick = () => {
+            // Toujours dépl(i)er le panneau au double-clic, y compris pour les types
+            // édités inline sur le canvas (code, liste…) — sans voler le focus du curseur
+            // inline en y forçant la sélection d'un champ (contrairement à openCanvasPopover).
+            const propsPanel = document.getElementById('props-panel');
+            if (propsPanel) {
+                propsPanel._userCollapsed = false;
+                propsPanel.classList.remove('collapsed');
+            }
+            updatePropsPanel();
+            requestAnimationFrame(() => updatePreviewScale());
+        };
         canvasEditor.onPositionChange = () => { updateFormatTab(); updatePropsPanel(); };
         canvasEditor.onContextMenu = (id, e) => openContextMenu(id, e);
         canvasEditor.onConnectorSelect = (conn) => { updateFormatTab(); updatePropsPanel(); };
@@ -391,21 +403,16 @@ function positionPopover(popover, refEvent) {
 
 function openCanvasPopover(element, event) {
     if (!element) return;
-    // For types with inline editing, do nothing
+    // Pour les types édités inline sur le canvas, le panneau est déjà déplié par
+    // onElementDblClick (qui se déclenche avant, pour tout type) — ne pas y voler
+    // le focus en forçant la sélection d'un champ, ça couperait le curseur inline.
     if (['heading', 'text', 'code', 'highlight', 'definition', 'list'].includes(element.type)) return;
 
-    // For all content types, expand sidebar and focus the first input
-    const propsPanel = document.getElementById('props-panel');
-    if (propsPanel) {
-        propsPanel._userCollapsed = false;
-        propsPanel.classList.remove('collapsed');
-        updatePropsPanel();
-        requestAnimationFrame(() => {
-            const firstInput = document.querySelector('#props-content input, #props-content textarea, #props-content select');
-            if (firstInput) firstInput.focus();
-            updatePreviewScale();
-        });
-    }
+    // Pour les types purement panneau (pas d'édition inline), focus le premier champ.
+    requestAnimationFrame(() => {
+        const firstInput = document.querySelector('#props-content input, #props-content textarea, #props-content select');
+        if (firstInput) firstInput.focus();
+    });
 }
 
 /** Taille approximative (Ko/Mo) d'une data URI, pour l'affichage dans le popover. */

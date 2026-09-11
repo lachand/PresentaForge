@@ -844,6 +844,12 @@ class CanvasEditor {
         container.style.overflow = 'hidden';
         container.style.userSelect = 'none';
         container.addEventListener('mousedown', e => {
+            // Un clic à l'intérieur d'un élément en cours d'édition (texte, code, liste…),
+            // ou sur un contrôle natif toujours interactif (ex. textarea code-live), doit
+            // repositionner le curseur nativement — voler le focus vers le conteneur
+            // couperait l'édition en cours (blur → commit) avant que le navigateur ait pu
+            // placer le curseur, et le clic suivant retomberait sur une simple resélection.
+            if (e.target.closest?.('.cel.editing, textarea, input, select, [contenteditable="true"]')) return;
             // Focus the container so keyboard navigation works immediately after click
             container.focus({ preventScroll: true });
             if (e.target === container || e.target.classList.contains('canvas-guide-layer')) {

@@ -19,6 +19,9 @@
 
         div.addEventListener('mousedown', event => {
             if (div.classList?.contains?.('editing')) return;
+            // Contrôle natif toujours interactif (ex. textarea code-live, sans bascule
+            // .editing) : laisser le navigateur placer le curseur, ne pas armer un drag.
+            if (event.target?.closest?.('textarea, input, select, [contenteditable="true"]')) return;
 
             const el = findElementById(editor.elements, id);
             if (!el) return;
@@ -106,6 +109,10 @@
             const el = findElementById(editor.elements, id);
             if (!el) return;
             if (editor._isElementLocked(el)) return;
+            // Le panneau de propriétés doit rester visible pendant l'édition inline
+            // (ex. langage du code, zones surlignées) — même pour les types édités
+            // directement sur le canvas, pas seulement ceux qui ouvrent le popover.
+            editor.onElementDblClick?.(el, event);
             if (['heading', 'text'].includes(el.type)) editor._startInlineEdit(div, el, event);
             else if (el.type === 'code') editor._startInlineEditCode(div, el);
             else if (el.type === 'highlight') editor._startInlineEditHighlight(div, el);
