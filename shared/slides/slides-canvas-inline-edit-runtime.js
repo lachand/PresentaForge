@@ -197,9 +197,35 @@
     };
 
     /**
+     * Calcule et applique à l'identique sur le <pre> surligné et le textarea la taille de
+     * police/interligne réellement utilisées par le rendu statique de cet élément (même
+     * formule que slides-renderer-canvas.js) — sans ça, le calage au pixel près de
+     * mountLiveHighlight casse dès que la taille de base diffère du 13px codé en dur en CSS
+     * (élément redimensionné, thème/typographie personnalisés…) : le curseur et la
+     * sélection natifs du textarea ne tombent alors plus sur les bons caractères affichés.
+     * @param {{ resolveElementFontSize?: function, computeCodeMetrics?: function }} ctx
+     * @param {object} el
+     * @param {HTMLElement} pre
+     * @param {HTMLElement} textarea
+     * @param {object} typography
+     */
+    const applyCodeFontMetrics = (ctx, el, pre, textarea, typography) => {
+        const resolveElementFontSize = ctx?.resolveElementFontSize;
+        const computeCodeMetrics = ctx?.computeCodeMetrics;
+        const base = typeof resolveElementFontSize === 'function'
+            ? resolveElementFontSize(el.type, el.style || {}, typography, 16)
+            : 16;
+        const metrics = typeof computeCodeMetrics === 'function'
+            ? computeCodeMetrics(base)
+            : { codeSize: Math.round(base * 0.82), codeLineHeight: 1.58 };
+        pre.style.fontSize = textarea.style.fontSize = `${metrics.codeSize}px`;
+        pre.style.lineHeight = textarea.style.lineHeight = String(metrics.codeLineHeight);
+    };
+
+    /**
      * Démarre l'édition inline d'un élément code : textarea transparent superposé à un
      * <pre> surligné hljs (mountLiveHighlight), remis à jour à chaque frappe.
-     * @param {{ editor: object, mountLiveHighlight?: function }} ctx
+     * @param {{ editor: object, mountLiveHighlight?: function, resolveElementFontSize?: function, computeCodeMetrics?: function }} ctx
      * @param {HTMLElement} div
      * @param {object} el
      */
@@ -225,6 +251,7 @@
         textarea.className = 'cel-code-edit';
         textarea.value = el.data?.code || '';
         textarea.spellcheck = false;
+        applyCodeFontMetrics(ctx, el, pre, textarea, editor.typography);
 
         wrap.appendChild(pre);
         wrap.appendChild(textarea);
@@ -288,7 +315,7 @@
      * Démarre l'édition inline d'un élément code surligné ("highlight") : code + langage,
      * textarea transparent superposé à un <pre> surligné hljs (mountLiveHighlight).
      * Les zones surlignées restent gérées dans le panneau de propriétés (trop complexe pour un overlay inline).
-     * @param {{ editor: object, mountLiveHighlight?: function }} ctx
+     * @param {{ editor: object, mountLiveHighlight?: function, resolveElementFontSize?: function, computeCodeMetrics?: function }} ctx
      * @param {HTMLElement} div
      * @param {object} el
      */
@@ -327,6 +354,7 @@
         textarea.className = 'cel-code-edit';
         textarea.value = el.data?.code || '';
         textarea.spellcheck = false;
+        applyCodeFontMetrics(ctx, el, pre, textarea, editor.typography);
 
         codeWrap.appendChild(pre);
         codeWrap.appendChild(textarea);

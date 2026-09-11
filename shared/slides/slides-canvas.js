@@ -1616,6 +1616,8 @@ class CanvasEditor {
         CanvasInlineEditRuntime.startInlineEditCode({
             editor: this,
             mountLiveHighlight: opts => this._mountLiveHighlight(opts),
+            resolveElementFontSize: (...args) => SlidesShared.resolveElementFontSize(...args),
+            computeCodeMetrics: baseFontSize => CanvasHelpers.computeCodeMetrics(baseFontSize, SlidesShared.resolveCodeLineHeight),
         }, div, el);
     }
 
@@ -1623,6 +1625,8 @@ class CanvasEditor {
         CanvasInlineEditRuntime.startInlineEditHighlight({
             editor: this,
             mountLiveHighlight: opts => this._mountLiveHighlight(opts),
+            resolveElementFontSize: (...args) => SlidesShared.resolveElementFontSize(...args),
+            computeCodeMetrics: baseFontSize => CanvasHelpers.computeCodeMetrics(baseFontSize, SlidesShared.resolveCodeLineHeight),
         }, div, el);
     }
 
