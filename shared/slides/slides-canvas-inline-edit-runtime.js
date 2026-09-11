@@ -203,23 +203,69 @@
      * mountLiveHighlight casse dès que la taille de base diffère du 13px codé en dur en CSS
      * (élément redimensionné, thème/typographie personnalisés…) : le curseur et la
      * sélection natifs du textarea ne tombent alors plus sur les bons caractères affichés.
+     *
+     * `screenScale` (= editor.scale, le zoom du canvas) : le portail d'édition (voir
+     * mountCodeEditPortal) rend le code HORS du canvas zoomé, en pixels écran réels — un
+     * <textarea> natif ne s'aligne pas de façon fiable avec un <pre> normal une fois sous
+     * `transform: scale()` (confirmé par capture d'écran : dérive de couleur/position dès
+     * que le canvas n'est pas à 100%). On compense donc ici en pixels réels plutôt que de
+     * compter sur l'ancêtre transformé pour visuellement remettre à l'échelle.
      * @param {{ resolveElementFontSize?: function, computeCodeMetrics?: function }} ctx
      * @param {object} el
      * @param {HTMLElement} pre
      * @param {HTMLElement} textarea
      * @param {object} typography
+     * @param {number} [screenScale=1]
      */
-    const applyCodeFontMetrics = (ctx, el, pre, textarea, typography) => {
+    const applyCodeFontMetrics = (ctx, el, pre, textarea, typography, screenScale = 1) => {
         const resolveElementFontSize = ctx?.resolveElementFontSize;
         const computeCodeMetrics = ctx?.computeCodeMetrics;
+        const scale = Number.isFinite(screenScale) && screenScale > 0 ? screenScale : 1;
         const base = typeof resolveElementFontSize === 'function'
             ? resolveElementFontSize(el.type, el.style || {}, typography, 16)
             : 16;
         const metrics = typeof computeCodeMetrics === 'function'
             ? computeCodeMetrics(base)
             : { codeSize: Math.round(base * 0.82), codeLineHeight: 1.58 };
-        pre.style.fontSize = textarea.style.fontSize = `${metrics.codeSize}px`;
+        pre.style.fontSize = textarea.style.fontSize = `${metrics.codeSize * scale}px`;
         pre.style.lineHeight = textarea.style.lineHeight = String(metrics.codeLineHeight);
+        // 0.75rem/1rem (padding CSS d'origine) exprimés en px réels à l'échelle du portail.
+        pre.style.padding = textarea.style.padding = `${12 * scale}px ${16 * scale}px`;
+    };
+
+    /**
+     * Monte un portail d'édition hors de la hiérarchie zoomée du canvas (appendu à
+     * document.body, position:fixed calée en pixels écran via getBoundingClientRect) : le
+     * <textarea>/<select> y rendent nativement, sans passer sous le transform:scale() du
+     * canvas — seul moyen fiable d'éviter la dérive pixel entre le <pre> surligné et le
+     * curseur/la sélection natifs du textarea à un zoom canvas différent de 100 %.
+     * @param {HTMLElement} anchorDiv - le .cel dont le portail doit occuper l'emplacement écran.
+     * @returns {{ portal: HTMLElement, destroy: function }}
+     */
+    const mountCodeEditPortal = anchorDiv => {
+        const portal = document.createElement('div');
+        portal.className = 'cel-code-edit-portal';
+        document.body.appendChild(portal);
+
+        const reposition = () => {
+            const rect = anchorDiv.getBoundingClientRect();
+            portal.style.left = `${rect.left}px`;
+            portal.style.top = `${rect.top}px`;
+            portal.style.width = `${rect.width}px`;
+            portal.style.height = `${rect.height}px`;
+        };
+        reposition();
+
+        window.addEventListener('resize', reposition);
+        window.addEventListener('scroll', reposition, true);
+
+        const destroy = () => {
+            window.removeEventListener('resize', reposition);
+            window.removeEventListener('scroll', reposition, true);
+            portal.remove();
+        };
+
+        return { portal, destroy };
     };
 
     /**
@@ -236,6 +282,9 @@
         if (div.classList.contains('editing')) return;
         div.classList.add('editing');
         const inner = div.querySelector('.cel-inner');
+        inner.innerHTML = '';
+
+        const { portal, destroy: destroyPortal } = mountCodeEditPortal(div);
 
         const lang = el.data?.language || 'text';
         const wrap = document.createElement('div');
@@ -251,12 +300,11 @@
         textarea.className = 'cel-code-edit';
         textarea.value = el.data?.code || '';
         textarea.spellcheck = false;
-        applyCodeFontMetrics(ctx, el, pre, textarea, editor.typography);
+        applyCodeFontMetrics(ctx, el, pre, textarea, editor.typography, editor.scale);
 
         wrap.appendChild(pre);
         wrap.appendChild(textarea);
-        inner.innerHTML = '';
-        inner.appendChild(wrap);
+        portal.appendChild(wrap);
         textarea.focus();
 
         const renderHighlight = typeof mountLiveHighlight === 'function'
@@ -269,6 +317,7 @@
             if (committed || !div.classList.contains('editing')) return;
             committed = true;
             div.classList.remove('editing');
+            destroyPortal();
             editor.updateData(el.id, { data: { code: textarea.value } });
         };
 
@@ -276,6 +325,7 @@
             if (committed) return;
             committed = true;
             div.classList.remove('editing');
+            destroyPortal();
             editor._refreshDOM(el.id);
         };
 
@@ -326,12 +376,18 @@
         if (div.classList.contains('editing')) return;
         div.classList.add('editing');
         const inner = div.querySelector('.cel-inner');
+        inner.innerHTML = '';
+
+        const { portal, destroy: destroyPortal } = mountCodeEditPortal(div);
+        const scale = Number.isFinite(editor.scale) && editor.scale > 0 ? editor.scale : 1;
 
         const wrapper = document.createElement('div');
         wrapper.className = 'cel-highlight-edit-wrap';
 
         const select = document.createElement('select');
         select.className = 'cel-hl-lang-select';
+        select.style.fontSize = `${11 * scale}px`;
+        select.style.padding = `${5.6 * scale}px ${12 * scale}px`;
         const currentLang = el.data?.language || 'python';
         HIGHLIGHT_LANGUAGES.forEach(([value, label]) => {
             const opt = document.createElement('option');
@@ -354,14 +410,13 @@
         textarea.className = 'cel-code-edit';
         textarea.value = el.data?.code || '';
         textarea.spellcheck = false;
-        applyCodeFontMetrics(ctx, el, pre, textarea, editor.typography);
+        applyCodeFontMetrics(ctx, el, pre, textarea, editor.typography, scale);
 
         codeWrap.appendChild(pre);
         codeWrap.appendChild(textarea);
         wrapper.appendChild(select);
         wrapper.appendChild(codeWrap);
-        inner.innerHTML = '';
-        inner.appendChild(wrapper);
+        portal.appendChild(wrapper);
         textarea.focus();
 
         const renderHighlight = typeof mountLiveHighlight === 'function'
@@ -377,6 +432,7 @@
                 if (wrapper.contains(document.activeElement)) return;
                 committed = true;
                 div.classList.remove('editing');
+                destroyPortal();
                 editor.updateData(el.id, { data: { code: textarea.value, language: select.value } });
             });
         };
@@ -385,6 +441,7 @@
             if (committed) return;
             committed = true;
             div.classList.remove('editing');
+            destroyPortal();
             editor._refreshDOM(el.id);
         };
 
@@ -816,6 +873,8 @@
             startInlineEditCodeExample,
             startInlineEditList,
             startInlineEditTable,
+            applyCodeFontMetrics,
+            mountCodeEditPortal,
         }),
     });
 })(window);

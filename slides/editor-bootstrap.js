@@ -53,11 +53,11 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
         '../shared/slides/slides-canvas-events-runtime.js?v=2',
         '../shared/slides/slides-canvas-transform-runtime.js?v=1',
         '../shared/slides/slides-canvas-special-runtime.js?v=2',
-        '../shared/slides/slides-canvas-inline-edit-runtime.js?v=2',
+        '../shared/slides/slides-canvas-inline-edit-runtime.js?v=3',
         '../shared/slides/slides-canvas-content-runtime.js?v=2',
     ],
     // CanvasEditor class (depends on all sub-runtimes above)
-    ['../shared/slides/slides-canvas.js?v=23'],
+    ['../shared/slides/slides-canvas.js?v=24'],
     // Editor modules (mostly sequential — each may depend on previously registered globals)
     ['../shared/slides/editor-dialog.js?v=3'],
     ['../shared/slides/ui-toast.js?v=1'],

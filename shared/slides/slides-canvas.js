@@ -561,6 +561,16 @@ class CanvasEditor {
     font-family:var(--sl-font-mono,monospace); font-size:11px;
     padding:0.35rem 0.75rem; border-bottom:1px solid rgba(226,232,240,0.12);
 }
+/* Portail d'édition code/highlight : hors du canvas zoomé (transform:scale() du frame,
+   voir editor-main.js), appendu à document.body et positionné en pixels écran réels via
+   getBoundingClientRect (CanvasInlineEditRuntime.mountCodeEditPortal). Un <textarea>
+   natif sous transform:scale() ne s'aligne pas de façon fiable avec le <pre> surligné
+   à côté — confirmé par capture d'écran (dérive de couleur/position dès qu'on n'est pas
+   à 100%). Rendre hors du transform garantit un rendu natif, quel que soit le zoom. */
+.cel-code-edit-portal {
+    position:fixed; z-index:5000; box-sizing:border-box;
+    background:var(--sl-code-bg,#0d1117); overflow:hidden;
+}
 .cel-list-content .cel-li-text { outline:none; cursor:text; }
 .cel-list-content .cel-li-text:focus { background:rgba(129,140,248,0.06); border-radius:3px; }
 .cel-list-content ul { padding-left:1.4em; margin:2px 0; list-style:inherit; }
