@@ -19,12 +19,15 @@
 
         div.addEventListener('mousedown', event => {
             if (div.classList?.contains?.('editing')) return;
-            // Contrôle natif toujours interactif (ex. textarea code-live, sans bascule
-            // .editing) : laisser le navigateur placer le curseur, ne pas armer un drag.
-            if (event.target?.closest?.('textarea, input, select, [contenteditable="true"]')) return;
 
             const el = findElementById(editor.elements, id);
             if (!el) return;
+
+            // Contrôle natif toujours interactif (ex. textarea code-live, sans bascule
+            // .editing) : laisser le navigateur placer le curseur, ne pas armer de drag —
+            // mais la sélection doit quand même se mettre à jour (panneau de propriétés,
+            // barre de format), sinon cliquer dedans ne sélectionne jamais l'élément.
+            const isNativeEditableTarget = !!event.target?.closest?.('textarea, input, select, [contenteditable="true"]');
 
             const targetClassList = event.target?.classList;
             if (targetClassList?.contains?.('cel-handle')) {
@@ -68,7 +71,7 @@
                 return;
             }
 
-            event.stopPropagation?.();
+            if (!isNativeEditableTarget) event.stopPropagation?.();
             if (context.tryHandlePipetteClick?.(id)) return;
 
             if (event.ctrlKey || event.metaKey) {
@@ -80,6 +83,7 @@
                 editor.onSelect?.(findElementById(editor.elements, id));
             }
 
+            if (isNativeEditableTarget) return;
             if (el.locked) return;
             const dragOrigins = {};
             for (const sid of editor.selectedIds || []) {
