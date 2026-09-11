@@ -542,7 +542,14 @@ class CanvasEditor {
 .cel-code-edit {
     resize:none; border:none; outline:none; display:block; overflow:auto;
     background:transparent; color:transparent; caret-color:var(--sl-code-text,#e2e8f0);
+    /* Scrollbar native masquée : sa réserve de largeur (variable selon OS/navigateur)
+       désynchronisait le retour à la ligne du textarea de celui du <pre> sans scrollbar
+       (overflow:hidden) en dessous — confirmé par capture d'écran (texte fantôme dédoublé
+       dès qu'une ligne wrappe). Le défilement reste fonctionnel (molette/clavier),
+       synchronisé manuellement vers le <pre> par mountLiveHighlight (voir syncScroll). */
+    scrollbar-width: none;
 }
+.cel-code-edit::-webkit-scrollbar { display:none; width:0; height:0; }
 .cel-code-edit::selection { background:rgba(129,140,248,0.35); }
 .cel-highlight-edit-wrap {
     display:flex; flex-direction:column; width:100%; height:100%;
