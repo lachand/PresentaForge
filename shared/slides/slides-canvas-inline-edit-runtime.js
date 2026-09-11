@@ -248,6 +248,100 @@
         textarea.addEventListener('blur', commit);
     };
 
+    // Langages proposés — doit rester aligné avec le <select id="sp-hl-lang"> du panneau
+    // de propriétés (editor-props-panel.js, case 'highlight').
+    const HIGHLIGHT_LANGUAGES = [
+        ['python', 'Python'],
+        ['javascript', 'JavaScript'],
+        ['java', 'Java'],
+        ['c', 'C'],
+        ['bash', 'Bash / Terminal'],
+        ['html', 'HTML'],
+        ['css', 'CSS'],
+        ['sql', 'SQL'],
+        ['yaml', 'YAML'],
+        ['json', 'JSON'],
+        ['text', 'Texte'],
+    ];
+
+    /**
+     * Démarre l'édition inline d'un élément code surligné ("highlight") : code + langage.
+     * Les zones surlignées restent gérées dans le panneau de propriétés (trop complexe pour un overlay inline).
+     * @param {{ editor: object }} ctx
+     * @param {HTMLElement} div
+     * @param {object} el
+     */
+    const startInlineEditHighlight = (ctx, div, el) => {
+        const editor = ctx?.editor;
+        if (!editor || !div || !el) return;
+        if (div.classList.contains('editing')) return;
+        div.classList.add('editing');
+        const inner = div.querySelector('.cel-inner');
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cel-highlight-edit-wrap';
+
+        const select = document.createElement('select');
+        select.className = 'cel-hl-lang-select';
+        const currentLang = el.data?.language || 'python';
+        HIGHLIGHT_LANGUAGES.forEach(([value, label]) => {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = label;
+            if (value === currentLang) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        const textarea = document.createElement('textarea');
+        textarea.className = 'cel-code-edit';
+        textarea.value = el.data?.code || '';
+        textarea.spellcheck = false;
+
+        wrapper.appendChild(select);
+        wrapper.appendChild(textarea);
+        inner.innerHTML = '';
+        inner.appendChild(wrapper);
+        textarea.focus();
+
+        let committed = false;
+
+        const commit = () => {
+            if (committed || !div.classList.contains('editing')) return;
+            requestAnimationFrame(() => {
+                if (wrapper.contains(document.activeElement)) return;
+                committed = true;
+                div.classList.remove('editing');
+                editor.updateData(el.id, { data: { code: textarea.value, language: select.value } });
+            });
+        };
+
+        const revert = () => {
+            if (committed) return;
+            committed = true;
+            div.classList.remove('editing');
+            editor._refreshDOM(el.id);
+        };
+
+        textarea.addEventListener('keydown', e => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = textarea.selectionStart, end = textarea.selectionEnd;
+                textarea.value = textarea.value.substring(0, start) + '    ' + textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + 4;
+            }
+            if (e.key === 'Escape') { e.preventDefault(); revert(); }
+            if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); textarea.blur(); }
+            e.stopPropagation();
+        });
+        select.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { e.preventDefault(); revert(); }
+            e.stopPropagation();
+        });
+
+        textarea.addEventListener('blur', commit);
+        select.addEventListener('blur', commit);
+    };
+
     /**
      * Démarre l'édition inline d'un élément définition (terme / définition / exemple).
      * @param {{ editor: object }} ctx
@@ -405,7 +499,9 @@
     };
 
     /**
-     * Démarre l'édition inline d'un élément liste (items contentEditable).
+     * Démarre l'édition inline d'un élément liste (items + un niveau de sous-items).
+     * Modèle de données : items = (string | { text, sub: string[] })[] — profondeur plafonnée à 1
+     * (un sous-item ne peut pas avoir lui-même des sous-items).
      * @param {{ editor: object, resolveElementFontSize: function }} ctx
      * @param {HTMLElement} div
      * @param {object} el
@@ -440,52 +536,120 @@
                 if (ul.contains(document.activeElement)) return;
                 committed = true;
                 div.classList.remove('editing');
-                const items = Array.from(ul.querySelectorAll('li')).map(li => li.textContent).filter(t => t !== '');
+                const items = Array.from(ul.querySelectorAll(':scope > li')).map(li => {
+                    const text = li.querySelector(':scope > .cel-li-text')?.textContent || '';
+                    const subUl = li.querySelector(':scope > ul');
+                    if (!subUl) return text;
+                    const sub = Array.from(subUl.querySelectorAll(':scope > li'))
+                        .map(subLi => subLi.querySelector(':scope > .cel-li-text')?.textContent || '')
+                        .filter(t => t !== '');
+                    return { text, sub };
+                }).filter(item => (typeof item === 'string' ? item !== '' : (item.text !== '' || item.sub.length > 0)));
                 editor.updateData(el.id, { data: { items: items.length ? items : [''] } });
             });
         };
 
+        const focusText = (textEl, atEnd = true) => {
+            if (!textEl) return;
+            textEl.focus();
+            if (!atEnd) return;
+            const range = document.createRange();
+            range.selectNodeContents(textEl);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        };
+
         const makeLi = (text = '') => {
             const li = document.createElement('li');
-            li.contentEditable = 'true';
-            li.textContent = text;
-            li.addEventListener('blur', commitAll);
+            const textEl = document.createElement('div');
+            textEl.className = 'cel-li-text';
+            textEl.contentEditable = 'true';
+            textEl.textContent = text;
+            textEl.addEventListener('blur', commitAll);
+            li.appendChild(textEl);
             return li;
         };
 
-        // Single delegated keydown handler on the ul
+        // Handler délégué unique sur le ul racine — couvre les items racine et les sous-items
         ul.addEventListener('keydown', e => {
+            const textEl = e.target.closest('.cel-li-text');
             const li = e.target.closest('li');
-            if (!li || li.parentElement !== ul) return;
+            if (!textEl || !li) return;
             e.stopPropagation();
+            const isRoot = li.parentElement === ul;
+
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 const newLi = makeLi('');
                 li.after(newLi);
-                newLi.focus();
+                focusText(newLi.querySelector('.cel-li-text'), false);
+                return;
             }
-            if (e.key === 'Backspace' && li.textContent === '') {
+            if (e.key === 'Backspace' && textEl.textContent === '') {
                 e.preventDefault();
+                if (li.querySelector(':scope > ul')) return; // a des sous-items : ne pas les perdre
                 const prev = li.previousElementSibling;
+                const parentLi = !isRoot ? li.parentElement.closest('li') : null;
                 li.remove();
                 if (prev) {
-                    prev.focus();
-                    const range = document.createRange();
-                    range.selectNodeContents(prev);
-                    range.collapse(false);
-                    const sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(range);
+                    focusText(prev.querySelector(':scope > .cel-li-text'));
+                } else if (parentLi) {
+                    const subUl = parentLi.querySelector(':scope > ul');
+                    if (subUl && !subUl.children.length) subUl.remove();
+                    focusText(parentLi.querySelector(':scope > .cel-li-text'));
                 }
+                return;
             }
-            if (e.key === 'Escape') { e.preventDefault(); revert(); }
+            if (e.key === 'Escape') { e.preventDefault(); revert(); return; }
+            if (e.key === 'Tab' && !e.shiftKey) {
+                // Indenter — seul un item racine sans sous-items propres peut devenir sous-item
+                e.preventDefault();
+                if (!isRoot || li.querySelector(':scope > ul')) return;
+                const prev = li.previousElementSibling;
+                if (!prev) return;
+                let subUl = prev.querySelector(':scope > ul');
+                if (!subUl) {
+                    subUl = document.createElement('ul');
+                    prev.appendChild(subUl);
+                }
+                li.remove();
+                subUl.appendChild(li);
+                focusText(li.querySelector('.cel-li-text'));
+                return;
+            }
+            if (e.key === 'Tab' && e.shiftKey) {
+                // Désindenter — remonte un sous-item au niveau racine, juste après son parent
+                e.preventDefault();
+                if (isRoot) return;
+                const subUl = li.parentElement;
+                const parentLi = subUl.closest('li');
+                li.remove();
+                parentLi.after(li);
+                if (!subUl.children.length) subUl.remove();
+                focusText(li.querySelector('.cel-li-text'));
+                return;
+            }
         });
 
-        (el.data?.items || ['']).forEach(text => ul.appendChild(makeLi(text)));
+        const buildLi = item => {
+            if (item && typeof item === 'object' && Array.isArray(item.sub)) {
+                const li = makeLi(item.text || '');
+                if (item.sub.length) {
+                    const subUl = document.createElement('ul');
+                    item.sub.forEach(subText => subUl.appendChild(makeLi(subText)));
+                    li.appendChild(subUl);
+                }
+                return li;
+            }
+            return makeLi(typeof item === 'string' ? item : '');
+        };
+
+        (el.data?.items || ['']).forEach(item => ul.appendChild(buildLi(item)));
         inner.innerHTML = '';
         inner.appendChild(ul);
-        const firstLi = ul.querySelector('li');
-        if (firstLi) firstLi.focus();
+        focusText(ul.querySelector('.cel-li-text'), false);
     };
 
     /**
@@ -572,6 +736,7 @@
     root.OEISlidesCanvasInlineEditRuntime = Object.freeze({
         startInlineEdit,
         startInlineEditCode,
+        startInlineEditHighlight,
         startInlineEditDefinition,
         startInlineEditCodeExample,
         startInlineEditList,
@@ -579,6 +744,7 @@
         testUtils: Object.freeze({
             startInlineEdit,
             startInlineEditCode,
+            startInlineEditHighlight,
             startInlineEditDefinition,
             startInlineEditCodeExample,
             startInlineEditList,

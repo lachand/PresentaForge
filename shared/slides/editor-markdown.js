@@ -141,7 +141,14 @@ function _slidesToMarkdown(slides) {
                     } else if (el.type === 'code') {
                         parts.push('```' + (el.data?.language || '') + '\n' + (el.data?.code || '') + '\n```');
                     } else if (el.type === 'list') {
-                        (el.data?.items || []).forEach(item => parts.push(`- ${item}`));
+                        (el.data?.items || []).forEach(item => {
+                            if (item && typeof item === 'object' && Array.isArray(item.sub)) {
+                                parts.push(`- ${item.text || ''}`);
+                                item.sub.forEach(sub => parts.push(`  - ${sub}`));
+                            } else {
+                                parts.push(`- ${item}`);
+                            }
+                        });
                     } else if (el.type === 'image') {
                         parts.push(`![${el.data?.alt || 'image'}](${el.data?.src || ''})`);
                     }

@@ -116,7 +116,11 @@ function updateStats() {
         if (s.elements) for (const el of s.elements) {
             if (el.data?.text) texts.push(el.data.text);
             if (el.data?.code) texts.push(el.data.code);
-            if (el.data?.items) texts.push(...el.data.items);
+            if (el.data?.items) for (const i of el.data.items) {
+                if (typeof i === 'string') { texts.push(i); continue; }
+                texts.push(i.text || '');
+                if (Array.isArray(i.sub)) texts.push(...i.sub);
+            }
         }
         wordCount += texts.join(' ').split(/\s+/).filter(w => w.length > 0).length;
     }

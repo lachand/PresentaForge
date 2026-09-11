@@ -88,7 +88,7 @@ function renderSlideList() {
             </div>
             <div class="sl-thumb-actions">
                 <button class="sl-thumb-action-btn" data-action="dup" title="Dupliquer">⧉</button>
-                <button class="sl-thumb-action-btn danger" data-action="del" title="Supprimer">✕</button>
+                <button class="sl-thumb-action-btn danger" data-action="del" title="Supprimer (Maj+Suppr)">✕</button>
             </div>
         </div>`;
     }).join('');
@@ -392,7 +392,7 @@ function positionPopover(popover, refEvent) {
 function openCanvasPopover(element, event) {
     if (!element) return;
     // For types with inline editing, do nothing
-    if (['heading', 'text', 'code', 'definition', 'list'].includes(element.type)) return;
+    if (['heading', 'text', 'code', 'highlight', 'definition', 'list'].includes(element.type)) return;
 
     // For all content types, expand sidebar and focus the first input
     const propsPanel = document.getElementById('props-panel');

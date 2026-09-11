@@ -1024,7 +1024,7 @@ function bindKeyboard() {
             else if (e.key === 'g') { e.preventDefault(); groupSelected(); }
         }
         if (e.key === 'F5') { e.preventDefault(); launchPresentation(e.shiftKey ? 'presenter' : undefined); }
-        // Arrow keys: nudge selected canvas elements, or navigate/reorder slides
+        // Arrow keys: nudge selected canvas elements, navigate slides, or (Ctrl+Shift) reorder the deck
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
             if (runtimeCanvas && runtimeCanvas.selectedIds.size > 0) {
                 e.preventDefault();
@@ -1032,11 +1032,15 @@ function bindKeyboard() {
                 const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
                 const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
                 runtimeCanvas.nudge(dx, dy);
+            } else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.ctrlKey && e.shiftKey) {
+                // Réordonner le deck — action volontaire (convention Google Slides), jamais implicite
+                e.preventDefault();
+                if (e.key === 'ArrowUp')   { if (!_moveSelectedSlidesBy(-1)) runtimeEditor.moveSlide(runtimeEditor.selectedIndex, runtimeEditor.selectedIndex - 1); }
+                if (e.key === 'ArrowDown') { if (!_moveSelectedSlidesBy(1)) runtimeEditor.moveSlide(runtimeEditor.selectedIndex, runtimeEditor.selectedIndex + 1); }
             } else {
-                if (e.key === 'ArrowUp')   { e.preventDefault(); if (!_moveSelectedSlidesBy(-1)) runtimeEditor.moveSlide(runtimeEditor.selectedIndex, runtimeEditor.selectedIndex - 1); }
-                if (e.key === 'ArrowDown') { e.preventDefault(); if (!_moveSelectedSlidesBy(1)) runtimeEditor.moveSlide(runtimeEditor.selectedIndex, runtimeEditor.selectedIndex + 1); }
-                if (e.key === 'ArrowLeft' && runtimeEditor.selectedIndex > 0) { e.preventDefault(); runtimeEditor.selectSlide(runtimeEditor.selectedIndex - 1); }
-                if (e.key === 'ArrowRight' && runtimeEditor.selectedIndex < runtimeEditor.data.slides.length - 1) { e.preventDefault(); runtimeEditor.selectSlide(runtimeEditor.selectedIndex + 1); }
+                // Navigation seule — symétrique sur les 4 flèches, jamais de réordonnancement implicite
+                if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && runtimeEditor.selectedIndex > 0) { e.preventDefault(); runtimeEditor.selectSlide(runtimeEditor.selectedIndex - 1); }
+                if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && runtimeEditor.selectedIndex < runtimeEditor.data.slides.length - 1) { e.preventDefault(); runtimeEditor.selectSlide(runtimeEditor.selectedIndex + 1); }
             }
         }
         if (e.key === 'Delete' && e.shiftKey) {
@@ -1048,13 +1052,6 @@ function bindKeyboard() {
         }
         if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?.selectedIds?.size > 0) runtimeCanvas.removeSelected();
         if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?._selectedConnectorId) runtimeCanvas.removeSelected();
-        if (e.key === 'Delete' && !e.shiftKey && inSlideList && !(runtimeCanvas?.selectedIds?.size > 0) && !runtimeCanvas?._selectedConnectorId) {
-            const selected = _selectedSlideIndicesForOps();
-            const label = selected.length > 1 ? `${selected.length} slides supprimés` : 'Slide supprimé';
-            if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
-            else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
-            notifyUndo(label, () => runtimeEditor.undo());
-        }
         if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             openQuickInsert();

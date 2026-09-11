@@ -56,10 +56,11 @@
     };
 
     // Comme normalizeListItems, mais PRÉSERVE la structure { text, sub:[…] } des
-    // puces à sous-liste — le type de slide 'bullets' rend un <ul> imbriqué
-    // (shared/slides/slides-core.js _bullets). Les sous-puces restent plates.
-    // Utilisé uniquement pour `type: 'bullets'` ; les autres listes (smartart,
-    // options, cartes, colonnes split) restent des tableaux de chaînes.
+    // puces à sous-liste — rendue en <ul> imbriqué à la fois par le type de slide
+    // 'bullets' (slides-core.js _bullets) et par l'élément canvas 'list'
+    // (slides-renderer-canvas.js, édité via startInlineEditList). Les sous-puces
+    // restent plates. Les autres listes (smartart, options, cartes, colonnes
+    // split) restent des tableaux de chaînes via normalizeListItems.
     const normalizeBulletItems = (items, fallback = []) => {
         if (!Array.isArray(items)) return fallback;
         const out = [];

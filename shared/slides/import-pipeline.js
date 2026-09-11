@@ -475,8 +475,11 @@
         }
 
         if (out.type === 'list') {
-            const nextItems = normalizeListItems(out.data.items || out.items || [], ['Point']);
-            if (!Array.isArray(out.data.items) || nextItems.join('||') !== (out.data.items || []).join('||')) {
+            // normalizeBulletItems (pas normalizeListItems) : préserve la forme { text, sub:[…] }
+            // des sous-items — voir shared/slides/slides-canvas-inline-edit-runtime.js::startInlineEditList.
+            const nextItems = normalizeBulletItems(out.data.items || out.items || [], ['Point']);
+            const stableKey = items => (items || []).map(i => (i && typeof i === 'object') ? `${i.text}»${(i.sub || []).join(',')}` : i).join('||');
+            if (!Array.isArray(out.data.items) || stableKey(nextItems) !== stableKey(out.data.items)) {
                 out.data.items = nextItems;
                 pushFix(report, `${slidePath}.elements[${index}].data.items`, 'Liste normalisée en tableau de chaînes.');
             }

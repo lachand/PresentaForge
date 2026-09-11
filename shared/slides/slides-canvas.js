@@ -526,8 +526,20 @@ class CanvasEditor {
     font-family:var(--sl-font-mono,monospace); font-size:13px; line-height:1.6;
     padding:0.75rem 1rem; box-sizing:border-box; tab-size:4;
 }
-.cel-list-content li[contenteditable] { outline:none; cursor:text; }
-.cel-list-content li[contenteditable]:focus { background:rgba(129,140,248,0.06); border-radius:3px; }
+.cel-highlight-edit-wrap {
+    display:flex; flex-direction:column; width:100%; height:100%;
+    background:var(--sl-code-bg,#0d1117);
+}
+.cel-highlight-edit-wrap .cel-code-edit { flex:1; min-height:0; }
+.cel-hl-lang-select {
+    flex:none; border:none; outline:none; cursor:pointer;
+    background:var(--sl-code-bg,#0d1117); color:var(--sl-code-text,#e2e8f0);
+    font-family:var(--sl-font-mono,monospace); font-size:11px;
+    padding:0.35rem 0.75rem; border-bottom:1px solid rgba(226,232,240,0.12);
+}
+.cel-list-content .cel-li-text { outline:none; cursor:text; }
+.cel-list-content .cel-li-text:focus { background:rgba(129,140,248,0.06); border-radius:3px; }
+.cel-list-content ul { padding-left:1.4em; margin:2px 0; list-style:inherit; }
 .cel-def-edit-field { outline:none; cursor:text; min-height:1em; }
 .cel-def-edit-field:focus { background:rgba(129,140,248,0.08); border-radius:3px; }
 .cel-def-inline-label { font-size:0.75em; color:var(--sl-muted,#64748b); user-select:none; }
@@ -856,35 +868,13 @@ class CanvasEditor {
         gl.className = 'canvas-guide-layer';
         container.appendChild(gl);
 
-        // Keyboard navigation — move selected element(s) with arrow keys
+        // Keyboard navigation — move selected element(s) with arrow keys.
+        // Le nudge clavier lui-même est géré par le listener global unique
+        // (editor-bindings.js::bindKeyboard() → this.nudge()) pour éviter un
+        // double-déplacement quand ce conteneur a le focus (cf. CLAUDE.md slides).
         if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '0');
         container.setAttribute('role', 'application');
         container.setAttribute('aria-label', 'Canvas de présentation — utilisez les flèches pour déplacer l\'élément sélectionné');
-        container.addEventListener('keydown', e => {
-            // Only handle when focus is on the container itself, not on an inner input/textarea
-            if (document.activeElement !== container) return;
-            const DIRS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-            const dir = DIRS[e.key];
-            if (!dir) return;
-            if (this.selectedIds.size === 0) return;
-            e.preventDefault();
-            const step = e.shiftKey ? 10 : 1;
-            const dx = dir[0] * step;
-            const dy = dir[1] * step;
-            let changed = false;
-            for (const id of this.selectedIds) {
-                const el = this.elements.find(el => el.id === id);
-                if (!el || this._isElementLocked(el)) continue;
-                el.x = (el.x || 0) + dx;
-                el.y = (el.y || 0) + dy;
-                this._refreshDOM(id);
-                changed = true;
-            }
-            if (changed) {
-                this._refreshConnectors();
-                this.onChange(this.serialize());
-            }
-        });
     }
 
     destroy() {
@@ -1592,6 +1582,10 @@ class CanvasEditor {
 
     _startInlineEditCode(div, el) {
         CanvasInlineEditRuntime.startInlineEditCode({ editor: this }, div, el);
+    }
+
+    _startInlineEditHighlight(div, el) {
+        CanvasInlineEditRuntime.startInlineEditHighlight({ editor: this }, div, el);
     }
 
     _startInlineEditDefinition(div, el) {

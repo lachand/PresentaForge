@@ -1728,7 +1728,14 @@ function _mdCanvasSlide(slide, lines, idx) {
                 break;
             case 'list':
                 if (Array.isArray(el.data?.items)) {
-                    for (const item of el.data.items) lines.push(`- ${_mdStripHtml(item)}`);
+                    for (const item of el.data.items) {
+                        if (item && typeof item === 'object' && Array.isArray(item.sub)) {
+                            lines.push(`- ${_mdStripHtml(item.text || '')}`);
+                            for (const sub of item.sub) lines.push(`  - ${_mdStripHtml(sub)}`);
+                        } else {
+                            lines.push(`- ${_mdStripHtml(item)}`);
+                        }
+                    }
                 }
                 break;
             case 'code':

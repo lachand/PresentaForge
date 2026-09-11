@@ -216,7 +216,14 @@
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('list', s, opts.typography, 22);
                 const liCls = el.data?.revealItems ? ' class="fragment"' : '';
-                const items = (el.data?.items || []).map(i => `<li${liCls}>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
+                const renderListItem = i => {
+                    if (i && typeof i === 'object' && Array.isArray(i.sub)) {
+                        const subItems = i.sub.map(sub => `<li${liCls}>${SlidesShared.formatInlineRichText(sub)}</li>`).join('');
+                        return `<li${liCls}>${SlidesShared.formatInlineRichText(i.text || '')}${subItems ? `<ul>${subItems}</ul>` : ''}</li>`;
+                    }
+                    return `<li${liCls}>${SlidesShared.formatInlineRichText(i)}</li>`;
+                };
+                const items = (el.data?.items || []).map(renderListItem).join('');
                 const lAlign = SlidesShared.resolveElementStyle('list', s, 'textAlign', 'left');
                 const lExtra = (s.fontWeight ? `font-weight:${s.fontWeight};` : '')
                     + (s.fontFamily ? `font-family:${s.fontFamily};` : '')

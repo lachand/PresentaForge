@@ -108,6 +108,7 @@
             if (editor._isElementLocked(el)) return;
             if (['heading', 'text'].includes(el.type)) editor._startInlineEdit(div, el, event);
             else if (el.type === 'code') editor._startInlineEditCode(div, el);
+            else if (el.type === 'highlight') editor._startInlineEditHighlight(div, el);
             else if (el.type === 'definition') editor._startInlineEditDefinition(div, el);
             else if (el.type === 'code-example') editor._startInlineEditCodeExample(div, el);
             else if (el.type === 'list') editor._startInlineEditList(div, el);

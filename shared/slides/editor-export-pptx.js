@@ -134,10 +134,20 @@ function _pptxExportCanvasSlide(pptSlide, slideData, dims, tc) {
             }
             case 'list': {
                 const items = el.data?.items || [];
-                const textRows = items.map(item => ({
-                    text: _mdStripHtml(item),
-                    options: { bullet: true, fontSize: s.fontSize || 20, color: _pptxExportColor(s.color) || _pptxExportColor(tc.text) || '333333' }
-                }));
+                const listColor = _pptxExportColor(s.color) || _pptxExportColor(tc.text) || '333333';
+                const listRow = (text, indent) => ({
+                    text: _mdStripHtml(text),
+                    options: { bullet: indent ? { indent } : true, fontSize: s.fontSize || 20, color: listColor }
+                });
+                const textRows = [];
+                items.forEach(item => {
+                    if (item && typeof item === 'object' && Array.isArray(item.sub)) {
+                        textRows.push(listRow(item.text || ''));
+                        item.sub.forEach(sub => textRows.push(listRow(sub, 20)));
+                    } else {
+                        textRows.push(listRow(item));
+                    }
+                });
                 pptSlide.addText(textRows, { x, y, w, h, valign: 'top' });
                 break;
             }

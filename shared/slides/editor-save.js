@@ -169,7 +169,11 @@ function _revisionExtractCanvasPreview(slide) {
         if (typeof data.title === 'string' && data.title.trim()) return data.title.trim();
         if (typeof data.question === 'string' && data.question.trim()) return data.question.trim();
         if (typeof data.term === 'string' && data.term.trim()) return data.term.trim();
-        if (Array.isArray(data.items) && data.items.length) return String(data.items[0] || '').trim();
+        if (Array.isArray(data.items) && data.items.length) {
+            const first = data.items[0];
+            const firstText = (first && typeof first === 'object') ? (first.text || '') : first;
+            return String(firstText || '').trim();
+        }
         if (Array.isArray(data.rows) && data.rows.length > 1) return String(data.rows[1]?.[0] || '').trim();
         return '';
     };
