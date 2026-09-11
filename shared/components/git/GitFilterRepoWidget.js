@@ -1,47 +1,4 @@
 class GitFilterRepoWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (GitFilterRepoWidget._stylesInjected) return;
-        GitFilterRepoWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-        .gfr-widget { font-family: var(--font-sans, sans-serif); display: flex; flex-direction: column; gap: 0.9rem; }
-        .gfr-progress { display: flex; align-items: center; gap: 0; margin-bottom: 0.25rem; }
-        .gfr-progress-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--border, #e2e8f0); border: 2px solid var(--border, #e2e8f0); flex-shrink: 0; transition: all 0.25s; }
-        .gfr-progress-dot.active { background: var(--primary, #6366f1); border-color: var(--primary, #6366f1); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
-        .gfr-progress-dot.done { background: #16a34a; border-color: #16a34a; }
-        .gfr-progress-line { flex: 1; height: 2px; background: var(--border, #e2e8f0); }
-        .gfr-progress-line.done { background: #16a34a; }
-        .gfr-step-header { display: flex; flex-direction: column; gap: 0.15rem; }
-        .gfr-step-num { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted, #94a3b8); }
-        .gfr-step-title { font-size: 0.95rem; font-weight: 700; color: var(--heading, #1e293b); }
-        .gfr-terminal { border-radius: 8px; overflow: hidden; background: #1e1e2e; }
-        .gfr-terminal-bar { display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.7rem; background: #181825; }
-        .gfr-td { width: 10px; height: 10px; border-radius: 50%; }
-        .gfr-td-red { background: #ff5f57; }
-        .gfr-td-yellow { background: #febc2e; }
-        .gfr-td-green { background: #28c840; }
-        .gfr-terminal-label { margin-left: auto; font-size: 0.68rem; color: #585b70; font-family: monospace; }
-        .gfr-terminal-body { padding: 0.7rem 1rem; }
-        .gfr-cmd { font-family: monospace; font-size: 0.8rem; color: #a6e3a1; white-space: pre-wrap; line-height: 1.6; }
-        .gfr-cmd-prompt { color: #89b4fa; }
-        .gfr-output { font-family: monospace; font-size: 0.77rem; color: #cdd6f4; margin-top: 0.5rem; white-space: pre-wrap; line-height: 1.65; border-top: 1px solid #313244; padding-top: 0.5rem; }
-        .gfr-note { padding: 0.6rem 0.8rem; background: #eff6ff; border: 1px solid #bfdbfe; border-left: 3px solid #3b82f6; border-radius: 6px; font-size: 0.81rem; color: #1e40af; line-height: 1.55; }
-        .gfr-warning { padding: 0.75rem 0.9rem; background: #fef2f2; border: 1px solid #fca5a5; border-left: 3px solid #dc2626; border-radius: 6px; font-size: 0.82rem; line-height: 1.55; }
-        .gfr-warning-title { font-weight: 700; color: #dc2626; margin-bottom: 0.5rem; font-size: 0.88rem; }
-        .gfr-checklist { display: flex; flex-direction: column; gap: 0.35rem; }
-        .gfr-check-item { display: flex; gap: 0.6rem; font-size: 0.82rem; color: #1e293b; padding: 0.2rem 0; }
-        .gfr-check-item span:first-child { flex-shrink: 0; }
-        .gfr-force-warn { padding: 0.65rem 0.8rem; background: #fff7ed; border: 1px solid #fed7aa; border-left: 3px solid #f97316; border-radius: 6px; font-size: 0.81rem; color: #9a3412; line-height: 1.55; }
-        .gfr-nav { display: flex; gap: 0.6rem; margin-top: 0.25rem; }
-        .gfr-btn { padding: 0.4rem 1rem; border-radius: 6px; border: 1.5px solid var(--border, #e2e8f0); background: var(--bg, #fff); cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: all 0.15s; color: var(--text, #1e293b); }
-        .gfr-btn:not([disabled]):hover { background: var(--primary, #6366f1); color: white; border-color: var(--primary, #6366f1); }
-        .gfr-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
-        `;
-        document.head.appendChild(s);
-    }
-
     static STEPS = [
         {
             title: 'État initial — identifier le problème',
@@ -125,7 +82,6 @@ To github.com:monorg/monrepo.git
     ];
 
     static mount(container, config = {}) {
-        GitFilterRepoWidget.ensureStyles();
         let step = 0;
         const total = GitFilterRepoWidget.STEPS.length;
 

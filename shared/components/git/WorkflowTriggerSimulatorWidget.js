@@ -1,42 +1,5 @@
 class WorkflowTriggerSimulatorWidget {
-    static ensureStyles() {
-        if (document.getElementById('wts-styles')) return;
-        const s = document.createElement('style');
-        s.id = 'wts-styles';
-        s.textContent = `
-.wts { font-family: var(--font); }
-.wts-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1rem; }
-@media (max-width: 640px) { .wts-grid { grid-template-columns: 1fr; } }
-.wts-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
-.wts-panel-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 0.75rem; }
-.wts-event-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.85rem; }
-.wts-event-btn { padding: 0.28rem 0.65rem; border: 1.5px solid var(--border); border-radius: 20px; background: transparent; cursor: pointer; font-size: 0.76rem; font-family: var(--font); color: var(--text); transition: all 0.15s; white-space: nowrap; }
-.wts-event-btn:hover { border-color: var(--primary); color: var(--primary); }
-.wts-event-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-.wts-field { margin-bottom: 0.6rem; }
-.wts-field label { display: block; font-size: 0.73rem; color: var(--muted); margin-bottom: 0.2rem; }
-.wts-field input { width: 100%; padding: 0.35rem 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.82rem; box-sizing: border-box; outline: none; }
-.wts-field input:focus { border-color: var(--primary); }
-.wts-note { font-size: 0.75rem; color: var(--muted); font-style: italic; margin: 0; }
-.wts-wf { border: 1.5px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; transition: all 0.2s; }
-.wts-wf:last-child { margin-bottom: 0; }
-.wts-wf.triggered { border-color: #22c55e; background: color-mix(in srgb, #22c55e 7%, var(--card)); }
-.wts-wf.blocked { opacity: 0.45; }
-.wts-wf-top { display: flex; align-items: center; gap: 0.5rem; }
-.wts-wf-name { font-family: monospace; font-size: 0.83rem; font-weight: 600; color: var(--heading); flex: 1; }
-.wts-badge { font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 20px; }
-.wts-badge.yes { background: #22c55e; color: #fff; }
-.wts-badge.no { background: var(--hover); color: var(--muted); border: 1px solid var(--border); }
-.wts-wf-on { margin-top: 0.35rem; font-family: monospace; font-size: 0.71rem; color: var(--muted); line-height: 1.7; }
-.wts-wf-match { color: #22c55e; font-weight: 700; }
-.wts-wf-reason { font-size: 0.71rem; color: #22c55e; margin-top: 0.2rem; }
-        `;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        WorkflowTriggerSimulatorWidget.ensureStyles();
-
         const WORKFLOWS = [
             { name: 'ci.yml',      on: { push: { branches: ['main', 'develop'] }, pull_request: { branches: ['main'] } } },
             { name: 'deploy.yml',  on: { push: { branches: ['main'] }, workflow_dispatch: {} } },

@@ -599,6 +599,16 @@ class ConceptPage {
         const runtimeDef = _getWidgetRegistry()[type];
         if (!runtimeDef) return false;
 
+        // Dépendances déclarées (ex. générateurs de trace partagés) chargées avant
+        // le script du widget lui-même.
+        if (Array.isArray(runtimeDef.deps)) {
+            for (const dep of runtimeDef.deps) {
+                if (typeof dep === 'string' && dep) {
+                    await OEIUtils.loadScript(this.resolveSharedScriptPath(dep));
+                }
+            }
+        }
+
         return this.ensureGlobalLoaded({
             cacheKey: `widget_${type}`,
             globalName: runtimeDef.global,

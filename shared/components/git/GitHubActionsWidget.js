@@ -5,8 +5,6 @@
  * la zone et affiche une explication détaillée.
  */
 class GitHubActionsWidget {
-    static _stylesInjected = false;
-
     static WORKFLOW = `name: CI
 
 on:
@@ -106,135 +104,8 @@ Si <code>test</code> échoue, <code>lint</code> est automatiquement annulé (sta
         }
     ];
 
-    static ensureStyles() {
-        if (GitHubActionsWidget._stylesInjected) return;
-        GitHubActionsWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-.gaw-root {
-    font-family: var(--font);
-    color: var(--text);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    align-items: start;
-}
-@media (max-width: 700px) {
-    .gaw-root { grid-template-columns: 1fr; }
-}
-
-/* Panneau YAML */
-.gaw-yaml-panel {
-    background: #1e293b;
-    border-radius: var(--radius);
-    overflow: hidden;
-    border: 1px solid #334155;
-}
-.gaw-yaml-bar {
-    background: #334155;
-    padding: 0.4rem 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.72rem;
-    color: #94a3b8;
-    font-family: var(--font-mono);
-}
-.gaw-dot {
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-.gaw-dot-r { background: #ef4444; }
-.gaw-dot-y { background: #f59e0b; }
-.gaw-dot-g { background: #22c55e; }
-.gaw-yaml-body {
-    padding: 0.75rem 0.5rem;
-    overflow-y: auto;
-    max-height: 480px;
-}
-.gaw-line {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    line-height: 1.7;
-    padding: 0 0.5rem;
-    border-radius: 3px;
-    cursor: default;
-    white-space: pre;
-    color: #cbd5e1;
-    transition: background 0.15s;
-}
-.gaw-line.clickable {
-    cursor: pointer;
-}
-.gaw-line.clickable:hover {
-    filter: brightness(1.2);
-}
-.gaw-line.highlighted {
-    font-weight: 600;
-}
-
-/* Panneau d'explication */
-.gaw-explain-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-.gaw-legend {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-.gaw-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.45rem 0.7rem;
-    border-radius: var(--radius-sm);
-    border: 2px solid;
-    cursor: pointer;
-    font-size: 0.78rem;
-    font-weight: 600;
-    transition: all 0.15s;
-    background: var(--card);
-}
-.gaw-legend-item:hover { filter: brightness(0.97); }
-.gaw-legend-item.active { color: #fff; }
-.gaw-legend-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.gaw-explain-box {
-    background: var(--card);
-    border: 1.5px solid var(--border);
-    border-left: 4px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.85rem 1rem;
-    font-size: 0.82rem;
-    line-height: 1.55;
-    min-height: 120px;
-}
-.gaw-explain-title {
-    font-family: var(--font-mono);
-    font-weight: 700;
-    font-size: 0.85rem;
-    margin-bottom: 0.4rem;
-}
-.gaw-hint {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-style: italic;
-}
-        `;
-        document.head.appendChild(s);
-    }
 
     static mount(container, config = {}) {
-        GitHubActionsWidget.ensureStyles();
-
         let activeRegion = null;
 
         const lines = GitHubActionsWidget.WORKFLOW.split('\n');

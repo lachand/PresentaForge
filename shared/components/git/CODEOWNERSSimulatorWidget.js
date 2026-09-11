@@ -1,45 +1,4 @@
 class CODEOWNERSSimulatorWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (CODEOWNERSSimulatorWidget._stylesInjected) return;
-        CODEOWNERSSimulatorWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-        .codeow-widget { display: flex; flex-direction: column; gap: 1rem; font-family: var(--font-sans, sans-serif); }
-        .codeow-main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        @media (max-width: 680px) { .codeow-main { grid-template-columns: 1fr; } }
-        .codeow-editor { display: flex; flex-direction: column; }
-        .codeow-file-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; background: #2a2a3e; border: 1px solid #3f3f5c; border-bottom: none; border-radius: 6px 6px 0 0; font-family: monospace; font-size: 0.78rem; color: #a6adc8; }
-        .codeow-textarea { width: 100%; min-height: 200px; padding: 0.75rem; font-family: monospace; font-size: 0.78rem; border: 1px solid #3f3f5c; border-radius: 0 0 6px 6px; background: #1e1e2e; color: #cdd6f4; resize: vertical; line-height: 1.7; outline: none; box-sizing: border-box; tab-size: 4; }
-        .codeow-textarea:focus { border-color: var(--primary, #6366f1); }
-        .codeow-tester { display: flex; flex-direction: column; gap: 0.75rem; }
-        .codeow-tester h4 { margin: 0; font-size: 0.9rem; color: var(--heading, #1e293b); }
-        .codeow-input-row { display: flex; align-items: stretch; border: 1.5px solid var(--border, #e2e8f0); border-radius: 6px; overflow: hidden; background: var(--bg, #fff); transition: border-color 0.15s; }
-        .codeow-input-row:focus-within { border-color: var(--primary, #6366f1); }
-        .codeow-slash { display: flex; align-items: center; padding: 0 0.5rem 0 0.75rem; color: var(--muted, #94a3b8); font-family: monospace; background: var(--bg-alt, #f8fafc); border-right: 1px solid var(--border, #e2e8f0); font-size: 0.9rem; }
-        .codeow-path-input { flex: 1; border: none; padding: 0.5rem 0.75rem; font-family: monospace; font-size: 0.83rem; outline: none; background: transparent; color: var(--text, #1e293b); }
-        .codeow-result { min-height: 90px; }
-        .codeow-empty { color: var(--muted, #94a3b8); font-size: 0.83rem; padding: 0.5rem 0; }
-        .codeow-no-match { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-size: 0.83rem; }
-        .codeow-match { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; }
-        .codeow-match-header { display: flex; align-items: center; gap: 0.5rem; font-size: 0.83rem; }
-        .codeow-reviewers { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; font-size: 0.83rem; color: #166534; }
-        .codeow-owner-badge { background: var(--primary, #6366f1); color: white; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.73rem; font-family: monospace; white-space: nowrap; }
-        .codeow-all-matches { margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid #86efac; display: flex; flex-direction: column; gap: 0.2rem; }
-        .codeow-all-matches small { color: #4b5563; font-size: 0.75rem; }
-        .codeow-match-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0.4rem; border-radius: 4px; opacity: 0.55; font-size: 0.78rem; }
-        .codeow-match-row.winner { opacity: 1; background: rgba(34,197,94,0.12); font-weight: 600; }
-        .codeow-match-owners { color: #4b5563; font-family: monospace; flex: 1; }
-        .codeow-winner-badge { color: #15803d; font-size: 0.7rem; font-weight: 700; white-space: nowrap; }
-        .codeow-examples { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-size: 0.78rem; padding-top: 0.25rem; }
-        .codeow-examples-label { color: var(--muted, #94a3b8); }
-        .codeow-example-btn { padding: 0.2rem 0.5rem; border: 1px solid var(--border, #e2e8f0); border-radius: 4px; background: var(--bg, #fff); cursor: pointer; font-family: monospace; font-size: 0.73rem; color: var(--text, #334155); transition: all 0.15s; }
-        .codeow-example-btn:hover { background: var(--primary, #6366f1); color: white; border-color: var(--primary, #6366f1); }
-        `;
-        document.head.appendChild(s);
-    }
-
     static parseRules(text) {
         return text.split('\n')
             .map(l => l.trim())
@@ -116,8 +75,6 @@ class CODEOWNERSSimulatorWidget {
     }
 
     static mount(container, config = {}) {
-        CODEOWNERSSimulatorWidget.ensureStyles();
-
         const DEFAULT = `# Propriétaire global par défaut
 *                   @alice
 

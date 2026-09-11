@@ -747,9 +747,15 @@ class SlidesRenderer {
         for (const [id, entry] of Object.entries(sourceReg)) {
             const rawScript = String(entry.script || '');
             const isAbsolute = /^(https?:)?\/\//i.test(rawScript);
+            const deps = Array.isArray(entry.deps)
+                ? entry.deps
+                    .filter((d) => typeof d === 'string' && d)
+                    .map((d) => (/^(https?:)?\/\//i.test(d) ? d : (BASE + d)))
+                : [];
             REGISTRY[id] = {
                 global: entry.global,
                 script: isAbsolute ? rawScript : (BASE + rawScript),
+                deps,
             };
         }
 
@@ -795,8 +801,11 @@ class SlidesRenderer {
                 continue;
             }
             try {
+                if (!SlidesRenderer._sv) SlidesRenderer._sv = Date.now();
+                for (const dep of (reg.deps || [])) {
+                    await loadScript(/^(https?:)?\/\//i.test(dep) ? dep : `${dep}?v=${SlidesRenderer._sv}`);
+                }
                 if (!window[reg.global]) {
-                    if (!SlidesRenderer._sv) SlidesRenderer._sv = Date.now();
                     if (!/^(https?:)?\/\//i.test(reg.script)) {
                         document.querySelectorAll(`script[src^="${reg.script}"]`).forEach(t => t.remove());
                     }

@@ -570,13 +570,21 @@
                 const entry = reg[wid];
                 if (!entry) continue;
                 try {
+                    const loadWidgetScript = (rel) => new Promise((res, rej) => {
+                        const abs = /^(https?:)?\/\//i.test(rel)
+                            ? rel
+                            : `../shared/components/${rel}?v=${studentWidgetScriptVersion}`;
+                        if (document.querySelector(`script[src="${abs}"]`)) { res(); return; }
+                        const s = document.createElement('script');
+                        s.src = abs;
+                        s.onload = res; s.onerror = rej;
+                        document.head.appendChild(s);
+                    });
+                    for (const dep of (Array.isArray(entry.deps) ? entry.deps : [])) {
+                        if (typeof dep === 'string' && dep) await loadWidgetScript(dep);
+                    }
                     if (!window[entry.global]) {
-                        await new Promise((res, rej) => {
-                            const s = document.createElement('script');
-                            s.src = `../shared/components/${entry.script}?v=${studentWidgetScriptVersion}`;
-                            s.onload = res; s.onerror = rej;
-                            document.head.appendChild(s);
-                        });
+                        await loadWidgetScript(entry.script);
                     }
                     const cls = window[entry.global];
                     if (!cls || typeof cls.mount !== 'function') continue;

@@ -32,6 +32,12 @@
         if (!inner) return false;
 
         try {
+            for (const dep of (Array.isArray(reg.deps) ? reg.deps : [])) {
+                if (typeof dep === 'string' && dep) {
+                    const isAbs = /^(https?:)?\/\//i.test(dep);
+                    await loadScript(isAbs ? dep : (scriptBasePath + dep));
+                }
+            }
             if (!windowRef?.[reg.global]) {
                 const scriptSrc = String(reg.script || '');
                 const isAbsolute = /^(https?:)?\/\//i.test(scriptSrc);

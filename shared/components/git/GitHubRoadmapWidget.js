@@ -5,111 +5,6 @@
  * avec marqueur "aujourd'hui", tooltips et panneau détail.
  */
 class GitHubRoadmapWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (GitHubRoadmapWidget._stylesInjected) return;
-        GitHubRoadmapWidget._stylesInjected = true;
-        const style = document.createElement('style');
-        style.textContent = `
-.grw-root {
-    font-family: var(--font);
-    color: var(--text);
-}
-.grw-timeline-wrap {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg);
-    padding: 1rem 1.25rem;
-    overflow-x: auto;
-    margin-bottom: 1rem;
-    position: relative;
-}
-.grw-svg {
-    display: block;
-}
-.grw-legend {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    font-size: 0.78rem;
-    margin-bottom: 0.75rem;
-    align-items: center;
-}
-.grw-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-.grw-legend-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-.grw-tooltip {
-    position: fixed;
-    background: var(--card, #fff);
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: var(--radius-sm);
-    padding: 0.6rem 0.85rem;
-    font-size: 0.8rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    pointer-events: none;
-    z-index: 9999;
-    max-width: 220px;
-    display: none;
-}
-.grw-tooltip.visible { display: block; }
-.grw-tooltip-name {
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-}
-.grw-tooltip-row { color: var(--muted); margin-bottom: 0.15rem; }
-.grw-tooltip-pct {
-    font-weight: 700;
-    margin-top: 0.2rem;
-}
-.grw-detail {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--card);
-    padding: 0.85rem 1rem;
-}
-.grw-detail-hidden { display: none; }
-.grw-detail-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    margin-bottom: 0.6rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.grw-detail-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-.grw-issue-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-}
-.grw-issue-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.82rem;
-}
-.grw-issue-icon { font-size: 0.75rem; }
-.grw-issue-closed { text-decoration: line-through; color: var(--muted); }
-`;
-        document.head.appendChild(style);
-    }
-
     static MILESTONES = [
         {
             id: 'v1.0',
@@ -196,8 +91,6 @@ class GitHubRoadmapWidget {
     };
 
     static mount(container, config = {}) {
-        GitHubRoadmapWidget.ensureStyles();
-
         let activeMs = null;
         const TOTAL_MONTHS = 13; // Jan 2025 to Jan 2026
         const SVG_W = 620;

@@ -5,8 +5,6 @@
  * timelines SVG lisibles et des fiches avantages/inconvénients.
  */
 class GitStrategyComparator {
-    static _stylesInjected = false;
-
     static COLORS = {
         main:    '#4f46e5',
         develop: '#0ea5e9',
@@ -48,133 +46,8 @@ class GitStrategyComparator {
         }
     };
 
-    static ensureStyles() {
-        if (GitStrategyComparator._stylesInjected) return;
-        GitStrategyComparator._stylesInjected = true;
-        const style = document.createElement('style');
-        style.textContent = `
-.gsc-root {
-    font-family: var(--font);
-    color: var(--text);
-}
-.gsc-tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 1rem;
-    overflow-x: auto;
-}
-.gsc-tab {
-    font-family: var(--font);
-    font-size: 0.83rem;
-    font-weight: 600;
-    padding: 0.55rem 1.1rem;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    white-space: nowrap;
-    transition: color 0.18s, border-color 0.18s;
-}
-.gsc-tab:hover { color: var(--text); }
-.gsc-tab.active {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-}
-.gsc-diagram-wrap {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 0;
-    margin-bottom: 1rem;
-    overflow-x: auto;
-}
-.gsc-diagram-wrap svg {
-    display: block;
-    margin: 0 auto;
-    overflow: visible;
-}
-.gsc-info-card {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--card);
-}
-.gsc-info-header {
-    padding: 0.7rem 1rem;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: var(--text);
-}
-.gsc-info-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-}
-@media (max-width: 520px) {
-    .gsc-info-cols { grid-template-columns: 1fr; }
-}
-.gsc-pros, .gsc-cons {
-    padding: 0.75rem 1rem;
-}
-.gsc-pros { border-right: 1px solid var(--border); }
-@media (max-width: 520px) {
-    .gsc-pros { border-right: none; border-bottom: 1px solid var(--border); }
-}
-.gsc-col-title {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.4rem;
-}
-.gsc-pros .gsc-col-title { color: #10b981; }
-.gsc-cons .gsc-col-title { color: #ef4444; }
-.gsc-list {
-    list-style: none;
-    margin: 0; padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-}
-.gsc-list li {
-    font-size: 0.82rem;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.4rem;
-    color: var(--text);
-    line-height: 1.4;
-}
-.gsc-pros .gsc-list li::before { content: '+'; color: #10b981; font-weight: 700; flex-shrink: 0; }
-.gsc-cons .gsc-list li::before { content: '-'; color: #ef4444; font-weight: 700; flex-shrink: 0; }
-.gsc-legend {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    padding: 0.5rem 1rem;
-    border-top: 1px solid var(--border);
-}
-.gsc-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.72rem;
-    color: var(--muted);
-}
-.gsc-legend-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-        `;
-        document.head.appendChild(style);
-    }
 
     static mount(container, config = {}) {
-        GitStrategyComparator.ensureStyles();
         let activeKey = config.strategy || 'trunk';
 
         const render = () => {

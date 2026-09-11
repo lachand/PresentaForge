@@ -1,39 +1,4 @@
 class SecretLeakTimelineWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (SecretLeakTimelineWidget._stylesInjected) return;
-        SecretLeakTimelineWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-        .slt-widget { font-family: var(--font-sans, sans-serif); }
-        .slt-controls { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-        .slt-btn { padding: 0.45rem 1.1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: opacity 0.15s, transform 0.1s; }
-        .slt-btn:active { transform: scale(0.97); }
-        .slt-btn-play { background: var(--primary, #6366f1); color: white; }
-        .slt-btn-reset { background: var(--bg-alt, #f1f5f9); color: var(--text, #1e293b); border: 1px solid var(--border, #e2e8f0); }
-        .slt-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-        .slt-timer { font-family: monospace; font-size: 0.8rem; color: var(--muted, #94a3b8); }
-        .slt-timeline { position: relative; padding-left: 2.25rem; display: flex; flex-direction: column; gap: 0; }
-        .slt-step { position: relative; padding-bottom: 1.1rem; opacity: 0; transform: translateY(6px); transition: opacity 0.35s, transform 0.35s; }
-        .slt-step.visible { opacity: 1; transform: translateY(0); }
-        .slt-step:last-child { padding-bottom: 0; }
-        .slt-dot { position: absolute; left: -2.1rem; top: 0.55rem; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; flex-shrink: 0; box-shadow: 0 0 0 2px; }
-        .slt-connector { position: absolute; left: -1.65rem; top: 1.3rem; width: 2px; bottom: 0; }
-        .slt-step:last-child .slt-connector { display: none; }
-        .slt-step-inner { background: var(--card, #fff); border: 1px solid var(--border, #e2e8f0); border-left: 3px solid; border-radius: 8px; padding: 0.65rem 0.9rem; }
-        .slt-step-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem; flex-wrap: wrap; }
-        .slt-step-icon { font-size: 1rem; flex-shrink: 0; }
-        .slt-step-time { font-family: monospace; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 4px; color: white; white-space: nowrap; }
-        .slt-step-label { font-weight: 600; font-size: 0.85rem; color: var(--heading, #1e293b); }
-        .slt-step-desc { font-size: 0.8rem; color: var(--muted, #64748b); line-height: 1.55; }
-        .slt-moral { margin-top: 1rem; padding: 0.8rem 1rem; background: #fefce8; border: 1px solid #fbbf24; border-radius: 8px; font-size: 0.83rem; line-height: 1.55; opacity: 0; transition: opacity 0.4s; }
-        .slt-moral.visible { opacity: 1; }
-        .slt-moral strong { color: #92400e; }
-        `;
-        document.head.appendChild(s);
-    }
-
     static STEPS = [
         {
             timeStr: 'T + 0 s', icon: '💻', label: 'git push origin main',
@@ -73,8 +38,6 @@ class SecretLeakTimelineWidget {
     ];
 
     static mount(container, config = {}) {
-        SecretLeakTimelineWidget.ensureStyles();
-
         container.innerHTML = `<div class="slt-widget">
             <div class="slt-controls">
                 <button class="slt-btn slt-btn-play">▶ Lancer la simulation</button>

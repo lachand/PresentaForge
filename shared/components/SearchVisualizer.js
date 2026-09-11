@@ -1,42 +1,34 @@
 /**
- * SearchVisualizer - Visualisation des recherches séquentielle et dichotomique
+ * SearchVisualizer — recherche séquentielle ET dichotomique.
+ *
+ * Les deux algorithmes vivent dans shared/components/algorithms/search-traces.js
+ * (buildSequentialSearchTrace / buildBinarySearchTrace, purs, génériques sur le
+ * type des valeurs — la page compare des chaînes par défaut en dichotomie, le
+ * widget slide des entiers, même générateur). Cette classe est l'ADAPTATEUR
+ * PAGE ; SearchWidget l'ADAPTATEUR SLIDE.
  */
 class SearchVisualizer extends SimulationPage {
     constructor(dataPath) {
         super(dataPath);
-
         this.algorithm = 'sequential'; // sequential | binary
         this.values = [];
         this.defaultData = [];
-
         this.target = null;
 
-        // sequential state
+        // reflets du dernier pas rendu (lecture pratique par les panneaux)
         this.currentIdx = -1;
-        this.compCount = 0;
-        this.searching = false;
-        this.found = false;
-
-        // binary state
         this.low = 0;
         this.high = 0;
         this.mid = -1;
         this.midValue = null;
+        this.found = false;
 
-        this.eliminatedIndices = new Set();
-        this.excludedLeftIndices = new Set();
-        this.excludedRightIndices = new Set();
-        this.totalCost = 0;
-        this.currentDecision = '';
-        this.traceEntries = [];
-        this.traceStep = 0;
-        this.maxTraceEntries = 12;
+        this.recentCaptions = [];
+        this.maxRecentCaptions = 12;
     }
 
     async init() {
         await super.init();
-        this.renderPseudocodeFromData();
-        this.bindPseudocodeLineInspector();
         this.bindPedagogyModeToggle();
         const cfg = this.data?.visualization?.config;
         this.algorithm = cfg?.algorithm || this.algorithm || 'sequential';
@@ -44,75 +36,89 @@ class SearchVisualizer extends SimulationPage {
         this.reset();
     }
 
+    // ── contrat trace ────────────────────────────────────────────────────────
 
-    renderPseudocodeFromData() {
-        const host = document.getElementById('pseudocode-container');
-        if (!host) return;
-        const blocks = this.data?.pseudocode || this.data?.pseudoCode;
-        if (!Array.isArray(blocks) || blocks.length === 0) return;
-
-        let idx = 1;
-        const lines = [];
-        blocks.forEach((block) => {
-            (block.lines || []).forEach((line) => {
-                const content = (typeof PseudocodeSupport !== 'undefined')
-                    ? PseudocodeSupport.renderLineContent(line, {
-                        autoKeywordHighlight: true,
-                        domain: this.data?.metadata?.category
-                    })
-                    : this.escapeHtml(line);
-                lines.push('<span class="line" id="line' + (idx++) + '">' + content + '</span>');
-            });
-        });
-
-        host.innerHTML = '<div class="card algorithm-code">' + lines.join('') + '</div>';
+    traceGeneratorScripts() {
+        return ['algorithms/search-traces.js'];
     }
 
-    render() {
-        this.renderVisualizer();
-        this.updateInfo();
+    buildTrace() {
+        if (typeof OEITrace === 'undefined' || this.target === null) return [];
+        return this.algorithm === 'binary'
+            ? OEITrace.buildBinarySearchTrace(this.values, this.target)
+            : OEITrace.buildSequentialSearchTrace(this.values, this.target);
     }
 
-    addTrace(message) {
-        if (!message) return;
-        this.traceStep += 1;
-        this.traceEntries.unshift({ step: this.traceStep, text: message });
-        if (this.traceEntries.length > this.maxTraceEntries) {
-            this.traceEntries = this.traceEntries.slice(0, this.maxTraceEntries);
-        }
+    stepDelay(step) {
+        return step && step.delay === 'quick' ? this.getCurrentDelay(0.35) : this.getCurrentDelay();
     }
 
-    setDecision(message, record = true) {
-        this.currentDecision = message || '';
-        if (record && this.currentDecision) this.addTrace(this.currentDecision);
-        this.updateTeachingPanels();
-    }
-
-    resetNarration() {
-        this.currentDecision = 'En attente de demarrage.';
-        this.traceEntries = [];
-        this.traceStep = 0;
-        this.updateTeachingPanels();
-    }
-
-    initData() {
-        if (this.defaultData.length > 0) {
-            this.values = [...this.defaultData];
+    renderStep(step) {
+        if (!step) {
+            this.renderVisualizer(null);
+            this.updatePanels(null);
             return;
         }
+        const v = step.vars;
+        this.currentIdx = v.currentIdx ?? -1;
+        this.low = v.low ?? 0;
+        this.high = v.high ?? -1;
+        this.mid = v.mid ?? -1;
+        this.midValue = this.mid >= 0 ? this.values[this.mid] : null;
+        this.found = step.phase === 'found';
 
-        if (this.algorithm === 'binary') {
-            this.values = ['abeille', 'banane', 'cerise', 'chat', 'chien', 'elephant', 'fraise', 'girafe', 'lion', 'mouton', 'pomme', 'renard', 'souris', 'tigre', 'zebre'];
-        } else {
-            this.values = Array.from({ length: 12 }, () => Math.floor(Math.random() * 100));
+        if (step.phase === 'found') {
+            const idx = step.marks.found[0];
+            this.setResult('Valeur trouvee a l indice ' + idx + ' !', 'ok');
+        } else if (step.phase === 'not-found') {
+            this.setResult('Valeur non trouvée !', 'bad');
         }
+
+        this.renderVisualizer(step);
+        this.updatePanels(step);
+        this.renderTraceList(step);
     }
 
-    renderVisualizer() {
+    onPlayerState(state) {
+        const btn = document.querySelector('[data-inline-onclick="page.startSearch()"]');
+        if (btn) btn.textContent = state.playing ? 'Pause' : 'Démarrer';
+    }
+
+    // ── rendu DOM ────────────────────────────────────────────────────────────
+
+    buildPointerMap(step) {
+        const pointers = new Map();
+        const n = this.values.length;
+        const add = (index, label) => {
+            if (!Number.isInteger(index) || index < 0 || index >= n) return;
+            const existing = pointers.get(index) || [];
+            existing.push(label);
+            pointers.set(index, existing);
+        };
+        if (!step) return pointers;
+        if (this.algorithm === 'sequential') {
+            if (this.currentIdx >= 0) add(this.currentIdx, 'i');
+        } else {
+            if (this.low >= 0) add(this.low, 'L');
+            if (this.high >= 0) add(this.high, 'H');
+            if (this.mid >= 0) add(this.mid, 'M');
+        }
+        return pointers;
+    }
+
+    renderVisualizer(step) {
         const vis = document.getElementById('visualizer');
         if (!vis) return;
-
         vis.innerHTML = '';
+
+        const current = new Set(step ? step.marks.current : []);
+        const found = new Set(step ? step.marks.found : []);
+        const checked = new Set(step ? step.marks.checked : []);
+        const eliminatedLeft = new Set(step ? step.marks.eliminatedLeft : []);
+        const eliminatedRight = new Set(step ? step.marks.eliminatedRight : []);
+        const rangeMark = step ? step.marks.range : null;
+        const pointers = this.buildPointerMap(step);
+
         this.values.forEach((value, index) => {
             const container = document.createElement('div');
             container.className = 'number-container';
@@ -121,9 +127,27 @@ class SearchVisualizer extends SimulationPage {
             cell.className = 'number';
             cell.id = 'num-' + index;
 
+            if (found.has(index)) {
+                cell.classList.add('found');
+            } else if (this.algorithm === 'binary') {
+                if (eliminatedLeft.has(index)) cell.classList.add('excluded-left', 'eliminated');
+                else if (eliminatedRight.has(index)) cell.classList.add('excluded-right', 'eliminated');
+                else if (rangeMark && index >= rangeMark[0] && index <= rangeMark[1]) cell.classList.add('active');
+                if (current.has(index)) cell.classList.add('mid');
+            } else {
+                if (current.has(index)) cell.classList.add('current');
+                else if (checked.has(index)) cell.classList.add('checked');
+            }
+
             const pointerLayer = document.createElement('div');
             pointerLayer.className = 'array-pointer-row';
             pointerLayer.id = 'pointer-' + index;
+            (pointers.get(index) || []).forEach((label) => {
+                const badge = document.createElement('span');
+                badge.className = 'pointer-badge search-pointer';
+                badge.textContent = label;
+                pointerLayer.appendChild(badge);
+            });
 
             const text = document.createElement('span');
             text.className = 'number-value';
@@ -140,171 +164,99 @@ class SearchVisualizer extends SimulationPage {
             container.appendChild(label);
             vis.appendChild(container);
         });
-
-        if (this.algorithm === 'binary') {
-            this.highlightRange(this.low, this.high);
-        }
-        this.updatePointers();
     }
 
-    highlightLine(lineId) {
-        super.highlightLine(lineId);
-    }
+    updatePanels(step) {
+        const stats = step ? step.stats : { comparisons: 0, cost: 0 };
+        const eliminatedCount = step
+            ? (step.marks.eliminatedLeft.length + step.marks.eliminatedRight.length + step.marks.checked.length)
+            : 0;
 
-    clearHighlight() {
-        super.clearHighlight();
-    }
+        this.updateInfo('search-cost-total', String(stats.cost || 0));
+        this.updateInfo('search-eliminated-count', String(eliminatedCount));
+        this.updateInfo('comparisons', this.algorithm === 'sequential' ? 'Comparaisons : ' + (stats.comparisons || 0) : String(stats.comparisons || 0));
 
-    updateInfo() {
-        const costEl = document.getElementById('search-cost-total');
-        const eliminatedEl = document.getElementById('search-eliminated-count');
-        const rangeEl = document.getElementById('search-active-range');
-        const comparisonsEl = document.getElementById('comparisons');
-        if (costEl) costEl.textContent = String(this.totalCost);
-        if (eliminatedEl) eliminatedEl.textContent = String(this.eliminatedIndices.size);
-
+        const n = this.values.length;
         if (this.algorithm === 'sequential') {
-            const currentIndexEl = document.getElementById('currentIndex');
-            const currentValueEl = document.getElementById('currentValue');
+            this.updateInfo('currentIndex', 'Indice courant : ' + (this.currentIdx >= 0 ? this.currentIdx : '-'));
+            this.updateInfo('currentValue', 'Valeur courante : ' + (this.currentIdx >= 0 && this.currentIdx < n ? this.values[this.currentIdx] : '-'));
+            const start = this.currentIdx < 0 ? 0 : this.currentIdx;
+            this.updateInfo('search-active-range', start <= n - 1 ? (start + '..' + (n - 1)) : '--');
 
-            if (currentIndexEl) currentIndexEl.textContent = 'Indice courant : ' + (this.currentIdx >= 0 ? this.currentIdx : '-');
-            if (currentValueEl) currentValueEl.textContent = 'Valeur courante : ' + (this.currentIdx >= 0 ? this.values[this.currentIdx] : '-');
-            if (comparisonsEl) comparisonsEl.textContent = 'Comparaisons : ' + this.compCount;
-            if (rangeEl) {
-                const start = this.currentIdx < 0 ? 0 : this.currentIdx;
-                rangeEl.textContent = start <= this.values.length - 1 ? (start + '..' + (this.values.length - 1)) : '--';
+            let visited = 'Aucune';
+            let remaining = n > 0 ? ('0..' + (n - 1)) : 'Aucune';
+            if (this.currentIdx >= 0 && n > 0) {
+                const end = Math.min(this.currentIdx, n - 1);
+                visited = '0..' + end;
+                remaining = this.found ? 'Aucune (trouve)' : (end + 1 <= n - 1 ? ((end + 1) + '..' + (n - 1)) : 'Aucune');
             }
-
-            const visitedEl = document.getElementById('search-seq-visited-text');
-            const remainingEl = document.getElementById('search-seq-remaining-text');
-            const n = this.values.length;
-            if (visitedEl || remainingEl) {
-                let visited = 'Aucune';
-                let remaining = n > 0 ? ('0..' + (n - 1)) : 'Aucune';
-
-                if (this.currentIdx >= 0 && n > 0) {
-                    const end = Math.min(this.currentIdx, n - 1);
-                    visited = '0..' + end;
-
-                    if (this.found) {
-                        remaining = 'Aucune (trouve)';
-                    } else if (end + 1 <= n - 1) {
-                        remaining = (end + 1) + '..' + (n - 1);
-                    } else {
-                        remaining = 'Aucune';
-                    }
-                }
-
-                if (visitedEl) visitedEl.textContent = visited;
-                if (remainingEl) remainingEl.textContent = remaining;
-            }
-            this.updateTeachingPanels();
-            this.updatePointers();
-            return;
+            this.updateInfo('search-seq-visited-text', visited);
+            this.updateInfo('search-seq-remaining-text', remaining);
+        } else {
+            this.updateInfo('low', 'Indice minimum : ' + this.low);
+            this.updateInfo('high', 'Indice maximum : ' + this.high);
+            this.updateInfo('mid', 'Indice du milieu : ' + (this.mid >= 0 ? this.mid : '-'));
+            this.updateInfo('midValue', 'Valeur du milieu : ' + (this.midValue !== null ? this.midValue : '-'));
+            this.updateInfo('search-active-range', this.low <= this.high ? (this.low + '..' + this.high) : '--');
+            this.updateInfo('search-active-interval-text', this.low <= this.high ? (this.low + '..' + this.high) : 'Vide');
+            this.updateInfo('search-excluded-left-text', this.low > 0 ? ('0..' + (this.low - 1)) : 'Aucun');
+            this.updateInfo('search-excluded-right-text', this.high < n - 1 ? ((this.high + 1) + '..' + (n - 1)) : 'Aucun');
         }
 
-        const lowEl = document.getElementById('low');
-        const highEl = document.getElementById('high');
-        const midEl = document.getElementById('mid');
-        const midValueEl = document.getElementById('midValue');
-
-        if (lowEl) lowEl.textContent = 'Indice minimum : ' + this.low;
-        if (highEl) highEl.textContent = 'Indice maximum : ' + this.high;
-        if (midEl) midEl.textContent = 'Indice du milieu : ' + (this.mid >= 0 ? this.mid : '-');
-        if (midValueEl) midValueEl.textContent = 'Valeur du milieu : ' + (this.midValue !== null ? this.midValue : '-');
-        if (comparisonsEl) comparisonsEl.textContent = String(this.compCount);
-        if (rangeEl) {
-            rangeEl.textContent = this.low <= this.high ? (this.low + '..' + this.high) : '--';
-        }
-
-        const activeIntervalEl = document.getElementById('search-active-interval-text');
-        const excludedLeftEl = document.getElementById('search-excluded-left-text');
-        const excludedRightEl = document.getElementById('search-excluded-right-text');
-        if (activeIntervalEl) {
-            activeIntervalEl.textContent = this.low <= this.high ? (this.low + '..' + this.high) : 'Vide';
-        }
-        if (excludedLeftEl) {
-            excludedLeftEl.textContent = this.low > 0 ? ('0..' + (this.low - 1)) : 'Aucun';
-        }
-        if (excludedRightEl) {
-            const n = this.values.length;
-            excludedRightEl.textContent = this.high < n - 1 ? ((this.high + 1) + '..' + (n - 1)) : 'Aucun';
-        }
-
-        this.updateTeachingPanels();
-        this.updatePointers();
-    }
-
-    updateTeachingPanels() {
-        const decisionEl = document.getElementById('search-current-decision');
-        if (decisionEl) {
-            decisionEl.textContent = this.currentDecision || 'En attente.';
-        }
-
-        const traceEl = document.getElementById('search-trace-list');
-        if (traceEl) {
-            traceEl.innerHTML = '';
-            if (!this.traceEntries.length) {
-                const empty = document.createElement('div');
-                empty.className = 'trace-item';
-                empty.textContent = 'Aucune etape enregistree.';
-                traceEl.appendChild(empty);
-            } else {
-                this.traceEntries.forEach((entry) => {
-                    const row = document.createElement('div');
-                    row.className = 'trace-item';
-                    row.innerHTML = '<span class="step">#' + entry.step + '</span>' + this.escapeHtml(entry.text);
-                    traceEl.appendChild(row);
-                });
-            }
-        }
+        this.updateInfo('search-current-decision', (step && step.caption) || 'En attente.');
 
         const vars = {
             target: this.target !== null ? this.target : '-',
             current: this.currentIdx,
-            currentValue: this.currentIdx >= 0 ? this.values[this.currentIdx] : '-',
-            low: this.low,
-            high: this.high,
-            mid: this.mid,
-            comparisons: this.compCount,
-            cost: this.totalCost
+            currentValue: this.currentIdx >= 0 && this.currentIdx < n ? this.values[this.currentIdx] : '-',
+            low: this.low, high: this.high, mid: this.mid,
+            comparisons: stats.comparisons || 0, cost: stats.cost || 0
         };
-
         Object.keys(vars).forEach((key) => {
             const el = document.getElementById('search-var-' + key);
             if (!el) return;
             const value = vars[key];
-            if (typeof value === 'number' && value < 0) {
-                el.textContent = '-';
-            } else {
-                el.textContent = String(value);
-            }
+            el.textContent = (typeof value === 'number' && value < 0) ? '-' : String(value);
         });
     }
 
-    updatePointers() {
-        const addBadge = (index, text) => {
-            const row = document.getElementById('pointer-' + index);
-            if (!row) return;
-            const badge = document.createElement('span');
-            badge.className = 'pointer-badge search-pointer';
-            badge.textContent = text;
-            row.appendChild(badge);
-        };
-
-        this.values.forEach((_, index) => {
-            const row = document.getElementById('pointer-' + index);
-            if (row) row.innerHTML = '';
-        });
-
-        if (this.algorithm === 'sequential') {
-            if (this.currentIdx >= 0) addBadge(this.currentIdx, 'i');
+    renderTraceList(step) {
+        const traceEl = document.getElementById('search-trace-list');
+        if (!traceEl) return;
+        if (step.i === 0) this.recentCaptions = [];
+        if (step.caption) {
+            this.recentCaptions.unshift({ step: step.i + 1, text: step.caption });
+            if (this.recentCaptions.length > this.maxRecentCaptions) {
+                this.recentCaptions = this.recentCaptions.slice(0, this.maxRecentCaptions);
+            }
+        }
+        traceEl.innerHTML = '';
+        if (!this.recentCaptions.length) {
+            const empty = document.createElement('div');
+            empty.className = 'trace-item';
+            empty.textContent = 'Aucune etape enregistree.';
+            traceEl.appendChild(empty);
             return;
         }
+        this.recentCaptions.forEach((entry) => {
+            const row = document.createElement('div');
+            row.className = 'trace-item';
+            const badge = document.createElement('span');
+            badge.className = 'step';
+            badge.textContent = '#' + entry.step;
+            row.appendChild(badge);
+            row.appendChild(document.createTextNode(entry.text));
+            traceEl.appendChild(row);
+        });
+    }
 
-        if (this.low >= 0) addBadge(this.low, 'L');
-        if (this.high >= 0) addBadge(this.high, 'H');
-        if (this.mid >= 0) addBadge(this.mid, 'M');
+    setResult(message, type) {
+        const result = document.getElementById('result');
+        if (!result) return;
+        result.textContent = message || '';
+        if (type === 'ok') result.style.color = 'var(--accent)';
+        else if (type === 'bad') result.style.color = 'var(--danger)';
+        else result.style.color = '';
     }
 
     getTargetInputValue() {
@@ -317,285 +269,46 @@ class SearchVisualizer extends SimulationPage {
         return raw;
     }
 
-    resetVisualClasses() {
-        this.values.forEach((_, i) => {
-            const el = document.getElementById('num-' + i);
-            if (el) {
-                el.classList.remove('current', 'found', 'checked', 'active', 'eliminated', 'mid', 'excluded-left', 'excluded-right');
-                el.style.background = '';
-                el.style.color = '';
-            }
-        });
-        this.updatePointers();
+    initData() {
+        if (this.defaultData.length > 0) {
+            this.values = [...this.defaultData];
+            return;
+        }
+        this.values = this.algorithm === 'binary'
+            ? ['abeille', 'banane', 'cerise', 'chat', 'chien', 'elephant', 'fraise', 'girafe', 'lion', 'mouton', 'pomme', 'renard', 'souris', 'tigre', 'zebre']
+            : Array.from({ length: 12 }, () => Math.floor(Math.random() * 100));
     }
 
-    setResult(message, type) {
-        const result = document.getElementById('result');
-        if (!result) return;
-        result.textContent = message || '';
-        if (type === 'ok') result.style.color = 'var(--accent)';
-        else if (type === 'bad') result.style.color = 'var(--danger)';
-        else result.style.color = '';
-    }
+    // ── contrôles bespoke ────────────────────────────────────────────────────
 
     async startSearch() {
-        this.target = this.getTargetInputValue();
-        if (this.target === null) {
+        const raw = this.getTargetInputValue();
+        if (raw === null) {
             this.setResult('Veuillez entrer une valeur valide.', 'bad');
             return;
         }
-
-        if (this.algorithm === 'binary') {
-            await this.startBinarySearch();
-            return;
-        }
-
-        await this.startSequentialSearch();
-    }
-
-    async startSequentialSearch() {
-        this.resetVisualClasses();
-        this.searching = true;
-        this.found = false;
-        this.currentIdx = -1;
-        this.compCount = 0;
-        this.totalCost = 0;
-        this.eliminatedIndices.clear();
-        this.excludedLeftIndices.clear();
-        this.excludedRightIndices.clear();
-        this.resetNarration();
-        this.setDecision('Demarrage de la recherche sequentielle (scan de gauche a droite).', true);
-        this.updateInfo();
-
+        this.target = raw;
+        this.invalidateTrace();
         this.setResult('', '');
-
-        while (this.searching && !this.found) {
-            const cont = await this.stepSequential();
-            if (!cont) break;
-            await OEIUtils.sleep(this.speedCtrl ? this.speedCtrl.getDelay() : 500);
+        if (this.player) {
+            this.player.reset();
+            this.player.play();
         }
-    }
-
-    async stepSequential() {
-        if (!this.searching || this.found) return false;
-
-        if (this.currentIdx >= 0) {
-            const prev = document.getElementById('num-' + this.currentIdx);
-            if (prev) {
-                prev.classList.remove('current');
-                prev.classList.add('checked');
-            }
-            this.eliminatedIndices.add(this.currentIdx);
-        }
-
-        this.currentIdx++;
-        if (this.currentIdx >= this.values.length) {
-            this.highlightLine('line5');
-            this.setResult('Valeur non trouvée !', 'bad');
-            this.setDecision('Fin du tableau atteinte: la cible est absente.', true);
-            this.searching = false;
-            this.updateInfo();
-            return false;
-        }
-
-        this.highlightLine('line2');
-        this.setDecision('Comparer la cible avec la case i=' + this.currentIdx + ' (valeur ' + this.values[this.currentIdx] + ').', true);
-        const current = document.getElementById('num-' + this.currentIdx);
-        if (current) current.classList.add('current');
-
-        this.compCount++;
-        this.totalCost++;
-        this.updateInfo();
-        await OEIUtils.sleep(250);
-
-        this.highlightLine('line3');
-        if (this.values[this.currentIdx] === this.target) {
-            this.highlightLine('line4');
-            if (current) {
-                current.classList.remove('current');
-                current.classList.add('found');
-            }
-            this.setResult('Valeur trouvee a l indice ' + this.currentIdx + ' !', 'ok');
-            this.setDecision('Egalite detectee: A[i] = cible, arret de la recherche.', true);
-            this.found = true;
-            this.searching = false;
-        } else {
-            this.setDecision('Pas d egalite: passer a i=' + (this.currentIdx + 1) + '.', true);
-        }
-
-        return true;
-    }
-
-    highlightRange(low, high) {
-        this.values.forEach((_, index) => {
-            const element = document.getElementById('num-' + index);
-            if (!element) return;
-            if (this.algorithm === 'binary') {
-                const isLeft = index < low;
-                const isRight = index > high;
-                const isActive = !isLeft && !isRight;
-
-                element.classList.toggle('excluded-left', isLeft);
-                element.classList.toggle('excluded-right', isRight);
-                element.classList.toggle('active', isActive);
-                element.classList.toggle('eliminated', isLeft || isRight);
-                return;
-            }
-
-            element.classList.toggle('eliminated', this.eliminatedIndices.has(index));
-            element.classList.remove('excluded-left', 'excluded-right');
-            element.classList.toggle('active', index >= low && index <= high);
-        });
-    }
-
-    async startBinarySearch() {
-        this.low = 0;
-        this.high = this.values.length - 1;
-        this.mid = -1;
-        this.midValue = null;
-        this.searching = true;
-        this.compCount = 0;
-        this.totalCost = 0;
-        this.eliminatedIndices.clear();
-        this.excludedLeftIndices.clear();
-        this.excludedRightIndices.clear();
-        this.resetNarration();
-        this.setDecision('Demarrage de la dichotomie: intervalle initial [0..' + (this.values.length - 1) + '].', true);
-
-        this.resetVisualClasses();
-        this.highlightRange(this.low, this.high);
-        this.setResult('', '');
-        this.updateInfo();
-
-        while (this.searching) {
-            const cont = await this.stepBinary();
-            if (!cont) break;
-            await OEIUtils.sleep(this.speedCtrl ? this.speedCtrl.getDelay() : 500);
-        }
-    }
-
-    async stepBinary() {
-        if (this.low > this.high) {
-            this.highlightLine('line12');
-            this.setResult('Valeur non trouvee !', 'bad');
-            this.setDecision('Intervalle vide (low > high): la cible est absente.', true);
-            this.searching = false;
-            this.clearHighlight();
-            this.updateInfo();
-            return false;
-        }
-
-        this.highlightLine('line4');
-        this.mid = Math.floor((this.low + this.high) / 2);
-        this.midValue = this.values[this.mid];
-        this.highlightRange(this.low, this.high);
-        this.compCount++;
-        this.totalCost++;
-        this.setDecision('Calcul du milieu: mid=' + this.mid + ', A[mid]=' + this.midValue + '.', true);
-        this.updateInfo();
-
-        const midElement = document.getElementById('num-' + this.mid);
-        if (midElement) {
-            midElement.classList.add('mid');
-        }
-
-        const delay = this.speedCtrl ? this.speedCtrl.getDelay() : 500;
-        await OEIUtils.sleep(delay * 0.15);
-        this.highlightLine('line5');
-
-        if (this.values[this.mid] === this.target) {
-            await OEIUtils.sleep(delay * 0.3);
-            this.highlightLine('line6');
-            await OEIUtils.sleep(delay * 0.45);
-            this.highlightLine('line7');
-            if (midElement) {
-                midElement.classList.remove('mid');
-                midElement.classList.add('found');
-            }
-            this.setResult('Valeur trouvee a l indice ' + this.mid + ' !', 'ok');
-            this.setDecision('A[mid] == cible: recherche terminee.', true);
-            this.clearHighlight();
-            this.searching = false;
-            this.updateInfo();
-            return false;
-        }
-
-        if (this.values[this.mid] < this.target) {
-            await OEIUtils.sleep(delay * 0.3);
-            this.highlightLine('line8');
-            await OEIUtils.sleep(delay * 0.45);
-            this.highlightLine('line9');
-            const oldLow = this.low;
-            for (let idx = oldLow; idx <= this.mid; idx++) this.eliminatedIndices.add(idx);
-            for (let idx = oldLow; idx <= this.mid; idx++) this.excludedLeftIndices.add(idx);
-            this.low = this.mid + 1;
-            this.setDecision('A[mid] < cible: exclusion de [' + oldLow + '..' + this.mid + '], nouvel intervalle [' + this.low + '..' + this.high + '].', true);
-            this.highlightRange(this.low, this.high);
-            if (midElement) midElement.classList.remove('mid');
-            this.updateInfo();
-            return true;
-        }
-
-        await OEIUtils.sleep(delay * 0.3);
-        this.highlightLine('line10');
-        await OEIUtils.sleep(delay * 0.45);
-        this.highlightLine('line11');
-        const oldHigh = this.high;
-        for (let idx = this.mid; idx <= oldHigh; idx++) this.eliminatedIndices.add(idx);
-        for (let idx = this.mid; idx <= oldHigh; idx++) this.excludedRightIndices.add(idx);
-        this.high = this.mid - 1;
-        this.setDecision('A[mid] > cible: exclusion de [' + this.mid + '..' + oldHigh + '], nouvel intervalle [' + this.low + '..' + this.high + '].', true);
-        this.highlightRange(this.low, this.high);
-        if (midElement) midElement.classList.remove('mid');
-        this.updateInfo();
-        return true;
     }
 
     async step() {
-        if (this.algorithm === 'binary') {
-            if (!this.searching) {
-                this.target = this.getTargetInputValue();
-                if (this.target === null) {
-                    this.setResult('Veuillez entrer une valeur valide.', 'bad');
-                    return;
-                }
-                this.low = 0;
-                this.high = this.values.length - 1;
-                this.searching = true;
-                this.resetVisualClasses();
-                this.eliminatedIndices.clear();
-                this.excludedLeftIndices.clear();
-                this.excludedRightIndices.clear();
-                this.compCount = 0;
-                this.totalCost = 0;
-                this.resetNarration();
-                this.setDecision('Mode pas a pas: intervalle initial [0..' + (this.values.length - 1) + '].', true);
-            }
-            await this.stepBinary();
-            this.updateInfo();
+        const raw = this.getTargetInputValue();
+        if (raw === null) {
+            this.setResult('Veuillez entrer une valeur valide.', 'bad');
             return;
         }
-
-        if (!this.searching) {
-            this.target = this.getTargetInputValue();
-            if (this.target === null) {
-                this.setResult('Veuillez entrer une valeur valide.', 'bad');
-                return;
-            }
-            this.searching = true;
-            this.found = false;
-            this.currentIdx = -1;
-            this.compCount = 0;
-            this.totalCost = 0;
-            this.eliminatedIndices.clear();
-            this.excludedLeftIndices.clear();
-            this.excludedRightIndices.clear();
-            this.resetVisualClasses();
+        if (this.target !== raw || !this.player) {
+            this.target = raw;
+            this.invalidateTrace();
             this.setResult('', '');
-            this.resetNarration();
-            this.setDecision('Mode pas a pas: demarrage du parcours sequentiel.', true);
+            if (this.player) this.player.reset();
         }
-        await this.stepSequential();
+        if (this.player) this.player.stepForward();
     }
 
     async stepSearch() {
@@ -603,29 +316,23 @@ class SearchVisualizer extends SimulationPage {
     }
 
     resetSearch() {
-        this.searching = false;
-        this.found = false;
-        this.currentIdx = -1;
-        this.compCount = 0;
         this.target = null;
-        this.low = 0;
-        this.high = this.values.length - 1;
-        this.mid = -1;
-        this.midValue = null;
-        this.totalCost = 0;
-        this.eliminatedIndices.clear();
-        this.excludedLeftIndices.clear();
-        this.excludedRightIndices.clear();
-        this.resetNarration();
-
+        this.invalidateTrace();
+        this.recentCaptions = [];
         const targetEl = document.getElementById('target');
         if (targetEl) targetEl.value = '';
-
         this.setResult('', '');
-
         this.clearHighlight();
-        this.resetVisualClasses();
-        this.render();
+        if (this.player) {
+            this.player.reset();
+        } else {
+            this.renderVisualizer(null);
+            this.updatePanels(null);
+        }
+    }
+
+    render() {
+        this.renderVisualizer(null);
     }
 
     reset() {
@@ -639,53 +346,11 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SearchWidget — Widget autonome pour intégration dans les slides
-// Couvre : sequential (recherche séquentielle), binary (recherche dichotomique)
-// Usage : SearchWidget.mount(container, { algorithm: 'binary', data: [...], target: 23 })
+// SearchWidget — adaptateur SLIDE. Consomme la MÊME trace (search-traces.js) via
+// TracePlayer. Couvre : sequential, binary. DOM .srw-* inchangé.
 // ─────────────────────────────────────────────────────────────────────────────
 class SearchWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (SearchWidget._stylesInjected) return;
-        SearchWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-.srw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,#e2e8f0);}
-.srw-header{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;font-weight:600;color:var(--sl-muted,#94a3b8);}
-.srw-input-row{display:flex;gap:8px;align-items:center;font-size:.78rem;}
-.srw-input-row label{color:var(--sl-muted,#94a3b8);}
-.srw-input-row input{width:70px;padding:4px 8px;border-radius:5px;border:1px solid var(--border,var(--sl-border,#334155));background:var(--surface,rgba(0,0,0,.18));color:var(--text,var(--sl-text,#e2e8f0));font-size:.78rem;}
-.srw-array-zone{display:flex;gap:4px;align-items:stretch;flex-wrap:wrap;min-height:60px;}
-.srw-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:40px;flex:1;border-radius:6px;background:var(--surface,rgba(0,0,0,.14));border:2px solid var(--border,var(--sl-border,rgba(255,255,255,.15)));position:relative;padding:8px 4px;transition:border-color .2s,background .2s;}
-.srw-cell .srw-val{font-size:.9rem;font-weight:600;}
-.srw-cell .srw-cell-idx{font-size:.65rem;color:var(--sl-muted,#94a3b8);margin-top:2px;}
-.srw-cell.current{border-color:var(--sl-accent,#f97316);background:rgba(249,115,22,.12);}
-.srw-cell.found{border-color:#22c55e;background:rgba(34,197,94,.15);}
-.srw-cell.checked{border-color:var(--sl-border,#334155);opacity:.45;}
-.srw-cell.eliminated{opacity:.3;text-decoration:line-through;}
-.srw-cell.low-mark,.srw-cell.high-mark{border-color:#6366f1;}
-.srw-cell.mid-mark{border-color:#a855f7;background:rgba(168,85,247,.15);}
-.srw-pointer-row{display:flex;gap:4px;align-items:flex-start;min-height:16px;margin-top:2px;}
-.srw-pointer{font-size:.6rem;padding:1px 4px;border-radius:3px;background:var(--sl-primary,#6366f1);color:#fff;white-space:nowrap;}
-.srw-pointer.p-low{background:#6366f1;}
-.srw-pointer.p-high{background:#6366f1;}
-.srw-pointer.p-mid{background:#a855f7;}
-.srw-pointer.p-cur{background:var(--sl-accent,#f97316);}
-.srw-info-bar{font-size:.72rem;color:var(--sl-text,#cbd5e1);min-height:16px;line-height:1.4;display:flex;justify-content:space-between;gap:8px;}
-.srw-action{flex:1;opacity:.9;}
-.srw-metrics{color:var(--sl-muted,#94a3b8);white-space:nowrap;}
-.srw-controls{display:flex;gap:8px;flex-wrap:wrap;}
-.srw-btn{padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;background:var(--sl-primary,#6366f1);color:#fff;transition:opacity .15s;}
-.srw-btn:hover:not(:disabled){opacity:.8;}
-.srw-btn:disabled{opacity:.35;cursor:not-allowed;}
-.srw-btn-secondary{background:rgba(255,255,255,.08);color:var(--sl-text,#e2e8f0);}
-`;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        SearchWidget.ensureStyles();
         const w = new SearchWidget(container, config);
         w.init();
         return w;
@@ -697,34 +362,41 @@ class SearchWidget {
         if (this.algorithm === 'search-sequential') this.algorithm = 'sequential';
         if (this.algorithm === 'search-binary') this.algorithm = 'binary';
         const defaultData = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91];
-        this.originalData = Array.isArray(config.data) && config.data.length > 0
+        this.values = Array.isArray(config.data) && config.data.length > 0
             ? config.data.map(Number).slice(0, 20) : defaultData;
-        // Binary search requires sorted data
         if (this.algorithm === 'binary') {
-            this.originalData = [...this.originalData].sort((a, b) => a - b);
+            this.values = [...this.values].sort((a, b) => a - b);
         }
-        this.defaultTarget = config.target != null ? Number(config.target) : this.originalData[Math.floor(this.originalData.length * 0.6)];
-        this._resetState();
-        this._timer = null;
-        this.isRunning = false;
+        this.n = this.values.length;
+        this.defaultTarget = config.target != null ? Number(config.target) : this.values[Math.floor(this.n * 0.6)];
+        this.target = this.defaultTarget;
+        this.baseInterval = 600;
+        this._trace = null;
+        this.player = null;
     }
 
-    _resetState() {
-        this.values = [...this.originalData];
-        this.n = this.values.length;
-        this.target = this.defaultTarget;
-        // sequential state
-        this.currentIdx = -1;
-        this.found = false;
-        this.done = false;
-        this.compCount = 0;
-        // binary state
-        this.low = 0;
-        this.high = this.n - 1;
-        this.mid = -1;
-        this.eliminatedLeft = new Set();
-        this.eliminatedRight = new Set();
-        this.action = 'Entrez une valeur et cliquez ▶ Lancer';
+    _gen() {
+        if (typeof OEITrace === 'undefined') return [];
+        return this.algorithm === 'binary'
+            ? OEITrace.buildBinarySearchTrace(this.values, this.target)
+            : OEITrace.buildSequentialSearchTrace(this.values, this.target);
+    }
+
+    _stepDelayMs(step) {
+        return step && step.delay === 'quick' ? Math.round(this.baseInterval * 0.4) : this.baseInterval;
+    }
+
+    /** Relit la cible depuis l'input ; retourne true si une reconstruction de trace est nécessaire. */
+    _syncTargetFromInput() {
+        const inp = this.root.querySelector('.srw-target-input');
+        const v = inp ? parseInt(inp.value, 10) : NaN;
+        const next = Number.isNaN(v) ? this.defaultTarget : v;
+        if (this._trace === null || next !== this.target) {
+            this.target = next;
+            this._trace = null;
+            return true;
+        }
+        return false;
     }
 
     init() {
@@ -744,155 +416,128 @@ class SearchWidget {
                 <button class="srw-btn srw-btn-reset srw-btn-secondary">↺ Reset</button>
             </div>
         </div>`;
-        this._render();
+
+        if (typeof TracePlayer === 'undefined') {
+            this.root.querySelector('.srw-action').textContent = 'Lecture indisponible (TracePlayer absent).';
+            return;
+        }
+
+        this.player = new TracePlayer({
+            getSteps: () => {
+                if (!this._trace) this._trace = this._gen();
+                return this._trace;
+            },
+            render: (step) => this._renderStep(step),
+            getDelay: () => {
+                const p = this.player;
+                const step = (p && Array.isArray(p.steps)) ? p.steps[p.cursor] : null;
+                return this._stepDelayMs(step);
+            },
+            onStateChange: (state) => this._syncButtons(state)
+        });
         this._bindControls();
+        this.player.attach();
     }
 
-    _render() {
+    _renderStep(step) {
+        if (!step) return;
         const zone = this.root.querySelector('.srw-array-zone');
         if (!zone) return;
+        const current = new Set(step.marks.current);
+        const found = new Set(step.marks.found);
+        const checked = new Set(step.marks.checked);
+        const eliminatedLeft = new Set(step.marks.eliminatedLeft);
+        const eliminatedRight = new Set(step.marks.eliminatedRight);
+        const low = step.vars.low;
+        const high = step.vars.high;
+        const mid = step.vars.mid;
+
         zone.innerHTML = '';
         this.values.forEach((v, idx) => {
             const cell = document.createElement('div');
             cell.className = 'srw-cell';
-            if (this.found && idx === this.currentIdx) cell.classList.add('found');
-            else if (this.algorithm === 'sequential') {
-                if (idx < this.currentIdx) cell.classList.add('checked');
-                else if (idx === this.currentIdx) cell.classList.add('current');
+            if (found.has(idx)) {
+                cell.classList.add('found');
+            } else if (this.algorithm === 'sequential') {
+                if (checked.has(idx)) cell.classList.add('checked');
+                else if (current.has(idx)) cell.classList.add('current');
             } else {
-                if (this.eliminatedLeft.has(idx) || this.eliminatedRight.has(idx)) cell.classList.add('eliminated');
-                else if (idx === this.mid && this.mid >= 0) cell.classList.add('mid-mark');
-                else if (idx === this.low || idx === this.high) cell.classList.add('low-mark');
+                if (eliminatedLeft.has(idx) || eliminatedRight.has(idx)) cell.classList.add('eliminated');
+                else if (idx === mid && mid >= 0) cell.classList.add('mid-mark');
+                else if (idx === low || idx === high) cell.classList.add('low-mark');
             }
             cell.innerHTML = `<span class="srw-val">${v}</span><span class="srw-cell-idx">[${idx}]</span>`;
             zone.appendChild(cell);
         });
 
-        // pointer row for binary search
         const prow = this.root.querySelector('.srw-pointer-row');
         if (prow && this.algorithm === 'binary') {
             const cells = zone.querySelectorAll('.srw-cell');
             const cellW = cells[0] ? cells[0].offsetWidth : 44;
             prow.innerHTML = '';
             const addPtr = (idx, label, cls) => {
-                if (idx < 0 || idx >= this.n) return;
+                if (idx == null || idx < 0 || idx >= this.n) return;
                 const span = document.createElement('span');
                 span.className = `srw-pointer ${cls}`;
                 span.textContent = label;
                 span.style.marginLeft = (idx * (cellW + 4)) + 'px';
                 prow.appendChild(span);
             };
-            if (!this.done) {
-                addPtr(this.low, 'low', 'p-low');
-                if (this.mid >= 0 && this.mid !== this.low && this.mid !== this.high) addPtr(this.mid, 'mid', 'p-mid');
-                if (this.high !== this.low) addPtr(this.high, 'high', 'p-high');
+            if (step.phase !== 'found' && step.phase !== 'not-found') {
+                addPtr(low, 'low', 'p-low');
+                if (mid >= 0 && mid !== low && mid !== high) addPtr(mid, 'mid', 'p-mid');
+                if (high !== low) addPtr(high, 'high', 'p-high');
             }
         }
 
         const act = this.root.querySelector('.srw-action');
-        if (act) act.textContent = this.action;
+        if (act) act.textContent = step.caption;
         const met = this.root.querySelector('.srw-metrics');
-        if (met) met.textContent = `Comparaisons : ${this.compCount}`;
+        if (met) met.textContent = `Comparaisons : ${step.stats.comparisons}`;
     }
 
     _bindControls() {
         const inp = this.root.querySelector('.srw-target-input');
         inp?.addEventListener('change', () => {
-            const v = parseInt(inp.value);
-            if (!isNaN(v)) { this.defaultTarget = v; this._stop(); this._resetState(); this._render(); }
+            const v = parseInt(inp.value, 10);
+            if (!Number.isNaN(v)) {
+                this.defaultTarget = v;
+                this.target = v;
+                this._trace = null;
+                this.player.pause();
+                this.player.reset();
+            }
         });
         this.root.querySelector('.srw-btn-play')?.addEventListener('click', () => this._togglePlay());
-        this.root.querySelector('.srw-btn-step')?.addEventListener('click', () => { this._stop(); this._step(); });
-        this.root.querySelector('.srw-btn-reset')?.addEventListener('click', () => { this._stop(); this._resetState(); this._render(); });
+        this.root.querySelector('.srw-btn-step')?.addEventListener('click', () => {
+            if (this._syncTargetFromInput()) this.player.reset();
+            this.player.stepForward();
+        });
+        this.root.querySelector('.srw-btn-reset')?.addEventListener('click', () => {
+            this.target = this.defaultTarget;
+            this._trace = null;
+            this.player.reset();
+        });
     }
 
     _togglePlay() {
-        if (this.isRunning) { this._stop(); return; }
-        if (this.done) { this._resetState(); this._render(); }
-        const inp = this.root.querySelector('.srw-target-input');
-        if (inp) this.target = parseInt(inp.value) || this.defaultTarget;
-        this.isRunning = true;
-        const btn = this.root.querySelector('.srw-btn-play');
-        if (btn) btn.textContent = '⏸ Pause';
-        this._run();
+        if (this.player.playing) { this.player.pause(); return; }
+        if (this._syncTargetFromInput()) this.player.reset();
+        this.player.play();
     }
 
-    _stop() {
-        this.isRunning = false;
-        clearTimeout(this._timer);
+    _syncButtons(state) {
         const btn = this.root.querySelector('.srw-btn-play');
-        if (btn) btn.textContent = '▶ Lancer';
+        if (!btn) return;
+        btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
     }
 
-    /** Libère le timer de lecture et vide le conteneur (revue §C4). */
     destroy() {
         this._destroyed = true;
-        this._stop();
+        if (this.player) this.player.destroy();
+        this.player = null;
+        this._trace = null;
         if (this.root) this.root.innerHTML = '';
-    }
-
-    _run() {
-        if (this._destroyed || !this.isRunning || this.done) { this._stop(); return; }
-        this._step();
-        if (!this.done) this._timer = setTimeout(() => this._run(), 600);
-    }
-
-    _step() {
-        if (this.done) return;
-        // Read current target from input on first step
-        if (this.compCount === 0 && this.currentIdx === -1 && this.mid === -1) {
-            const inp = this.root.querySelector('.srw-target-input');
-            if (inp) this.target = parseInt(inp.value) || this.defaultTarget;
-        }
-        if (this.algorithm === 'binary') this._stepBinary();
-        else this._stepSequential();
-        this._render();
-    }
-
-    _stepSequential() {
-        const nextIdx = this.currentIdx + 1;
-        if (nextIdx >= this.n) {
-            this.done = true;
-            this.action = `❌ ${this.target} non trouvé dans le tableau`;
-            this._stop();
-            return;
-        }
-        this.currentIdx = nextIdx;
-        this.compCount++;
-        if (this.values[nextIdx] === this.target) {
-            this.found = true;
-            this.done = true;
-            this.action = `✅ Trouvé : ${this.target} à l'index [${nextIdx}] en ${this.compCount} comparaison(s)`;
-            this._stop();
-        } else {
-            this.action = `a[${nextIdx}]=${this.values[nextIdx]} ≠ ${this.target} → continuer`;
-        }
-    }
-
-    _stepBinary() {
-        if (this.low > this.high) {
-            this.done = true;
-            this.action = `❌ ${this.target} non trouvé (espace de recherche épuisé)`;
-            this._stop();
-            return;
-        }
-        this.mid = Math.floor((this.low + this.high) / 2);
-        this.compCount++;
-        if (this.values[this.mid] === this.target) {
-            this.found = true;
-            this.done = true;
-            this.currentIdx = this.mid;
-            this.action = `✅ Trouvé : ${this.target} à l'index [${this.mid}] en ${this.compCount} comparaison(s)`;
-            this._stop();
-        } else if (this.values[this.mid] < this.target) {
-            this.action = `a[${this.mid}]=${this.values[this.mid]} < ${this.target} → chercher à droite [${this.mid+1}..${this.high}]`;
-            for (let k = this.low; k <= this.mid; k++) this.eliminatedLeft.add(k);
-            this.low = this.mid + 1;
-        } else {
-            this.action = `a[${this.mid}]=${this.values[this.mid]} > ${this.target} → chercher à gauche [${this.low}..${this.mid-1}]`;
-            for (let k = this.mid; k <= this.high; k++) this.eliminatedRight.add(k);
-            this.high = this.mid - 1;
-        }
     }
 }
 

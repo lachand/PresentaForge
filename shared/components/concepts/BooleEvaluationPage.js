@@ -5,80 +5,6 @@ class BooleEvaluationPage extends ConceptPage {
         this.summaryListeners = [];
     }
 
-    static ensureStyles() {
-        if (document.getElementById('boole-eval-summary-styles')) return;
-        const style = document.createElement('style');
-        style.id = 'boole-eval-summary-styles';
-        style.textContent = `
-            .boole-eval-summary {
-                margin-top: 1rem;
-                border: 1px solid var(--border);
-                border-radius: var(--radius-sm);
-                background: var(--card);
-                padding: 0.8rem;
-                display: grid;
-                gap: 0.55rem;
-            }
-            .boole-eval-summary h3 {
-                margin: 0;
-                color: var(--primary);
-                font-size: 0.95rem;
-            }
-            .boole-eval-summary-note {
-                margin: 0;
-                font-size: 0.8rem;
-                color: var(--muted);
-                line-height: 1.4;
-            }
-            .boole-eval-summary-list {
-                margin: 0;
-                padding: 0;
-                list-style: none;
-                display: grid;
-                gap: 0.45rem;
-            }
-            .boole-eval-summary-item {
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                background: var(--bg);
-                padding: 0.45rem 0.55rem;
-                display: grid;
-                gap: 0.28rem;
-            }
-            .boole-eval-summary-head {
-                display: flex;
-                justify-content: space-between;
-                gap: 0.5rem;
-                align-items: baseline;
-                font-size: 0.8rem;
-                color: var(--text);
-            }
-            .boole-eval-summary-bar {
-                width: 100%;
-                height: 7px;
-                border-radius: 999px;
-                background: var(--border);
-                overflow: hidden;
-            }
-            .boole-eval-summary-bar span {
-                display: block;
-                height: 100%;
-                width: 0;
-                border-radius: inherit;
-                background: linear-gradient(90deg, var(--primary), var(--accent));
-            }
-            .boole-eval-summary-remediation {
-                margin: 0;
-                font-size: 0.8rem;
-                color: var(--tone-indigo-text);
-                background: var(--tone-indigo-bg);
-                border: 1px solid var(--tone-indigo-border);
-                border-radius: 8px;
-                padding: 0.45rem 0.55rem;
-            }
-        `;
-        document.head.appendChild(style);
-    }
 
     async init() {
         await super.init();
@@ -96,7 +22,6 @@ class BooleEvaluationPage extends ConceptPage {
     }
 
     mountCompetencySummary() {
-        BooleEvaluationPage.ensureStyles();
         this.unbindSummaryListeners();
 
         const container = document.getElementById(this.courseContainerId);

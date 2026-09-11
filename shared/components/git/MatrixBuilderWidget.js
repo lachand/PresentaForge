@@ -1,52 +1,5 @@
 class MatrixBuilderWidget {
-    static ensureStyles() {
-        if (document.getElementById('mbw-styles')) return;
-        const s = document.createElement('style');
-        s.id = 'mbw-styles';
-        s.textContent = `
-.mbw { font-family: var(--font); }
-.mbw-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 660px) { .mbw-layout { grid-template-columns: 1fr; } }
-.mbw-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
-.mbw-panel-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 0.85rem; }
-.mbw-dim { margin-bottom: 0.85rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border); }
-.mbw-dim:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.mbw-dim-header { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.45rem; }
-.mbw-dim-key { font-family: monospace; font-size: 0.8rem; font-weight: 600; color: var(--heading); flex: 1; background: transparent; border: none; outline: none; padding: 0; }
-.mbw-dim-key:focus { border-bottom: 1px dashed var(--primary); }
-.mbw-dim-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 0 0.1rem; line-height: 1; }
-.mbw-dim-remove:hover { color: #ef4444; }
-.mbw-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
-.mbw-tag { display: inline-flex; align-items: center; gap: 0.25rem; background: color-mix(in srgb, var(--primary) 12%, var(--hover)); border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); border-radius: 20px; padding: 0.15rem 0.55rem; font-size: 0.73rem; font-family: monospace; color: var(--heading); }
-.mbw-tag-remove { background: none; border: none; cursor: pointer; padding: 0; line-height: 1; color: var(--muted); font-size: 0.75rem; }
-.mbw-tag-remove:hover { color: #ef4444; }
-.mbw-tag-input { border: 1px dashed var(--border); border-radius: 20px; padding: 0.15rem 0.5rem; font-size: 0.73rem; font-family: monospace; background: transparent; color: var(--text); outline: none; width: 80px; }
-.mbw-tag-input:focus { border-color: var(--primary); width: 110px; }
-.mbw-add-dim { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.85rem; }
-.mbw-btn-add { padding: 0.28rem 0.7rem; border: 1.5px dashed var(--border); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: 0.75rem; font-family: var(--font); transition: all 0.15s; }
-.mbw-btn-add:hover { border-color: var(--primary); color: var(--primary); }
-.mbw-count { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--primary); color: #fff; border-radius: 20px; padding: 0.2rem 0.75rem; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.75rem; }
-.mbw-count-sub { font-weight: 400; font-size: 0.72rem; opacity: 0.85; }
-.mbw-table-wrap { overflow-x: auto; margin-bottom: 0.85rem; }
-.mbw-table { border-collapse: collapse; width: 100%; font-size: 0.72rem; }
-.mbw-table th { background: var(--hover); padding: 0.35rem 0.6rem; text-align: center; border: 1px solid var(--border); font-family: monospace; font-weight: 600; color: var(--heading); }
-.mbw-table td { padding: 0.3rem 0.6rem; text-align: center; border: 1px solid var(--border); font-family: monospace; font-size: 0.7rem; color: var(--muted); }
-.mbw-table td.job-cell { background: color-mix(in srgb, var(--primary) 6%, var(--card)); color: var(--heading); font-weight: 500; }
-.mbw-yaml { background: #0f172a; border-radius: 8px; padding: 0.75rem 1rem; font-family: monospace; font-size: 0.73rem; line-height: 1.7; overflow-x: auto; }
-.mbw-yaml .y-key  { color: #7dd3fc; }
-.mbw-yaml .y-val  { color: #86efac; }
-.mbw-yaml .y-str  { color: #fde68a; }
-.mbw-yaml .y-cmmt { color: #64748b; }
-.mbw-empty { color: var(--muted); font-size: 0.8rem; font-style: italic; padding: 1rem 0; }
-.mbw-flat-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.85rem; }
-.mbw-job-chip { background: color-mix(in srgb, var(--primary) 10%, var(--hover)); border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border)); border-radius: 6px; padding: 0.2rem 0.55rem; font-family: monospace; font-size: 0.7rem; color: var(--heading); }
-        `;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        MatrixBuilderWidget.ensureStyles();
-
         let dims = [
             { key: 'python-version', values: ['3.10', '3.11', '3.12'] },
             { key: 'os',             values: ['ubuntu-latest', 'windows-latest'] }

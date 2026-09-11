@@ -547,7 +547,6 @@ if (typeof window !== 'undefined') {
 
 // ── Standalone widget ──────────────────────────────────────────
 class DnsWidget {
-    static _stylesInjected = false;
 
     static _DNS_DB = {
         'www.example.com':  { A: '93.184.216.34', AAAA: '2606:2800:220:1:248:1893:25c8:1946', CNAME: null, MX: 'mail.example.com (p.10)', NS: 'ns1.example.com', tld: '.com', auth: 'example.com', ttl: 3600 },
@@ -574,50 +573,8 @@ class DnsWidget {
             CNAME: null, MX: `mail.${auth} (p.10)`, NS: `ns1.${auth}`, tld, auth, ttl: 3600 };
     }
 
-    static ensureStyles() {
-        if (DnsWidget._stylesInjected) return;
-        DnsWidget._stylesInjected = true;
-        const css = `
-.dnw { font-family: inherit; display: flex; flex-direction: column; gap: 10px; }
-.dnw-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.dnw-input { font-size: 0.85rem; padding: 4px 8px; border: 1px solid var(--border, #ccc); border-radius: 6px; background: var(--surface, #fff); color: var(--text, #222); flex: 1; min-width: 140px; }
-.dnw-types { display: flex; gap: 4px; flex-wrap: wrap; }
-.dnw-type { font-size: 0.75rem; padding: 3px 8px; border-radius: 10px; border: 1px solid var(--border, #ccc); background: transparent; cursor: pointer; color: var(--text, #222); font-weight: 600; }
-.dnw-type.active { background: var(--primary, #6366f1); color: #fff; border-color: var(--primary, #6366f1); }
-.dnw-btn { font-size: 0.82rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--primary, #6366f1); background: var(--primary, #6366f1); color: #fff; cursor: pointer; }
-.dnw-btn.sec { background: transparent; color: var(--text, #222); border-color: var(--border, #ccc); }
-.dnw-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.dnw-chip { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; background: var(--surface2, #f0f0f0); border: 1px solid var(--border, #ccc); cursor: pointer; color: var(--text, #222); }
-.dnw-chip:hover { background: var(--primary, #6366f1); color: #fff; border-color: var(--primary, #6366f1); }
-.dnw-diagram { display: flex; gap: 6px; align-items: stretch; flex-wrap: wrap; }
-.dnw-srv { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 10px; border-radius: 8px; border: 2px solid var(--border, #ddd); background: var(--surface2, #f8f8f8); min-width: 72px; font-size: 0.78rem; font-weight: 700; transition: border-color 0.2s, background 0.2s; }
-.dnw-srv-icon { font-size: 1.3rem; }
-.dnw-srv-name { font-size: 0.7rem; color: var(--muted, #888); font-weight: 500; text-align: center; }
-.dnw-srv.active { border-color: var(--primary, #6366f1); background: rgba(99,102,241,0.1); }
-.dnw-srv.resolved { border-color: #22c55e; background: rgba(34,197,94,0.08); }
-.dnw-srv.queried { border-color: #f59e0b; background: rgba(245,158,11,0.1); }
-.dnw-steps { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
-.dnw-step { display: flex; gap: 8px; align-items: flex-start; font-size: 0.82rem; }
-.dnw-step-num { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; background: var(--primary, #6366f1); color: #fff; }
-.dnw-step-num.resp { background: #22c55e; }
-.dnw-step-text { flex: 1; line-height: 1.4; }
-.dnw-cache table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-.dnw-cache th { padding: 4px 8px; text-align: left; font-size: 0.75rem; color: var(--muted, #888); border-bottom: 1px solid var(--border, #ddd); }
-.dnw-cache td { padding: 3px 8px; border-bottom: 1px solid var(--border, #eee); }
-.dnw-badge { font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; font-weight: 700; background: var(--primary, #6366f1); color: #fff; }
-.dnw-empty { font-size: 0.8rem; color: var(--muted, #aaa); font-style: italic; padding: 4px 0; }
-.dnw-feedback { font-size: 0.82rem; min-height: 1.3em; }
-.dnw-feedback.ok { color: #16a34a; font-weight: 600; }
-.dnw-feedback.err { color: #dc2626; font-weight: 600; }
-.dnw-section-lbl { font-size: 0.78rem; font-weight: 700; color: var(--muted, #888); }
-`;
-        const s = document.createElement('style');
-        s.textContent = css;
-        document.head.appendChild(s);
-    }
 
     static mount(container, config = {}) {
-        DnsWidget.ensureStyles();
         if (container.dataset.dnw) return;
         container.dataset.dnw = '1';
         new DnsWidget(container, config).init();

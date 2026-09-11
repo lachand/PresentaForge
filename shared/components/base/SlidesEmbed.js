@@ -8,47 +8,7 @@
  * comme URL absolue à slides/viewer.html?mode=embed.
  */
 class SlidesEmbed {
-
-    static ensureStyles() {
-        if (document.getElementById('slides-embed-css')) return;
-        const style = document.createElement('style');
-        style.id = 'slides-embed-css';
-        style.textContent = `
-.sl-embed-wrap {
-    position: relative;
-    width: 100%;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.22);
-    background: #111;
-}
-.sl-embed-wrap iframe {
-    display: block;
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-.sl-embed-loading {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255,255,255,0.45);
-    font-size: 0.85rem;
-    pointer-events: none;
-    font-family: system-ui, sans-serif;
-    background: #111;
-    transition: opacity 0.3s;
-}
-.sl-embed-loading.loaded { opacity: 0; pointer-events: none; }
-`;
-        document.head.appendChild(style);
-    }
-
     static mount(container, config = {}) {
-        SlidesEmbed.ensureStyles();
-
         const file = String(config.file || '');
         const height = Math.max(200, Number(config.height) || 480);
         const titleAttr = SlidesEmbed._esc(config.title || 'Présentation intégrée');

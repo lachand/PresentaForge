@@ -1,22 +1,70 @@
 /**
- * HashTableVisualizer - Visualisation de tables de hachage
+ * HashTableVisualizer — table de hachage à chaînage séparé.
  *
- * Opérations :
- * - doInsert() : Insérer une paire clé-valeur
- * - doSearch() : Rechercher une clé
- * - doDelete() : Supprimer une clé
- * - resetTable() : Réinitialiser la table
- * - showPseudo(tab) : Basculer entre pseudocode insertion/recherche
- * - updateHashInfo() : Mettre à jour l'info de la fonction de hachage
+ * La mécanique de bucket (sonder/comparer/insérer/mettre à jour/supprimer)
+ * vit dans shared/components/algorithms/hashtable-traces.js, pure. Comme
+ * pour les structures pile/file et la liste chaînée, chaque clic est une
+ * opération INDÉPENDANTE sur une table qui PERSISTE entre les opérations —
+ * pas « un » algorithme à dérouler du début à la fin. Cette classe est
+ * l'ADAPTATEUR PAGE (hash polynomial d'une clé texte, mode 'map' — une clé
+ * déjà présente met à jour sa valeur) ; HashTableWidget l'ADAPTATEUR SLIDE
+ * (clé numérique directe, mode 'multiset' — comportement d'origine inchangé,
+ * pas de recherche de doublon).
  */
-
 class HashTableVisualizer extends SimulationPage {
     constructor(dataPath) {
         super(dataPath);
         this.NUM_BUCKETS = 10;
         this.table = [];
         this.totalCollisions = 0;
-        this.animating = false;
+        this._pendingCommit = null;
+    }
+
+    // ── contrat trace ────────────────────────────────────────────────────────
+
+    traceGeneratorScripts() {
+        return ['algorithms/hashtable-traces.js'];
+    }
+
+    /** Ne reconstruit jamais toute seule : chaque opération pose sa propre trace (voir doInsert/doSearch/doDelete). */
+    buildTrace() {
+        return this._trace || [];
+    }
+
+    stepDelay(step) {
+        return this.getCurrentDelay(step && step.delay === 'quick' ? 0.8 : 1);
+    }
+
+    /** Rendu d'un pas : buckets + panneau de calcul de hash. Le panneau "feedback"
+     *  n'est mis à jour qu'à la fin de l'opération (voir doInsert/doSearch/doDelete),
+     *  pas à chaque pas — comme dans le code d'origine (aucun flicker de message). */
+    renderStep(step) {
+        this.table = step.table;
+        this.renderBuckets(step.marks.activeBucket, step.marks.indices.length
+            ? { bucket: step.marks.activeBucket, indices: step.marks.indices, cls: step.marks.cls }
+            : null);
+        if (step.info) this.showHashSteps(step.key, step.info);
+    }
+
+    onPlayerState(state) {
+        if (state.atEnd && !state.playing && this._pendingCommit) {
+            const commit = this._pendingCommit;
+            this._pendingCommit = null;
+            commit();
+        }
+    }
+
+    /** Lance la trace de l'opération courante puis appelle `onDone` (table figée) à la fin. */
+    runOperation(trace, onDone) {
+        if (this._pendingCommit) return; // opération déjà en cours : ignorer le clic
+        this._trace = trace;
+        this._pendingCommit = () => onDone(trace.at(-1));
+        if (this.player) {
+            this.player.reset();
+            this.player.play();
+        } else {
+            onDone(trace.at(-1));
+        }
     }
 
     /**
@@ -35,6 +83,8 @@ class HashTableVisualizer extends SimulationPage {
     reset() {
         this.state.phase = 'idle';
         this.state.stepCount = 0;
+        this._trace = null;
+        this._pendingCommit = null;
         this.initTable();
         this.loadDefaultData();
     }
@@ -54,25 +104,14 @@ class HashTableVisualizer extends SimulationPage {
     }
 
     /**
-     * Calcule le hash d'une clé
+     * Calcule le hash d'une clé (méthode choisie par #hashFn, modulo par défaut)
      */
     hashKey(key) {
-        let numKey = 0;
-        for (let i = 0; i < key.length; i++) {
-            numKey = numKey * 31 + key.charCodeAt(i);
-        }
-        numKey = Math.abs(numKey);
+        const raw = Math.abs(OEITrace.polynomialHash(key));
         const methodEl = document.getElementById('hashFn');
         const method = methodEl ? methodEl.value : 'modulo';
-        if (method === 'multiplication') {
-            const A = 0.6180339887;
-            const frac = (numKey * A) % 1;
-            return { raw: numKey, hash: Math.floor(frac * this.NUM_BUCKETS), method: 'multiplication', A: A, frac: frac };
-        } else {
-            return { raw: numKey, hash: numKey % this.NUM_BUCKETS, method: 'modulo' };
-        }
+        return OEITrace.computeHashInfo(raw, { method, numBuckets: this.NUM_BUCKETS });
     }
-
 
     /**
      * Affiche les étapes du calcul de hash
@@ -80,7 +119,7 @@ class HashTableVisualizer extends SimulationPage {
     showHashSteps(key, info) {
         const el = document.getElementById('hashSteps');
         if (!el) return;
-        let html = '<div class="step">Cle : "<strong>' + this.escHtml(key) + '</strong>" &rarr; valeur numerique : <strong>' + info.raw + '</strong></div>';
+        let html = '<div class="step">Cle : "<strong>' + this.escHtml(String(key)) + '</strong>" &rarr; valeur numerique : <strong>' + info.raw + '</strong></div>';
         if (info.method === 'modulo') {
             html += '<div class="step">' + info.raw + ' mod ' + this.NUM_BUCKETS + ' = <span class="step-result">' + info.hash + '</span></div>';
         } else {
@@ -121,7 +160,7 @@ class HashTableVisualizer extends SimulationPage {
                     if (ni > 0) {
                         const arrow = document.createElement('span');
                         arrow.className = 'chain-arrow';
-                        arrow.textContent = '\u2192';
+                        arrow.textContent = '→';
                         chain.appendChild(arrow);
                     }
                     const nd = document.createElement('span');
@@ -219,33 +258,15 @@ class HashTableVisualizer extends SimulationPage {
         if (event && event.target) event.target.classList.add('active');
     }
 
-    renderPseudocodeFromData() {
-        const blocks = this.data?.pseudocode || this.data?.pseudoCode;
-        if (!Array.isArray(blocks)) return;
+    getInspectorContainerIds() {
+        return ['pseudo-insert', 'pseudo-search'];
+    }
 
-        const idPrefix = {
-            insert: 'ins',
-            search: 'src'
-        };
-
-        blocks.forEach((block) => {
-            const target = document.getElementById('pseudo-' + block.name);
-            if (!target) return;
-
-            const prefix = idPrefix[block.name] || (block.name + '-line');
-            const lines = (block.lines || []).map((line, idx) => {
-                const id = (prefix.endsWith('-line') ? (prefix + idx) : (prefix + (idx + 1)));
-                const content = (typeof PseudocodeSupport !== 'undefined')
-                    ? PseudocodeSupport.renderLineContent(line, {
-                        autoKeywordHighlight: true,
-                        domain: this.data?.metadata?.category
-                    })
-                    : this.escapeHtml(line);
-                return '<span class="line" id="' + id + '">' + content + '</span>';
-            });
-
-            target.innerHTML = lines.join('');
-        });
+    /** Rend les deux blocs de pseudocode dans leurs conteneurs respectifs. */
+    setupPseudocode() {
+        if (typeof PseudocodeSupport === 'undefined') return;
+        PseudocodeSupport.renderFromData(this.data, { containerId: 'pseudo-insert', blockFilter: 'insert' });
+        PseudocodeSupport.renderFromData(this.data, { containerId: 'pseudo-search', blockFilter: 'search' });
     }
 
     /**
@@ -265,168 +286,99 @@ class HashTableVisualizer extends SimulationPage {
     /**
      * Insertion
      */
-    async doInsert() {
-        if (this.animating) return;
+    doInsert() {
+        if (this._pendingCommit) return;
         const key = document.getElementById('inputKey')?.value.trim();
         const value = document.getElementById('inputValue')?.value.trim();
         if (!key) { this.setFeedback('Veuillez entrer une cle.', 'error'); return; }
         if (!value) { this.setFeedback('Veuillez entrer une valeur.', 'error'); return; }
 
-        this.animating = true;
         this.showPseudo('insert');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         const firstTab = document.querySelectorAll('.tab-btn')[0];
         if (firstTab) firstTab.classList.add('active');
 
-        this.highlightLine('ins1');
-        await OEIUtils.sleep(this.getCurrentDelay());
-
         const info = this.hashKey(key);
-        this.showHashSteps(key, info);
-        this.highlightLine('ins2');
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        this.highlightLine('ins3');
-        this.renderBuckets(info.hash);
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        let found = false;
-        for (let i = 0; i < this.table[info.hash].length; i++) {
-            this.highlightLine('ins4');
-            this.renderBuckets(info.hash, { bucket: info.hash, indices: [i], cls: 'probe-node' });
-            await OEIUtils.sleep(this.getCurrentDelay());
-            this.highlightLine('ins5');
-            await OEIUtils.sleep(this.getCurrentDelay());
-            if (this.table[info.hash][i].key === key) {
-                this.highlightLine('ins6');
-                this.table[info.hash][i].value = value;
-                this.renderBuckets(info.hash, { bucket: info.hash, indices: [i], cls: 'highlight-node' });
-                await OEIUtils.sleep(this.getCurrentDelay());
-                this.highlightLine('ins7');
-                this.setFeedback('Cle "' + key + '" mise a jour avec valeur "' + value + '".', 'success');
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            if (this.table[info.hash].length > 0) this.totalCollisions++;
-            this.highlightLine('ins8');
-            this.table[info.hash].push({ key, value });
-            this.renderBuckets(info.hash, { bucket: info.hash, indices: [this.table[info.hash].length - 1], cls: 'insert-node' });
-            await OEIUtils.sleep(this.getCurrentDelay(0.85));
-            this.highlightLine('ins9');
-            this.setFeedback('Cle "' + key + '" inseree dans le bucket ' + info.hash + '.', 'success');
-        }
-
-        this.updateStats();
-        await OEIUtils.sleep(this.getCurrentDelay());
-        this.clearHighlight();
-        this.animating = false;
-        const inputKey = document.getElementById('inputKey');
-        const inputValue = document.getElementById('inputValue');
-        if (inputKey) inputKey.value = '';
-        if (inputValue) inputValue.value = '';
+        const trace = OEITrace.buildHashInsertTrace(this.table, key, value, info, { mode: 'map' });
+        this.runOperation(trace, (last) => {
+            this.table = last.table;
+            if (!last.updated && last.collision) this.totalCollisions++;
+            this.updateStats();
+            this.setFeedback(
+                last.updated
+                    ? 'Cle "' + key + '" mise a jour avec valeur "' + value + '".'
+                    : 'Cle "' + key + '" inseree dans le bucket ' + info.hash + '.',
+                'success'
+            );
+            // La dernière ligne de pseudocode reste visible un temps avant de s'effacer
+            // (comme le sleep(getCurrentDelay()) final du code d'origine).
+            setTimeout(() => {
+                this.clearHighlight();
+                const inputKey = document.getElementById('inputKey');
+                const inputValue = document.getElementById('inputValue');
+                if (inputKey) inputKey.value = '';
+                if (inputValue) inputValue.value = '';
+            }, this.getCurrentDelay());
+        });
     }
 
     /**
      * Recherche
      */
-    async doSearch() {
-        if (this.animating) return;
+    doSearch() {
+        if (this._pendingCommit) return;
         const key = document.getElementById('inputKey')?.value.trim();
         if (!key) { this.setFeedback('Veuillez entrer une cle a rechercher.', 'error'); return; }
 
-        this.animating = true;
         this.showPseudo('search');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         const secondTab = document.querySelectorAll('.tab-btn')[1];
         if (secondTab) secondTab.classList.add('active');
 
-        this.highlightLine('src1');
-        await OEIUtils.sleep(this.getCurrentDelay());
-
         const info = this.hashKey(key);
-        this.showHashSteps(key, info);
-        this.highlightLine('src2');
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        this.highlightLine('src3');
-        this.renderBuckets(info.hash);
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        let found = false;
-        for (let i = 0; i < this.table[info.hash].length; i++) {
-            this.highlightLine('src4');
-            this.renderBuckets(info.hash, { bucket: info.hash, indices: [i], cls: 'probe-node' });
-            await OEIUtils.sleep(this.getCurrentDelay());
-            this.highlightLine('src5');
-            await OEIUtils.sleep(this.getCurrentDelay());
-            if (this.table[info.hash][i].key === key) {
-                this.highlightLine('src6');
-                this.renderBuckets(info.hash, { bucket: info.hash, indices: [i], cls: 'highlight-node' });
-                this.setFeedback('Cle "' + key + '" trouvee ! Valeur : "' + this.table[info.hash][i].value + '"', 'success');
-                found = true;
-                break;
+        const trace = OEITrace.buildHashSearchTrace(this.table, key, info);
+        this.runOperation(trace, (last) => {
+            if (last.ok) {
+                const idx = last.marks.indices[0];
+                const foundValue = last.table[info.hash][idx].value;
+                this.setFeedback('Cle "' + key + '" trouvee ! Valeur : "' + foundValue + '"', 'success');
+            } else {
+                this.setFeedback('Cle "' + key + '" non trouvee.', 'error');
             }
-        }
-
-        if (!found) {
-            this.highlightLine('src7');
-            this.setFeedback('Cle "' + key + '" non trouvee.', 'error');
-        }
-
-        await OEIUtils.sleep(this.getCurrentDelay());
-        this.clearHighlight();
-        this.animating = false;
+            setTimeout(() => this.clearHighlight(), this.getCurrentDelay());
+        });
     }
 
     /**
      * Suppression
      */
-    async doDelete() {
-        if (this.animating) return;
+    doDelete() {
+        if (this._pendingCommit) return;
         const key = document.getElementById('inputKey')?.value.trim();
         if (!key) { this.setFeedback('Veuillez entrer une cle a supprimer.', 'error'); return; }
 
-        this.animating = true;
         const info = this.hashKey(key);
-        this.showHashSteps(key, info);
-        this.renderBuckets(info.hash);
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        let found = false;
-        for (let i = 0; i < this.table[info.hash].length; i++) {
-            this.renderBuckets(info.hash, { bucket: info.hash, indices: [i], cls: 'probe-node' });
-            await OEIUtils.sleep(this.getCurrentDelay());
-            if (this.table[info.hash][i].key === key) {
-                this.renderBuckets(info.hash, { bucket: info.hash, indices: [i], cls: 'delete-node' });
-                await OEIUtils.sleep(this.getCurrentDelay(0.75));
-                this.table[info.hash].splice(i, 1);
-                this.renderBuckets(info.hash);
-                this.updateStats();
-                this.setFeedback('Cle "' + key + '" supprimee.', 'success');
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            this.setFeedback('Cle "' + key + '" non trouvee.', 'error');
-        }
-
-        await OEIUtils.sleep(this.getCurrentDelay());
-        this.clearHighlight();
-        this.animating = false;
-        const inputKey = document.getElementById('inputKey');
-        if (inputKey) inputKey.value = '';
+        const trace = OEITrace.buildHashDeleteTrace(this.table, key, info);
+        this.runOperation(trace, (last) => {
+            this.table = last.table;
+            if (last.ok) this.updateStats();
+            this.setFeedback(
+                last.ok ? 'Cle "' + key + '" supprimee.' : 'Cle "' + key + '" non trouvee.',
+                last.ok ? 'success' : 'error'
+            );
+            setTimeout(() => {
+                this.clearHighlight();
+                const inputKey = document.getElementById('inputKey');
+                if (inputKey) inputKey.value = '';
+            }, this.getCurrentDelay());
+        });
     }
 
     /**
      * Réinitialiser
      */
     resetTable() {
-        this.animating = false;
+        this._pendingCommit = null;
         this.clearHighlight();
         const hashSteps = document.getElementById('hashSteps');
         if (hashSteps) hashSteps.innerHTML = '<span class="text-muted">Effectuez une operation pour voir le calcul du hash.</span>';
@@ -456,52 +408,28 @@ class HashTableVisualizer extends SimulationPage {
     async init() {
         await super.init();
         this.NUM_BUCKETS = this.data.visualization?.config?.numBuckets || 10;
-        this.renderPseudocodeFromData();
         this.bindPseudocodeLineInspector();
         this.reset();
     }
 }
 
 // Export global
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = HashTableVisualizer;
+}
 if (typeof window !== 'undefined') {
     window.HashTableVisualizer = HashTableVisualizer;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HashTableWidget — Widget autonome pour intégration dans les slides
-// Usage : HashTableWidget.mount(container, { buckets: 8, data: [14, 7, 21, 3] })
+// HashTableWidget — adaptateur SLIDE. Consomme la MÊME mécanique de bucket
+// (hashtable-traces.js) mais en mode 'multiset' (clé numérique directe,
+// jamais de recherche de doublon — comportement d'origine inchangé) et rendu
+// instantané (pas d'animation par pas, comme pile/file/liste chaînée). DOM
+// .htw-* inchangé. Usage : HashTableWidget.mount(container, { buckets: 8, data: [14, 7, 21, 3] })
 // ─────────────────────────────────────────────────────────────────────────────
 class HashTableWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (HashTableWidget._stylesInjected) return;
-        HashTableWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-.htw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,#e2e8f0);}
-.htw-header{font-size:.8rem;font-weight:600;color:var(--sl-muted,#94a3b8);}
-.htw-table{display:flex;flex-direction:column;gap:4px;flex:1;overflow-y:auto;}
-.htw-row{display:flex;align-items:center;gap:5px;}
-.htw-row-idx{min-width:22px;font-size:.68rem;color:var(--sl-muted,#94a3b8);text-align:right;font-weight:600;}
-.htw-cell{min-width:32px;height:24px;border-radius:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;transition:background .2s;}
-.htw-cell.filled{background:var(--sl-primary,#6366f1);border-color:var(--sl-primary,#6366f1);color:#fff;}
-.htw-cell.active{background:var(--sl-accent,#f97316);border-color:var(--sl-accent,#f97316);color:#fff;}
-.htw-cell.found{background:#22c55e;border-color:#22c55e;color:#fff;}
-.htw-cell.collision{background:#a855f7;border-color:#a855f7;color:#fff;}
-.htw-chain-arr{font-size:.65rem;color:var(--sl-muted,#94a3b8);}
-.htw-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
-.htw-input{background:var(--surface,rgba(0,0,0,.18));border:1px solid var(--border,var(--sl-border,#334155));border-radius:6px;padding:4px 8px;font-size:.75rem;color:var(--text,var(--sl-text,#e2e8f0));width:64px;}
-.htw-btn{padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;background:var(--sl-primary,#6366f1);color:#fff;transition:opacity .15s;}
-.htw-btn:hover:not(:disabled){opacity:.8;}
-.htw-btn-secondary{background:rgba(255,255,255,.08);color:var(--sl-text,#e2e8f0);}
-.htw-info-bar{font-size:.72rem;color:var(--sl-text,#cbd5e1);min-height:16px;line-height:1.4;}
-`;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        HashTableWidget.ensureStyles();
         const w = new HashTableWidget(container, config);
         w.init();
         return w;
@@ -515,10 +443,11 @@ class HashTableWidget {
         this._foundKey = null;
         this._action = `h(k) = k mod ${this.NUM_BUCKETS}`;
         const defaults = Array.isArray(config.data) ? config.data : [14, 7, 21, 3, 28];
-        defaults.forEach(k => this._table[this._hash(k)].push(k));
+        defaults.forEach(k => {
+            const info = window.OEITrace.computeHashInfo(k, { method: 'modulo', numBuckets: this.NUM_BUCKETS });
+            this._table[info.hash].push({ key: k, value: k });
+        });
     }
-
-    _hash(k) { return ((k % this.NUM_BUCKETS) + this.NUM_BUCKETS) % this.NUM_BUCKETS; }
 
     init() {
         this.root.innerHTML = `<div class="htw-container">
@@ -554,15 +483,15 @@ class HashTableWidget {
             if (bucket.length === 0) {
                 html += `<div class="htw-cell"></div>`;
             } else {
-                bucket.forEach((key, ki) => {
+                bucket.forEach((entry, ki) => {
                     let cls = 'filled';
                     if (i === this._activeRow && ki === bucket.length - 1) {
                         cls = ki === 0 ? 'active' : 'collision';
-                    } else if (this._foundKey !== null && key === this._foundKey) {
+                    } else if (this._foundKey !== null && entry.key === this._foundKey) {
                         cls = 'found';
                     }
                     if (ki > 0) html += `<span class="htw-chain-arr">&#8594;</span>`;
-                    html += `<div class="htw-cell ${cls}">${key}</div>`;
+                    html += `<div class="htw-cell ${cls}">${entry.key}</div>`;
                 });
             }
             row.innerHTML = html;
@@ -581,28 +510,29 @@ class HashTableWidget {
         this.root.querySelector('.htw-btn-insert')?.addEventListener('click', () => {
             const k = this._key();
             if (isNaN(k)) return;
-            const h = this._hash(k);
-            const collision = this._table[h].length > 0;
-            this._table[h].push(k);
-            this._activeRow = h;
+            const info = window.OEITrace.computeHashInfo(k, { method: 'modulo', numBuckets: this.NUM_BUCKETS });
+            const last = window.OEITrace.buildHashInsertTrace(this._table, k, k, info, { mode: 'multiset' }).at(-1);
+            this._table = last.table;
+            this._activeRow = info.hash;
             this._foundKey = null;
-            this._action = `Inserer ${k} -> h(${k})=${h}${collision ? ' (collision : chainee)' : ''}`;
+            this._action = `Inserer ${k} -> h(${k})=${info.hash}${last.collision ? ' (collision : chainee)' : ''}`;
             this._render();
             setTimeout(() => { this._activeRow = -1; this._render(); }, 900);
         });
         this.root.querySelector('.htw-btn-search')?.addEventListener('click', () => {
             const k = this._key();
             if (isNaN(k)) return;
-            const h = this._hash(k);
-            const bucket = this._table[h];
-            const idx = bucket.indexOf(k);
+            const info = window.OEITrace.computeHashInfo(k, { method: 'modulo', numBuckets: this.NUM_BUCKETS });
+            const bucketLen = this._table[info.hash].length;
+            const last = window.OEITrace.buildHashSearchTrace(this._table, k, info).at(-1);
             this._activeRow = -1;
             this._foundKey = null;
-            if (idx === -1) {
-                this._action = `Chercher ${k} -> bucket ${h}, non trouve (${bucket.length} comp.)`;
+            if (!last.ok) {
+                this._action = `Chercher ${k} -> bucket ${info.hash}, non trouve (${bucketLen} comp.)`;
             } else {
                 this._foundKey = k;
-                this._action = `Cle ${k} trouvee dans bucket ${h} (${idx + 1} comparaison(s))`;
+                const idx = last.marks.indices[0];
+                this._action = `Cle ${k} trouvee dans bucket ${info.hash} (${idx + 1} comparaison(s))`;
             }
             this._render();
         });

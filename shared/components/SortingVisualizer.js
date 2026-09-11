@@ -1,36 +1,30 @@
 /**
- * SortingVisualizer - Visualisation d'algorithmes de tri sur tableau
+ * SortingVisualizer — visualisation des tris élémentaires sur tableau.
  *
- * Algorithmes supportés :
- * - bubble-sort
- * - insertion-sort
- * - selection-sort
+ * Algorithmes : bubble-sort, insertion-sort, selection-sort.
+ *
+ * L'algorithme lui-même vit dans `shared/components/algorithms/sort-traces.js`
+ * (générateur de trace pur). Cette classe est un ADAPTATEUR PAGE mince :
+ *   - buildTrace()  → délègue au générateur (aucune boucle sur les données)
+ *   - renderStep()  → rend un pas dans le DOM de la page de cours
+ *   - reset()       → régénère un tableau aléatoire et recharge la trace
+ * Le transport (play/pause/pas-à-pas, curseur de vitesse) est fourni par
+ * TracePlayer via SimulationPage.
  */
 class SortingVisualizer extends SimulationPage {
     constructor(dataPath) {
         super(dataPath);
         this.numbers = [];
+        this.originalNumbers = [];
         this.n = 0;
-
-        this.i = 0;
-        this.j = 0;
-        this.minIndex = 0;
-        this.isSwapping = false;
-        this.isRunning = false;
 
         this.defaultSize = 8;
         this.minValue = 0;
         this.maxValue = 99;
         this.algorithm = 'bubble-sort';
 
-        this.comparisonCount = 0;
-        this.writeCount = 0;
-        this.lastSortedIndices = [];
-        this.keyValue = null;
-        this.currentAction = '';
-        this.traceEntries = [];
-        this.traceStep = 0;
-        this.maxTraceEntries = 12;
+        this.recentCaptions = [];
+        this.maxRecentCaptions = 12;
     }
 
     async init() {
@@ -46,50 +40,157 @@ class SortingVisualizer extends SimulationPage {
         this.reset();
     }
 
+    // ── contrat trace ────────────────────────────────────────────────────────
+
+    traceGeneratorScripts() {
+        return ['algorithms/sort-traces.js'];
+    }
+
+    buildTrace() {
+        const src = [...this.originalNumbers];
+        if (typeof OEITrace === 'undefined') return [];
+        if (this.algorithm === 'insertion-sort') return OEITrace.buildInsertionTrace(src);
+        if (this.algorithm === 'selection-sort') return OEITrace.buildSelectionTrace(src);
+        return OEITrace.buildBubbleTrace(src);
+    }
+
+    stepDelay(step) {
+        switch (step && step.delay) {
+            case 'swap': return this.getSwapAnimationDuration();
+            case 'postswap': return this.getPostSwapPause();
+            case 'half': return this.getCurrentDelay(0.75);
+            default: return this.getCurrentDelay();
+        }
+    }
+
+    renderStep(step) {
+        if (!step) return;
+        this.numbers = step.array.slice();
+        this.n = this.numbers.length;
+
+        const options = {};
+        if (step.anim === 'swap') {
+            options.animateSwap = true;
+            options.swapDurationMs = this.getSwapAnimationDuration();
+        }
+        if (step.insertion) {
+            options.insertionKey = step.insertion.key;
+            options.insertionTargetIndex = step.insertion.targetIndex;
+        }
+
+        const swapping = step.marks.swap.length ? step.marks.swap : [];
+        const sorted = step.marks.sorted;
+        this.renderArray(swapping, sorted, this.buildPointerMap(step), options);
+
+        this.updatePanels(step);
+    }
+
+    onPlayerState(state) {
+        const startBtn = document.querySelector('[data-inline-onclick="page.startSort()"]');
+        if (startBtn) {
+            startBtn.textContent = state.playing ? 'Pause' : (state.atEnd ? 'Rejouer' : 'Démarrer le tri');
+        }
+    }
+
+    // ── construction des pointeurs / panneaux depuis un pas ──────────────────
+
+    buildPointerMap(step) {
+        const pointers = new Map();
+        const n = this.numbers.length;
+        const add = (index, label) => {
+            if (!Number.isInteger(index) || index < 0 || index >= n) return;
+            const existing = pointers.get(index) || [];
+            if (!existing.includes(label)) existing.push(label);
+            pointers.set(index, existing);
+        };
+
+        const v = step.vars;
+        if (this.algorithm === 'bubble-sort') {
+            if (step.marks.compare.length >= 2 || step.marks.swap.length >= 2) {
+                const pair = (step.marks.swap.length ? step.marks.swap : step.marks.compare).slice().sort((a, b) => a - b);
+                add(pair[0], 'j');
+                add(pair[1], 'j+1');
+            } else if (v.j != null) {
+                add(v.j, 'j');
+                add(v.j + 1, 'j+1');
+            }
+            if (v.i != null) add(n - v.i - 1, 'lim');
+        } else if (this.algorithm === 'insertion-sort') {
+            if (v.i != null) add(v.i, 'i');
+            if (v.j != null) add(v.j, 'j');
+            if (step.insertion) add(step.insertion.targetIndex, 'ins');
+        } else if (this.algorithm === 'selection-sort') {
+            if (v.i != null) add(v.i, 'i');
+            if (v.j != null) add(v.j, 'j');
+            if (v.minIndex != null) add(v.minIndex, 'min');
+        }
+        return pointers;
+    }
+
+    updatePanels(step) {
+        this.updateInfo('sort-metric-comparisons', String(step.stats.comparisons));
+        this.updateInfo('sort-metric-writes', String(step.stats.writes));
+
+        const zones = this.describeZones(step.marks.sorted);
+        this.updateInfo('sort-zone-sorted', zones.sorted);
+        this.updateInfo('sort-zone-unsorted', zones.unsorted);
+
+        const v = step.vars;
+        this.updateInfo('sort-var-i', this.formatVar(v.i));
+        this.updateInfo('sort-var-j', this.formatVar(v.j));
+        this.updateInfo('sort-var-min', this.formatVar(v.minIndex));
+        this.updateInfo('sort-var-key', this.formatVar(v.key));
+        this.updateInfo('sort-var-n', String(this.numbers.length));
+
+        this.updateInfo('sort-current-action', step.caption || 'En attente.');
+        this.renderTraceList(step);
+    }
+
+    renderTraceList(step) {
+        const traceEl = document.getElementById('sort-trace-list');
+        if (!traceEl) return;
+
+        if (step.i === 0) this.recentCaptions = [];
+        if (step.caption) {
+            this.recentCaptions.unshift({ step: step.i + 1, text: step.caption });
+            if (this.recentCaptions.length > this.maxRecentCaptions) {
+                this.recentCaptions = this.recentCaptions.slice(0, this.maxRecentCaptions);
+            }
+        }
+
+        traceEl.innerHTML = '';
+        if (!this.recentCaptions.length) {
+            const empty = document.createElement('div');
+            empty.className = 'trace-item';
+            empty.textContent = 'Aucune etape enregistree.';
+            traceEl.appendChild(empty);
+            return;
+        }
+        this.recentCaptions.forEach((entry) => {
+            const row = document.createElement('div');
+            row.className = 'trace-item';
+            const badge = document.createElement('span');
+            badge.className = 'step';
+            badge.textContent = '#' + entry.step;
+            row.appendChild(badge);
+            row.appendChild(document.createTextNode(entry.text));
+            traceEl.appendChild(row);
+        });
+    }
+
+    // ── helpers DOM conservés ────────────────────────────────────────────────
 
     randomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     initArray() {
-        this.numbers = Array.from(
+        this.originalNumbers = Array.from(
             { length: this.defaultSize },
             () => this.randomInt(this.minValue, this.maxValue)
         );
+        this.numbers = [...this.originalNumbers];
         this.n = this.numbers.length;
-
-        if (this.algorithm === 'insertion-sort') {
-            this.i = 1;
-            this.j = 0;
-        } else {
-            this.i = 0;
-            this.j = this.algorithm === 'selection-sort' ? 1 : 0;
-        }
-        this.minIndex = 0;
-        this.isSwapping = false;
-        this.keyValue = null;
-        this.currentAction = 'Pret a lancer la simulation.';
-    }
-
-    resetNarration() {
-        this.currentAction = 'Pret a lancer la simulation.';
-        this.traceEntries = [];
-        this.traceStep = 0;
-    }
-
-    addTrace(message) {
-        if (!message) return;
-        this.traceStep += 1;
-        this.traceEntries.unshift({ step: this.traceStep, text: message });
-        if (this.traceEntries.length > this.maxTraceEntries) {
-            this.traceEntries = this.traceEntries.slice(0, this.maxTraceEntries);
-        }
-    }
-
-    setAction(message, recordInTrace = false) {
-        this.currentAction = message || '';
-        if (recordInTrace) this.addTrace(this.currentAction);
-        this.updateActionPanel();
     }
 
     formatVar(value) {
@@ -99,40 +200,6 @@ class SortingVisualizer extends SimulationPage {
             if (value < 0) return '-';
         }
         return String(value);
-    }
-
-    getPointerMap() {
-        const pointers = new Map();
-        const add = (index, label) => {
-            if (!Number.isInteger(index) || index < 0 || index >= this.numbers.length) return;
-            const existing = pointers.get(index) || [];
-            if (!existing.includes(label)) existing.push(label);
-            pointers.set(index, existing);
-        };
-
-        if (this.algorithm === 'bubble-sort') {
-            add(this.j, 'j');
-            add(this.j + 1, 'j+1');
-            if (this.i >= 0 && this.i < this.n) {
-                add(this.n - this.i - 1, 'lim');
-            }
-            return pointers;
-        }
-
-        if (this.algorithm === 'insertion-sort') {
-            add(this.i, 'i');
-            add(this.j, 'j');
-            add(this.j + 1, 'ins');
-            return pointers;
-        }
-
-        if (this.algorithm === 'selection-sort') {
-            add(this.i, 'i');
-            add(this.j, 'j');
-            add(this.minIndex, 'min');
-        }
-
-        return pointers;
     }
 
     renderArray(swappingIndices = [], sortedIndices = [], pointerMap = null, options = {}) {
@@ -151,7 +218,7 @@ class SortingVisualizer extends SimulationPage {
             : 0;
         const swapDistance = animateSwap ? Math.max(1, swapRight - swapLeft) : 0;
         const sorted = new Set(sortedIndices || []);
-        const pointers = pointerMap || this.getPointerMap();
+        const pointers = pointerMap || new Map();
         const hasInsertionKey = Object.prototype.hasOwnProperty.call(options || {}, 'insertionKey')
             && options.insertionKey !== null
             && options.insertionKey !== undefined;
@@ -209,39 +276,32 @@ class SortingVisualizer extends SimulationPage {
             slot.appendChild(indexLabel);
             arrayDiv.appendChild(slot);
         });
-
-        this.lastSortedIndices = [...sorted];
-        this.updateMetricsPanel();
     }
 
     render() {
-        this.renderArray();
+        this.renderArray([], [], new Map());
     }
 
-    getSortedIndices(upto) {
-        const sorted = [];
-        for (let k = 0; k < upto; k++) sorted.push(k);
-        return sorted;
-    }
+    describeZones(sortedIndices) {
+        const n = this.numbers.length;
+        const sorted = Array.from(new Set(sortedIndices || [])).sort((a, b) => a - b);
+        const sortedCount = sorted.length;
 
-    resetMetrics() {
-        this.comparisonCount = 0;
-        this.writeCount = 0;
-        this.lastSortedIndices = [];
-        this.resetNarration();
-        this.updateMetricsPanel();
-    }
+        if (n === 0) return { sorted: '-', unsorted: '-' };
+        if (sortedCount === 0) return { sorted: 'Aucune', unsorted: '0..' + (n - 1) };
+        if (sortedCount === n) return { sorted: '0..' + (n - 1), unsorted: 'Aucune (termine)' };
 
-    incrementComparisons(amount = 1) {
-        this.comparisonCount += amount;
-        this.updateMetricsPanel();
+        const isPrefix = sorted.every((idx, pos) => idx === pos);
+        if (isPrefix) {
+            return { sorted: 'Prefixe 0..' + (sortedCount - 1), unsorted: sortedCount + '..' + (n - 1) };
+        }
+        const start = n - sortedCount;
+        const isSuffix = sorted.every((idx, pos) => idx === start + pos);
+        if (isSuffix) {
+            return { sorted: 'Suffixe ' + start + '..' + (n - 1), unsorted: '0..' + (start - 1) };
+        }
+        return { sorted: sortedCount + ' cases validees', unsorted: (n - sortedCount) + ' cases restantes' };
     }
-
-    incrementWrites(amount = 1) {
-        this.writeCount += amount;
-        this.updateMetricsPanel();
-    }
-
 
     getSwapAnimationDuration() {
         const base = this.getCurrentDelay();
@@ -252,432 +312,22 @@ class SortingVisualizer extends SimulationPage {
         return Math.max(70, Math.round(this.getCurrentDelay() * 0.28));
     }
 
-    describeZones(sortedIndices) {
-        const n = this.numbers.length;
-        const sorted = Array.from(new Set(sortedIndices || [])).sort((a, b) => a - b);
-        const sortedCount = sorted.length;
-
-        if (n === 0) {
-            return {
-                sorted: '-',
-                unsorted: '-'
-            };
-        }
-
-        if (sortedCount === 0) {
-            return {
-                sorted: 'Aucune',
-                unsorted: '0..' + (n - 1)
-            };
-        }
-
-        if (sortedCount === n) {
-            return {
-                sorted: '0..' + (n - 1),
-                unsorted: 'Aucune (termine)'
-            };
-        }
-
-        const isPrefix = sorted.every((idx, pos) => idx === pos);
-        if (isPrefix) {
-            return {
-                sorted: 'Prefixe 0..' + (sortedCount - 1),
-                unsorted: sortedCount + '..' + (n - 1)
-            };
-        }
-
-        const start = n - sortedCount;
-        const isSuffix = sorted.every((idx, pos) => idx === start + pos);
-        if (isSuffix) {
-            return {
-                sorted: 'Suffixe ' + start + '..' + (n - 1),
-                unsorted: '0..' + (start - 1)
-            };
-        }
-
-        return {
-            sorted: sortedCount + ' cases validees',
-            unsorted: (n - sortedCount) + ' cases restantes'
-        };
-    }
-
-    updateMetricsPanel() {
-        const comparisonsEl = document.getElementById('sort-metric-comparisons');
-        const writesEl = document.getElementById('sort-metric-writes');
-        const sortedZoneEl = document.getElementById('sort-zone-sorted');
-        const unsortedZoneEl = document.getElementById('sort-zone-unsorted');
-
-        if (comparisonsEl) comparisonsEl.textContent = String(this.comparisonCount);
-        if (writesEl) writesEl.textContent = String(this.writeCount);
-
-        if (sortedZoneEl || unsortedZoneEl) {
-            const zones = this.describeZones(this.lastSortedIndices);
-            if (sortedZoneEl) sortedZoneEl.textContent = zones.sorted;
-            if (unsortedZoneEl) unsortedZoneEl.textContent = zones.unsorted;
-        }
-
-        this.updateVariablePanel();
-        this.updateActionPanel();
-    }
-
-    updateVariablePanel() {
-        const map = {
-            i: this.i,
-            j: this.j,
-            min: this.algorithm === 'selection-sort' ? this.minIndex : null,
-            key: this.algorithm === 'insertion-sort' ? this.keyValue : null,
-            n: this.numbers.length
-        };
-
-        Object.keys(map).forEach((name) => {
-            const el = document.getElementById('sort-var-' + name);
-            if (!el) return;
-            el.textContent = this.formatVar(map[name]);
-        });
-    }
-
-    updateActionPanel() {
-        const actionEl = document.getElementById('sort-current-action');
-        if (actionEl) {
-            actionEl.textContent = this.currentAction || 'En attente.';
-        }
-
-        const traceEl = document.getElementById('sort-trace-list');
-        if (!traceEl) return;
-        traceEl.innerHTML = '';
-
-        if (!this.traceEntries.length) {
-            const empty = document.createElement('div');
-            empty.className = 'trace-item';
-            empty.textContent = 'Aucune etape enregistree.';
-            traceEl.appendChild(empty);
-            return;
-        }
-
-        this.traceEntries.forEach((entry) => {
-            const row = document.createElement('div');
-            row.className = 'trace-item';
-            row.innerHTML = '<span class="step">#' + entry.step + '</span>' + this.escapeHtml(entry.text);
-            traceEl.appendChild(row);
-        });
-    }
-
-    highlightAlgorithmLine(lineId) {
-        this.clearHighlight();
-        const direct = document.getElementById(lineId);
-        if (direct) {
-            this.highlightLine(lineId);
-            return;
-        }
-
-        const m = /^line(\d+)$/.exec(lineId);
-        if (!m) {
-            this.highlightLine(lineId);
-            return;
-        }
-
-        const idx = parseInt(m[1], 10) - 1;
-        const fnByAlgo = {
-            'bubble-sort': 'bubble',
-            'insertion-sort': 'insertion',
-            'selection-sort': 'selection'
-        };
-        const fnName = fnByAlgo[this.algorithm];
-        if (!fnName) {
-            this.highlightLine(lineId);
-            return;
-        }
-
-        const mapped = fnName + '-line' + idx;
-        this.highlightLine(mapped);
-    }
-
-    async startSort() {
-        if (this.isRunning) return;
-
-        if (this.algorithm === 'insertion-sort') {
-            await this.startInsertionSort();
-            return;
-        }
-        if (this.algorithm === 'selection-sort') {
-            await this.startSelectionSort();
-            return;
-        }
-
-        await this.startBubbleSort();
-    }
-
-    async startBubbleSort() {
-        this.isRunning = true;
-        this.setAction('Demarrage du tri a bulles.', true);
-
-        for (this.i = 0; this.i < this.n - 1; this.i++) {
-            this.setAction('Passe ' + (this.i + 1) + ': le plus grand element remonte en fin de zone.', true);
-            this.highlightAlgorithmLine('line1');
-
-            for (this.j = 0; this.j < this.n - this.i - 1; this.j++) {
-                this.setAction('Comparer les cases ' + this.j + ' et ' + (this.j + 1) + '.', true);
-                this.highlightAlgorithmLine('line2');
-                this.renderArray([this.j, this.j + 1], [...Array(this.n).keys()].slice(this.n - this.i));
-                await OEIUtils.sleep(this.getCurrentDelay());
-
-                this.incrementComparisons(1);
-                if (this.numbers[this.j] > this.numbers[this.j + 1]) {
-                    this.setAction('Echanger ' + this.numbers[this.j] + ' et ' + this.numbers[this.j + 1] + '.', true);
-                    this.highlightAlgorithmLine('line3');
-                    const swapDuration = this.getSwapAnimationDuration();
-                    this.renderArray(
-                        [this.j, this.j + 1],
-                        [...Array(this.n).keys()].slice(this.n - this.i),
-                        null,
-                        { animateSwap: true, swapDurationMs: swapDuration }
-                    );
-                    await OEIUtils.sleep(swapDuration);
-
-                    [this.numbers[this.j], this.numbers[this.j + 1]] = [this.numbers[this.j + 1], this.numbers[this.j]];
-                    this.incrementWrites(2);
-                    this.renderArray([], [...Array(this.n).keys()].slice(this.n - this.i));
-                    await OEIUtils.sleep(this.getPostSwapPause());
-                }
-            }
-            this.setAction('Passe ' + (this.i + 1) + ' terminee: indice ' + (this.n - this.i - 1) + ' valide.', true);
-        }
-
-        this.setAction('Tri termine: toutes les cases sont ordonnees.', true);
-        this.renderArray([], this.numbers.map((_, index) => index));
-        this.clearHighlight();
-        this.isRunning = false;
-    }
-
-    async startInsertionSort() {
-        this.isRunning = true;
-        this.setAction('Demarrage du tri par insertion.', true);
-
-        for (this.i = 1; this.i < this.n; this.i++) {
-            this.setAction('Iteration i=' + this.i + ': inserer la valeur courante dans le prefixe trie.', true);
-            this.highlightAlgorithmLine('line1');
-            this.renderArray([this.i], [...Array(this.i).keys()]);
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            const key = this.numbers[this.i];
-            this.keyValue = key;
-            this.setAction('Valeur en memoire key = ' + key + '.', true);
-            this.highlightAlgorithmLine('line2');
-            this.renderArray([this.i], [...Array(this.i).keys()], null, {
-                insertionKey: key,
-                insertionTargetIndex: this.i
-            });
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            this.j = this.i - 1;
-            this.setAction('Comparer key aux elements vers la gauche a partir de j=' + this.j + '.', true);
-            this.highlightAlgorithmLine('line3');
-            this.renderArray([this.i], [...Array(this.i).keys()], null, {
-                insertionKey: key,
-                insertionTargetIndex: this.j + 1
-            });
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            while (this.j >= 0) {
-                this.incrementComparisons(1);
-                if (!(this.numbers[this.j] > key)) break;
-
-                this.setAction('Decaler ' + this.numbers[this.j] + ' vers la droite.', true);
-                this.highlightAlgorithmLine('line4');
-                this.renderArray([this.j, this.j + 1], [...Array(this.i).keys()], null, {
-                    insertionKey: key,
-                    insertionTargetIndex: this.j + 1
-                });
-                await OEIUtils.sleep(this.getCurrentDelay());
-
-                this.numbers[this.j + 1] = this.numbers[this.j];
-                this.incrementWrites(1);
-                this.highlightAlgorithmLine('line5');
-                this.renderArray([this.j, this.j + 1], [...Array(this.i).keys()], null, {
-                    insertionKey: key,
-                    insertionTargetIndex: this.j + 1
-                });
-                await OEIUtils.sleep(this.getCurrentDelay());
-
-                this.j--;
-                this.highlightAlgorithmLine('line6');
-                this.renderArray([], [...Array(this.i).keys()], null, {
-                    insertionKey: key,
-                    insertionTargetIndex: this.j + 1
-                });
-                await OEIUtils.sleep(this.getCurrentDelay(0.75));
-            }
-
-            this.numbers[this.j + 1] = key;
-            this.incrementWrites(1);
-            this.setAction('Insertion de key=' + key + ' a l indice ' + (this.j + 1) + '.', true);
-            this.highlightAlgorithmLine('line8');
-            this.renderArray([this.j + 1], [...Array(this.i + 1).keys()]);
-            await OEIUtils.sleep(this.getCurrentDelay());
-        }
-
-        this.keyValue = null;
-        this.setAction('Tri termine: toutes les insertions sont effectuees.', true);
-        this.renderArray([], this.numbers.map((_, index) => index));
-        this.clearHighlight();
-        this.isRunning = false;
-    }
-
-    async startSelectionSort() {
-        this.isRunning = true;
-        this.setAction('Demarrage du tri par selection.', true);
-
-        for (this.i = 0; this.i < this.n - 1; this.i++) {
-            this.highlightAlgorithmLine('line1');
-            this.minIndex = this.i;
-            this.setAction('Nouvelle passe i=' + this.i + ': minimum provisoire a l indice ' + this.minIndex + '.', true);
-            this.highlightAlgorithmLine('line2');
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            for (this.j = this.i + 1; this.j < this.n; this.j++) {
-                this.setAction('Comparer candidat j=' + this.j + ' au minimum courant indice ' + this.minIndex + '.', true);
-                this.highlightAlgorithmLine('line3');
-                this.renderArray([this.j, this.minIndex], this.getSortedIndices(this.i));
-                await OEIUtils.sleep(this.getCurrentDelay());
-
-                this.incrementComparisons(1);
-                if (this.numbers[this.j] < this.numbers[this.minIndex]) {
-                    this.highlightAlgorithmLine('line4');
-                    await OEIUtils.sleep(this.getCurrentDelay(0.75));
-                    this.minIndex = this.j;
-                    this.setAction('Nouveau minimum trouve a l indice ' + this.minIndex + ' (valeur ' + this.numbers[this.minIndex] + ').', true);
-                    this.highlightAlgorithmLine('line5');
-                    this.renderArray([this.j, this.minIndex], this.getSortedIndices(this.i));
-                    await OEIUtils.sleep(this.getCurrentDelay(0.75));
-                }
-            }
-
-            if (this.minIndex !== this.i) {
-                this.setAction('Permutation entre i=' + this.i + ' et min=' + this.minIndex + '.', true);
-                this.highlightAlgorithmLine('line8');
-                const swapDuration = this.getSwapAnimationDuration();
-                this.renderArray([this.i, this.minIndex], this.getSortedIndices(this.i), null, {
-                    animateSwap: true,
-                    swapDurationMs: swapDuration
-                });
-                await OEIUtils.sleep(swapDuration);
-                [this.numbers[this.i], this.numbers[this.minIndex]] = [this.numbers[this.minIndex], this.numbers[this.i]];
-                this.incrementWrites(2);
-                this.highlightAlgorithmLine('line9');
-                this.renderArray([], this.getSortedIndices(this.i + 1));
-                await OEIUtils.sleep(this.getPostSwapPause());
-            }
-
-            this.setAction('Indice ' + this.i + ' fixe dans la zone triee.', true);
-            this.renderArray([], this.getSortedIndices(this.i + 1));
-            await OEIUtils.sleep(this.getCurrentDelay(0.75));
-        }
-
-        this.setAction('Tri termine: tous les minimums successifs sont places.', true);
-        this.renderArray([], [...Array(this.n).keys()]);
-        this.clearHighlight();
-        this.isRunning = false;
-    }
-
-    nextStep() {
-        if (this.isRunning) return;
-
-        if (this.algorithm === 'selection-sort') {
-            this.nextStepSelection();
-            return;
-        }
-
-        if (this.algorithm !== 'bubble-sort') return;
-
-        if (this.isSwapping) {
-            this.setAction('Etape: permutation des indices ' + this.j + ' et ' + (this.j + 1) + '.', true);
-            [this.numbers[this.j], this.numbers[this.j + 1]] = [this.numbers[this.j + 1], this.numbers[this.j]];
-            this.incrementWrites(2);
-            this.renderArray([this.j, this.j + 1]);
-            this.isSwapping = false;
-            this.j++;
-            return;
-        }
-
-        if (this.i < this.n - 1) {
-            this.highlightAlgorithmLine('line1');
-
-            if (this.j < this.n - this.i - 1) {
-                this.setAction('Etape: comparaison des indices ' + this.j + ' et ' + (this.j + 1) + '.', true);
-                this.highlightAlgorithmLine('line2');
-                this.renderArray([this.j, this.j + 1], [...Array(this.n).keys()].slice(this.n - this.i));
-
-                this.incrementComparisons(1);
-                if (this.numbers[this.j] > this.numbers[this.j + 1]) {
-                    this.setAction('Echange requis detecte.', true);
-                    this.highlightAlgorithmLine('line3');
-                    this.isSwapping = true;
-                    return;
-                }
-
-                this.j++;
-            } else {
-                this.j = 0;
-                this.i++;
-            }
-        } else {
-            this.setAction('Tri termine.', true);
-            this.renderArray([], this.numbers.map((_, index) => index));
-            this.clearHighlight();
-        }
-    }
-
-    nextStepSelection() {
-        if (this.i >= this.n - 1) {
-            this.setAction('Tri termine.', true);
-            this.renderArray([], [...Array(this.n).keys()]);
-            this.clearHighlight();
-            return;
-        }
-
-        if (this.j < this.n) {
-            this.setAction('Etape: comparaison j=' + this.j + ' vs min=' + this.minIndex + '.', true);
-            this.highlightAlgorithmLine('line3');
-            this.renderArray([this.j, this.minIndex], this.getSortedIndices(this.i));
-
-            this.incrementComparisons(1);
-            if (this.numbers[this.j] < this.numbers[this.minIndex]) {
-                this.highlightAlgorithmLine('line4');
-                this.minIndex = this.j;
-                this.highlightAlgorithmLine('line5');
-            }
-            this.j++;
-            return;
-        }
-
-        if (this.minIndex !== this.i) {
-            this.setAction('Permutation i=' + this.i + ' avec min=' + this.minIndex + '.', true);
-            this.highlightAlgorithmLine('line8');
-            [this.numbers[this.i], this.numbers[this.minIndex]] = [this.numbers[this.minIndex], this.numbers[this.i]];
-            this.incrementWrites(2);
-            this.highlightAlgorithmLine('line9');
-        }
-
-        this.i++;
-        this.minIndex = this.i;
-        this.j = this.i + 1;
-        this.renderArray([], this.getSortedIndices(this.i));
-    }
+    // ── reset ────────────────────────────────────────────────────────────────
 
     reset() {
-        this.isRunning = false;
         this.initArray();
-        this.resetMetrics();
-        this.setAction('Tableau reinitialise. Lance une simulation pour observer les variables.', false);
-
-        if (this.algorithm === 'selection-sort') {
-            this.i = 0;
-            this.minIndex = 0;
-            this.j = 1;
-        }
-
+        this.recentCaptions = [];
+        this.invalidateTrace();
         this.clearHighlight();
-        this.render();
+
+        if (this.player) {
+            this.player.reset();
+        } else {
+            this.render();
+            this.updateInfo('sort-metric-comparisons', '0');
+            this.updateInfo('sort-metric-writes', '0');
+            this.updateInfo('sort-current-action', 'Tableau reinitialise. Lance une simulation pour observer les variables.');
+        }
     }
 }
 
@@ -686,44 +336,12 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SortingWidget — Widget autonome pour intégration dans les slides
-// Couvre : bubble-sort, insertion-sort, selection-sort
-// Usage : SortingWidget.mount(container, { algorithm: 'bubble-sort', data: [...] })
+// SortingWidget — adaptateur SLIDE (autonome, monté par le registre de widgets).
+// Consomme la MÊME trace que la page (sort-traces.js) via TracePlayer.
+// Couvre : bubble-sort, insertion-sort, selection-sort.
 // ─────────────────────────────────────────────────────────────────────────────
 class SortingWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (SortingWidget._stylesInjected) return;
-        SortingWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-.sw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,#e2e8f0);}
-.sw-header{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;font-weight:600;color:var(--sl-muted,#94a3b8);}
-.sw-array-zone{display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:24px;padding-bottom:20px;position:relative;}
-.sw-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;position:relative;}
-.sw-bar-inner{width:100%;border-radius:4px 4px 0 0;background:var(--sl-primary,#6366f1);transition:height .25s,background .2s;border:1px solid rgba(0,0,0,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.18);}
-.sw-bar.current .sw-bar-inner{background:var(--sl-accent,#f97316);}
-.sw-bar.swapping .sw-bar-inner{background:#ef4444;}
-.sw-bar.sorted .sw-bar-inner{background:#22c55e;}
-.sw-bar.min-mark .sw-bar-inner{background:#a855f7;}
-.sw-bar.key-mark .sw-bar-inner{background:#eab308;}
-.sw-val{position:absolute;top:-18px;font-size:10px;color:var(--sl-text,#e2e8f0);white-space:nowrap;}
-.sw-idx{position:absolute;bottom:-16px;font-size:9px;color:var(--sl-muted,#94a3b8);}
-.sw-info-bar{font-size:.72rem;color:var(--sl-text,#cbd5e1);min-height:16px;line-height:1.4;display:flex;justify-content:space-between;gap:8px;}
-.sw-action{flex:1;opacity:.9;}
-.sw-metrics{color:var(--sl-muted,#94a3b8);white-space:nowrap;}
-.sw-controls{display:flex;gap:8px;flex-wrap:wrap;}
-.sw-btn{padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;background:var(--sl-primary,#6366f1);color:#fff;transition:opacity .15s;}
-.sw-btn:hover:not(:disabled){opacity:.8;}
-.sw-btn:disabled{opacity:.35;cursor:not-allowed;}
-.sw-btn-secondary{background:rgba(255,255,255,.08);color:var(--sl-text,#e2e8f0);}
-`;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        SortingWidget.ensureStyles();
         const w = new SortingWidget(container, config);
         w.init();
         return w;
@@ -732,31 +350,30 @@ class SortingWidget {
     constructor(container, config = {}) {
         this.root = container;
         this.algorithm = config.algorithm || config.type || 'bubble-sort';
-        const defaultData = Array.from({length: 8}, () => Math.floor(Math.random() * 85) + 5);
+        const defaultData = Array.from({ length: 8 }, () => Math.floor(Math.random() * 85) + 5);
         this.originalData = Array.isArray(config.data) && config.data.length > 0
             ? config.data.map(Number).slice(0, 16) : defaultData;
-        this.numbers = [...this.originalData];
-        this.n = this.numbers.length;
-        this._resetState();
-        this._timer = null;
-        this.isRunning = false;
+        this.baseInterval = 500;
+        this._trace = null;
+        this.player = null;
     }
 
-    _resetState() {
-        this.numbers = [...this.originalData];
-        this.n = this.numbers.length;
-        this.i = 0;
-        this.j = this.algorithm === 'insertion-sort' ? 1
-               : this.algorithm === 'selection-sort' ? 1 : 0;
-        this.minIndex = 0;
-        this.keyValue = null;
-        this.done = false;
-        this.compCount = 0;
-        this.swapCount = 0;
-        this.sortedIndices = new Set();
-        this.activeIndices = [];
-        this.swappingIndices = [];
-        this.action = 'Prêt — cliquez ▶ Lancer ou Étape';
+    _build() {
+        const src = [...this.originalData];
+        if (typeof OEITrace === 'undefined') return [];
+        if (this.algorithm === 'insertion-sort') return OEITrace.buildInsertionTrace(src);
+        if (this.algorithm === 'selection-sort') return OEITrace.buildSelectionTrace(src);
+        return OEITrace.buildBubbleTrace(src);
+    }
+
+    _stepDelayMs(step) {
+        const base = this.baseInterval;
+        switch (step && step.delay) {
+            case 'swap': return Math.round(base * 0.5);
+            case 'postswap': return Math.round(base * 0.34);
+            case 'half': return Math.round(base * 0.6);
+            default: return base;
+        }
     }
 
     init() {
@@ -771,172 +388,82 @@ class SortingWidget {
                 <button class="sw-btn sw-btn-reset sw-btn-secondary">↺ Reset</button>
             </div>
         </div>`;
-        this._render();
+
+        if (typeof TracePlayer === 'undefined') {
+            this.root.querySelector('.sw-action').textContent = 'Lecture indisponible (TracePlayer absent).';
+            return;
+        }
+
+        this.player = new TracePlayer({
+            getSteps: () => {
+                if (!this._trace) this._trace = this._build();
+                return this._trace;
+            },
+            render: (step) => this._renderStep(step),
+            getDelay: () => {
+                const p = this.player;
+                const step = (p && Array.isArray(p.steps)) ? p.steps[p.cursor] : null;
+                return this._stepDelayMs(step);
+            },
+            onStateChange: (state) => this._syncButtons(state)
+        });
+
         this._bindControls();
+        this.player.attach();
     }
 
-    _render() {
+    _renderStep(step) {
         const zone = this.root.querySelector('.sw-array-zone');
-        if (!zone) return;
-        const max = Math.max(...this.numbers, 1);
+        if (!zone || !step) return;
+        const numbers = step.array;
+        const max = Math.max(...numbers, 1);
+        const sorted = new Set(step.marks.sorted);
+        const swapping = new Set(step.marks.swap);
+        const current = new Set([...step.marks.compare, ...step.marks.active]);
+        const done = step.phase === 'done';
+
         zone.innerHTML = '';
-        this.numbers.forEach((v, idx) => {
+        numbers.forEach((v, idx) => {
             const bar = document.createElement('div');
             bar.className = 'sw-bar';
-            if (this.sortedIndices.has(idx)) bar.classList.add('sorted');
-            else if (this.swappingIndices.includes(idx)) bar.classList.add('swapping');
-            else if (this.activeIndices.includes(idx)) bar.classList.add('current');
-            if (this.algorithm === 'selection-sort' && idx === this.minIndex && !this.done)
+            if (sorted.has(idx)) bar.classList.add('sorted');
+            else if (swapping.has(idx)) bar.classList.add('swapping');
+            else if (current.has(idx)) bar.classList.add('current');
+            if (this.algorithm === 'selection-sort' && step.vars.minIndex === idx && !done) {
                 bar.classList.add('min-mark');
-            if (this.algorithm === 'insertion-sort' && v === this.keyValue && this.activeIndices.includes(idx))
+            }
+            if (this.algorithm === 'insertion-sort' && step.insertion && step.insertion.targetIndex === idx && !done) {
                 bar.classList.add('key-mark');
+            }
             const px = Math.max(6, Math.round((v / max) * 110));
             bar.innerHTML = `<span class="sw-val">${v}</span><div class="sw-bar-inner" style="height:${px}px"></div><span class="sw-idx">${idx}</span>`;
             zone.appendChild(bar);
         });
+
         const act = this.root.querySelector('.sw-action');
-        if (act) act.textContent = this.action;
+        if (act) act.textContent = step.caption;
         const met = this.root.querySelector('.sw-metrics');
-        if (met) met.textContent = `Comp: ${this.compCount}  Ech: ${this.swapCount}`;
+        if (met) met.textContent = `Comp: ${step.stats.comparisons}  Ech: ${step.stats.swaps}`;
     }
 
     _bindControls() {
-        this.root.querySelector('.sw-btn-play')?.addEventListener('click', () => this._togglePlay());
-        this.root.querySelector('.sw-btn-step')?.addEventListener('click', () => { this._stop(); this._step(); });
-        this.root.querySelector('.sw-btn-reset')?.addEventListener('click', () => { this._stop(); this._reset(); });
+        this.root.querySelector('.sw-btn-play')?.addEventListener('click', () => this.player.toggle());
+        this.root.querySelector('.sw-btn-step')?.addEventListener('click', () => this.player.stepForward());
+        this.root.querySelector('.sw-btn-reset')?.addEventListener('click', () => this.player.reset());
     }
 
-    _togglePlay() {
-        if (this.isRunning) { this._stop(); return; }
-        if (this.done) { this._reset(); }
-        this.isRunning = true;
+    _syncButtons(state) {
         const btn = this.root.querySelector('.sw-btn-play');
-        if (btn) btn.textContent = '⏸ Pause';
-        this._run();
+        if (!btn) return;
+        btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
     }
 
-    _stop() {
-        this.isRunning = false;
-        clearTimeout(this._timer);
-        const btn = this.root.querySelector('.sw-btn-play');
-        if (btn) btn.textContent = '▶ Lancer';
-    }
-
-    /** Libère le timer de lecture et vide le conteneur (revue §C4). */
     destroy() {
         this._destroyed = true;
-        this._stop();
+        if (this.player) this.player.destroy();
+        this.player = null;
+        this._trace = null;
         if (this.root) this.root.innerHTML = '';
-    }
-
-    _run() {
-        if (this._destroyed || !this.isRunning || this.done) { this._stop(); return; }
-        this._step();
-        if (!this.done) this._timer = setTimeout(() => this._run(), 500);
-    }
-
-    _reset() {
-        this._resetState();
-        this._render();
-    }
-
-    _step() {
-        if (this.done) return;
-        if (this.algorithm === 'bubble-sort') this._stepBubble();
-        else if (this.algorithm === 'insertion-sort') this._stepInsertion();
-        else if (this.algorithm === 'selection-sort') this._stepSelection();
-        this._render();
-    }
-
-    _stepBubble() {
-        const a = this.numbers;
-        const n = this.n;
-        while (this.i < n - 1) {
-            if (this.j < n - 1 - this.i) {
-                this.compCount++;
-                this.activeIndices = [this.j, this.j + 1];
-                if (a[this.j] > a[this.j + 1]) {
-                    [a[this.j], a[this.j + 1]] = [a[this.j + 1], a[this.j]];
-                    this.swapCount++;
-                    this.swappingIndices = [this.j, this.j + 1];
-                    this.action = `Échange a[${this.j}]=${a[this.j]} ↔ a[${this.j+1}]=${a[this.j+1]}`;
-                } else {
-                    this.swappingIndices = [];
-                    this.action = `a[${this.j}]=${a[this.j]} ≤ a[${this.j+1}]=${a[this.j+1]} — OK`;
-                }
-                this.j++;
-                return;
-            }
-            this.sortedIndices.add(n - 1 - this.i);
-            this.i++;
-            this.j = 0;
-        }
-        for (let k = 0; k < n; k++) this.sortedIndices.add(k);
-        this.done = true;
-        this.activeIndices = [];
-        this.swappingIndices = [];
-        this.action = '✅ Tableau trié !';
-        this._stop();
-    }
-
-    _stepInsertion() {
-        const a = this.numbers;
-        const n = this.n;
-        if (this.i >= n) {
-            for (let k = 0; k < n; k++) this.sortedIndices.add(k);
-            this.done = true;
-            this.activeIndices = [];
-            this.action = '✅ Tableau trié !';
-            this._stop();
-            return;
-        }
-        const key = a[this.i];
-        this.keyValue = key;
-        let j = this.i - 1;
-        while (j >= 0 && a[j] > key) {
-            this.compCount++;
-            a[j + 1] = a[j];
-            this.swapCount++;
-            j--;
-        }
-        if (j >= 0) this.compCount++;
-        a[j + 1] = key;
-        for (let k = 0; k <= this.i; k++) this.sortedIndices.add(k);
-        this.activeIndices = [j + 1];
-        this.action = `Insertion de ${key} → position ${j + 1}`;
-        this.i++;
-    }
-
-    _stepSelection() {
-        const a = this.numbers;
-        const n = this.n;
-        if (this.i >= n - 1) {
-            this.sortedIndices.add(n - 1);
-            this.done = true;
-            this.activeIndices = [];
-            this.action = '✅ Tableau trié !';
-            this._stop();
-            return;
-        }
-        let minIdx = this.i;
-        for (let k = this.i + 1; k < n; k++) {
-            this.compCount++;
-            if (a[k] < a[minIdx]) minIdx = k;
-        }
-        this.minIndex = minIdx;
-        if (minIdx !== this.i) {
-            [a[this.i], a[minIdx]] = [a[minIdx], a[this.i]];
-            this.swapCount++;
-            this.swappingIndices = [this.i, minIdx];
-            this.action = `Min=${a[this.i]} (à [${minIdx}]) → échangé avec [${this.i}]`;
-        } else {
-            this.swappingIndices = [];
-            this.action = `Min=${a[this.i]} déjà à sa place [${this.i}]`;
-        }
-        this.sortedIndices.add(this.i);
-        this.activeIndices = [this.i];
-        this.i++;
-        this.minIndex = this.i;
     }
 }
 

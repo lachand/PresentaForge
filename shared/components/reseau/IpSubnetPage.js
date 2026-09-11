@@ -285,42 +285,7 @@ if (typeof window !== 'undefined') {
 // Usage : IpSubnetWidget.mount(container, { ip: '192.168.1.0/24' })
 // ─────────────────────────────────────────────────────────────────────────────
 class IpSubnetWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (IpSubnetWidget._stylesInjected) return;
-        IpSubnetWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-.ipw-container{display:flex;flex-direction:column;gap:8px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,#e2e8f0);}
-.ipw-header{font-size:.8rem;font-weight:600;color:var(--sl-muted,#94a3b8);}
-.ipw-input-row{display:flex;gap:8px;align-items:center;}
-.ipw-input{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:6px 10px;font-size:.8rem;color:var(--sl-text,#e2e8f0);font-family:monospace;}
-.ipw-input:focus{outline:none;border-color:var(--sl-primary,#6366f1);}
-.ipw-btn{padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;background:var(--sl-primary,#6366f1);color:#fff;transition:opacity .15s;white-space:nowrap;}
-.ipw-btn:hover{opacity:.8;}
-.ipw-btn-secondary{background:rgba(255,255,255,.08);color:var(--sl-text,#e2e8f0);}
-.ipw-error{font-size:.72rem;color:#ef4444;min-height:16px;}
-.ipw-summary{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
-.ipw-item{background:rgba(255,255,255,.05);border-radius:6px;padding:5px 8px;}
-.ipw-item-label{font-size:.62rem;color:var(--sl-muted,#94a3b8);text-transform:uppercase;letter-spacing:.04em;}
-.ipw-item-value{font-size:.78rem;font-weight:600;font-family:monospace;color:var(--sl-text,#e2e8f0);}
-.ipw-item.highlight .ipw-item-value{color:var(--sl-accent,#f97316);}
-.ipw-binary{display:flex;flex-direction:column;gap:3px;overflow:auto;}
-.ipw-bin-row{display:flex;align-items:center;gap:4px;font-size:.62rem;font-family:monospace;}
-.ipw-bin-label{width:80px;color:var(--sl-muted,#94a3b8);text-align:right;flex-shrink:0;}
-.ipw-bits{display:flex;gap:1px;flex-wrap:nowrap;}
-.ipw-bit{width:13px;height:13px;display:flex;align-items:center;justify-content:center;border-radius:2px;font-size:.62rem;}
-.ipw-bit.net{background:rgba(99,102,241,.45);color:#e2e8f0;}
-.ipw-bit.host{background:rgba(249,115,22,.3);color:#e2e8f0;}
-.ipw-bit.plain{background:rgba(255,255,255,.1);color:#94a3b8;}
-.ipw-sep{color:rgba(255,255,255,.2);padding:0 1px;}
-`;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        IpSubnetWidget.ensureStyles();
         const w = new IpSubnetWidget(container, config);
         w.init();
         return w;

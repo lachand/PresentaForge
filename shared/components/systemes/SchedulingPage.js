@@ -467,44 +467,10 @@ if (typeof window !== 'undefined') {
 // Usage : SchedulingWidget.mount(container, { algorithm: 'fcfs'|'sjf'|'rr'|'priority', quantum: 2 })
 // ─────────────────────────────────────────────────────────────────────────────
 class SchedulingWidget {
-    static _stylesInjected = false;
     static _COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'];
 
-    static ensureStyles() {
-        if (SchedulingWidget._stylesInjected) return;
-        SchedulingWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-.schw-container{display:flex;flex-direction:column;gap:8px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,#e2e8f0);}
-.schw-header{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;font-weight:600;color:var(--sl-muted,#94a3b8);}
-.schw-algo-bar{display:flex;gap:5px;flex-wrap:wrap;}
-.schw-algo-btn{padding:3px 9px;border:1px solid rgba(255,255,255,.15);border-radius:12px;cursor:pointer;font-size:.66rem;background:transparent;color:var(--sl-text,#e2e8f0);transition:all .15s;}
-.schw-algo-btn.active,.schw-algo-btn:hover{background:var(--sl-primary,#6366f1);border-color:var(--sl-primary,#6366f1);color:#fff;}
-.schw-quantum-row{display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--sl-muted,#94a3b8);}
-.schw-quantum-input{width:40px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--sl-text,#e2e8f0);text-align:center;}
-.schw-proc-table{font-size:.68rem;border-collapse:collapse;width:100%;}
-.schw-proc-table th{color:var(--sl-muted,#94a3b8);font-weight:600;padding:2px 6px;text-align:left;}
-.schw-proc-table td{padding:2px 6px;}
-.schw-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;}
-.schw-gantt-zone{overflow-x:auto;}
-.schw-gantt{display:flex;gap:1px;min-height:28px;align-items:stretch;}
-.schw-gblock{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:24px;border-radius:3px;font-size:.6rem;font-weight:700;color:#fff;padding:0 3px;position:relative;}
-.schw-gblock.idle{background:rgba(255,255,255,.1);color:var(--sl-muted,#94a3b8);}
-.schw-gtick{display:flex;gap:1px;font-size:.56rem;color:var(--sl-muted,#94a3b8);margin-top:2px;}
-.schw-gtick span{text-align:left;}
-.schw-metrics{display:flex;gap:6px;flex-wrap:wrap;font-size:.68rem;}
-.schw-metric{background:rgba(255,255,255,.06);border-radius:4px;padding:3px 8px;}
-.schw-metric strong{color:var(--sl-accent,#f97316);}
-.schw-controls{display:flex;gap:6px;flex-wrap:wrap;}
-.schw-btn{padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;background:var(--sl-primary,#6366f1);color:#fff;transition:opacity .15s;}
-.schw-btn:hover{opacity:.8;}
-.schw-btn-secondary{background:rgba(255,255,255,.08);color:var(--sl-text,#e2e8f0);}
-`;
-        document.head.appendChild(s);
-    }
 
     static mount(container, config = {}) {
-        SchedulingWidget.ensureStyles();
         const w = new SchedulingWidget(container, config);
         w.init();
         return w;

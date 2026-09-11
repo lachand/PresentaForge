@@ -41,6 +41,12 @@ class SimulationPage extends SimulationPageBase {
         this.speedCtrl = null;
         this.lastHighlightedLineId = null;
 
+        // Lecture pilotée par trace (TracePlayer) — activée si la sous-classe
+        // fournit buildTrace() + renderStep(). Reste null pour les pages qui
+        // gardent leur boucle async maison.
+        this.player = null;
+        this._trace = null;
+
         this.learning = {
             mounted: false,
             selectedLineId: null
@@ -69,6 +75,8 @@ class SimulationPage extends SimulationPageBase {
             this.setupControls();
             this.setupPseudocode();
             this.setupSpeedController();
+            await this._ensureTraceGenerators();
+            this.setupTracePlayer();
             this.reset();
             this.setupLearningTools();
         } catch (error) {
@@ -188,6 +196,108 @@ class SimulationPage extends SimulationPageBase {
     }
 
     // ============================================
+    // LECTURE PILOTÉE PAR TRACE (TracePlayer)
+    // ============================================
+
+    /**
+     * Chemins (relatifs à shared/components/) des générateurs de trace requis par
+     * cette page. Les sous-classes pilotées par trace la surchargent, ex. :
+     *   traceGeneratorScripts() { return ['algorithms/sort-traces.js']; }
+     * @returns {string[]}
+     */
+    traceGeneratorScripts() {
+        return [];
+    }
+
+    /**
+     * Charge (idempotent) le moteur TracePlayer + les générateurs de trace
+     * déclarés par la sous-classe. Aucune balise <script> à ajouter aux pages :
+     * tout est chargé paresseusement via OEIUtils.loadScript (patron §C7).
+     */
+    async _ensureTraceGenerators() {
+        const scripts = this.traceGeneratorScripts();
+        if (!Array.isArray(scripts) || scripts.length === 0) return;
+        if (typeof document === 'undefined' || typeof OEIUtils === 'undefined') return;
+        for (const rel of ['base/TracePlayer.js', ...scripts]) {
+            try {
+                await OEIUtils.loadScript(this.resolveSharedScriptPath(rel));
+            } catch (error) {
+                console.warn('Générateur de trace indisponible :', rel, error);
+            }
+        }
+    }
+
+    /**
+     * Instancie le TracePlayer si la sous-classe fournit le contrat trace :
+     *   buildTrace() → Step[]   (pur, sans DOM)
+     *   renderStep(step)        → rendu DOM du pas
+     * Sinon, la page garde sa boucle async historique et `this.player` reste null.
+     */
+    setupTracePlayer() {
+        if (this.player && typeof this.player.destroy === 'function') {
+            this.player.destroy();
+        }
+        this.player = null;
+        this._trace = null;
+
+        if (typeof this.buildTrace !== 'function' || typeof this.renderStep !== 'function') return;
+        if (typeof TracePlayer === 'undefined') {
+            console.warn('TracePlayer.js non chargé — lecture pas-à-pas indisponible');
+            return;
+        }
+
+        this.player = new TracePlayer({
+            getSteps: () => {
+                if (!this._trace) this._trace = this.buildTrace();
+                return this._trace;
+            },
+            render: (step, ctx) => this.renderStep(step, ctx),
+            onLine: (lineId) => this.highlightLine(lineId ? this.resolveLineId(lineId) : null),
+            getDelay: () => {
+                const p = this.player;
+                const step = (p && Array.isArray(p.steps)) ? p.steps[p.cursor] : null;
+                return this.stepDelay(step);
+            },
+            onStateChange: (state) => {
+                if (typeof this.onPlayerState === 'function') this.onPlayerState(state);
+            }
+        });
+    }
+
+    /**
+     * Durée (ms) pendant laquelle le pas courant reste affiché avant l'avance
+     * automatique. Par défaut = `getCurrentDelay()` ; les sous-classes peuvent
+     * moduler selon `step.delay` (ex. animation de permutation plus courte).
+     */
+    stepDelay(_step) {
+        return this.getCurrentDelay();
+    }
+
+    /**
+     * Traduit un lineId symbolique (émis par le générateur) vers l'id présent dans
+     * le DOM du pseudocode. Identité par défaut ; surchargé quand la page héberge
+     * plusieurs blocs de pseudocode.
+     */
+    resolveLineId(symbolic) {
+        return symbolic;
+    }
+
+    /** Régénère la trace au prochain accès (après changement d'entrée). */
+    invalidateTrace() {
+        this._trace = null;
+    }
+
+    /** Contrôle « Démarrer / Pause » des pages pilotées par trace. */
+    startSort() {
+        if (this.player) this.player.toggle();
+    }
+
+    /** Contrôle « Étape suivante » des pages pilotées par trace. */
+    nextStep() {
+        if (this.player) this.player.stepForward();
+    }
+
+    // ============================================
     // MÉTHODES ABSTRAITES (à surcharger)
     // ============================================
 
@@ -223,6 +333,11 @@ class SimulationPage extends SimulationPageBase {
      * Exécute la simulation automatiquement
      */
     async runAuto() {
+        if (this.player) {
+            this.player.play();
+            return;
+        }
+
         this.state.running = true;
 
         while (this.state.running && this.state.phase !== 'done') {
@@ -243,6 +358,7 @@ class SimulationPage extends SimulationPageBase {
      * Arrête l'exécution automatique
      */
     stop() {
+        if (this.player) this.player.pause();
         this.state.running = false;
     }
 
@@ -289,6 +405,10 @@ class SimulationPage extends SimulationPageBase {
      * Exécute une seule étape de la simulation
      */
     async stepOnce() {
+        if (this.player) {
+            this.player.stepForward();
+            return;
+        }
         if (this.state.running) return;
 
         await this.doStep();
@@ -491,6 +611,11 @@ class SimulationPage extends SimulationPageBase {
 
     destroy() {
         this.stop();
+        if (this.player && typeof this.player.destroy === 'function') {
+            this.player.destroy();
+        }
+        this.player = null;
+        this._trace = null;
         this.teardownLearningTools();
         if (this.speedCtrl && typeof this.speedCtrl.destroy === 'function') {
             this.speedCtrl.destroy();

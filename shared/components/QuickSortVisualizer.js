@@ -1,28 +1,23 @@
 /**
- * QuickSortVisualizer - Visualisation du tri rapide (Lomuto)
+ * QuickSortVisualizer — visualisation du tri rapide (Lomuto, pivot = dernier).
+ *
+ * L'algorithme (récursion simulée par pile) vit dans
+ * shared/components/algorithms/sort-traces.js → buildQuickSortTrace().
+ * Cette classe est l'ADAPTATEUR PAGE ; QuickSortWidget l'ADAPTATEUR SLIDE.
+ * Tous deux consomment la même trace via TracePlayer.
  */
 class QuickSortVisualizer extends SimulationPage {
     constructor(dataPath) {
         super(dataPath);
         this.numbers = [];
+        this.originalNumbers = [];
         this.size = 8;
         this.minValue = 1;
         this.maxValue = 100;
-        this.isRunning = false;
-
-        this.comparisonCount = 0;
-        this.swapCount = 0;
-        this.partitionCount = 0;
-        this.maxDepth = 0;
-        this.currentRange = null;
-        this.recursionStack = [];
-        this.pivotHistory = [];
     }
 
     async init() {
         await super.init();
-        this.renderPseudocodeFromData();
-        this.bindPseudocodeLineInspector();
         const cfg = this.data?.visualization?.config;
         this.size = cfg?.size || 8;
         this.minValue = cfg?.minValue ?? 1;
@@ -30,45 +25,61 @@ class QuickSortVisualizer extends SimulationPage {
         this.reset();
     }
 
-    renderPseudocodeFromData() {
-        const host = document.getElementById('pseudocode-container');
-        if (!host) return;
-        const blocks = this.data?.pseudocode || this.data?.pseudoCode;
-        if (!Array.isArray(blocks) || blocks.length === 0) return;
+    // ── contrat trace ────────────────────────────────────────────────────────
 
-        const lines = [];
-        blocks.forEach((block) => {
-            (block.lines || []).forEach((line, localIdx) => {
-                const id = (Array.isArray(block.lineIds) && block.lineIds[localIdx]) || '';
-                const attr = id ? (' id="' + id + '"') : '';
-                const content = (typeof PseudocodeSupport !== 'undefined')
-                    ? PseudocodeSupport.renderLineContent(line, {
-                        autoKeywordHighlight: true,
-                        domain: this.data?.metadata?.category
-                    })
-                    : this.escapeHtml(line);
-                lines.push('<span class="line"' + attr + '>' + content + '</span>');
-            });
-        });
-
-        host.innerHTML = '<div class="card algorithm-code">' + lines.join('') + '</div>';
+    traceGeneratorScripts() {
+        return ['algorithms/sort-traces.js'];
     }
+
+    buildTrace() {
+        if (typeof OEITrace === 'undefined') return [];
+        return OEITrace.buildQuickSortTrace([...this.originalNumbers]);
+    }
+
+    stepDelay(step) {
+        switch (step && step.delay) {
+            case 'swap': return this.getSwapAnimationDuration();
+            case 'postswap': return this.getPostSwapPause();
+            case 'half': return this.getCurrentDelay(0.75);
+            default: return this.getCurrentDelay();
+        }
+    }
+
+    renderStep(step) {
+        if (!step) return;
+        this.numbers = step.array.slice();
+
+        const r = (step.view && step.view.range) || null;
+        const swap = step.marks.swap;
+        const opts = {
+            pivotIndex: step.marks.pivot.length ? step.marks.pivot[0] : (r ? r.pivotIndex : -1),
+            low: step.marks.range ? step.marks.range[0] : (r ? r.low : -1),
+            high: step.marks.range ? step.marks.range[1] : (r ? r.high : -1),
+            splitIndex: r ? r.splitIndex : -1,
+            sortedIndices: step.marks.sorted
+        };
+        if (swap.length === 2) {
+            opts.swapIndex1 = swap[0];
+            opts.swapIndex2 = swap[1];
+            if (step.anim === 'swap') {
+                opts.animateSwap = true;
+                opts.swapDurationMs = this.getSwapAnimationDuration();
+            }
+        }
+        this.renderArray(this.numbers, opts);
+        this.updatePanels(step);
+    }
+
+    onPlayerState(state) {
+        const btn = document.querySelector('[data-inline-onclick="page.startSort()"]');
+        if (btn) btn.textContent = state.playing ? 'Pause' : (state.atEnd ? 'Rejouer' : 'Lancer le tri rapide');
+    }
+
+    // ── helpers DOM conservés ────────────────────────────────────────────────
 
     randomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
-
-    resetSimulationStats() {
-        this.comparisonCount = 0;
-        this.swapCount = 0;
-        this.partitionCount = 0;
-        this.maxDepth = 0;
-        this.currentRange = null;
-        this.recursionStack = [];
-        this.pivotHistory = [];
-        this.updatePanels();
-    }
-
 
     getSwapAnimationDuration() {
         const base = this.getCurrentDelay();
@@ -79,66 +90,36 @@ class QuickSortVisualizer extends SimulationPage {
         return Math.max(70, Math.round(this.getCurrentDelay() * 0.3));
     }
 
-    updatePanels() {
-        const compEl = document.getElementById('quick-stat-comparisons');
-        const swapEl = document.getElementById('quick-stat-swaps');
-        const partitionEl = document.getElementById('quick-stat-partitions');
-        const depthEl = document.getElementById('quick-stat-depth');
-        const rangeEl = document.getElementById('quick-range');
-        const pivotEl = document.getElementById('quick-pivot');
-        const splitEl = document.getElementById('quick-split');
+    updatePanels(step) {
+        const stats = step ? step.stats : { comparisons: 0, swaps: 0, partitions: 0, maxDepth: 0 };
+        const v = (step && step.view) || null;
+        const r = (v && v.range) || null;
+
+        this.updateInfo('quick-stat-comparisons', String(stats.comparisons || 0));
+        this.updateInfo('quick-stat-swaps', String(stats.swaps || 0));
+        this.updateInfo('quick-stat-partitions', String(stats.partitions || 0));
+        this.updateInfo('quick-stat-depth', String((v && v.maxDepth) || stats.maxDepth || 0));
+
+        this.updateInfo('quick-range', r ? (r.low + '..' + r.high) : '--');
+        this.updateInfo('quick-pivot', (r && r.pivotIndex >= 0) ? (r.pivotValue + ' @ ' + r.pivotIndex) : '--');
+        this.updateInfo('quick-split', (r && r.splitIndex >= 0) ? String(r.splitIndex) : '--');
+
         const stackEl = document.getElementById('quick-stack');
-        const historyEl = document.getElementById('quick-pivot-history');
-
-        if (compEl) compEl.textContent = String(this.comparisonCount);
-        if (swapEl) swapEl.textContent = String(this.swapCount);
-        if (partitionEl) partitionEl.textContent = String(this.partitionCount);
-        if (depthEl) depthEl.textContent = String(this.maxDepth);
-
-        if (rangeEl) {
-            if (!this.currentRange) rangeEl.textContent = '--';
-            else rangeEl.textContent = this.currentRange.low + '..' + this.currentRange.high;
-        }
-
-        if (pivotEl) {
-            if (!this.currentRange || this.currentRange.pivotIndex < 0) pivotEl.textContent = '--';
-            else pivotEl.textContent = this.currentRange.pivotValue + ' @ ' + this.currentRange.pivotIndex;
-        }
-
-        if (splitEl) {
-            if (!this.currentRange || this.currentRange.splitIndex < 0) splitEl.textContent = '--';
-            else splitEl.textContent = String(this.currentRange.splitIndex);
-        }
-
         if (stackEl) {
-            if (!this.recursionStack.length) {
-                stackEl.innerHTML = '<span class="text-muted text-sm">Pile vide</span>';
-            } else {
-                stackEl.innerHTML = this.recursionStack
-                    .slice()
-                    .reverse()
-                    .map((frame) => {
-                        return '<div class="quick-stack-item">d' + frame.depth + ' : [' + frame.low + '..' + frame.high + ']</div>';
-                    })
-                    .join('');
-            }
+            const stack = (v && v.stack) || [];
+            stackEl.innerHTML = stack.length
+                ? stack.slice().reverse().map((fr) => '<div class="quick-stack-item">d' + fr.depth + ' : [' + fr.low + '..' + fr.high + ']</div>').join('')
+                : '<span class="text-muted text-sm">Pile vide</span>';
         }
 
+        const historyEl = document.getElementById('quick-pivot-history');
         if (historyEl) {
-            if (!this.pivotHistory.length) {
-                historyEl.innerHTML = '<span class="text-muted text-sm">Aucun pivot traite.</span>';
-            } else {
-                historyEl.innerHTML = this.pivotHistory
-                    .slice(-8)
-                    .reverse()
-                    .map((entry) => {
-                        return '<div class="quick-history-item">' +
-                            '<span class="k">[' + entry.low + '..' + entry.high + ']</span> ' +
-                            '<span class="v">pivot ' + entry.value + ' -> index ' + entry.finalIndex + '</span>' +
-                            '</div>';
-                    })
-                    .join('');
-            }
+            const hist = (v && v.pivotHistory) || [];
+            historyEl.innerHTML = hist.length
+                ? hist.slice(-8).reverse().map((e) =>
+                    '<div class="quick-history-item"><span class="k">[' + e.low + '..' + e.high + ']</span> ' +
+                    '<span class="v">pivot ' + e.value + ' -> index ' + e.finalIndex + '</span></div>').join('')
+                : '<span class="text-muted text-sm">Aucun pivot traite.</span>';
         }
     }
 
@@ -196,177 +177,19 @@ class QuickSortVisualizer extends SimulationPage {
 
     render() {
         this.renderArray(this.numbers, {});
-        this.updatePanels();
-    }
-
-    async partition(array, low, high, depth) {
-        this.partitionCount += 1;
-
-        this.highlightLine('pivot-setup');
-        const pivot = array[high];
-        this.currentRange = {
-            low,
-            high,
-            pivotIndex: high,
-            pivotValue: pivot,
-            splitIndex: -1,
-            depth
-        };
-        this.updatePanels();
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        this.highlightLine('index-setup');
-        let i = low - 1;
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        for (let j = low; j < high; j++) {
-            this.highlightLine('for-loop');
-            this.renderArray(array, {
-                pivotIndex: high,
-                low,
-                high,
-                swapIndex1: i + 1,
-                swapIndex2: j,
-                splitIndex: i
-            });
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            this.highlightLine('if-condition');
-            this.comparisonCount += 1;
-            this.updatePanels();
-            if (array[j] <= pivot) {
-                await OEIUtils.sleep(this.getCurrentDelay(0.5));
-                this.highlightLine('increment-i');
-                i++;
-                await OEIUtils.sleep(this.getCurrentDelay(0.5));
-
-                this.highlightLine('swap-elements');
-                this.currentRange.splitIndex = i;
-                if (i !== j) {
-                    const swapDuration = this.getSwapAnimationDuration();
-                    this.renderArray(array, {
-                        pivotIndex: high,
-                        low,
-                        high,
-                        swapIndex1: i,
-                        swapIndex2: j,
-                        splitIndex: i,
-                        animateSwap: true,
-                        swapDurationMs: swapDuration
-                    });
-                    await OEIUtils.sleep(swapDuration);
-
-                    [array[i], array[j]] = [array[j], array[i]];
-                    this.swapCount += 1;
-                    this.renderArray(array, {
-                        pivotIndex: high,
-                        low,
-                        high,
-                        splitIndex: i
-                    });
-                    this.updatePanels();
-                    await OEIUtils.sleep(this.getPostSwapPause());
-                } else {
-                    this.renderArray(array, {
-                        pivotIndex: high,
-                        low,
-                        high,
-                        swapIndex1: i,
-                        swapIndex2: j,
-                        splitIndex: i
-                    });
-                    await OEIUtils.sleep(this.getCurrentDelay(0.35));
-                }
-            }
-        }
-
-        this.highlightLine('final-swap');
-        const finalLeft = i + 1;
-        const finalRight = high;
-        if (finalLeft !== finalRight) {
-            const finalSwapDuration = this.getSwapAnimationDuration();
-            this.renderArray(array, {
-                pivotIndex: high,
-                low,
-                high,
-                swapIndex1: finalLeft,
-                swapIndex2: finalRight,
-                splitIndex: finalLeft,
-                animateSwap: true,
-                swapDurationMs: finalSwapDuration
-            });
-            await OEIUtils.sleep(finalSwapDuration);
-            [array[finalLeft], array[finalRight]] = [array[finalRight], array[finalLeft]];
-            this.swapCount += 1;
-            await OEIUtils.sleep(this.getPostSwapPause());
-        }
-        this.currentRange.pivotIndex = i + 1;
-        this.currentRange.splitIndex = i + 1;
-        this.renderArray(array, {
-            pivotIndex: i + 1,
-            low,
-            high,
-            swapIndex1: i + 1,
-            swapIndex2: high,
-            splitIndex: i + 1
-        });
-        this.pivotHistory.push({
-            low,
-            high,
-            value: pivot,
-            finalIndex: i + 1
-        });
-        this.updatePanels();
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        this.highlightLine('return-pivot');
-        await OEIUtils.sleep(this.getCurrentDelay(0.6));
-        return i + 1;
-    }
-
-    async quickSort(array, low, high, depth = 1) {
-        if (low < high) {
-            this.recursionStack.push({ low, high, depth });
-            this.maxDepth = Math.max(this.maxDepth, depth);
-            this.updatePanels();
-
-            this.highlightLine('if-low-high');
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            this.highlightLine('partition-call');
-            const pivotIndex = await this.partition(array, low, high, depth);
-
-            this.highlightLine('recursion-left');
-            await this.quickSort(array, low, pivotIndex - 1, depth + 1);
-
-            this.highlightLine('recursion-right');
-            await this.quickSort(array, pivotIndex + 1, high, depth + 1);
-
-            this.recursionStack.pop();
-            this.updatePanels();
-        }
-    }
-
-    async startSort() {
-        if (this.isRunning) return;
-        this.isRunning = true;
-        this.resetSimulationStats();
-
-        await this.quickSort(this.numbers, 0, this.numbers.length - 1, 1);
-        this.clearHighlight();
-        this.currentRange = null;
-        this.recursionStack = [];
-        this.renderArray(this.numbers, { sortedIndices: this.numbers.map((_, idx) => idx) });
-        this.updatePanels();
-        this.isRunning = false;
     }
 
     reset() {
-        if (this.isRunning) return;
         this.numbers = Array.from({ length: this.size }, () => this.randomInt(this.minValue, this.maxValue));
-        this.resetSimulationStats();
+        this.originalNumbers = [...this.numbers];
+        this.invalidateTrace();
         this.clearHighlight();
-        this.render();
+        if (this.player) {
+            this.player.reset();
+        } else {
+            this.render();
+            this.updatePanels(null);
+        }
     }
 }
 
@@ -375,48 +198,10 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QuickSortWidget — Widget autonome pour intégration dans les slides
-// Algorithme : Lomuto partition scheme (pivot = dernier élément)
-// Usage : QuickSortWidget.mount(container, { data: [...] })
+// QuickSortWidget — adaptateur SLIDE. Même trace (buildQuickSortTrace) via TracePlayer.
 // ─────────────────────────────────────────────────────────────────────────────
 class QuickSortWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (QuickSortWidget._stylesInjected) return;
-        QuickSortWidget._stylesInjected = true;
-        // Reuse SortingWidget styles if already injected, else inject minimal subset
-        if (!document.querySelector('style[data-sw]')) {
-            const s = document.createElement('style');
-            s.setAttribute('data-sw', '1');
-            s.textContent = `
-.sw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,#e2e8f0);}
-.sw-header{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;font-weight:600;color:var(--sl-muted,#94a3b8);}
-.sw-array-zone{display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:24px;padding-bottom:20px;}
-.sw-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;position:relative;}
-.sw-bar-inner{width:100%;border-radius:4px 4px 0 0;background:var(--sl-primary,#6366f1);transition:height .25s,background .2s;border:1px solid rgba(0,0,0,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.18);}
-.sw-bar.current .sw-bar-inner{background:var(--sl-accent,#f97316);}
-.sw-bar.swapping .sw-bar-inner{background:#ef4444;}
-.sw-bar.sorted .sw-bar-inner{background:#22c55e;}
-.sw-bar.pivot-mark .sw-bar-inner{background:#eab308;}
-.sw-bar.bound-mark .sw-bar-inner{background:#6366f1;opacity:.5;}
-.sw-val{position:absolute;top:-18px;font-size:10px;color:var(--sl-text,#e2e8f0);}
-.sw-idx{position:absolute;bottom:-16px;font-size:9px;color:var(--sl-muted,#94a3b8);}
-.sw-info-bar{font-size:.72rem;color:var(--sl-text,#cbd5e1);min-height:16px;display:flex;justify-content:space-between;}
-.sw-action{flex:1;opacity:.9;}
-.sw-metrics{color:var(--sl-muted,#94a3b8);white-space:nowrap;}
-.sw-controls{display:flex;gap:8px;flex-wrap:wrap;}
-.sw-btn{padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;background:var(--sl-primary,#6366f1);color:#fff;transition:opacity .15s;}
-.sw-btn:hover:not(:disabled){opacity:.8;}
-.sw-btn:disabled{opacity:.35;cursor:not-allowed;}
-.sw-btn-secondary{background:rgba(255,255,255,.08);color:var(--sl-text,#e2e8f0);}
-`;
-            document.head.appendChild(s);
-        }
-    }
-
     static mount(container, config = {}) {
-        QuickSortWidget.ensureStyles();
         const w = new QuickSortWidget(container, config);
         w.init();
         return w;
@@ -424,28 +209,22 @@ class QuickSortWidget {
 
     constructor(container, config = {}) {
         this.root = container;
-        const defaultData = Array.from({length: 8}, () => Math.floor(Math.random() * 85) + 5);
+        const defaultData = Array.from({ length: 8 }, () => Math.floor(Math.random() * 85) + 5);
         this.originalData = Array.isArray(config.data) && config.data.length > 0
             ? config.data.map(Number).slice(0, 14) : defaultData;
-        this._resetState();
-        this._timer = null;
-        this.isRunning = false;
+        this.baseInterval = 500;
+        this._trace = null;
+        this.player = null;
     }
 
-    _resetState() {
-        this.numbers = [...this.originalData];
-        this.n = this.numbers.length;
-        this.compCount = 0;
-        this.swapCount = 0;
-        this.sortedIndices = new Set();
-        this.pivotIdx = -1;
-        this.activeIdx = -1;
-        this.boundIdx = -1;
-        this.action = 'Prêt — cliquez ▶ Lancer ou Étape';
-        this.done = false;
-        // Use explicit stack to avoid recursion (for step-by-step)
-        this._stack = [[0, this.n - 1]];
-        this._currentPartition = null; // { lo, hi, pivotVal, i, j }
+    _stepDelayMs(step) {
+        const base = this.baseInterval;
+        switch (step && step.delay) {
+            case 'swap': return Math.round(base * 0.5);
+            case 'postswap': return Math.round(base * 0.34);
+            case 'half': return Math.round(base * 0.6);
+            default: return base;
+        }
     }
 
     init() {
@@ -459,133 +238,79 @@ class QuickSortWidget {
                 <button class="sw-btn sw-btn-reset sw-btn-secondary">↺ Reset</button>
             </div>
         </div>`;
-        this._render();
+
+        if (typeof TracePlayer === 'undefined') {
+            this.root.querySelector('.sw-action').textContent = 'Lecture indisponible (TracePlayer absent).';
+            return;
+        }
+
+        this.player = new TracePlayer({
+            getSteps: () => {
+                if (!this._trace) {
+                    this._trace = (typeof OEITrace !== 'undefined')
+                        ? OEITrace.buildQuickSortTrace([...this.originalData]) : [];
+                }
+                return this._trace;
+            },
+            render: (step) => this._renderStep(step),
+            getDelay: () => {
+                const p = this.player;
+                const step = (p && Array.isArray(p.steps)) ? p.steps[p.cursor] : null;
+                return this._stepDelayMs(step);
+            },
+            onStateChange: (state) => this._syncButtons(state)
+        });
         this._bindControls();
+        this.player.attach();
     }
 
-    _render() {
+    _renderStep(step) {
         const zone = this.root.querySelector('.sw-array-zone');
-        if (!zone) return;
-        const max = Math.max(...this.numbers, 1);
+        if (!zone || !step) return;
+        const numbers = step.array;
+        const max = Math.max(...numbers, 1);
+        const sorted = new Set(step.marks.sorted);
+        const pivot = step.marks.pivot.length ? step.marks.pivot[0] : -1;
+        const current = new Set([...step.marks.compare, ...step.marks.active]);
+        const bound = step.vars.i;
+
         zone.innerHTML = '';
-        this.numbers.forEach((v, idx) => {
+        numbers.forEach((v, idx) => {
             const bar = document.createElement('div');
             bar.className = 'sw-bar';
-            if (this.sortedIndices.has(idx)) bar.classList.add('sorted');
-            else if (idx === this.pivotIdx) bar.classList.add('pivot-mark');
-            else if (idx === this.activeIdx) bar.classList.add('current');
-            else if (idx === this.boundIdx) bar.classList.add('bound-mark');
+            if (sorted.has(idx)) bar.classList.add('sorted');
+            else if (idx === pivot) bar.classList.add('pivot-mark');
+            else if (current.has(idx)) bar.classList.add('current');
+            else if (idx === bound) bar.classList.add('bound-mark');
             const px = Math.max(6, Math.round((v / max) * 110));
             bar.innerHTML = `<span class="sw-val">${v}</span><div class="sw-bar-inner" style="height:${px}px"></div><span class="sw-idx">${idx}</span>`;
             zone.appendChild(bar);
         });
+
         const act = this.root.querySelector('.sw-action');
-        if (act) act.textContent = this.action;
+        if (act) act.textContent = step.caption;
         const met = this.root.querySelector('.sw-metrics');
-        if (met) met.textContent = `Comp: ${this.compCount}  Ech: ${this.swapCount}`;
+        if (met) met.textContent = `Comp: ${step.stats.comparisons}  Ech: ${step.stats.swaps}`;
     }
 
     _bindControls() {
-        this.root.querySelector('.sw-btn-play')?.addEventListener('click', () => this._togglePlay());
-        this.root.querySelector('.sw-btn-step')?.addEventListener('click', () => { this._stop(); this._step(); });
-        this.root.querySelector('.sw-btn-reset')?.addEventListener('click', () => { this._stop(); this._resetState(); this._render(); });
+        this.root.querySelector('.sw-btn-play')?.addEventListener('click', () => this.player.toggle());
+        this.root.querySelector('.sw-btn-step')?.addEventListener('click', () => this.player.stepForward());
+        this.root.querySelector('.sw-btn-reset')?.addEventListener('click', () => this.player.reset());
     }
 
-    _togglePlay() {
-        if (this.isRunning) { this._stop(); return; }
-        if (this.done) { this._resetState(); this._render(); }
-        this.isRunning = true;
+    _syncButtons(state) {
         const btn = this.root.querySelector('.sw-btn-play');
-        if (btn) btn.textContent = '⏸ Pause';
-        this._run();
+        if (!btn) return;
+        btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
     }
 
-    _stop() {
-        this.isRunning = false;
-        clearTimeout(this._timer);
-        const btn = this.root.querySelector('.sw-btn-play');
-        if (btn) btn.textContent = '▶ Lancer';
-    }
-
-    /** Libère le timer de lecture et vide le conteneur (revue §C4). */
     destroy() {
         this._destroyed = true;
-        this._stop();
+        if (this.player) this.player.destroy();
+        this.player = null;
+        this._trace = null;
         if (this.root) this.root.innerHTML = '';
-    }
-
-    _run() {
-        if (this._destroyed || !this.isRunning || this.done) { this._stop(); return; }
-        this._step();
-        if (!this.done) this._timer = setTimeout(() => this._run(), 500);
-    }
-
-    _step() {
-        if (this.done) return;
-        const a = this.numbers;
-
-        // If we have an active partition in progress, do one comparison step
-        if (this._currentPartition) {
-            const p = this._currentPartition;
-            if (p.j < p.hi) {
-                this.compCount++;
-                this.activeIdx = p.j;
-                this.boundIdx = p.i;
-                if (a[p.j] <= p.pivotVal) {
-                    p.i++;
-                    if (p.i !== p.j) {
-                        [a[p.i], a[p.j]] = [a[p.j], a[p.i]];
-                        this.swapCount++;
-                        this.action = `a[${p.j}]=${a[p.i]} ≤ pivot=${p.pivotVal} → échange avec [${p.i}]`;
-                    } else {
-                        this.action = `a[${p.j}]=${a[p.j]} ≤ pivot=${p.pivotVal} → OK (déjà en place)`;
-                    }
-                } else {
-                    this.action = `a[${p.j}]=${a[p.j]} > pivot=${p.pivotVal} → laisser à droite`;
-                }
-                p.j++;
-                this._render();
-                return;
-            }
-            // End of partition — place pivot
-            [a[p.i + 1], a[p.hi]] = [a[p.hi], a[p.i + 1]];
-            const pivotFinalIdx = p.i + 1;
-            if (p.i + 1 !== p.hi) this.swapCount++;
-            this.sortedIndices.add(pivotFinalIdx);
-            this.pivotIdx = -1;
-            this.activeIdx = -1;
-            this.boundIdx = -1;
-            this.action = `Pivot=${p.pivotVal} placé à sa position finale [${pivotFinalIdx}]`;
-            // Push sub-arrays to stack
-            if (pivotFinalIdx - 1 > p.lo) this._stack.push([p.lo, pivotFinalIdx - 1]);
-            if (pivotFinalIdx + 1 < p.hi) this._stack.push([pivotFinalIdx + 1, p.hi]);
-            this._currentPartition = null;
-            this._render();
-            return;
-        }
-
-        // Start next sub-array from stack
-        if (this._stack.length === 0) {
-            // Mark all remaining as sorted
-            for (let k = 0; k < this.n; k++) this.sortedIndices.add(k);
-            this.done = true;
-            this.pivotIdx = -1;
-            this.action = '✅ Tableau trié !';
-            this._stop();
-            this._render();
-            return;
-        }
-
-        const [lo, hi] = this._stack.pop();
-        if (lo >= hi) {
-            if (lo === hi) this.sortedIndices.add(lo);
-            this._step(); // recurse to get next valid segment
-            return;
-        }
-        this.pivotIdx = hi;
-        this.action = `Nouveau segment [${lo}..${hi}], pivot = a[${hi}] = ${a[hi]}`;
-        this._currentPartition = { lo, hi, pivotVal: a[hi], i: lo - 1, j: lo };
-        this._render();
     }
 }
 

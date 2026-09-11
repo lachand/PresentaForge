@@ -127,17 +127,19 @@ const OEI_WIDGET_REGISTRY = {
 
     // ── Tri ───────────────────────────────────────────────────────────────────
     'sorting-merge': {
+        deps: ['base/TracePlayer.js', 'algorithms/sort-traces.js'],
         global: 'MergeSortWidget',
         script: 'MergeSortVisualizer.js',
         label: 'Tri fusion (Merge Sort)',
         category: 'Tri',
-        description: 'Visualisation bottom-up du tri fusion : chaque étape montre les fusions de sous-tableaux',
+        description: 'Visualisation top-down du tri fusion : division récursive (diviser pour régner) puis fusion des moitiés triées',
         level: 'L2',
         tags: ['tri', 'fusion', 'merge sort', 'diviser pour régner', 'O(n log n)'],
         defaultConfig: { data: [64, 34, 25, 12, 22, 11, 90, 48] },
         staticFallback: _sf('🔀', 'Tri fusion'),
     },
     'sorting-counting': {
+        deps: ['base/TracePlayer.js', 'algorithms/sort-traces.js'],
         global: 'CountingRadixWidget',
         script: 'CountingRadixVisualizer.js',
         label: 'Tri par comptage',
@@ -149,6 +151,7 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('🔢', 'Tri par comptage'),
     },
     'sorting-bubble': {
+        deps: ['base/TracePlayer.js', 'algorithms/sort-traces.js'],
         global: 'SortingWidget',
         script: 'SortingVisualizer.js',
         label: 'Tri à bulles',
@@ -160,6 +163,7 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('🔵', 'Tri à bulles'),
     },
     'sorting-insertion': {
+        deps: ['base/TracePlayer.js', 'algorithms/sort-traces.js'],
         global: 'SortingWidget',
         script: 'SortingVisualizer.js',
         label: 'Tri par insertion',
@@ -171,6 +175,7 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('🃏', 'Tri par insertion'),
     },
     'sorting-selection': {
+        deps: ['base/TracePlayer.js', 'algorithms/sort-traces.js'],
         global: 'SortingWidget',
         script: 'SortingVisualizer.js',
         label: 'Tri par sélection',
@@ -182,6 +187,7 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('📍', 'Tri par sélection'),
     },
     'sorting-quick': {
+        deps: ['base/TracePlayer.js', 'algorithms/sort-traces.js'],
         global: 'QuickSortWidget',
         script: 'QuickSortVisualizer.js',
         label: 'Tri rapide (QuickSort)',
@@ -195,6 +201,7 @@ const OEI_WIDGET_REGISTRY = {
 
     // ── Structures linéaires ──────────────────────────────────────────────────
     'struct-stack': {
+        deps: ['algorithms/structure-traces.js'],
         global: 'StructureWidget',
         script: 'StructureVisualizer.js',
         label: 'Pile (Stack)',
@@ -206,6 +213,7 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('📚', 'Pile (Stack)'),
     },
     'struct-queue': {
+        deps: ['algorithms/structure-traces.js'],
         global: 'StructureWidget',
         script: 'StructureVisualizer.js',
         label: 'File (Queue)',
@@ -219,6 +227,7 @@ const OEI_WIDGET_REGISTRY = {
 
     // ── Recherche ─────────────────────────────────────────────────────────────
     'search-sequential': {
+        deps: ['base/TracePlayer.js', 'algorithms/search-traces.js'],
         global: 'SearchWidget',
         script: 'SearchVisualizer.js',
         label: 'Recherche séquentielle',
@@ -230,6 +239,7 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('🔍', 'Recherche séquentielle'),
     },
     'search-binary': {
+        deps: ['base/TracePlayer.js', 'algorithms/search-traces.js'],
         global: 'SearchWidget',
         script: 'SearchVisualizer.js',
         label: 'Recherche dichotomique',
@@ -243,6 +253,7 @@ const OEI_WIDGET_REGISTRY = {
 
     // ── Structures de données ─────────────────────────────────────────────────
     'bst-simulator': {
+        deps: ['algorithms/bst-traces.js'],
         global: 'BSTWidget',
         script: 'BinaryTreeVisualizer.js',
         label: 'Arbre binaire de recherche',
@@ -254,6 +265,7 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('🌲', 'Arbre binaire de recherche'),
     },
     'struct-linked-list': {
+        deps: ['algorithms/linkedlist-traces.js'],
         global: 'LinkedListWidget',
         script: 'LinkedListVisualizer.js',
         label: 'Liste chaînée',
@@ -267,6 +279,7 @@ const OEI_WIDGET_REGISTRY = {
     'struct-hash-table': {
         global: 'HashTableWidget',
         script: 'HashTableVisualizer.js',
+        deps: ['algorithms/hashtable-traces.js'],
         label: 'Table de hachage',
         category: 'Structures',
         description: 'Table de hachage avec chaînage : visualisation de h(k)=k mod n, collisions et recherche',
@@ -278,6 +291,7 @@ const OEI_WIDGET_REGISTRY = {
     'struct-heap-min': {
         global: 'HeapWidget',
         script: 'HeapVisualizer.js',
+        deps: ['algorithms/heap-traces.js'],
         label: 'Tas minimum (Min-Heap)',
         category: 'Structures',
         description: 'Tas binaire minimum : insertion avec sift-up, extraction de la racine avec heapify-down',
@@ -289,6 +303,7 @@ const OEI_WIDGET_REGISTRY = {
     'struct-heap-max': {
         global: 'HeapWidget',
         script: 'HeapVisualizer.js',
+        deps: ['algorithms/heap-traces.js'],
         label: 'Tas maximum (Max-Heap)',
         category: 'Structures',
         description: 'Tas binaire maximum : insertion avec sift-up, extraction de la racine avec heapify-down',

@@ -232,8 +232,20 @@ const PseudocodeSupport = {
         const container = document.getElementById(containerId);
         if (!container) return false;
 
-        const blocks = this.getBlocks(data);
+        let blocks = this.getBlocks(data);
         if (blocks.length === 0) return false;
+
+        // `blockFilter` : rendre un sous-ensemble des blocs dans ce conteneur.
+        // string → correspondance sur `block.name` ; fonction → prédicat (block, idx).
+        // Utilisé quand une page héberge plusieurs blocs de pseudocode dans des
+        // conteneurs distincts (ex. CountingRadix : #pseudo-counting / #pseudo-radix).
+        if (options.blockFilter != null) {
+            const match = typeof options.blockFilter === 'function'
+                ? options.blockFilter
+                : (block) => block && block.name === options.blockFilter;
+            blocks = blocks.filter(match);
+            if (blocks.length === 0) return false;
+        }
 
         // Priorité : ids explicites portés par le JSON (`block.lineIds[i]`, source unique
         // depuis la revue §C10) ; sinon le builder fourni ; sinon un id générique.

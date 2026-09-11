@@ -3,45 +3,7 @@
  * Montre l'évolution des branches sur un graphe SVG.
  */
 class GitflowSimulatorWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (GitflowSimulatorWidget._stylesInjected) return;
-        GitflowSimulatorWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-.gflow-root { font-family: var(--font); }
-.gflow-step-card {
-    background: #eef2ff; border: 1.5px solid #a5b4fc;
-    border-radius: var(--radius); padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem; font-size: 0.88rem; color: #3730a3;
-}
-.gflow-step-num { font-weight: 700; margin-bottom: 0.2rem; font-size: 0.75rem; text-transform: uppercase; }
-.gflow-step-desc { font-size: 0.9rem; color: var(--text); font-weight: 500; }
-.gflow-step-detail { font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
-.gflow-svg-wrap {
-    overflow-x: auto; border: 1px solid var(--border);
-    border-radius: var(--radius); background: var(--bg); padding: 1rem;
-    margin-bottom: 0.75rem;
-}
-.gflow-nav {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 0.5rem;
-}
-.gflow-nav-center { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
-.gflow-legend {
-    display: flex; flex-wrap: wrap; gap: 0.5rem 1rem;
-    margin-top: 0.5rem; font-size: 0.75rem;
-}
-.gflow-legend-item { display: flex; align-items: center; gap: 0.3rem; }
-.gflow-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
-        `;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        GitflowSimulatorWidget.ensureStyles();
-
         // Coordonnées fixes par branche
         const BRANCHES = {
             main:     { y: 30,  color: '#4f46e5', label: 'main' },

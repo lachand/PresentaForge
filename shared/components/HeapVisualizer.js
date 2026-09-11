@@ -1,11 +1,21 @@
 /**
  * HeapVisualizer - Visualisation d'un tas binaire (min/max)
  *
+ * La mécanique de sift-up/sift-down/heapsort vit dans
+ * shared/components/algorithms/heap-traces.js, pure (`mode` 'min'|'max' pilote
+ * le seul comparateur partagé). Comme pile/file, liste chaînée et table de
+ * hachage, chaque clic (Insérer/Extraire/Heapsort) est une opération
+ * INDÉPENDANTE sur un tas qui PERSISTE — la PAGE anime via TracePlayer
+ * (patron `runOperation`, identique à StructureVisualizer/HashTableVisualizer) ;
+ * le WIDGET reste instantané (règle établie depuis la régression pile/file sur
+ * clics rapprochés) et n'expose pas Heapsort (comme CountingRadixWidget qui
+ * n'expose pas le mode radix).
+ *
  * Opérations :
  * - setMode(mode) : Basculer min-heap / max-heap
  * - doInsert() : Insérer une valeur
  * - doExtract() : Extraire la racine
- * - doHeapsort() : Trier via heapsort (ordre croissant)
+ * - doHeapsort() : Trier via heapsort (mode-aware — voir heap-traces.js)
  * - resetHeap() : Réinitialiser avec les données de démonstration
  */
 class HeapVisualizer extends SimulationPage {
@@ -13,7 +23,6 @@ class HeapVisualizer extends SimulationPage {
         super(dataPath);
         this.heap = [];
         this.mode = 'min';
-        this.animating = false;
         this.activeIndices = new Set();
         this.swappingIndices = new Set();
         this.sortedIndices = new Set();
@@ -21,6 +30,7 @@ class HeapVisualizer extends SimulationPage {
         this.hoverIndex = -1;
         this.hoverSyncBound = false;
         this.swapMotion = null;
+        this._pendingCommit = null;
     }
 
     parent(i) {
@@ -39,10 +49,69 @@ class HeapVisualizer extends SimulationPage {
         return this.mode === 'min' ? a < b : a > b;
     }
 
+    // ── contrat trace ────────────────────────────────────────────────────────
+
+    traceGeneratorScripts() {
+        return ['algorithms/heap-traces.js'];
+    }
+
+    /** Ne reconstruit jamais toute seule : chaque opération pose sa propre trace (voir doInsert/doExtract/doHeapsort). */
+    buildTrace() {
+        return this._trace || [];
+    }
+
+    stepDelay(step) {
+        if (!step) return this.getCurrentDelay();
+        switch (step.delay) {
+            case 'grow': return this.getCurrentDelay(1.25);
+            case 'settle': return this.getCurrentDelay(0.75);
+            case 'quick': return this.getCurrentDelay(0.625);
+            case 'swap': return this.getSwapAnimationDuration();
+            case 'post-swap': return this.getPostSwapPause();
+            default: return this.getCurrentDelay();
+        }
+    }
+
+    renderStep(step) {
+        this.heap = step.heap;
+        this.activeIndices = new Set(step.marks.active);
+        this.swappingIndices = new Set(step.marks.swapping);
+        this.sortedIndices = new Set(step.marks.sorted);
+        if (step.delay === 'swap' && step.marks.swapping.length === 2) {
+            this.setSwapMotion(step.marks.swapping[0], step.marks.swapping[1], this.getSwapAnimationDuration());
+        } else {
+            this.clearSwapMotion();
+        }
+        this.render();
+    }
+
+    onPlayerState(state) {
+        if (state.atEnd && !state.playing && this._pendingCommit) {
+            const commit = this._pendingCommit;
+            this._pendingCommit = null;
+            commit();
+        }
+    }
+
+    /** Lance la trace de l'opération courante puis appelle `onDone` (tas figé) à la fin. */
+    runOperation(trace, onDone) {
+        if (this._pendingCommit) return; // opération déjà en cours : ignorer le clic
+        this._trace = trace;
+        this._pendingCommit = () => onDone(trace.at(-1));
+        if (this.player) {
+            this.player.reset();
+            this.player.play();
+        } else {
+            onDone(trace.at(-1));
+        }
+    }
+
+    get animating() {
+        return !!this._pendingCommit;
+    }
+
     async init() {
         await super.init();
-        this.renderPseudocodeFromData();
-        this.bindPseudocodeLineInspector();
         this.reset();
         this.bindHoverSync();
     }
@@ -110,35 +179,6 @@ class HeapVisualizer extends SimulationPage {
         });
 
         this.hoverSyncBound = true;
-    }
-
-    renderPseudocodeFromData() {
-        const blocks = this.data?.pseudocode || this.data?.pseudoCode;
-        if (!Array.isArray(blocks)) return;
-
-        const idPrefix = {
-            insert: 'pins',
-            extract: 'pext'
-        };
-
-        blocks.forEach((block) => {
-            const target = document.getElementById('pseudo-' + block.name);
-            if (!target) return;
-
-            const prefix = idPrefix[block.name] || (block.name + '-line');
-            const lines = (block.lines || []).map((line, idx) => {
-                const id = (prefix.endsWith('-line') ? (prefix + idx) : (prefix + (idx + 1)));
-                const content = (typeof PseudocodeSupport !== 'undefined')
-                    ? PseudocodeSupport.renderLineContent(line, {
-                        autoKeywordHighlight: true,
-                        domain: this.data?.metadata?.category
-                    })
-                    : this.escapeHtml(line);
-                return '<span class="line" id="' + id + '">' + content + '</span>';
-            });
-
-            target.innerHTML = lines.join('');
-        });
     }
 
     setFeedback(message, cls) {
@@ -301,6 +341,27 @@ class HeapVisualizer extends SimulationPage {
         if (extractEl) extractEl.classList.toggle('hidden', tab !== 'extract');
     }
 
+    /** Rend les deux blocs de pseudocode dans leurs conteneurs respectifs. */
+    setupPseudocode() {
+        if (typeof PseudocodeSupport === 'undefined') return;
+        PseudocodeSupport.renderFromData(this.data, { containerId: 'pseudo-insert', blockFilter: 'insert' });
+        PseudocodeSupport.renderFromData(this.data, { containerId: 'pseudo-extract', blockFilter: 'extract' });
+        this.refreshCompareLine();
+    }
+
+    getInspectorContainerIds() {
+        return ['pseudo-insert', 'pseudo-extract'];
+    }
+
+    /** La ligne pins4 (« tant que ... ») change de symbole de comparaison selon le mode. */
+    refreshCompareLine() {
+        const compareLine = document.getElementById('pins4');
+        if (!compareLine) return;
+        compareLine.innerHTML = this.mode === 'min'
+            ? '  <span class="keyword">tant que</span> i &gt; 0 <span class="keyword">et</span> tas[i] &lt; tas[parent(i)]:'
+            : '  <span class="keyword">tant que</span> i &gt; 0 <span class="keyword">et</span> tas[i] &gt; tas[parent(i)]:';
+    }
+
     setMode(newMode) {
         if (this.animating) return;
 
@@ -309,20 +370,12 @@ class HeapVisualizer extends SimulationPage {
         const maxBtn = document.getElementById('btnMax');
         if (minBtn) minBtn.classList.toggle('active', newMode === 'min');
         if (maxBtn) maxBtn.classList.toggle('active', newMode === 'max');
-
-        const compareLine = document.getElementById('pins4');
-        if (compareLine) {
-            if (this.mode === 'min') {
-                compareLine.innerHTML = '  <span class="keyword">tant que</span> i &gt; 0 <span class="keyword">et</span> tas[i] &lt; tas[parent(i)]:';
-            } else {
-                compareLine.innerHTML = '  <span class="keyword">tant que</span> i &gt; 0 <span class="keyword">et</span> tas[i] &gt; tas[parent(i)]:';
-            }
-        }
+        this.refreshCompareLine();
 
         this.resetHeap();
     }
 
-    async doInsert() {
+    doInsert() {
         if (this.animating) return;
 
         const inputEl = document.getElementById('inputVal');
@@ -338,68 +391,23 @@ class HeapVisualizer extends SimulationPage {
             return;
         }
 
-        this.animating = true;
         this.sortedIndices.clear();
-
         this.showPseudo('insert', document.querySelectorAll('.tab-btn')[0]);
 
-        this.highlightLine('pins1');
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        this.heap.push(value);
-        this.highlightLine('pins2');
-        this.activeIndices.clear();
-        this.swappingIndices.clear();
-        this.activeIndices.add(this.heap.length - 1);
-        this.render();
-        await OEIUtils.sleep(this.getCurrentDelay(1.25));
-
-        let i = this.heap.length - 1;
-        this.highlightLine('pins3');
-        await OEIUtils.sleep(this.getCurrentDelay(0.75));
-
-        while (i > 0 && this.compare(this.heap[i], this.heap[this.parent(i)])) {
-            this.highlightLine('pins4');
+        const trace = OEITrace.buildHeapInsertTrace(this.heap, value, this.mode);
+        this.runOperation(trace, (last) => {
+            this.heap = last.heap;
             this.activeIndices.clear();
-            this.activeIndices.add(i);
-            this.activeIndices.add(this.parent(i));
-            this.render();
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            this.highlightLine('pins5');
             this.swappingIndices.clear();
-            this.swappingIndices.add(i);
-            this.swappingIndices.add(this.parent(i));
-            const insertSwapDuration = this.getSwapAnimationDuration();
-            this.setSwapMotion(i, this.parent(i), insertSwapDuration);
-            this.render();
-            await OEIUtils.sleep(insertSwapDuration);
-
-            [this.heap[i], this.heap[this.parent(i)]] = [this.heap[this.parent(i)], this.heap[i]];
             this.clearSwapMotion();
             this.render();
-            await OEIUtils.sleep(this.getPostSwapPause());
-
-            this.highlightLine('pins6');
-            i = this.parent(i);
-            this.swappingIndices.clear();
-            this.activeIndices.clear();
-            this.activeIndices.add(i);
-            this.render();
-            await OEIUtils.sleep(this.getCurrentDelay(0.75));
-        }
-
-        this.activeIndices.clear();
-        this.swappingIndices.clear();
-        this.clearSwapMotion();
-        this.render();
-        this.setFeedback('Valeur ' + value + ' inseree.', 'success');
-        this.clearHighlight();
-        this.animating = false;
-        if (inputEl) inputEl.value = '';
+            this.setFeedback('Valeur ' + value + ' inseree.', 'success');
+            this.clearHighlight();
+            if (inputEl) inputEl.value = '';
+        });
     }
 
-    async doExtract() {
+    doExtract() {
         if (this.animating) return;
 
         if (this.heap.length === 0) {
@@ -407,100 +415,22 @@ class HeapVisualizer extends SimulationPage {
             return;
         }
 
-        this.animating = true;
         this.sortedIndices.clear();
-
         this.showPseudo('extract', document.querySelectorAll('.tab-btn')[1]);
 
-        this.highlightLine('pext1');
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        const root = this.heap[0];
-        this.highlightLine('pext2');
-        this.activeIndices.clear();
-        this.swappingIndices.clear();
-        this.activeIndices.add(0);
-        this.render();
-        await OEIUtils.sleep(this.getCurrentDelay(1.25));
-
-        if (this.heap.length === 1) {
-            this.heap.pop();
+        const trace = OEITrace.buildHeapExtractTrace(this.heap, this.mode);
+        this.runOperation(trace, (last) => {
+            this.heap = last.heap;
             this.activeIndices.clear();
+            this.swappingIndices.clear();
             this.clearSwapMotion();
             this.render();
-            this.setFeedback('Racine extraite : ' + root, 'success');
+            this.setFeedback('Racine extraite : ' + last.removedValue, 'success');
             this.clearHighlight();
-            this.animating = false;
-            return;
-        }
-
-        this.highlightLine('pext3');
-        this.heap[0] = this.heap[this.heap.length - 1];
-        this.render();
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        this.highlightLine('pext4');
-        this.heap.pop();
-        this.render();
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        let i = 0;
-        this.highlightLine('pext5');
-        this.activeIndices.clear();
-        this.activeIndices.add(0);
-        this.render();
-        await OEIUtils.sleep(this.getCurrentDelay(0.75));
-
-        while (true) {
-            this.highlightLine('pext6');
-            let best = i;
-            const l = this.left(i);
-            const r = this.right(i);
-
-            if (l < this.heap.length && this.compare(this.heap[l], this.heap[best])) best = l;
-            if (r < this.heap.length && this.compare(this.heap[r], this.heap[best])) best = r;
-            if (best === i) break;
-
-            this.highlightLine('pext7');
-            this.activeIndices.clear();
-            this.activeIndices.add(i);
-            this.activeIndices.add(best);
-            this.render();
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            this.highlightLine('pext8');
-            this.swappingIndices.clear();
-            this.swappingIndices.add(i);
-            this.swappingIndices.add(best);
-            const extractSwapDuration = this.getSwapAnimationDuration();
-            this.setSwapMotion(i, best, extractSwapDuration);
-            this.render();
-            await OEIUtils.sleep(extractSwapDuration);
-
-            [this.heap[i], this.heap[best]] = [this.heap[best], this.heap[i]];
-            this.clearSwapMotion();
-            this.render();
-            await OEIUtils.sleep(this.getPostSwapPause());
-
-            this.highlightLine('pext9');
-            i = best;
-            this.swappingIndices.clear();
-            this.activeIndices.clear();
-            this.activeIndices.add(i);
-            this.render();
-            await OEIUtils.sleep(this.getCurrentDelay(0.75));
-        }
-
-        this.activeIndices.clear();
-        this.swappingIndices.clear();
-        this.clearSwapMotion();
-        this.render();
-        this.setFeedback('Racine extraite : ' + root, 'success');
-        this.clearHighlight();
-        this.animating = false;
+        });
     }
 
-    async doHeapsort() {
+    doHeapsort() {
         if (this.animating) return;
 
         if (this.heap.length < 2) {
@@ -508,97 +438,19 @@ class HeapVisualizer extends SimulationPage {
             return;
         }
 
-        this.animating = true;
         this.sortedIndices.clear();
         this.setFeedback('Heapsort en cours...', 'info');
 
-        const arr = [...this.heap];
-        const n = arr.length;
-
-        const siftDown = (index, size) => {
-            let largest = index;
-            const l = 2 * index + 1;
-            const r = 2 * index + 2;
-
-            if (l < size && arr[l] > arr[largest]) largest = l;
-            if (r < size && arr[r] > arr[largest]) largest = r;
-
-            if (largest !== index) {
-                [arr[index], arr[largest]] = [arr[largest], arr[index]];
-                siftDown(largest, size);
-            }
-        };
-
-        for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
-            siftDown(i, n);
-        }
-
-        this.heap = [...arr];
-        this.render();
-        await OEIUtils.sleep(this.getCurrentDelay(1.25));
-
-        for (let end = n - 1; end > 0; end--) {
-            this.swappingIndices.clear();
-            this.swappingIndices.add(0);
-            this.swappingIndices.add(end);
-            const heapSortRootSwapDuration = this.getSwapAnimationDuration();
-            this.setSwapMotion(0, end, heapSortRootSwapDuration);
-            this.render();
-            await OEIUtils.sleep(heapSortRootSwapDuration);
-
-            [arr[0], arr[end]] = [arr[end], arr[0]];
-            this.heap = [...arr];
-            this.sortedIndices.add(end);
-            this.clearSwapMotion();
-            this.swappingIndices.clear();
-            this.render();
-            await OEIUtils.sleep(this.getPostSwapPause());
-
-            let i = 0;
-            const size = end;
-            while (true) {
-                let largest = i;
-                const l = 2 * i + 1;
-                const r = 2 * i + 2;
-
-                if (l < size && arr[l] > arr[largest]) largest = l;
-                if (r < size && arr[r] > arr[largest]) largest = r;
-                if (largest === i) break;
-
-                this.activeIndices.clear();
-                this.activeIndices.add(i);
-                this.activeIndices.add(largest);
-                this.render();
-                await OEIUtils.sleep(this.getCurrentDelay(0.625));
-
-                const heapSortInnerSwapDuration = this.getSwapAnimationDuration();
-                this.swappingIndices.clear();
-                this.swappingIndices.add(i);
-                this.swappingIndices.add(largest);
-                this.setSwapMotion(i, largest, heapSortInnerSwapDuration);
-                this.render();
-                await OEIUtils.sleep(heapSortInnerSwapDuration);
-
-                [arr[i], arr[largest]] = [arr[largest], arr[i]];
-                this.heap = [...arr];
-                this.clearSwapMotion();
-                this.swappingIndices.clear();
-                this.render();
-                await OEIUtils.sleep(this.getPostSwapPause());
-
-                i = largest;
-            }
+        const trace = OEITrace.buildHeapsortTrace(this.heap, this.mode);
+        this.runOperation(trace, (last) => {
+            this.heap = last.heap;
             this.activeIndices.clear();
-        }
-
-        this.sortedIndices.add(0);
-        this.heap = [...arr];
-        this.clearSwapMotion();
-        this.render();
-
-        this.setFeedback('Heapsort termine ! Resultat : [' + arr.join(', ') + ']', 'success');
-        this.clearHighlight();
-        this.animating = false;
+            this.swappingIndices.clear();
+            this.clearSwapMotion();
+            this.render();
+            this.setFeedback('Heapsort termine ! Resultat : [' + last.heap.join(', ') + ']', 'success');
+            this.clearHighlight();
+        });
     }
 
     resetHeap() {
@@ -612,16 +464,12 @@ class HeapVisualizer extends SimulationPage {
         this.clearSwapMotion();
         this.clearHighlight();
         this.setFeedback('', '');
+        this._trace = null;
         this.render();
 
         const defaults = this.data?.visualization?.config?.defaultValues || [15, 8, 23, 4, 42, 16, 27, 11];
         for (const value of defaults) {
-            this.heap.push(value);
-            let i = this.heap.length - 1;
-            while (i > 0 && this.compare(this.heap[i], this.heap[this.parent(i)])) {
-                [this.heap[i], this.heap[this.parent(i)]] = [this.heap[this.parent(i)], this.heap[i]];
-                i = this.parent(i);
-            }
+            this.heap = OEITrace.buildHeapInsertTrace(this.heap, value, this.mode).at(-1).heap;
         }
 
         this.render();
@@ -635,52 +483,29 @@ class HeapVisualizer extends SimulationPage {
         const maxBtn = document.getElementById('btnMax');
         if (minBtn) minBtn.classList.add('active');
         if (maxBtn) maxBtn.classList.remove('active');
-
-        const compareLine = document.getElementById('pins4');
-        if (compareLine) {
-            compareLine.innerHTML = '  <span class="keyword">tant que</span> i &gt; 0 <span class="keyword">et</span> tas[i] &lt; tas[parent(i)]:';
-        }
+        this.refreshCompareLine();
 
         this.showPseudo('insert', document.querySelectorAll('.tab-btn')[0]);
         this.resetHeap();
     }
 }
 
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = HeapVisualizer;
+}
 if (typeof window !== 'undefined') {
     window.HeapVisualizer = HeapVisualizer;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HeapWidget — Widget autonome pour intégration dans les slides
-// Usage : HeapWidget.mount(container, { mode: 'min'|'max', data: [...] })
+// HeapWidget — adaptateur SLIDE. Consomme LA MÊME mécanique de sift-up/
+// sift-down (heap-traces.js) mais en lecture instantanée (`.at(-1)` seulement
+// — pas d'animation, comme pile/file/liste chaînée/table de hachage). Pas de
+// bouton Heapsort (comme CountingRadixWidget sans mode radix). DOM .hpw-*
+// inchangé. Usage : HeapWidget.mount(container, { mode: 'min'|'max', data: [...] })
 // ─────────────────────────────────────────────────────────────────────────────
 class HeapWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (HeapWidget._stylesInjected) return;
-        HeapWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-.hpw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,#e2e8f0);}
-.hpw-header{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;font-weight:600;color:var(--sl-muted,#94a3b8);}
-.hpw-array{display:flex;gap:3px;flex-wrap:wrap;}
-.hpw-cell{min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:.75rem;font-weight:600;background:var(--sl-primary,#6366f1);color:#fff;transition:background .2s;border:1px solid rgba(0,0,0,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.18);}
-.hpw-cell.root{background:var(--sl-accent,#f97316);}
-.hpw-tree{height:120px;}
-.hpw-tree svg{width:100%;height:100%;display:block;}
-.hpw-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
-.hpw-input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:4px 8px;font-size:.75rem;color:var(--sl-text,#e2e8f0);width:58px;}
-.hpw-btn{padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;background:var(--sl-primary,#6366f1);color:#fff;transition:opacity .15s;}
-.hpw-btn:hover:not(:disabled){opacity:.8;}
-.hpw-btn-secondary{background:rgba(255,255,255,.08);color:var(--sl-text,#e2e8f0);}
-.hpw-info-bar{font-size:.72rem;color:var(--sl-text,#cbd5e1);min-height:16px;line-height:1.4;}
-`;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        HeapWidget.ensureStyles();
         const w = new HeapWidget(container, config);
         w.init();
         return w;
@@ -696,40 +521,15 @@ class HeapWidget {
         defaults.forEach(v => this._insertSilent(v));
     }
 
-    _cmp(a, b) { return this.mode === 'min' ? a < b : a > b; }
-    _parent(i) { return Math.floor((i - 1) / 2); }
-    _left(i) { return 2 * i + 1; }
-    _right(i) { return 2 * i + 2; }
-
     _insertSilent(val) {
-        this._heap.push(val);
-        let i = this._heap.length - 1;
-        while (i > 0) {
-            const p = this._parent(i);
-            if (!this._cmp(this._heap[i], this._heap[p])) break;
-            [this._heap[i], this._heap[p]] = [this._heap[p], this._heap[i]];
-            i = p;
-        }
+        this._heap = window.OEITrace.buildHeapInsertTrace(this._heap, val, this.mode).at(-1).heap;
     }
 
     _extract() {
         if (this._heap.length === 0) { this._action = 'Tas vide.'; this._render(); return; }
-        const root = this._heap[0];
-        const last = this._heap.pop();
-        if (this._heap.length > 0) {
-            this._heap[0] = last;
-            let i = 0;
-            while (true) {
-                let t = i;
-                const l = this._left(i), r = this._right(i);
-                if (l < this._heap.length && this._cmp(this._heap[l], this._heap[t])) t = l;
-                if (r < this._heap.length && this._cmp(this._heap[r], this._heap[t])) t = r;
-                if (t === i) break;
-                [this._heap[i], this._heap[t]] = [this._heap[t], this._heap[i]];
-                i = t;
-            }
-        }
-        this._action = `Extrait : ${root} (${this.mode === 'min' ? 'minimum' : 'maximum'}) — heapify-down`;
+        const last = window.OEITrace.buildHeapExtractTrace(this._heap, this.mode).at(-1);
+        this._heap = last.heap;
+        this._action = `Extrait : ${last.removedValue} (${this.mode === 'min' ? 'minimum' : 'maximum'}) — heapify-down`;
         this._render();
     }
 
@@ -789,7 +589,7 @@ class HeapWidget {
                     const y = 14 + level * Math.max(20, Math.floor((H - 28) / Math.max(levels - 1, 1)));
                     positions.push({ x, y });
                     if (i > 0) {
-                        const p = this._parent(i);
+                        const p = Math.floor((i - 1) / 2);
                         svgContent += `<line x1="${positions[p].x}" y1="${positions[p].y}" x2="${x}" y2="${y}" stroke="rgba(148,163,184,.35)" stroke-width="1.5"/>`;
                     }
                 });

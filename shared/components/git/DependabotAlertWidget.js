@@ -1,59 +1,4 @@
 class DependabotAlertWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (DependabotAlertWidget._stylesInjected) return;
-        DependabotAlertWidget._stylesInjected = true;
-        const s = document.createElement('style');
-        s.textContent = `
-        .dep-widget { font-family: var(--font-sans, sans-serif); display: flex; flex-direction: column; gap: 1rem; }
-        .dep-selector { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-        .dep-sel-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.75rem; border: 1.5px solid var(--border, #e2e8f0); border-radius: 6px; background: var(--bg, #fff); cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: all 0.15s; color: var(--text, #1e293b); }
-        .dep-sel-btn:hover { border-color: var(--sel-color, #6366f1); color: var(--sel-color, #6366f1); }
-        .dep-sel-btn.active { border-color: var(--sel-color, #6366f1); background: color-mix(in srgb, var(--sel-color, #6366f1) 10%, white); color: var(--sel-color, #6366f1); font-weight: 700; }
-        .dep-sel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .dep-card { border: 1px solid var(--border, #e2e8f0); border-radius: 10px; overflow: hidden; }
-        .dep-card-header { padding: 0.9rem 1rem; background: var(--bg-alt, #f8fafc); border-bottom: 1px solid var(--border, #e2e8f0); display: flex; flex-direction: column; gap: 0.3rem; }
-        .dep-severity-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; width: fit-content; }
-        .dep-card-title { font-weight: 700; font-size: 0.95rem; color: var(--heading, #1e293b); }
-        .dep-card-sub { font-size: 0.78rem; color: var(--muted, #64748b); }
-        .dep-card-body { padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
-        .dep-meta { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .dep-meta-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; }
-        .dep-meta-label { color: var(--muted, #64748b); }
-        .dep-cvss { color: white; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
-        .dep-desc { font-size: 0.82rem; color: var(--muted, #475569); line-height: 1.55; margin: 0; }
-        .dep-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .dep-action-btn { padding: 0.4rem 0.85rem; border-radius: 6px; border: 1.5px solid var(--border, #e2e8f0); background: var(--bg, #fff); cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: all 0.15s; color: var(--text, #1e293b); }
-        .dep-action-btn:hover { background: var(--bg-alt, #f1f5f9); }
-        .dep-action-btn.active { border-color: var(--primary, #6366f1); background: #eef2ff; color: var(--primary, #6366f1); font-weight: 700; }
-        .dep-panel { padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border, #e2e8f0); font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.5rem; }
-        .dep-panel-title { font-weight: 700; font-size: 0.85rem; }
-        .dep-panel-merge { background: #f0fdf4; border-color: #86efac; }
-        .dep-panel-dismiss { background: #fef2f2; border-color: #fca5a5; }
-        .dep-panel-cve { background: var(--bg-alt, #f8fafc); }
-        .dep-pr-card { background: white; border: 1px solid #86efac; border-radius: 6px; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
-        .dep-pr-header { display: flex; gap: 0.6rem; align-items: flex-start; }
-        .dep-pr-icon { font-size: 1rem; flex-shrink: 0; }
-        .dep-pr-title { font-weight: 600; font-size: 0.82rem; color: #166534; }
-        .dep-pr-sub { font-size: 0.73rem; color: #4b5563; }
-        .dep-pr-checks { display: flex; flex-direction: column; gap: 0.15rem; padding-left: 1.6rem; }
-        .dep-pr-check { font-size: 0.75rem; color: #374151; }
-        .dep-panel-tip { background: #dcfce7; border-radius: 4px; padding: 0.4rem 0.6rem; font-size: 0.77rem; color: #166534; }
-        .dep-dismiss-options { display: flex; flex-direction: column; gap: 0.4rem; }
-        .dep-dismiss-opt { display: flex; gap: 0.6rem; padding: 0.5rem 0.6rem; border-radius: 6px; background: white; border: 1px solid var(--border, #e2e8f0); align-items: flex-start; }
-        .dep-dismiss-opt-warn { border-color: #fde68a; background: #fefce8; }
-        .dep-dismiss-opt-danger { border-color: #fca5a5; background: #fef2f2; }
-        .dep-dismiss-opt span { font-size: 1rem; flex-shrink: 0; }
-        .dep-dismiss-opt div { font-size: 0.78rem; line-height: 1.45; color: #374151; }
-        .dep-cve-table { width: 100%; border-collapse: collapse; }
-        .dep-cve-table td { padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--border, #e2e8f0); vertical-align: top; }
-        .dep-cve-table td:first-child { color: var(--muted, #64748b); width: 38%; font-size: 0.77rem; }
-        .dep-cve-table td:last-child { font-size: 0.8rem; }
-        `;
-        document.head.appendChild(s);
-    }
-
     static ALERTS = [
         {
             severity: 'critical', severityLabel: 'Critique', severityColor: '#dc2626',
@@ -94,8 +39,6 @@ class DependabotAlertWidget {
     ];
 
     static mount(container, config = {}) {
-        DependabotAlertWidget.ensureStyles();
-
         let currentAlert = 0;
         let currentAction = null;
 

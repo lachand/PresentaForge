@@ -357,6 +357,24 @@ function getWidgetMountScript(usedWidgets, basePath) {
 <\/script>`;
 }
 
+/* ── Widget CSS helper ─────────────────────────────────────────────
+   Les widgets OEI n'injectent plus leur <style> au montage (lot 3H) :
+   leurs regles vivent dans shared/components/widgets.css. Pour les exports
+   HTML autonomes, on inline cette feuille a cote des scripts widgets. */
+let _widgetCssCache = null;
+async function _fetchWidgetCss() {
+    if (_widgetCssCache != null) return _widgetCssCache;
+    try {
+        const r = await fetch('../shared/components/widgets.css');
+        _widgetCssCache = r.ok ? await r.text() : '';
+        if (!r.ok) console.warn('[OEI] widgets.css non disponible (HTTP ' + r.status + ')');
+    } catch (e) {
+        console.warn('[OEI] Could not inline widgets.css:', e);
+        _widgetCssCache = '';
+    }
+    return _widgetCssCache;
+}
+
 /* ── Theme CSS helper (inline, no dependency on slides-core cache) ── */
 function _buildThemeRootCSS(themeData) {
     const _d = SlidesThemes.BUILT_IN.dark;
@@ -521,7 +539,7 @@ async function exportPDF() {
 }
 
 /** Fallback: open print dialog */
-function _exportPDFPrint() {
+async function _exportPDFPrint() {
     const data = editor.data;
     if (!data) return;
     const dims = ASPECT_DIMS[data.metadata?.aspect] || [1280, 720];
@@ -545,6 +563,7 @@ function _exportPDFPrint() {
 
     const usedWidgets = collectUsedWidgets(data.slides);
     const widgetScript = getWidgetMountScript(usedWidgets, '../shared/components/');
+    const widgetCss = usedWidgets.size > 0 ? await _fetchWidgetCss() : '';
     const printScript = usedWidgets.size > 0
         ? `<script>window._mountOEIWidgets().then(function(){ setTimeout(function(){ window.print(); }, 1000); });<\/script>`
         : `<script>setTimeout(function(){ window.print(); }, 500);<\/script>`;
@@ -557,6 +576,7 @@ ${_buildThemeFontLinks(themeData)}
 ${_buildThemeRootCSS(themeData)}
 body { margin: 0; padding: 0; background: var(--sl-bg); }
 ${themeCSS}
+${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n' + widgetCss : ''}
 @page { size: landscape; margin: 0; }
 .pdf-slide {
     width: ${dims[0]}px; height: ${dims[1]}px; page-break-after: always;
@@ -785,6 +805,7 @@ async function exportHTML() {
     ).join('\n');
 
     const usedWidgets = collectUsedWidgets(data.slides);
+    const widgetCss = usedWidgets.size > 0 ? await _fetchWidgetCss() : '';
 
     // Inline widget scripts for standalone export
     let inlineWidgetScripts = '';
@@ -795,6 +816,12 @@ async function exportHTML() {
         for (const wid of usedWidgets) {
             const entry = CanvasEditor.WIDGET_REGISTRY[wid];
             if (entry) {
+                // Dépendances déclarées (générateurs de trace…) inlinées AVANT le widget.
+                if (Array.isArray(entry.deps)) {
+                    for (const dep of entry.deps) {
+                        if (typeof dep === 'string' && dep) scriptSet.add(dep);
+                    }
+                }
                 scriptSet.add(entry.script);
                 registry[wid] = { global: entry.global };
             }
@@ -879,6 +906,7 @@ body { background: var(--sl-bg); }
 ${themeCSS}
 ${thumbCSS}
 ${pvScopedCSS}
+${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n' + widgetCss : ''}
 
 /* ── Presenter toggle button ─────────────────────────── */
 #pv-toggle-bar{position:fixed;bottom:12px;right:12px;z-index:9999;display:flex;gap:6px;opacity:0.35;transition:opacity .3s}
@@ -1427,6 +1455,10 @@ async function _buildOfflineExportDocument(data) {
         notes: s.notes || '', bg: s.bg || ''
     })));
     const inlineCSS = resources.css.join('\n') + '\n' + fontCSS;
+    // NB : l'export offline n'inline pas (encore) les scripts widgets — les slots
+    // .sl-sim-container restent vides. On inline neanmoins widgets.css quand le deck
+    // contient des widgets, pour rester coherent avec exportHTML().
+    const widgetCss = collectUsedWidgets(data.slides).size > 0 ? await _fetchWidgetCss() : '';
 
     const html = `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1440,6 +1472,7 @@ body { background: var(--sl-bg); }
 ${themeCSS}
 ${thumbCSS}
 ${pvScopedCSS}
+${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n' + widgetCss : ''}
 </style>
 </head><body>
 <div class="reveal" id="reveal-root"><div class="slides" id="slides-root">${slidesHTML}</div></div>

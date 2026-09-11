@@ -404,10 +404,16 @@ class WidgetPickerModal {
             if (!window.ConceptPage) window.ConceptPage = class { constructor() {} async init() {} };
             if (!window.SimulationPage) window.SimulationPage = window.ConceptPage;
             if (!window.ExerciseRunnerPage) window.ExerciseRunnerPage = window.ConceptPage;
+            if (!WidgetPickerModal._sv) WidgetPickerModal._sv = Date.now();
+            // Dépendances déclarées (générateurs de trace partagés…) avant le widget.
+            for (const dep of (Array.isArray(r.deps) ? r.deps : [])) {
+                if (typeof dep === 'string' && dep) {
+                    await this._loadScript(`../shared/components/${dep}?v=${WidgetPickerModal._sv}`);
+                }
+            }
             if (!window[r.global]) {
                 // Clé de version par session : force un rechargement fresh même si le navigateur a
                 // une version ancienne en cache (ex: avant l'ajout d'une classe standalone en Phase 2).
-                if (!WidgetPickerModal._sv) WidgetPickerModal._sv = Date.now();
                 const scriptSrc = `../shared/components/${r.script}`;
                 // Retire tout tag existant pour ce script (avec ou sans paramètre version)
                 document.querySelectorAll(`script[src^="${scriptSrc}"]`).forEach(t => t.remove());

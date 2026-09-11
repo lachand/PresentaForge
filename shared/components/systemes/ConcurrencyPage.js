@@ -336,53 +336,7 @@ if (typeof window !== 'undefined') {
 
 // ── Standalone widget ──────────────────────────────────────────
 class ConcurrencyWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (ConcurrencyWidget._stylesInjected) return;
-        ConcurrencyWidget._stylesInjected = true;
-        const css = `
-.cnw { font-family: inherit; display: flex; flex-direction: column; gap: 10px; }
-.cnw-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border, #ddd); }
-.cnw-tab { font-size: 0.82rem; padding: 6px 16px; border: none; background: transparent; cursor: pointer; color: var(--muted, #888); font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -2px; }
-.cnw-tab.active { color: var(--primary, #6366f1); border-bottom-color: var(--primary, #6366f1); }
-.cnw-panel { display: none; flex-direction: column; gap: 8px; }
-.cnw-panel.active { display: flex; }
-.cnw-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.cnw-opt { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; cursor: pointer; }
-.cnw-btns { display: flex; gap: 6px; margin-left: auto; }
-.cnw-btn { font-size: 0.82rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border, #ccc); background: var(--surface, #f5f5f5); color: var(--text, #222); cursor: pointer; }
-.cnw-btn.primary { background: var(--primary, #6366f1); color: #fff; border-color: var(--primary, #6366f1); }
-.cnw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.cnw-card { border: 1px solid var(--border, #ddd); border-radius: 8px; padding: 10px; background: var(--surface2, #f8f8f8); }
-.cnw-card-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: var(--muted, #666); }
-.cnw-kv { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 2px 0; border-bottom: 1px solid var(--border, #eee); }
-.cnw-kv:last-child { border-bottom: none; }
-.cnw-kv-key { color: var(--muted, #888); }
-.cnw-kv-val { font-weight: 700; }
-.cnw-counter-big { font-size: 2.2rem; font-weight: 800; text-align: center; color: var(--primary, #6366f1); padding: 6px 0; }
-.cnw-expected { font-size: 0.78rem; text-align: center; color: var(--muted, #888); }
-.cnw-log { font-size: 0.78rem; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-.cnw-log-item { padding: 2px 6px; border-radius: 4px; background: var(--surface2, #f0f0f0); }
-.cnw-status { font-size: 0.82rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-align: center; }
-.cnw-status.ok { background: rgba(34,197,94,0.12); color: #16a34a; }
-.cnw-status.bad { background: rgba(239,68,68,0.12); color: #dc2626; }
-.cnw-status.pending { background: rgba(99,102,241,0.1); color: var(--primary, #6366f1); }
-.cnw-section-lbl { font-size: 0.78rem; font-weight: 700; color: var(--muted, #888); }
-.cnw-res-grid { display: flex; gap: 10px; }
-.cnw-res-box { flex: 1; border: 2px solid var(--border, #ddd); border-radius: 8px; padding: 8px; text-align: center; font-size: 0.82rem; }
-.cnw-res-box .res-name { font-weight: 700; font-size: 0.9rem; }
-.cnw-res-box .res-owner { color: var(--muted, #888); font-size: 0.78rem; margin-top: 2px; }
-.cnw-res-box.owned { border-color: var(--primary, #6366f1); background: rgba(99,102,241,0.08); }
-.cnw-res-box.deadlocked { border-color: #ef4444; background: rgba(239,68,68,0.08); }
-`;
-        const s = document.createElement('style');
-        s.textContent = css;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        ConcurrencyWidget.ensureStyles();
         if (container.dataset.cnw) return;
         container.dataset.cnw = '1';
         new ConcurrencyWidget(container, config).init();

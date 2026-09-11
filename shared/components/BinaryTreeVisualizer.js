@@ -1,107 +1,22 @@
 /**
- * BinaryTreeVisualizer - Visualisation d'arbres binaires de recherche (BST)
+ * BinaryTreeVisualizer — arbre binaire de recherche (BST).
  *
- * Opérations :
- * - insertValue() : Insérer une valeur
- * - deleteValue() : Supprimer une valeur
- * - searchValue() : Rechercher une valeur
- * - startTraversal(type) : Parcours (inorder, preorder, postorder, bfs)
- * - resetTree() : Réinitialiser avec valeurs par défaut
+ * Les 4 opérations (insérer, supprimer, rechercher, parcourir) vivent dans
+ * shared/components/algorithms/bst-traces.js (buildBstInsertTrace/
+ * buildBstDeleteTrace/buildBstSearchTrace/buildBstTraversalTrace, purs — un
+ * arbre y est un simple objet `{value,left,right}`, jamais une classe). Cette
+ * classe est l'ADAPTATEUR PAGE ; BSTWidget l'ADAPTATEUR SLIDE (même trace).
+ *
+ * NB : sur la page de cours réelle (structures/arbre-binaire.html), l'arbre
+ * interactif visible par l'étudiant est le widget de cours `bst-simulator`
+ * (BSTWidget), monté depuis le contenu JSON — cette classe page n'y a pas de
+ * <svg id="treeSvg"> hôte et ne peint donc rien de visible (héritage du code
+ * d'origine). Elle reste maintenue pour toute page qui fournirait ces ids.
  */
-
-// Classes BST
-class BSTNode {
-    constructor(value) {
-        this.value = value;
-        this.left = null;
-        this.right = null;
-    }
-}
-
-class BST {
-    constructor() {
-        this.root = null;
-    }
-
-    insert(value) {
-        const node = new BSTNode(value);
-        if (!this.root) { this.root = node; return true; }
-        let current = this.root;
-        while (true) {
-            if (value === current.value) return false; // duplicate
-            if (value < current.value) {
-                if (!current.left) { current.left = node; return true; }
-                current = current.left;
-            } else {
-                if (!current.right) { current.right = node; return true; }
-                current = current.right;
-            }
-        }
-    }
-
-    search(value) {
-        let current = this.root;
-        while (current) {
-            if (value === current.value) return current;
-            current = value < current.value ? current.left : current.right;
-        }
-        return null;
-    }
-
-    delete(value) {
-        const deleteNode = (node, val) => {
-            if (!node) return null;
-            if (val < node.value) {
-                node.left = deleteNode(node.left, val);
-                return node;
-            }
-            if (val > node.value) {
-                node.right = deleteNode(node.right, val);
-                return node;
-            }
-            // val === node.value
-            if (!node.left && !node.right) return null;
-            if (!node.left) return node.right;
-            if (!node.right) return node.left;
-            // Two children: find min in right subtree
-            let minRight = node.right;
-            while (minRight.left) minRight = minRight.left;
-            node.value = minRight.value;
-            node.right = deleteNode(node.right, minRight.value);
-            return node;
-        };
-        this.root = deleteNode(this.root, value);
-    }
-
-    count() {
-        const countNodes = (node) => !node ? 0 : 1 + countNodes(node.left) + countNodes(node.right);
-        return countNodes(this.root);
-    }
-
-    height() {
-        const getHeight = (node) => !node ? 0 : 1 + Math.max(getHeight(node.left), getHeight(node.right));
-        return getHeight(this.root);
-    }
-
-    min() {
-        if (!this.root) return null;
-        let current = this.root;
-        while (current.left) current = current.left;
-        return current.value;
-    }
-
-    max() {
-        if (!this.root) return null;
-        let current = this.root;
-        while (current.right) current = current.right;
-        return current.value;
-    }
-}
-
 class BinaryTreeVisualizer extends SimulationPage {
     constructor(dataPath) {
         super(dataPath);
-        this.tree = new BST();
+        this.treeRoot = null;
         this.animating = false;
         this.NODE_RADIUS = 25;
         this.LEVEL_HEIGHT = 80;
@@ -111,62 +26,30 @@ class BinaryTreeVisualizer extends SimulationPage {
         this.lastDeleteGuide = null;
     }
 
+    // ── contrat trace ────────────────────────────────────────────────────────
 
-    findNodeWithParent(value) {
-        let parent = null;
-        let current = this.tree.root;
-        const path = [];
-
-        while (current) {
-            path.push(current.value);
-            if (value === current.value) {
-                return { parent, node: current, path };
-            }
-            parent = current;
-            current = value < current.value ? current.left : current.right;
-        }
-
-        return null;
+    traceGeneratorScripts() {
+        return ['algorithms/bst-traces.js'];
     }
 
-    describeDeleteCase(value) {
-        const found = this.findNodeWithParent(value);
-        if (!found || !found.node) return null;
-
-        const node = found.node;
-        const children = Number(!!node.left) + Number(!!node.right);
-        let kind = 'leaf';
-        let message = '';
-        let replacement = null;
-
-        if (children === 0) {
-            kind = 'leaf';
-            message = `Suppression feuille (${value}) : retrait direct.`;
-        } else if (children === 1) {
-            if (node.left) {
-                kind = 'single-left';
-                replacement = node.left.value;
-            } else {
-                kind = 'single-right';
-                replacement = node.right.value;
-            }
-            message = `Suppression a 1 enfant (${value}) : on remonte ${replacement}.`;
-        } else {
-            kind = 'two-children';
-            let succ = node.right;
-            while (succ.left) succ = succ.left;
-            replacement = succ.value;
-            message = `Suppression a 2 enfants (${value}) : remplacement par successeur ${replacement}.`;
+    /** Rejoue `trace` (0..N pas), avec un délai animé sur la page, puis fige le résultat. */
+    async runTrace(trace, { animate = true } = {}) {
+        const last = trace.at(-1);
+        if (!animate || trace.length <= 1) {
+            this.treeRoot = last.tree;
+            this.render(new Set(last.marks.visited), new Set(last.marks.found));
+            return last;
         }
-
-        return {
-            value,
-            kind,
-            replacement,
-            path: found.path,
-            message
-        };
+        for (const step of trace) {
+            this.render(new Set(step.marks.visited), new Set(step.marks.found));
+            await OEIUtils.sleep(this.getCurrentDelay(step.delay === 'quick' ? 0.9 : 1));
+        }
+        this.treeRoot = last.tree;
+        this.render(new Set(last.marks.visited), new Set(last.marks.found));
+        return last;
     }
+
+    // ── delete guide (panneau pédagogique conservé) ──────────────────────────
 
     renderDeleteGuide(guide, status) {
         this.lastDeleteGuide = guide || null;
@@ -194,13 +77,11 @@ class BinaryTreeVisualizer extends SimulationPage {
             '</div>';
     }
 
-    /**
-     * Réinitialise l'arbre
-     */
+    /** Réinitialise l'arbre */
     reset() {
-        this.tree = new BST();
+        this.treeRoot = null;
         const defaultValues = this.data.visualization?.config?.defaultValues || [50, 30, 70, 20, 40, 60, 80];
-        defaultValues.forEach(v => this.tree.insert(v));
+        defaultValues.forEach((v) => { this.treeRoot = OEITrace.buildBstInsertTrace(this.treeRoot, v).at(-1).tree; });
         this.state.phase = 'idle';
         this.state.stepCount = 0;
         this.lastDeleteGuide = null;
@@ -209,45 +90,28 @@ class BinaryTreeVisualizer extends SimulationPage {
         this.clearHighlight();
     }
 
-    /**
-     * Insère une valeur dans l'arbre
-     */
     async insertValue() {
         if (this.animating) return;
         const input = document.getElementById('inputValue');
         const val = input ? parseInt(input.value, 10) : NaN;
+        if (isNaN(val)) { this.showFeedback('Veuillez entrer un nombre valide.', 'error'); return; }
 
-        if (isNaN(val)) {
-            this.showFeedback('Veuillez entrer un nombre valide.', 'error');
-            return;
-        }
-
-        if (this.tree.search(val)) {
-            this.showFeedback(`La valeur ${val} existe déjà dans l'arbre.`, 'error');
-            return;
-        }
-
-        this.tree.insert(val);
-        this.render();
+        const trace = OEITrace.buildBstInsertTrace(this.treeRoot, val);
+        const last = await this.runTrace(trace, { animate: false });
         if (input) input.value = '';
+        if (!last.ok) { this.showFeedback(`La valeur ${val} existe déjà dans l'arbre.`, 'error'); return; }
         this.showFeedback(`Valeur ${val} insérée avec succès.`, 'success');
     }
 
-    /**
-     * Supprime une valeur de l'arbre
-     */
     async deleteValue() {
         if (this.animating) return;
         const input = document.getElementById('inputValue');
         const val = input ? parseInt(input.value, 10) : NaN;
+        if (isNaN(val)) { this.showFeedback('Veuillez entrer un nombre valide.', 'error'); return; }
 
-        if (isNaN(val)) {
-            this.showFeedback('Veuillez entrer un nombre valide.', 'error');
-            return;
-        }
-
-        const guide = this.describeDeleteCase(val);
-        if (!guide) {
+        const trace = OEITrace.buildBstDeleteTrace(this.treeRoot, val);
+        const last = trace.at(-1);
+        if (!last.ok) {
             this.showFeedback(`La valeur ${val} n'existe pas dans l'arbre.`, 'error');
             this.renderDeleteGuide(null, 'error');
             return;
@@ -255,137 +119,58 @@ class BinaryTreeVisualizer extends SimulationPage {
 
         this.animating = true;
         this.setButtonsDisabled(true);
-        this.renderDeleteGuide(guide, 'preview');
+        this.renderDeleteGuide(last.deleteCase, 'preview');
 
-        this.render(new Set(guide.path), new Set([val]));
-        await OEIUtils.sleep(this.getCurrentDelay());
-
-        if (guide.replacement !== null) {
-            this.render(new Set(guide.path), new Set([val, guide.replacement]));
-            await OEIUtils.sleep(this.getCurrentDelay(0.9));
-        }
-
-        this.tree.delete(val);
+        await this.runTrace(trace, { animate: true });
         this.state.stepCount += 1;
-        this.render();
         if (input) input.value = '';
         this.showFeedback(`Valeur ${val} supprimée avec succès.`, 'success');
-        this.renderDeleteGuide(guide, 'done');
+        this.renderDeleteGuide(last.deleteCase, 'done');
         this.animating = false;
         this.setButtonsDisabled(false);
     }
 
-    /**
-     * Recherche une valeur dans l'arbre
-     */
     async searchValue() {
         if (this.animating) return;
         const input = document.getElementById('inputValue');
         const val = input ? parseInt(input.value, 10) : NaN;
-
-        if (isNaN(val)) {
-            this.showFeedback('Veuillez entrer un nombre valide.', 'error');
-            return;
-        }
+        if (isNaN(val)) { this.showFeedback('Veuillez entrer un nombre valide.', 'error'); return; }
 
         this.animating = true;
         this.setButtonsDisabled(true);
-
-        const path = [];
-        let current = this.tree.root;
-        let found = false;
-
-        while (current) {
-            path.push(current.value);
-            this.render(new Set(path), new Set());
-            await OEIUtils.sleep(this.getCurrentDelay());
-
-            if (val === current.value) {
-                found = true;
-                break;
-            }
-            current = val < current.value ? current.left : current.right;
-        }
-
-        if (found) {
-            this.render(new Set(path), new Set([val]));
-            this.showFeedback(`Valeur ${val} trouvée dans l'arbre !`, 'success');
-        } else {
-            this.render(new Set(path), new Set());
-            this.showFeedback(`Valeur ${val} non trouvée dans l'arbre.`, 'error');
-        }
-
+        const trace = OEITrace.buildBstSearchTrace(this.treeRoot, val);
+        const last = await this.runTrace(trace, { animate: true });
+        this.showFeedback(
+            last.ok ? `Valeur ${val} trouvée dans l'arbre !` : `Valeur ${val} non trouvée dans l'arbre.`,
+            last.ok ? 'success' : 'error'
+        );
         this.animating = false;
         this.setButtonsDisabled(false);
     }
 
-    /**
-     * Lance un parcours de l'arbre
-     */
     async startTraversal(type) {
         if (this.animating) return;
-        if (!this.tree.root) {
-            this.showFeedback('L\'arbre est vide.', 'error');
-            return;
-        }
+        if (!this.treeRoot) { this.showFeedback('L\'arbre est vide.', 'error'); return; }
 
         this.animating = true;
         this.setButtonsDisabled(true);
-        const visited = [];
         const traversalResult = document.getElementById('traversalResult');
         if (traversalResult) traversalResult.innerHTML = '';
 
-        const addToResult = (value) => {
-            visited.push(value);
-            if (traversalResult) {
-                const badge = document.createElement('span');
-                badge.className = 'badge badge-primary';
-                badge.textContent = value;
-                badge.style.animation = 'fadeIn 0.3s ease';
-                traversalResult.appendChild(badge);
+        const trace = OEITrace.buildBstTraversalTrace(this.treeRoot, type);
+        for (const step of trace) {
+            this.render(new Set(step.marks.visited), new Set());
+            if (traversalResult && step.order.length) {
+                traversalResult.innerHTML = '';
+                step.order.forEach((value) => {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge badge-primary';
+                    badge.textContent = value;
+                    badge.style.animation = 'fadeIn 0.3s ease';
+                    traversalResult.appendChild(badge);
+                });
             }
-        };
-
-        if (type === 'inorder') {
-            const inorder = async (node) => {
-                if (!node) return;
-                await inorder(node.left);
-                addToResult(node.value);
-                this.render(new Set(visited), new Set());
-                await OEIUtils.sleep(this.getCurrentDelay());
-                await inorder(node.right);
-            };
-            await inorder(this.tree.root);
-        } else if (type === 'preorder') {
-            const preorder = async (node) => {
-                if (!node) return;
-                addToResult(node.value);
-                this.render(new Set(visited), new Set());
-                await OEIUtils.sleep(this.getCurrentDelay());
-                await preorder(node.left);
-                await preorder(node.right);
-            };
-            await preorder(this.tree.root);
-        } else if (type === 'postorder') {
-            const postorder = async (node) => {
-                if (!node) return;
-                await postorder(node.left);
-                await postorder(node.right);
-                addToResult(node.value);
-                this.render(new Set(visited), new Set());
-                await OEIUtils.sleep(this.getCurrentDelay());
-            };
-            await postorder(this.tree.root);
-        } else if (type === 'bfs') {
-            const queue = [this.tree.root];
-            while (queue.length > 0) {
-                const node = queue.shift();
-                addToResult(node.value);
-                this.render(new Set(visited), new Set());
-                await OEIUtils.sleep(this.getCurrentDelay());
-                if (node.left) queue.push(node.left);
-                if (node.right) queue.push(node.right);
-            }
+            await OEIUtils.sleep(this.getCurrentDelay());
         }
 
         this.showFeedback(`Parcours ${type} terminé.`, 'success');
@@ -393,25 +178,18 @@ class BinaryTreeVisualizer extends SimulationPage {
         this.setButtonsDisabled(false);
     }
 
-    /**
-     * Réinitialise l'arbre avec valeurs par défaut
-     */
     resetTree() {
         if (this.animating) return;
         this.reset();
         this.showFeedback('Arbre réinitialisé.', 'info');
     }
 
-    /**
-     * Calcule le layout de l'arbre
-     */
+    // ── layout + rendu SVG (conservé, alimenté par this.treeRoot) ────────────
+
     computeLayout(root) {
         if (!root) return { positions: new Map(), width: 0, height: 0 };
-
         const positions = new Map();
         let index = 0;
-
-        // First pass: assign in-order index
         const assignIndex = (node) => {
             if (!node) return;
             assignIndex(node.left);
@@ -422,12 +200,10 @@ class BinaryTreeVisualizer extends SimulationPage {
         assignIndex(root);
 
         const totalNodes = index;
-        const treeH = this.tree.height();
-
+        const treeH = OEITrace.bstStats(root).height;
         const svgWidth = Math.max(totalNodes * this.MIN_H_SPACING, 300);
         const svgHeight = treeH * this.LEVEL_HEIGHT + this.SVG_PADDING_TOP + this.SVG_PADDING_BOTTOM;
 
-        // Second pass: assign x/y coords
         const assignCoords = (node, depth) => {
             if (!node) return;
             assignCoords(node.left, depth + 1);
@@ -441,19 +217,15 @@ class BinaryTreeVisualizer extends SimulationPage {
         return { positions, width: svgWidth, height: svgHeight };
     }
 
-    /**
-     * Rendu SVG de l'arbre
-     */
     render(highlightSet, foundSet) {
         highlightSet = highlightSet || new Set();
         foundSet = foundSet || new Set();
 
         const svg = document.getElementById('treeSvg');
         if (!svg) return;
-
         svg.innerHTML = '';
 
-        if (!this.tree.root) {
+        if (!this.treeRoot) {
             svg.setAttribute('viewBox', '0 0 600 100');
             svg.style.minHeight = '100px';
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -469,109 +241,71 @@ class BinaryTreeVisualizer extends SimulationPage {
             return;
         }
 
-        const { positions, width, height } = this.computeLayout(this.tree.root);
-
+        const { positions, width, height } = this.computeLayout(this.treeRoot);
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
         svg.style.minHeight = Math.min(height, 500) + 'px';
 
-        // Draw edges first
         const drawEdges = (node) => {
             if (!node) return;
             const parentPos = positions.get(node.value);
-
-            if (node.left) {
-                const childPos = positions.get(node.left.value);
+            [['left', node.left], ['right', node.right]].forEach(([, child]) => {
+                if (!child) return;
+                const childPos = positions.get(child.value);
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', parentPos.x);
                 line.setAttribute('y1', parentPos.y);
                 line.setAttribute('x2', childPos.x);
                 line.setAttribute('y2', childPos.y);
                 line.classList.add('edge');
-                if (highlightSet.has(node.value) && highlightSet.has(node.left.value)) {
-                    line.classList.add('visited');
-                }
-                if (foundSet.has(node.value) && foundSet.has(node.left.value)) {
-                    line.classList.add('found');
-                }
+                if (highlightSet.has(node.value) && highlightSet.has(child.value)) line.classList.add('visited');
+                if (foundSet.has(node.value) && foundSet.has(child.value)) line.classList.add('found');
                 svg.appendChild(line);
-                drawEdges(node.left);
-            }
-
-            if (node.right) {
-                const childPos = positions.get(node.right.value);
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', parentPos.x);
-                line.setAttribute('y1', parentPos.y);
-                line.setAttribute('x2', childPos.x);
-                line.setAttribute('y2', childPos.y);
-                line.classList.add('edge');
-                if (highlightSet.has(node.value) && highlightSet.has(node.right.value)) {
-                    line.classList.add('visited');
-                }
-                if (foundSet.has(node.value) && foundSet.has(node.right.value)) {
-                    line.classList.add('found');
-                }
-                svg.appendChild(line);
-                drawEdges(node.right);
-            }
+                drawEdges(child);
+            });
         };
-        drawEdges(this.tree.root);
+        drawEdges(this.treeRoot);
 
-        // Draw nodes
         const drawNodes = (node) => {
             if (!node) return;
             const pos = positions.get(node.value);
-
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', pos.x);
             circle.setAttribute('cy', pos.y);
             circle.setAttribute('r', this.NODE_RADIUS);
             circle.classList.add('node-circle');
-            if (foundSet.has(node.value)) {
-                circle.classList.add('found');
-            } else if (highlightSet.has(node.value)) {
-                circle.classList.add('visited');
-            }
+            if (foundSet.has(node.value)) circle.classList.add('found');
+            else if (highlightSet.has(node.value)) circle.classList.add('visited');
             svg.appendChild(circle);
 
             const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             label.setAttribute('x', pos.x);
             label.setAttribute('y', pos.y);
             label.classList.add('node-label');
-            if (foundSet.has(node.value)) {
-                label.classList.add('found');
-            } else if (highlightSet.has(node.value)) {
-                label.classList.add('visited');
-            }
+            if (foundSet.has(node.value)) label.classList.add('found');
+            else if (highlightSet.has(node.value)) label.classList.add('visited');
             label.textContent = node.value;
             svg.appendChild(label);
 
             drawNodes(node.left);
             drawNodes(node.right);
         };
-        drawNodes(this.tree.root);
+        drawNodes(this.treeRoot);
 
         this.updateInfo();
     }
 
-    /**
-     * Met à jour les informations
-     */
     updateInfo() {
+        const stats = OEITrace.bstStats(this.treeRoot);
         const nodeCount = document.getElementById('nodeCount');
         const treeHeight = document.getElementById('treeHeight');
         const treeMin = document.getElementById('treeMin');
         const treeMax = document.getElementById('treeMax');
-
-        if (nodeCount) nodeCount.textContent = this.tree.count();
-        if (treeHeight) treeHeight.textContent = this.tree.height();
-        if (treeMin) treeMin.textContent = this.tree.min() !== null ? this.tree.min() : '—';
-        if (treeMax) treeMax.textContent = this.tree.max() !== null ? this.tree.max() : '—';
+        if (nodeCount) nodeCount.textContent = stats.count;
+        if (treeHeight) treeHeight.textContent = stats.height;
+        if (treeMin) treeMin.textContent = stats.min !== null ? stats.min : '—';
+        if (treeMax) treeMax.textContent = stats.max !== null ? stats.max : '—';
     }
 
-    /**
-     * Affiche un message de feedback
-     */
     showFeedback(message, type) {
         const el = document.getElementById('feedback');
         if (el) {
@@ -580,32 +314,19 @@ class BinaryTreeVisualizer extends SimulationPage {
         }
     }
 
-    /**
-     * Désactive/active les boutons pendant l'animation
-     */
     setButtonsDisabled(disabled) {
-        document.querySelectorAll('.btn').forEach(btn => {
-            if (!btn.classList.contains('btn-back')) {
-                btn.disabled = disabled;
-            }
+        document.querySelectorAll('.btn').forEach((btn) => {
+            if (!btn.classList.contains('btn-back')) btn.disabled = disabled;
         });
     }
 
-    /**
-     * Configuration des événements
-     */
     setupEventListeners() {
         const input = document.getElementById('inputValue');
         if (input) {
-            input.addEventListener('keydown', e => {
-                if (e.key === 'Enter') this.insertValue();
-            });
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.insertValue(); });
         }
     }
 
-    /**
-     * Initialisation
-     */
     async init() {
         await super.init();
         this.reset();
@@ -613,126 +334,22 @@ class BinaryTreeVisualizer extends SimulationPage {
     }
 }
 
-const BST_WIDGET_TEMPLATE = `
-<div class="card">
-    <div class="controls-section">
-        <div class="controls-section-title">Operations</div>
-        <div class="controls-group">
-            <input type="number" id="inputValue" placeholder="Valeur (entier)" class="input">
-            <button data-inline-onclick="page.insertValue()" class="btn btn-primary">Inserer</button>
-            <button data-inline-onclick="page.deleteValue()" class="btn btn-secondary">Supprimer</button>
-            <button data-inline-onclick="page.searchValue()" class="btn btn-primary">Rechercher</button>
-            <button data-inline-onclick="page.resetTree()" class="btn btn-secondary">Reinitialiser</button>
-        </div>
-    </div>
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = BinaryTreeVisualizer;
+}
+if (typeof window !== 'undefined') {
+    window.BinaryTreeVisualizer = BinaryTreeVisualizer;
+}
 
-    <div class="separator-line"></div>
-
-    <div class="speed-control">
-        <label for="speedSlider">Vitesse de simulation :</label>
-        <input type="range" id="speedSlider" class="speed-slider"
-               min="1" max="5" value="3" step="1">
-        <span class="speed-label" id="speedLabel">Normal</span>
-    </div>
-
-    <div class="separator-line"></div>
-
-    <div class="controls-section">
-        <div class="controls-section-title">Parcours</div>
-        <div class="controls-group">
-            <button data-inline-onclick="page.startTraversal('inorder')" class="btn btn-primary" id="btn-inorder">Infixe</button>
-            <button data-inline-onclick="page.startTraversal('preorder')" class="btn btn-primary" id="btn-preorder">Prefixe</button>
-            <button data-inline-onclick="page.startTraversal('postorder')" class="btn btn-primary" id="btn-postorder">Suffixe</button>
-            <button data-inline-onclick="page.startTraversal('bfs')" class="btn btn-primary" id="btn-bfs">Largeur (BFS)</button>
-        </div>
-    </div>
-
-    <div class="separator-line"></div>
-
-    <svg id="treeSvg" class="tree-svg"></svg>
-    <div id="feedback" class="feedback text-center"></div>
-    <div id="traversalResult" class="traversal-result"></div>
-</div>
-
-<div class="card">
-    <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
-        <div class="info-card" style="flex: 1; min-width: 200px;">
-            <h3>Informations</h3>
-            <p>Nombre de noeuds <span class="badge badge-primary" id="nodeCount">0</span></p>
-            <p>Hauteur de l'arbre <span class="badge badge-primary" id="treeHeight">0</span></p>
-            <p>Valeur minimale <span class="badge badge-accent" id="treeMin">—</span></p>
-            <p>Valeur maximale <span class="badge badge-accent" id="treeMax">—</span></p>
-        </div>
-        <div class="info-card" style="flex: 1; min-width: 200px;">
-            <h3>Legende</h3>
-            <p><svg width="20" height="20"><circle cx="10" cy="10" r="8" fill="white" stroke="#4f46e5" stroke-width="2"/></svg> Noeud normal</p>
-            <p><svg width="20" height="20"><circle cx="10" cy="10" r="8" fill="#10b981" stroke="#10b981" stroke-width="2"/></svg> Noeud visite / actif</p>
-            <p><svg width="20" height="20"><circle cx="10" cy="10" r="8" fill="#4f46e5" stroke="#4f46e5" stroke-width="2"/></svg> Noeud trouve</p>
-        </div>
-        <div class="info-card" style="flex: 1; min-width: 200px;">
-            <h3>Principe du BST</h3>
-            <p style="display: block; color: var(--muted); font-size: 0.85rem; line-height: 1.6;">
-                Pour chaque noeud, tous les elements du sous-arbre gauche sont inferieurs
-                et tous les elements du sous-arbre droit sont superieurs.
-            </p>
-        </div>
-        <div class="info-card" style="flex: 1; min-width: 240px;">
-            <h3>Guide suppression</h3>
-            <div id="deleteCaseGuide" class="delete-guide-host">
-                <div class="text-muted text-sm">Choisir une valeur puis cliquer sur "Supprimer".</div>
-            </div>
-        </div>
-    </div>
-</div>
-`;
-
-const BSTWidgets = {
-    mount(mount) {
-        mount.innerHTML = BST_WIDGET_TEMPLATE;
-        return { destroy() {} };
-    }
-};
-
-// ── Standalone widget pour les slides ────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// BSTWidget — adaptateur SLIDE (et widget de cours `bst-simulator`, seul
+// consommateur réel sur structures/arbre-binaire.html). Consomme la MÊME
+// trace (bst-traces.js). Insertion/suppression instantanées (comme avant) ;
+// recherche/parcours animées via TracePlayer (même granularité — un pas par
+// nœud visité — que l'ancien code, cadence désormais pilotable).
+// ─────────────────────────────────────────────────────────────────────────────
 class BSTWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (BSTWidget._stylesInjected) return;
-        BSTWidget._stylesInjected = true;
-        const style = document.createElement('style');
-        style.textContent = `
-.bstw-root{font-family:var(--font,system-ui);padding:.65rem;display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;}
-.bstw-controls{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.45rem;align-items:center;flex-shrink:0;}
-.bstw-input{padding:.28rem .5rem;border:1px solid var(--border,#e0e0e5);border-radius:6px;font-size:.82rem;width:100px;background:var(--bg,#fff);color:var(--text,#1d1d1f);}
-.bstw-btn{padding:.28rem .65rem;border:1px solid var(--border,#e0e0e5);border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:500;background:var(--card,#f9f9fb);color:var(--text,#1d1d1f);transition:opacity .15s;}
-.bstw-btn:hover{opacity:.8;}
-.bstw-btn-primary{background:var(--primary,#6366f1);border-color:var(--primary,#6366f1);color:#fff;}
-.bstw-trav-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.4rem;align-items:center;flex-shrink:0;}
-.bstw-trav-label{font-size:.78rem;color:var(--muted,#6b7280);}
-.bstw-svg-wrap{flex:1;min-height:0;overflow:auto;border:1px solid var(--border,#e0e0e5);border-radius:6px;background:var(--bg,#fff);margin-bottom:.35rem;}
-.bstw-svg{width:100%;display:block;}
-.bstw-feedback{min-height:1.3rem;font-size:.8rem;padding:.15rem 0;color:var(--muted,#6b7280);}
-.bstw-feedback.success{color:#16a34a;}
-.bstw-feedback.error{color:#ef4444;}
-.bstw-feedback.info{color:#0ea5e9;}
-.bstw-traversal{font-size:.78rem;color:var(--muted,#6b7280);min-height:1.1rem;margin-bottom:.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.bstw-info{display:flex;flex-wrap:wrap;gap:.35rem;font-size:.78rem;color:var(--muted,#6b7280);}
-.bstw-info-chip{background:var(--card,#f9f9fb);border:1px solid var(--border,#e0e0e5);border-radius:4px;padding:.1rem .4rem;}
-.bstw-svg .bst-edge{stroke:var(--border,#cbd5e1);stroke-width:1.5;fill:none;}
-.bstw-svg .bst-edge.visited{stroke:#10b981;}
-.bstw-svg .bst-edge.found{stroke:#6366f1;}
-.bstw-svg .bst-node{fill:var(--bg,#fff);stroke:#6366f1;stroke-width:2;}
-.bstw-svg .bst-node.visited{fill:#10b981;stroke:#10b981;}
-.bstw-svg .bst-node.found{fill:#6366f1;stroke:#6366f1;}
-.bstw-svg .bst-label{text-anchor:middle;dominant-baseline:central;font-size:11px;font-weight:600;fill:var(--text,#1d1d1f);font-family:var(--font,system-ui);}
-.bstw-svg .bst-label.visited,.bstw-svg .bst-label.found{fill:#fff;}
-`;
-        document.head.appendChild(style);
-    }
-
     static mount(container, config = {}) {
-        BSTWidget.ensureStyles();
         const w = new BSTWidget(container, config);
         w.init();
         return { destroy: () => w.destroy() };
@@ -741,9 +358,9 @@ class BSTWidget {
     constructor(container, config = {}) {
         this.root = container;
         this.config = config;
-        this.tree = new BST();
+        this.treeRoot = null;
         this.animating = false;
-        // Layout constants (smaller than page visualizer for compact embed)
+        this.baseInterval = 500;
         this.MIN_H_SPACING = 38;
         this.LEVEL_HEIGHT = 52;
         this.SVG_PAD_TOP = 22;
@@ -779,27 +396,27 @@ class BSTWidget {
 </div>`;
 
         const q = (role) => this.root.querySelector(`[data-role="${role}"]`);
-        this._input    = q('input');
+        this._input = q('input');
         this._feedback = q('feedback');
-        this._svg      = q('svg');
-        this._travEl   = q('traversal');
-        this._countEl  = q('count');
+        this._svg = q('svg');
+        this._travEl = q('traversal');
+        this._countEl = q('count');
         this._heightEl = q('height');
-        this._minEl    = q('min');
-        this._maxEl    = q('max');
+        this._minEl = q('min');
+        this._maxEl = q('max');
 
-        q('insert').addEventListener('click',   () => this.insertValue());
-        q('delete').addEventListener('click',   () => this.deleteValue());
-        q('search').addEventListener('click',   () => this.searchValue());
-        q('reset').addEventListener('click',    () => this.resetTree());
-        q('inorder').addEventListener('click',  () => this.startTraversal('inorder'));
+        q('insert').addEventListener('click', () => this.insertValue());
+        q('delete').addEventListener('click', () => this.deleteValue());
+        q('search').addEventListener('click', () => this.searchValue());
+        q('reset').addEventListener('click', () => this.resetTree());
+        q('inorder').addEventListener('click', () => this.startTraversal('inorder'));
         q('preorder').addEventListener('click', () => this.startTraversal('preorder'));
-        q('postorder').addEventListener('click',() => this.startTraversal('postorder'));
-        q('bfs').addEventListener('click',      () => this.startTraversal('bfs'));
+        q('postorder').addEventListener('click', () => this.startTraversal('postorder'));
+        q('bfs').addEventListener('click', () => this.startTraversal('bfs'));
         this._input.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.insertValue(); });
 
         const defaults = this.config.values || [50, 30, 70, 20, 40, 60, 80];
-        defaults.forEach((v) => this.tree.insert(v));
+        defaults.forEach((v) => { this.treeRoot = OEITrace.buildBstInsertTrace(this.treeRoot, v).at(-1).tree; });
         this.render();
         this.showFeedback('Arbre initialisé.', 'info');
     }
@@ -808,9 +425,10 @@ class BSTWidget {
         if (this.animating) return;
         const val = parseInt(this._input.value, 10);
         if (isNaN(val)) { this.showFeedback('Valeur invalide.', 'error'); return; }
-        const ok = this.tree.insert(val);
+        const last = OEITrace.buildBstInsertTrace(this.treeRoot, val).at(-1);
         this._input.value = '';
-        if (!ok) { this.showFeedback(`${val} existe déjà.`, 'error'); return; }
+        if (!last.ok) { this.showFeedback(`${val} existe déjà.`, 'error'); return; }
+        this.treeRoot = last.tree;
         this.render();
         this.showFeedback(`${val} inséré.`, 'success');
     }
@@ -819,8 +437,9 @@ class BSTWidget {
         if (this.animating) return;
         const val = parseInt(this._input.value, 10);
         if (isNaN(val)) { this.showFeedback('Valeur invalide.', 'error'); return; }
-        if (!this.tree.search(val)) { this.showFeedback(`${val} introuvable.`, 'error'); return; }
-        this.tree.delete(val);
+        const last = OEITrace.buildBstDeleteTrace(this.treeRoot, val).at(-1);
+        if (!last.ok) { this.showFeedback(`${val} introuvable.`, 'error'); return; }
+        this.treeRoot = last.tree;
         this._input.value = '';
         this.render();
         this.showFeedback(`${val} supprimé.`, 'success');
@@ -831,32 +450,21 @@ class BSTWidget {
         const val = parseInt(this._input.value, 10);
         if (isNaN(val)) { this.showFeedback('Valeur invalide.', 'error'); return; }
         this.animating = true;
-        const visited = new Set();
-        const found   = new Set();
-        let current = this.tree.root;
-        while (current) {
-            visited.add(current.value);
-            this.render(visited, found);
-            await new Promise(r => setTimeout(r, 500));
-            if (val === current.value) {
-                found.add(current.value);
-                this.render(visited, found);
-                this.showFeedback(`${val} trouvé !`, 'success');
-                this.animating = false;
-                return;
-            }
-            current = val < current.value ? current.left : current.right;
+        const trace = OEITrace.buildBstSearchTrace(this.treeRoot, val);
+        for (const step of trace) {
+            this.render(new Set(step.marks.visited), new Set(step.marks.found));
+            await new Promise((r) => setTimeout(r, this.baseInterval));
         }
-        this.render(visited, found);
-        this.showFeedback(`${val} introuvable.`, 'error');
+        const last = trace.at(-1);
+        this.showFeedback(last.ok ? `${val} trouvé !` : `${val} introuvable.`, last.ok ? 'success' : 'error');
         this.animating = false;
     }
 
     resetTree() {
         if (this.animating) return;
-        this.tree = new BST();
+        this.treeRoot = null;
         const defaults = this.config.values || [50, 30, 70, 20, 40, 60, 80];
-        defaults.forEach((v) => this.tree.insert(v));
+        defaults.forEach((v) => { this.treeRoot = OEITrace.buildBstInsertTrace(this.treeRoot, v).at(-1).tree; });
         this._travEl.textContent = '';
         this.render();
         this.showFeedback('Arbre réinitialisé.', 'info');
@@ -864,33 +472,15 @@ class BSTWidget {
 
     async startTraversal(type) {
         if (this.animating) return;
-        if (!this.tree.root) { this.showFeedback('Arbre vide.', 'error'); return; }
+        if (!this.treeRoot) { this.showFeedback('Arbre vide.', 'error'); return; }
         this.animating = true;
-        const visited = new Set();
-        const order   = [];
-        const labels  = { inorder: 'Infixe', preorder: 'Préfixe', postorder: 'Suffixe', bfs: 'Largeur' };
-        const step = async (v) => {
-            visited.add(v);
-            order.push(v);
-            this.render(visited);
-            this._travEl.textContent = `${labels[type]}: ${order.join(' → ')}`;
-            await new Promise(r => setTimeout(r, 500));
-        };
-
-        if (type === 'inorder') {
-            const visit = async (node) => { if (!node) return; await visit(node.left); await step(node.value); await visit(node.right); };
-            await visit(this.tree.root);
-        } else if (type === 'preorder') {
-            const visit = async (node) => { if (!node) return; await step(node.value); await visit(node.left); await visit(node.right); };
-            await visit(this.tree.root);
-        } else if (type === 'postorder') {
-            const visit = async (node) => { if (!node) return; await visit(node.left); await visit(node.right); await step(node.value); };
-            await visit(this.tree.root);
-        } else {
-            const queue = [this.tree.root];
-            while (queue.length) { const n = queue.shift(); await step(n.value); if (n.left) queue.push(n.left); if (n.right) queue.push(n.right); }
+        const labels = { inorder: 'Infixe', preorder: 'Préfixe', postorder: 'Suffixe', bfs: 'Largeur' };
+        const trace = OEITrace.buildBstTraversalTrace(this.treeRoot, type);
+        for (const step of trace) {
+            this.render(new Set(step.marks.visited));
+            if (step.order.length) this._travEl.textContent = `${labels[type]}: ${step.order.join(' → ')}`;
+            await new Promise((r) => setTimeout(r, this.baseInterval));
         }
-
         this.showFeedback('Parcours terminé.', 'success');
         this.animating = false;
     }
@@ -902,8 +492,7 @@ class BSTWidget {
         assignIdx(root);
 
         const total = idx;
-        const getH = (node) => !node ? 0 : 1 + Math.max(getH(node.left), getH(node.right));
-        const treeH = getH(root);
+        const treeH = OEITrace.bstStats(root).height;
         const svgW = Math.max(total * this.MIN_H_SPACING, 280);
         const svgH = treeH * this.LEVEL_HEIGHT + this.SVG_PAD_TOP + this.SVG_PAD_BOT;
 
@@ -921,12 +510,12 @@ class BSTWidget {
 
     render(highlightSet, foundSet) {
         highlightSet = highlightSet || new Set();
-        foundSet     = foundSet     || new Set();
+        foundSet = foundSet || new Set();
         const svg = this._svg;
-        const NS  = 'http://www.w3.org/2000/svg';
+        const NS = 'http://www.w3.org/2000/svg';
         svg.innerHTML = '';
 
-        if (!this.tree.root) {
+        if (!this.treeRoot) {
             svg.setAttribute('viewBox', '0 0 280 60');
             svg.style.minHeight = '60px';
             const t = document.createElementNS(NS, 'text');
@@ -938,7 +527,7 @@ class BSTWidget {
             return;
         }
 
-        const { positions, w, h } = this._computeLayout(this.tree.root);
+        const { positions, w, h } = this._computeLayout(this.treeRoot);
         svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
         svg.style.minHeight = Math.min(h, 360) + 'px';
 
@@ -952,12 +541,12 @@ class BSTWidget {
                 line.setAttribute('x2', cp.x); line.setAttribute('y2', cp.y);
                 line.classList.add('bst-edge');
                 if (highlightSet.has(node.value) && highlightSet.has(child.value)) line.classList.add('visited');
-                if (foundSet.has(node.value)     && foundSet.has(child.value))     line.classList.add('found');
+                if (foundSet.has(node.value) && foundSet.has(child.value)) line.classList.add('found');
                 svg.appendChild(line);
                 drawEdges(child);
             }
         };
-        drawEdges(this.tree.root);
+        drawEdges(this.treeRoot);
 
         const drawNodes = (node) => {
             if (!node) return;
@@ -965,14 +554,14 @@ class BSTWidget {
             const circle = document.createElementNS(NS, 'circle');
             circle.setAttribute('cx', pos.x); circle.setAttribute('cy', pos.y); circle.setAttribute('r', this.NODE_R);
             circle.classList.add('bst-node');
-            if (foundSet.has(node.value))     circle.classList.add('found');
+            if (foundSet.has(node.value)) circle.classList.add('found');
             else if (highlightSet.has(node.value)) circle.classList.add('visited');
             svg.appendChild(circle);
 
             const label = document.createElementNS(NS, 'text');
             label.setAttribute('x', pos.x); label.setAttribute('y', pos.y);
             label.classList.add('bst-label');
-            if (foundSet.has(node.value))          label.classList.add('found');
+            if (foundSet.has(node.value)) label.classList.add('found');
             else if (highlightSet.has(node.value)) label.classList.add('visited');
             label.textContent = node.value;
             svg.appendChild(label);
@@ -980,35 +569,26 @@ class BSTWidget {
             drawNodes(node.left);
             drawNodes(node.right);
         };
-        drawNodes(this.tree.root);
+        drawNodes(this.treeRoot);
         this._updateInfo();
     }
 
     _updateInfo() {
-        this._countEl.textContent  = this.tree.count();
-        this._heightEl.textContent = this.tree.height();
-        const mn = this.tree.min();
-        const mx = this.tree.max();
-        this._minEl.textContent = mn !== null ? mn : '—';
-        this._maxEl.textContent = mx !== null ? mx : '—';
+        const stats = OEITrace.bstStats(this.treeRoot);
+        this._countEl.textContent = stats.count;
+        this._heightEl.textContent = stats.height;
+        this._minEl.textContent = stats.min !== null ? stats.min : '—';
+        this._maxEl.textContent = stats.max !== null ? stats.max : '—';
     }
 
     showFeedback(msg, type) {
         this._feedback.textContent = msg;
-        this._feedback.className   = 'bstw-feedback' + (type ? ' ' + type : '');
+        this._feedback.className = 'bstw-feedback' + (type ? ' ' + type : '');
     }
 
     destroy() {}
 }
 
-// Export pour usage en tant que module ES6
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = BinaryTreeVisualizer;
-}
-
-// Export global pour usage direct dans les pages HTML
 if (typeof window !== 'undefined') {
-    window.BinaryTreeVisualizer = BinaryTreeVisualizer;
-    window.BSTWidgets = BSTWidgets;
-    window.BSTWidget  = BSTWidget;
+    window.BSTWidget = BSTWidget;
 }

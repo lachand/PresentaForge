@@ -1,49 +1,4 @@
 class JobDependencyGraphWidget {
-    static ensureStyles() {
-        if (document.getElementById('jdg-styles')) return;
-        const s = document.createElement('style');
-        s.id = 'jdg-styles';
-        s.textContent = `
-.jdg { font-family: var(--font); }
-.jdg-toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
-.jdg-toolbar-label { font-size: 0.75rem; color: var(--muted); }
-.jdg-select { padding: 0.3rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 0.82rem; cursor: pointer; outline: none; }
-.jdg-select:focus { border-color: var(--primary); }
-.jdg-btn { padding: 0.3rem 0.8rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-family: var(--font); font-size: 0.82rem; font-weight: 600; transition: all 0.15s; }
-.jdg-btn-play { background: var(--primary); color: #fff; border-color: var(--primary); }
-.jdg-btn-play:hover:not(:disabled) { opacity: 0.85; }
-.jdg-btn-play:disabled { opacity: 0.5; cursor: default; }
-.jdg-btn-reset { background: var(--hover); color: var(--text); border-color: var(--border); }
-.jdg-btn-reset:hover { border-color: var(--primary); }
-.jdg-canvas { position: relative; padding: 1.5rem 0.5rem 1.5rem 0; display: flex; align-items: stretch; gap: 0; min-height: 140px; overflow-x: auto; }
-.jdg-col { display: flex; flex-direction: column; justify-content: center; gap: 0.75rem; padding: 0 2.5rem; position: relative; flex-shrink: 0; }
-.jdg-col:first-child { padding-left: 0; }
-.jdg-col:last-child { padding-right: 0; }
-.jdg-job { border: 2px solid var(--border); border-radius: 10px; padding: 0.55rem 0.85rem; background: var(--card); cursor: pointer; transition: border-color 0.2s, background 0.2s, opacity 0.2s, transform 0.15s; min-width: 120px; text-align: center; user-select: none; }
-.jdg-job:hover { border-color: var(--primary); transform: translateY(-1px); }
-.jdg-job.will-fail { border-color: #ef4444; border-style: dashed; }
-.jdg-job.state-waiting { opacity: 0.7; }
-.jdg-job.state-running { border-color: #f59e0b !important; border-style: solid !important; background: color-mix(in srgb, #f59e0b 10%, var(--card)) !important; animation: jdg-pulse 0.8s ease-in-out infinite; }
-.jdg-job.state-success { border-color: #22c55e !important; border-style: solid !important; background: color-mix(in srgb, #22c55e 10%, var(--card)) !important; opacity: 1; }
-.jdg-job.state-failed  { border-color: #ef4444 !important; border-style: solid !important; background: color-mix(in srgb, #ef4444 10%, var(--card)) !important; opacity: 1; }
-.jdg-job.state-blocked { border-color: var(--border) !important; border-style: solid !important; opacity: 0.35; cursor: default; }
-@keyframes jdg-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
-.jdg-job-name { font-size: 0.8rem; font-weight: 700; color: var(--heading); }
-.jdg-job-runner { font-size: 0.67rem; color: var(--muted); margin-top: 0.15rem; }
-.jdg-job-cond { font-size: 0.63rem; color: #f59e0b; margin-top: 0.2rem; }
-.jdg-job-status { font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; min-height: 1rem; }
-.jdg-svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-.jdg-log { margin-top: 0.75rem; background: #0f172a; border-radius: 8px; padding: 0.65rem 1rem; font-family: monospace; font-size: 0.73rem; min-height: 2.2rem; max-height: 100px; overflow-y: auto; }
-.jdg-log-line { line-height: 1.75; color: #94a3b8; }
-.jdg-log-line.run  { color: #fbbf24; }
-.jdg-log-line.ok   { color: #4ade80; }
-.jdg-log-line.fail { color: #f87171; }
-.jdg-log-line.skip { color: #475569; }
-.jdg-hint { font-size: 0.72rem; color: var(--muted); margin-top: 0.5rem; }
-        `;
-        document.head.appendChild(s);
-    }
-
     static computeLevels(jobs) {
         const levels = {};
         jobs.forEach(j => levels[j.id] = 0);
@@ -59,8 +14,6 @@ class JobDependencyGraphWidget {
     }
 
     static mount(container, config = {}) {
-        JobDependencyGraphWidget.ensureStyles();
-
         const SCENARIOS = [
             {
                 name: 'CI basique (1 job)',

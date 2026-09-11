@@ -459,47 +459,7 @@ if (typeof window !== 'undefined') {
 
 // ── Standalone widget ──────────────────────────────────────────
 class MemoryWidget {
-    static _stylesInjected = false;
-
-    static ensureStyles() {
-        if (MemoryWidget._stylesInjected) return;
-        MemoryWidget._stylesInjected = true;
-        const css = `
-.mpw { font-family: inherit; display: flex; flex-direction: column; gap: 10px; }
-.mpw-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.mpw-lbl { font-size: 0.78rem; font-weight: 600; color: var(--muted, #888); }
-.mpw-input { font-size: 0.85rem; padding: 4px 8px; border: 1px solid var(--border, #ccc); border-radius: 6px; background: var(--surface, #fff); color: var(--text, #222); }
-.mpw-pills { display: flex; gap: 4px; }
-.mpw-pill { font-size: 0.8rem; padding: 4px 10px; border: 1px solid var(--border, #ccc); border-radius: 12px; background: transparent; color: var(--text, #222); cursor: pointer; }
-.mpw-pill.active { background: var(--primary, #6366f1); color: #fff; border-color: var(--primary, #6366f1); }
-.mpw-btns { display: flex; gap: 6px; margin-left: auto; }
-.mpw-btn { font-size: 0.82rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border, #ccc); background: var(--surface, #f5f5f5); color: var(--text, #222); cursor: pointer; }
-.mpw-btn.primary { background: var(--primary, #6366f1); color: #fff; border-color: var(--primary, #6366f1); }
-.mpw-ref { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 36px; }
-.mpw-rc { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 0.88rem; font-weight: 700; background: var(--surface2, #f0f0f0); border: 2px solid transparent; }
-.mpw-rc.current { border-color: var(--primary, #6366f1); background: rgba(99,102,241,0.12); }
-.mpw-rc.processed { opacity: 0.45; }
-.mpw-frame-row { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
-.mpw-frame-lbl { font-size: 0.75rem; font-weight: 600; color: var(--muted, #888); width: 52px; flex-shrink: 0; }
-.mpw-frame-cells { display: flex; gap: 2px; flex-wrap: wrap; }
-.mpw-fc { width: 30px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 0.82rem; font-weight: 700; background: var(--surface2, #f0f0f0); }
-.mpw-fc.empty { color: var(--muted, #aaa); font-weight: 400; }
-.mpw-fc.hit { background: #22c55e; color: #fff; }
-.mpw-fc.fault { background: var(--primary, #6366f1); color: #fff; }
-.mpw-fc.victim { background: #ef4444; color: #fff; }
-.mpw-stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.82rem; }
-.mpw-stat { display: flex; flex-direction: column; align-items: center; }
-.mpw-sv { font-size: 1.1rem; font-weight: 700; color: var(--primary, #6366f1); }
-.mpw-sl { color: var(--muted, #888); font-size: 0.75rem; }
-.mpw-info { font-size: 0.82rem; color: var(--muted, #888); min-height: 1.4em; }
-`;
-        const s = document.createElement('style');
-        s.textContent = css;
-        document.head.appendChild(s);
-    }
-
     static mount(container, config = {}) {
-        MemoryWidget.ensureStyles();
         if (container.dataset.mpw) return;
         container.dataset.mpw = '1';
         new MemoryWidget(container, config).init();
