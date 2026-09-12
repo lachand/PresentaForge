@@ -1354,6 +1354,7 @@ class CanvasEditor {
             const h = document.createElement('div');
             h.className = `cel-handle cel-handle-${pos}`;
             h.dataset.handle = pos;
+            h.title = 'Maintenir Ctrl pour conserver les proportions';
             div.appendChild(h);
         });
         // Connector anchor points (edges + center)

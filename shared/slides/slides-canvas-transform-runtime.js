@@ -116,16 +116,29 @@
                 h = nh;
             }
 
-            if (event.ctrlKey && handle.length === 2 && aspectRatio) {
-                const absDx = Math.abs(dx);
-                const absDy = Math.abs(dy);
-                if (absDx / aspectRatio >= absDy) {
+            if (event.ctrlKey && aspectRatio) {
+                if (handle.length === 2) {
+                    const absDx = Math.abs(dx);
+                    const absDy = Math.abs(dy);
+                    if (absDx / aspectRatio >= absDy) {
+                        const newH = Math.max(MIN_H, w / aspectRatio);
+                        if (handle.includes('n')) y = refOrig.y + refOrig.h - newH;
+                        h = newH;
+                    } else {
+                        const newW = Math.max(MIN_W, h * aspectRatio);
+                        if (handle.includes('w')) x = refOrig.x + refOrig.w - newW;
+                        w = newW;
+                    }
+                } else if (handle === 'e' || handle === 'w') {
+                    // Poignée médiane horizontale : seule la largeur vient d'un geste
+                    // explicite — la hauteur est ajustée au ratio, centrée verticalement
+                    // (aucune intention verticale exprimée par ce drag).
                     const newH = Math.max(MIN_H, w / aspectRatio);
-                    if (handle.includes('n')) y = refOrig.y + refOrig.h - newH;
+                    y = refOrig.y + (refOrig.h - newH) / 2;
                     h = newH;
-                } else {
+                } else if (handle === 'n' || handle === 's') {
                     const newW = Math.max(MIN_W, h * aspectRatio);
-                    if (handle.includes('w')) x = refOrig.x + refOrig.w - newW;
+                    x = refOrig.x + (refOrig.w - newW) / 2;
                     w = newW;
                 }
             }

@@ -1022,6 +1022,16 @@ function bindKeyboard() {
             if (e.key === 'a') { e.preventDefault(); selectAll(); }
             if (e.key === 'g' && e.shiftKey) { e.preventDefault(); ungroupSelected(); }
             else if (e.key === 'g') { e.preventDefault(); groupSelected(); }
+            if (e.key === 'l' && runtimeCanvas?.selectedIds?.size > 0) {
+                // Jusque-là seul le panneau de propriétés permettait de verrouiller un
+                // élément. Sélection mixte (verrouillé + déverrouillé) : tout verrouiller
+                // en un coup plutôt que d'inverser chacun indépendamment (résultat imprévisible).
+                e.preventDefault();
+                const ids = [...runtimeCanvas.selectedIds];
+                const anyUnlocked = ids.some(id => !runtimeCanvas.elements.find(el => el.id === id)?.locked);
+                ids.forEach(id => runtimeCanvas.updateData(id, { locked: anyUnlocked }));
+                notify(anyUnlocked ? 'Verrouillé' : 'Déverrouillé', 'success');
+            }
         }
         if (e.key === 'F5') { e.preventDefault(); launchPresentation(e.shiftKey ? 'presenter' : undefined); }
         // Arrow keys: nudge/resize (Ctrl) selected canvas elements, navigate slides, or (Ctrl+Shift) reorder the deck
