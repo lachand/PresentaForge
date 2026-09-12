@@ -551,6 +551,10 @@ class CanvasEditor {
 }
 .cel-code-edit::-webkit-scrollbar { display:none; width:0; height:0; }
 .cel-code-edit::selection { background:rgba(129,140,248,0.35); }
+/* Textarea de code SEULE, sans calque <pre> surligné en dessous (ex. mermaid, pas
+   d'aperçu live) — .cel-code-edit est transparente par défaut pour laisser voir un
+   calque de coloration ; ce modificateur restaure un fond/texte opaques et lisibles. */
+.cel-code-edit-plain { background:var(--sl-code-bg,#0d1117); color:var(--sl-code-text,#e2e8f0); }
 .cel-highlight-edit-wrap {
     display:flex; flex-direction:column; width:100%; height:100%;
     background:var(--sl-code-bg,#0d1117);
@@ -1667,6 +1671,51 @@ class CanvasEditor {
             editor: this,
             resolveElementFontSize: (...args) => SlidesShared.resolveElementFontSize(...args),
         }, div, el);
+    }
+
+    _startInlineEditQuote(div, el) {
+        CanvasInlineEditRuntime.startInlineEditQuote({ editor: this }, div, el);
+    }
+
+    _startInlineEditCalloutBox(div, el) {
+        CanvasInlineEditRuntime.startInlineEditCalloutBox({ editor: this }, div, el);
+    }
+
+    _startInlineEditLatex(div, el) {
+        CanvasInlineEditRuntime.startInlineEditLatex({ editor: this }, div, el);
+    }
+
+    _startInlineEditAudienceRoulette(div, el) {
+        CanvasInlineEditRuntime.startInlineEditAudienceRoulette({ editor: this }, div, el);
+    }
+
+    _startInlineEditTimerLabel(div, el) {
+        CanvasInlineEditRuntime.startInlineEditTimerLabel({ editor: this }, div, el);
+    }
+
+    _startInlineEditPromptField(div, el) {
+        CanvasInlineEditRuntime.startInlineEditPromptField({ editor: this }, div, el);
+    }
+
+    _startInlineEditCard(div, el) {
+        CanvasInlineEditRuntime.startInlineEditCard({ editor: this }, div, el);
+    }
+
+    _startInlineEditSmartArt(div, el) {
+        CanvasInlineEditRuntime.startInlineEditSmartArt({ editor: this }, div, el);
+    }
+
+    _startInlineEditTerminalSession(div, el) {
+        CanvasInlineEditRuntime.startInlineEditTerminalSession({
+            editor: this,
+            mountLiveHighlight: opts => this._mountLiveHighlight(opts),
+            resolveElementFontSize: (...args) => SlidesShared.resolveElementFontSize(...args),
+            computeCodeMetrics: baseFontSize => CanvasHelpers.computeCodeMetrics(baseFontSize, SlidesShared.resolveCodeLineHeight),
+        }, div, el);
+    }
+
+    _startInlineEditMermaid(div, el) {
+        CanvasInlineEditRuntime.startInlineEditMermaid({ editor: this }, div, el);
     }
 
     _onMouseMove(e) {

@@ -406,7 +406,11 @@ function openCanvasPopover(element, event) {
     // Pour les types édités inline sur le canvas, le panneau est déjà déplié par
     // onElementDblClick (qui se déclenche avant, pour tout type) — ne pas y voler
     // le focus en forçant la sélection d'un champ, ça couperait le curseur inline.
-    if (['heading', 'text', 'code', 'highlight', 'definition', 'list'].includes(element.type)) return;
+    if ([
+        'heading', 'text', 'code', 'highlight', 'definition', 'list',
+        'quote', 'callout-box', 'terminal-session', 'latex', 'card', 'smartart',
+        'poll-likert', 'debate-mode', 'postit-wall', 'audience-roulette', 'mermaid', 'timer',
+    ].includes(element.type)) return;
 
     // Pour les types purement panneau (pas d'édition inline), focus le premier champ.
     requestAnimationFrame(() => {
@@ -682,6 +686,15 @@ function bindBgPicker(container) {
 
 /* ── Convert template → canvas ─────────────────────────── */
 
+// Miroir de SPLIT_RICH_COLUMN_TYPES (shared/slides/slides-core.js) — non exportée
+// globalement, déjà dupliquée par shared/slides/import-pipeline.js (RICH_SPLIT_COLUMN_TYPES)
+// sous la même justification. Types de colonne "split" à contenu riche (stocké sous
+// col.data.*, pas col.text) que convertTemplateToCanvas doit convertir tels quels.
+const SPLIT_RICH_COLUMN_TYPES = new Set([
+    'image', 'video', 'latex', 'mermaid', 'table', 'highlight', 'card', 'definition',
+    'smartart', 'diagramme', 'callout-box', 'quote', 'timeline-vertical', 'swot-grid', 'qrcode',
+]);
+
 async function convertTemplateToCanvas() {
     const activeEditor = _previewCtx().editor;
     if (!activeEditor) return;
@@ -740,7 +753,7 @@ async function convertTemplateToCanvas() {
             const listW = hasNote ? Math.round((CW - 96) * 0.63) : CW - 96;
             add({ type: 'heading', x: 48, y: 40, w: CW - 96, h: 76, data: { text: slide.title || '' },
                 style: { fontSize: 36, fontWeight: 700, color: 'var(--sl-heading)', fontFamily: 'var(--sl-font-heading)' }, z: 1 });
-            add({ type: 'list', x: 48, y: 140, w: listW, h: CH - 172, data: { items: slide.items || [] },
+            add({ type: 'list', x: 48, y: 140, w: listW, h: CH - 172, data: { items: slide.items || [], revealItems: !!slide.revealItems },
                 style: { fontSize: 18, color: 'var(--sl-text)' }, z: 2 });
             if (hasNote) {
                 const noteX = 48 + listW + 24, noteW = CW - 96 - listW - 24;
@@ -749,16 +762,37 @@ async function convertTemplateToCanvas() {
             }
             break;
         }
-        case 'code':
+        case 'code': {
             if (slide.title) add({ ...H2(slide.title, 40), z: 1 });
-            add({ type: 'code', x: 48, y: slide.title ? 136 : 40, w: CW - 96, h: CH - (slide.title ? 168 : 80),
-                data: { language: slide.language || 'text', code: slide.code || '' }, z: 2 });
+            const codeY = slide.title ? 136 : 40, codeH = CH - (slide.title ? 168 : 80);
+            const codeExtra = {};
+            if (slide.label) codeExtra.label = slide.label;
+            if (slide.labelTone) codeExtra.labelTone = slide.labelTone;
+            if (slide.tone) codeExtra.tone = slide.tone;
+            if (slide.explanation) {
+                const gap = 24, explW = Math.round((CW - 96) * 0.35), codeW = (CW - 96) - explW - gap;
+                add({ type: 'code', x: 48, y: codeY, w: codeW, h: codeH,
+                    data: { language: slide.language || 'text', code: slide.code || '', ...codeExtra }, z: 2 });
+                add({ type: 'text', x: 48 + codeW + gap, y: codeY, w: explW, h: codeH,
+                    data: { html: slide.explanation }, style: { fontSize: 15, color: 'var(--sl-muted)' }, z: 3 });
+            } else {
+                add({ type: 'code', x: 48, y: codeY, w: CW - 96, h: codeH,
+                    data: { language: slide.language || 'text', code: slide.code || '', ...codeExtra }, z: 2 });
+            }
             break;
-        case 'definition':
+        }
+        case 'definition': {
             if (slide.title) add({ ...H2(slide.title, 40), z: 1 });
+            const defExtra = {};
+            if (slide.label) defExtra.label = slide.label;
+            if (slide.blockLabel) defExtra.blockLabel = slide.blockLabel;
+            if (slide.labelTone) defExtra.labelTone = slide.labelTone;
+            if (slide.tone) defExtra.tone = slide.tone;
+            if (slide.exampleLabel) defExtra.exampleLabel = slide.exampleLabel;
             add({ type: 'definition', x: 48, y: slide.title ? 136 : 60, w: CW - 96, h: slide.title ? CH - 168 : CH - 92,
-                data: { term: slide.term || '', definition: slide.definition || '', example: slide.example || '' }, z: 2 });
+                data: { term: slide.term || '', definition: slide.definition || '', example: slide.example || '', ...defExtra }, z: 2 });
             break;
+        }
         case 'split': {
             const contentY = slide.title ? 136 : 40, contentH = CH - contentY - 40;
             const gap = 24, splitColW = Math.round((CW - 96 - gap) / 2);
@@ -772,6 +806,7 @@ async function convertTemplateToCanvas() {
             const lH = contentH - (lY - contentY);
             if (slide.left?.type === 'code') add({ type: 'code', x: 48, y: lY, w: splitColW, h: lH, data: { language: slide.left.language || 'text', code: slide.left.code || '' }, z: 2 });
             else if (slide.left?.type === 'bullets' || slide.left?.items) add({ type: 'list', x: 48, y: lY, w: splitColW, h: lH, data: { items: slide.left?.items || [] }, style: { fontSize: 18, color: 'var(--sl-text)' }, z: 2 });
+            else if (slide.left?.type && SPLIT_RICH_COLUMN_TYPES.has(slide.left.type)) add({ type: slide.left.type, x: 48, y: lY, w: splitColW, h: lH, data: { ...(slide.left.data || {}) }, style: { ...(slide.left.style || {}) }, z: 2 });
             else add({ type: 'text', x: 48, y: lY, w: splitColW, h: lH, data: { text: slide.left?.text || '' }, style: { fontSize: 18, color: 'var(--sl-text)' }, z: 2 });
             const rX = 48 + splitColW + gap;
             let rY = contentY;
@@ -783,18 +818,20 @@ async function convertTemplateToCanvas() {
             const rH = contentH - (rY - contentY);
             if (slide.right?.type === 'code') add({ type: 'code', x: rX, y: rY, w: splitColW, h: rH, data: { language: slide.right.language || 'text', code: slide.right.code || '' }, z: 3 });
             else if (slide.right?.type === 'bullets' || slide.right?.items) add({ type: 'list', x: rX, y: rY, w: splitColW, h: rH, data: { items: slide.right?.items || [] }, style: { fontSize: 18, color: 'var(--sl-text)' }, z: 3 });
+            else if (slide.right?.type && SPLIT_RICH_COLUMN_TYPES.has(slide.right.type)) add({ type: slide.right.type, x: rX, y: rY, w: splitColW, h: rH, data: { ...(slide.right.data || {}) }, style: { ...(slide.right.style || {}) }, z: 3 });
             else add({ type: 'text', x: rX, y: rY, w: splitColW, h: rH, data: { text: slide.right?.text || '' }, style: { fontSize: 18, color: 'var(--sl-text)' }, z: 3 });
             break;
         }
         case 'comparison': {
+            const leftData = slide.left || slide.data?.left, rightData = slide.right || slide.data?.right;
             const contentY = slide.title ? 136 : 40, contentH = CH - contentY - 40;
             const gap = 16, cmpColW = Math.round((CW - 96 - gap) / 2);
             if (slide.title) add({ ...H2(slide.title, 40), z: 1 });
             add({ type: 'card', x: 48, y: contentY, w: cmpColW, h: contentH,
-                data: { title: slide.left?.title || '', items: slide.left?.items || [] },
+                data: { title: leftData?.title || '', items: leftData?.items || [] },
                 style: { fontSize: 18, color: 'var(--sl-text)', titleColor: 'var(--sl-primary)' }, z: 2 });
             add({ type: 'card', x: 48 + cmpColW + gap, y: contentY, w: cmpColW, h: contentH,
-                data: { title: slide.right?.title || '', items: slide.right?.items || [] },
+                data: { title: rightData?.title || '', items: rightData?.items || [] },
                 style: { fontSize: 18, color: 'var(--sl-text)', titleColor: 'var(--sl-accent,#f472b6)' }, z: 3 });
             break;
         }
@@ -818,9 +855,20 @@ async function convertTemplateToCanvas() {
             break;
         case 'blank':
             add({ type: 'text', x: 48, y: 40, w: CW - 96, h: CH - 80,
-                data: { text: slide.html || '(contenu HTML libre)' },
+                data: { html: slide.html || '<p>(contenu HTML libre)</p>' },
                 style: { fontSize: 16, color: 'var(--sl-muted)', textAlign: 'center' }, z: 1 });
             break;
+        case 'quiz': {
+            if (slide.title) add({ ...H2(slide.title, 40), z: 1 });
+            const quizY = slide.title ? 136 : 40;
+            const quizH = slide.explanation ? (CH - quizY - 40 - 140 - 24) : (CH - quizY - 40);
+            const options = slide.quizType === 'true-false' ? ['Vrai', 'Faux'] : (slide.options || []);
+            add({ type: 'mcq-single', x: 48, y: quizY, w: CW - 96, h: quizH,
+                data: { question: slide.title || '', options, answer: Number(slide.answer) || 0 }, z: 2 });
+            if (slide.explanation) add({ type: 'callout-box', x: 48, y: quizY + quizH + 24, w: CW - 96, h: 140,
+                data: { label: 'Explication', text: slide.explanation, tone: 'info' }, z: 3 });
+            break;
+        }
         default:
             add({ type: 'heading', x: 48, y: 260, w: CW - 96, h: 120,
                 data: { text: slide.title || `Slide ${slide.type}` },
@@ -829,6 +877,7 @@ async function convertTemplateToCanvas() {
 
     if (slide.notes) newSlide.notes = slide.notes;
     if (slide.bg)    newSlide.bg    = slide.bg;
+    if (slide.keypoints) newSlide.keypoints = slide.keypoints;
     activeEditor.replaceSlide(activeEditor.selectedIndex, newSlide);
     _previewNotify('Slide converti en canvas', 'success');
 }

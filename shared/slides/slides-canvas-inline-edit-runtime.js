@@ -467,6 +467,133 @@
     };
 
     /**
+     * Construit un ensemble de champs "label + valeur" contentEditable, empilés
+     * verticalement (cœur commun à définition/quote/callout-box/latex/... — voir
+     * startInlineEditDefinition pour le cas d'origine à 3 champs). Ne gère ni le
+     * commit ni le revert : l'appelant attache ses propres listeners `blur` sur les
+     * `editables` retournés et route `onEscape` vers son propre revert, pour rester
+     * libre de combiner plusieurs sous-éditeurs (ex. startInlineEditCard combine ceci
+     * avec mountFlatItemsEditor sous un commit unique).
+     * @param {{key: string, label: string|null, value: string, cls?: string}[]} fields
+     * @param {() => void} onEscape
+     * @returns {{ container: HTMLElement, editables: HTMLElement[] }}
+     */
+    const mountLabeledFieldsEditor = (fields, onEscape) => {
+        const container = document.createElement('div');
+        container.className = 'cel-def-content';
+        container.style.cursor = 'text';
+
+        const editables = [];
+        fields.forEach(({ key, label, cls, value }) => {
+            const row = document.createElement('div');
+            row.style.marginBottom = '0.35rem';
+            if (label) {
+                const lbl = document.createElement('span');
+                lbl.textContent = label + ' : ';
+                lbl.className = 'cel-def-inline-label';
+                row.appendChild(lbl);
+            }
+            const field = document.createElement('span');
+            field.contentEditable = 'true';
+            field.className = cls ? `${cls} cel-def-edit-field` : 'cel-def-edit-field';
+            field.textContent = value;
+            field.dataset.key = key;
+            row.appendChild(field);
+            container.appendChild(row);
+            editables.push(field);
+        });
+
+        editables.forEach((field, i) => {
+            field.addEventListener('keydown', e => {
+                if (e.key === 'Tab' && editables.length > 1) {
+                    e.preventDefault();
+                    const next = editables[(i + (e.shiftKey ? editables.length - 1 : 1)) % editables.length];
+                    next.focus();
+                    const range = document.createRange();
+                    range.selectNodeContents(next);
+                    range.collapse(false);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+                if (e.key === 'Escape') { e.preventDefault(); onEscape(); }
+                e.stopPropagation();
+            });
+        });
+
+        return { container, editables };
+    };
+
+    /**
+     * Construit une liste plate d'items contentEditable — Enter ajoute un item après
+     * le courant, Backspace sur item vide fusionne avec le précédent, Escape délègue
+     * à `onEscape`. Volontairement SANS sous-items/Tab-indent (voir startInlineEditList
+     * pour cette variante) : card/smartart attendent un tableau de strings plates.
+     * Ne gère pas le commit : chaque item text appelle `onBlur` à son blur, à
+     * l'appelant de committer via `readItems()` (avec sa propre porte
+     * requestAnimationFrame + contains(activeElement), potentiellement partagée avec
+     * un autre sous-éditeur — voir startInlineEditCard).
+     * @param {string[]} items
+     * @param {{ onBlur: () => void, onEscape: () => void }} handlers
+     * @returns {{ ul: HTMLElement, readItems: () => string[], focusFirst: () => void }}
+     */
+    const mountFlatItemsEditor = (items, { onBlur, onEscape }) => {
+        const ul = document.createElement('ul');
+        ul.className = 'cel-list-content';
+
+        const focusEnd = textEl => {
+            textEl.focus();
+            const range = document.createRange();
+            range.selectNodeContents(textEl);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        };
+
+        const makeLi = (text = '') => {
+            const li = document.createElement('li');
+            const textEl = document.createElement('div');
+            textEl.className = 'cel-li-text';
+            textEl.contentEditable = 'true';
+            textEl.textContent = text;
+            textEl.addEventListener('blur', onBlur);
+            li.appendChild(textEl);
+            return li;
+        };
+
+        ul.addEventListener('keydown', e => {
+            const textEl = e.target.closest('.cel-li-text');
+            const li = e.target.closest('li');
+            if (!textEl || !li) return;
+            e.stopPropagation();
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const newLi = makeLi('');
+                li.after(newLi);
+                newLi.querySelector('.cel-li-text').focus();
+                return;
+            }
+            if (e.key === 'Backspace' && textEl.textContent === '') {
+                e.preventDefault();
+                const prev = li.previousElementSibling;
+                li.remove();
+                if (prev) focusEnd(prev.querySelector('.cel-li-text'));
+                return;
+            }
+            if (e.key === 'Escape') { e.preventDefault(); onEscape(); }
+        });
+
+        (items.length ? items : ['']).forEach(text => ul.appendChild(makeLi(typeof text === 'string' ? text : '')));
+
+        return {
+            ul,
+            readItems: () => Array.from(ul.querySelectorAll(':scope > li > .cel-li-text')).map(t => t.textContent).filter(t => t !== ''),
+            focusFirst: () => ul.querySelector('.cel-li-text')?.focus(),
+        };
+    };
+
+    /**
      * Démarre l'édition inline d'un élément définition (terme / définition / exemple).
      * @param {{ editor: object }} ctx
      * @param {HTMLElement} div
@@ -479,39 +606,23 @@
         div.classList.add('editing');
         const inner = div.querySelector('.cel-inner');
 
-        const container = document.createElement('div');
-        container.className = 'cel-def-content';
-        container.style.cursor = 'text';
+        let committed = false;
+        const revert = () => {
+            if (committed) return;
+            committed = true;
+            div.classList.remove('editing');
+            editor._refreshDOM(el.id);
+        };
 
-        const fields = [
+        const { container, editables } = mountLabeledFieldsEditor([
             { key: 'term',       label: 'Terme',      cls: 'cel-def-term',    value: el.data?.term       || '' },
             { key: 'definition', label: 'Définition',  cls: 'cel-def-body',    value: el.data?.definition || '' },
             { key: 'example',    label: String(el.data?.exampleLabel || 'Exemple'), cls: 'cel-def-example', value: el.data?.example || '' },
-        ];
-
-        const editables = [];
-        fields.forEach(({ key, label, cls, value }) => {
-            const row = document.createElement('div');
-            row.style.marginBottom = '0.35rem';
-            const lbl = document.createElement('span');
-            lbl.textContent = label + ' : ';
-            lbl.className = 'cel-def-inline-label';
-            const field = document.createElement('span');
-            field.contentEditable = 'true';
-            field.className = cls + ' cel-def-edit-field';
-            field.textContent = value;
-            field.dataset.key = key;
-            row.appendChild(lbl);
-            row.appendChild(field);
-            container.appendChild(row);
-            editables.push(field);
-        });
+        ], revert);
 
         inner.innerHTML = '';
         inner.appendChild(container);
         editables[0].focus();
-
-        let committed = false;
 
         const commit = () => {
             if (committed || !div.classList.contains('editing')) return;
@@ -525,6 +636,25 @@
             });
         };
 
+        editables.forEach(field => field.addEventListener('blur', commit));
+    };
+
+    /**
+     * Fabrique une fonction startInlineEditXxx pour un élément à champs texte simples
+     * indépendants (pas d'interaction entre champs, pas de sous-éditeur combiné) —
+     * factorise le commit/revert commun à quote/callout-box/latex/audience-roulette/
+     * timer-label/prompt-field, qui ne diffèrent que par la liste de champs édités.
+     * @param {(el: object) => {key: string, label: string|null, value: string}[]} getFields
+     * @returns {(ctx: object, div: HTMLElement, el: object) => void}
+     */
+    const makeSimpleFieldsInlineEditor = getFields => (ctx, div, el) => {
+        const editor = ctx?.editor;
+        if (!editor || !div || !el) return;
+        if (div.classList.contains('editing')) return;
+        div.classList.add('editing');
+        const inner = div.querySelector('.cel-inner');
+
+        let committed = false;
         const revert = () => {
             if (committed) return;
             committed = true;
@@ -532,24 +662,326 @@
             editor._refreshDOM(el.id);
         };
 
-        editables.forEach((field, i) => {
-            field.addEventListener('keydown', e => {
-                if (e.key === 'Tab') {
-                    e.preventDefault();
-                    const next = editables[(i + (e.shiftKey ? editables.length - 1 : 1)) % editables.length];
-                    next.focus();
-                    const range = document.createRange();
-                    range.selectNodeContents(next);
-                    range.collapse(false);
-                    const sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                }
-                if (e.key === 'Escape') { e.preventDefault(); revert(); }
-                e.stopPropagation();
+        const { container, editables } = mountLabeledFieldsEditor(getFields(el), revert);
+
+        inner.innerHTML = '';
+        inner.appendChild(container);
+        editables[0].focus();
+
+        const commit = () => {
+            if (committed || !div.classList.contains('editing')) return;
+            requestAnimationFrame(() => {
+                if (container.contains(document.activeElement)) return;
+                committed = true;
+                div.classList.remove('editing');
+                const patch = {};
+                editables.forEach(f => { patch[f.dataset.key] = f.textContent; });
+                editor.updateData(el.id, { data: patch });
             });
-            field.addEventListener('blur', commit);
+        };
+
+        editables.forEach(field => field.addEventListener('blur', commit));
+    };
+
+    /** Démarre l'édition inline d'un élément citation (texte + auteur). */
+    const startInlineEditQuote = makeSimpleFieldsInlineEditor(el => [
+        { key: 'text', label: 'Citation', value: el.data?.text || '' },
+        { key: 'author', label: 'Auteur', value: el.data?.author || '' },
+    ]);
+
+    /** Démarre l'édition inline d'un encadré callout-box (label + message). La teinte (tone) reste au panneau. */
+    const startInlineEditCalloutBox = makeSimpleFieldsInlineEditor(el => [
+        { key: 'label', label: 'Label', value: el.data?.label || '' },
+        { key: 'text', label: 'Message', value: el.data?.text || '' },
+    ]);
+
+    /** Démarre l'édition inline d'un élément LaTeX (expression seule). */
+    const startInlineEditLatex = makeSimpleFieldsInlineEditor(el => [
+        { key: 'expression', label: 'Expression', value: el.data?.expression || '' },
+    ]);
+
+    /** Démarre l'édition inline d'un élément roulette (titre seul). */
+    const startInlineEditAudienceRoulette = makeSimpleFieldsInlineEditor(el => [
+        { key: 'title', label: 'Titre', value: el.data?.title || '' },
+    ]);
+
+    /** Démarre l'édition inline du label d'un minuteur — ne touche jamais data.duration (reste au panneau). */
+    const startInlineEditTimerLabel = makeSimpleFieldsInlineEditor(el => [
+        { key: 'label', label: 'Label', value: el.data?.label || '' },
+    ]);
+
+    /**
+     * Démarre l'édition inline de la consigne (data.prompt) partagée par poll-likert,
+     * debate-mode et postit-wall — un seul champ, sans label affiché (le contenu de
+     * l'élément EST la consigne, un préfixe "Prompt :" serait redondant).
+     */
+    const startInlineEditPromptField = makeSimpleFieldsInlineEditor(el => [
+        { key: 'prompt', label: null, value: el.data?.prompt || '' },
+    ]);
+
+    /**
+     * Démarre l'édition inline d'une carte (card) : titre + items plats (pas de
+     * sous-items). Combine mountLabeledFieldsEditor (titre) et mountFlatItemsEditor
+     * (items) sous un commit unique, porté par le wrapper englobant les deux.
+     * @param {{ editor: object }} ctx
+     * @param {HTMLElement} div
+     * @param {object} el
+     */
+    const startInlineEditCard = (ctx, div, el) => {
+        const editor = ctx?.editor;
+        if (!editor || !div || !el) return;
+        if (div.classList.contains('editing')) return;
+        div.classList.add('editing');
+        const inner = div.querySelector('.cel-inner');
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cel-card-edit-wrap';
+
+        let committed = false;
+        const revert = () => {
+            if (committed) return;
+            committed = true;
+            div.classList.remove('editing');
+            editor._refreshDOM(el.id);
+        };
+        const commit = () => {
+            if (committed || !div.classList.contains('editing')) return;
+            requestAnimationFrame(() => {
+                if (wrapper.contains(document.activeElement)) return;
+                committed = true;
+                div.classList.remove('editing');
+                const items = list.readItems();
+                editor.updateData(el.id, { data: { title: titleField.textContent, items: items.length ? items : [''] } });
+            });
+        };
+
+        const { container: titleContainer, editables: [titleField] } = mountLabeledFieldsEditor(
+            [{ key: 'title', label: 'Titre', value: el.data?.title || '' }], revert,
+        );
+        titleField.addEventListener('blur', commit);
+
+        const list = mountFlatItemsEditor(el.data?.items || [''], { onBlur: commit, onEscape: revert });
+
+        wrapper.appendChild(titleContainer);
+        wrapper.appendChild(list.ul);
+        inner.innerHTML = '';
+        inner.appendChild(wrapper);
+        titleField.focus();
+    };
+
+    /**
+     * Démarre l'édition inline d'un smartart : items plats seuls (pas de titre, pas
+     * de sous-items). data.variant (layout) reste géré par le panneau de propriétés.
+     * @param {{ editor: object }} ctx
+     * @param {HTMLElement} div
+     * @param {object} el
+     */
+    const startInlineEditSmartArt = (ctx, div, el) => {
+        const editor = ctx?.editor;
+        if (!editor || !div || !el) return;
+        if (div.classList.contains('editing')) return;
+        div.classList.add('editing');
+        const inner = div.querySelector('.cel-inner');
+
+        let committed = false;
+        const revert = () => {
+            if (committed) return;
+            committed = true;
+            div.classList.remove('editing');
+            editor._refreshDOM(el.id);
+        };
+        const commit = () => {
+            if (committed || !div.classList.contains('editing')) return;
+            requestAnimationFrame(() => {
+                if (list.ul.contains(document.activeElement)) return;
+                committed = true;
+                div.classList.remove('editing');
+                const items = list.readItems();
+                editor.updateData(el.id, { data: { items: items.length ? items : [''] } });
+            });
+        };
+
+        const list = mountFlatItemsEditor(el.data?.items || [''], { onBlur: commit, onEscape: revert });
+
+        inner.innerHTML = '';
+        inner.appendChild(list.ul);
+        list.focusFirst();
+    };
+
+    // Langages proposés pour terminal-session — doit rester aligné avec le
+    // <select id="sp-term-lang"> du panneau de propriétés (editor-props-panel.js,
+    // case 'terminal-session'). Volontairement distincte de HIGHLIGHT_LANGUAGES
+    // (moins de langages, "Bash" au lieu de "Bash / Terminal").
+    const TERMINAL_SESSION_LANGUAGES = [
+        ['bash', 'Bash'],
+        ['python', 'Python'],
+        ['javascript', 'JavaScript'],
+        ['yaml', 'YAML'],
+        ['text', 'Texte'],
+    ];
+
+    /**
+     * Démarre l'édition inline d'une session terminal : script + langage, calquée sur
+     * startInlineEditHighlight (même moteur hljs via SlidesShared.codeTerminal côté
+     * rendu statique → portail requis, cf. mountCodeEditPortal), sans zones surlignées.
+     * @param {{ editor: object, mountLiveHighlight?: function, resolveElementFontSize?: function, computeCodeMetrics?: function }} ctx
+     * @param {HTMLElement} div
+     * @param {object} el
+     */
+    const startInlineEditTerminalSession = (ctx, div, el) => {
+        const editor = ctx?.editor;
+        const mountLiveHighlight = ctx?.mountLiveHighlight;
+        if (!editor || !div || !el) return;
+        if (div.classList.contains('editing')) return;
+        div.classList.add('editing');
+        const inner = div.querySelector('.cel-inner');
+        inner.innerHTML = '';
+
+        const { portal, destroy: destroyPortal } = mountCodeEditPortal(div);
+        const scale = Number.isFinite(editor.scale) && editor.scale > 0 ? editor.scale : 1;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cel-highlight-edit-wrap';
+
+        const select = document.createElement('select');
+        select.className = 'cel-hl-lang-select';
+        select.style.fontSize = `${11 * scale}px`;
+        select.style.padding = `${5.6 * scale}px ${12 * scale}px`;
+        const currentLang = el.data?.language || 'bash';
+        TERMINAL_SESSION_LANGUAGES.forEach(([value, label]) => {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = label;
+            if (value === currentLang) opt.selected = true;
+            select.appendChild(opt);
         });
+
+        const codeWrap = document.createElement('div');
+        codeWrap.className = 'cel-code-edit-wrap';
+
+        const pre = document.createElement('pre');
+        pre.className = 'cel-code-edit-highlight';
+        pre.setAttribute('aria-hidden', 'true');
+        const codeEl = document.createElement('code');
+        pre.appendChild(codeEl);
+
+        const textarea = document.createElement('textarea');
+        textarea.className = 'cel-code-edit';
+        textarea.value = el.data?.script || '';
+        textarea.spellcheck = false;
+        applyCodeFontMetrics(ctx, el, pre, textarea, editor.typography, scale);
+
+        codeWrap.appendChild(pre);
+        codeWrap.appendChild(textarea);
+        wrapper.appendChild(select);
+        wrapper.appendChild(codeWrap);
+        portal.appendChild(wrapper);
+        textarea.focus();
+
+        const renderHighlight = typeof mountLiveHighlight === 'function'
+            ? mountLiveHighlight({ textarea, pre, codeEl, getLanguage: () => select.value })
+            : null;
+        select.addEventListener('change', () => renderHighlight?.());
+
+        let committed = false;
+
+        const commit = () => {
+            if (committed || !div.classList.contains('editing')) return;
+            requestAnimationFrame(() => {
+                if (wrapper.contains(document.activeElement)) return;
+                committed = true;
+                div.classList.remove('editing');
+                destroyPortal();
+                editor.updateData(el.id, { data: { script: textarea.value, language: select.value } });
+            });
+        };
+
+        const revert = () => {
+            if (committed) return;
+            committed = true;
+            div.classList.remove('editing');
+            destroyPortal();
+            editor._refreshDOM(el.id);
+        };
+
+        textarea.addEventListener('keydown', e => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = textarea.selectionStart, end = textarea.selectionEnd;
+                textarea.value = textarea.value.substring(0, start) + '    ' + textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + 4;
+                renderHighlight?.();
+            }
+            if (e.key === 'Escape') { e.preventDefault(); revert(); }
+            if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); textarea.blur(); }
+            e.stopPropagation();
+        });
+        select.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { e.preventDefault(); revert(); }
+            e.stopPropagation();
+        });
+
+        textarea.addEventListener('blur', commit);
+        select.addEventListener('blur', commit);
+    };
+
+    /**
+     * Démarre l'édition inline d'un diagramme Mermaid : textarea seule, sans calque de
+     * coloration ni portail (pas d'aperçu live du diagramme pendant la frappe — se
+     * re-rend au commit via editor._refreshDOM, comme tous les autres types). Un seul
+     * calque transformé par le zoom canvas comme le reste du contenu : aucune dérive
+     * pixel à compenser, contrairement à code/highlight/terminal-session.
+     * @param {{ editor: object }} ctx
+     * @param {HTMLElement} div
+     * @param {object} el
+     */
+    const startInlineEditMermaid = (ctx, div, el) => {
+        const editor = ctx?.editor;
+        if (!editor || !div || !el) return;
+        if (div.classList.contains('editing')) return;
+        div.classList.add('editing');
+        const inner = div.querySelector('.cel-inner');
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cel-code-edit-wrap';
+        const textarea = document.createElement('textarea');
+        textarea.className = 'cel-code-edit cel-code-edit-plain';
+        textarea.value = el.data?.code || '';
+        textarea.spellcheck = false;
+        wrap.appendChild(textarea);
+        inner.innerHTML = '';
+        inner.appendChild(wrap);
+        textarea.focus();
+
+        let committed = false;
+
+        const commit = () => {
+            if (committed || !div.classList.contains('editing')) return;
+            committed = true;
+            div.classList.remove('editing');
+            editor.updateData(el.id, { data: { code: textarea.value } });
+        };
+
+        const revert = () => {
+            if (committed) return;
+            committed = true;
+            div.classList.remove('editing');
+            editor._refreshDOM(el.id);
+        };
+
+        textarea.addEventListener('keydown', e => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = textarea.selectionStart, end = textarea.selectionEnd;
+                textarea.value = textarea.value.substring(0, start) + '    ' + textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + 4;
+            }
+            if (e.key === 'Escape') { e.preventDefault(); revert(); }
+            if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); textarea.blur(); }
+            e.stopPropagation();
+        });
+
+        textarea.addEventListener('blur', commit);
     };
 
     /**
@@ -865,6 +1297,16 @@
         startInlineEditCodeExample,
         startInlineEditList,
         startInlineEditTable,
+        startInlineEditQuote,
+        startInlineEditCalloutBox,
+        startInlineEditLatex,
+        startInlineEditAudienceRoulette,
+        startInlineEditTimerLabel,
+        startInlineEditPromptField,
+        startInlineEditCard,
+        startInlineEditSmartArt,
+        startInlineEditTerminalSession,
+        startInlineEditMermaid,
         testUtils: Object.freeze({
             startInlineEdit,
             startInlineEditCode,
@@ -873,8 +1315,20 @@
             startInlineEditCodeExample,
             startInlineEditList,
             startInlineEditTable,
+            startInlineEditQuote,
+            startInlineEditCalloutBox,
+            startInlineEditLatex,
+            startInlineEditAudienceRoulette,
+            startInlineEditTimerLabel,
+            startInlineEditPromptField,
+            startInlineEditCard,
+            startInlineEditSmartArt,
+            startInlineEditTerminalSession,
+            startInlineEditMermaid,
             applyCodeFontMetrics,
             mountCodeEditPortal,
+            mountLabeledFieldsEditor,
+            mountFlatItemsEditor,
         }),
     });
 })(window);

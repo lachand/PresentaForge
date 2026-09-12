@@ -124,6 +124,16 @@
             else if (el.type === 'code-example') editor._startInlineEditCodeExample(div, el);
             else if (el.type === 'list') editor._startInlineEditList(div, el);
             else if (el.type === 'table') editor._startInlineEditTable(div, el);
+            else if (el.type === 'quote') editor._startInlineEditQuote(div, el);
+            else if (el.type === 'callout-box') editor._startInlineEditCalloutBox(div, el);
+            else if (el.type === 'terminal-session') editor._startInlineEditTerminalSession(div, el);
+            else if (el.type === 'latex') editor._startInlineEditLatex(div, el);
+            else if (el.type === 'card') editor._startInlineEditCard(div, el);
+            else if (el.type === 'smartart') editor._startInlineEditSmartArt(div, el);
+            else if (['poll-likert', 'debate-mode', 'postit-wall'].includes(el.type)) editor._startInlineEditPromptField(div, el);
+            else if (el.type === 'audience-roulette') editor._startInlineEditAudienceRoulette(div, el);
+            else if (el.type === 'mermaid') editor._startInlineEditMermaid(div, el);
+            else if (el.type === 'timer') editor._startInlineEditTimerLabel(div, el);
             else editor.onDblClick?.(el, event);
         });
 
