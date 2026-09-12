@@ -323,11 +323,31 @@
             }
         }
 
+        // Point de départ du point d'angle glissé — sert de référence à l'alignement
+        // horizontal/vertical (Maj enfoncée, cf. updateHandleDrag).
+        let startPoint = null;
+        if (handle.role === 'waypoint' && handle.index != null && Array.isArray(conn.waypoints)) {
+            const p = conn.waypoints[handle.index];
+            if (p) startPoint = { x: p.x, y: p.y };
+        }
+
+        // Extrémité FIXE (celle qui n'est pas glissée) — sert d'ancrage à la ligne de
+        // prévisualisation pointillée pendant le drag d'une extrémité (cf. updateHandleDrag
+        // + CanvasEditor._onMouseMove, qui réutilise updateTempLine comme pour la création).
+        let fixedElId = null, fixedAnchor = null;
+        if (handle.role === 'endpoint') {
+            fixedElId = handle.end === 'source' ? conn.targetId : conn.sourceId;
+            fixedAnchor = handle.end === 'source' ? conn.targetAnchor : conn.sourceAnchor;
+        }
+
         return {
             connId: id,
             role: handle.role,
             end: handle.end || null,
             index: handle.index,
+            startPoint,
+            fixedElId,
+            fixedAnchor,
             origSourceId: conn.sourceId,
             origSourceAnchor: conn.sourceAnchor,
             origTargetId: conn.targetId,
@@ -340,18 +360,27 @@
      * Met à jour la poignée en cours de glissement. `point` (coordonnées canvas) sert
      * au repositionnement direct des points d'angle/contrôle de courbe ; `screenPoint`
      * (coordonnées écran client) sert au survol d'ancre pour le rattachement
-     * d'extrémité, via document.elementFromPoint côté CanvasEditor.
+     * d'extrémité, via document.elementFromPoint côté CanvasEditor. `shiftKey` (point
+     * d'angle uniquement) contraint le déplacement à l'axe horizontal ou vertical par
+     * rapport à la position de départ du point (dont la variation est la plus grande).
      * Pour une extrémité, ne déplace pas encore le connecteur (le rattachement se
      * fait au relâchement, cf. endHandleDrag) — seulement l'ancre survolée s'allume.
      */
-    const updateHandleDrag = (context, drag, point, screenPoint) => {
+    const updateHandleDrag = (context, drag, point, screenPoint, shiftKey) => {
         const state = context?.state;
         if (!state || !drag) return;
         const conn = Array.isArray(state.connectors) ? state.connectors.find(c => c.id === drag.connId) : null;
         if (!conn) return;
 
         if (drag.role === 'waypoint' && drag.index != null && Array.isArray(conn.waypoints)) {
-            conn.waypoints[drag.index] = { x: Math.round(point.x), y: Math.round(point.y) };
+            let px = point.x, py = point.y;
+            if (shiftKey && drag.startPoint) {
+                const dx = Math.abs(px - drag.startPoint.x);
+                const dy = Math.abs(py - drag.startPoint.y);
+                if (dx > dy) py = drag.startPoint.y;
+                else px = drag.startPoint.x;
+            }
+            conn.waypoints[drag.index] = { x: Math.round(px), y: Math.round(py) };
             context.refreshConnectors?.();
             return;
         }

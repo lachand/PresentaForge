@@ -1024,9 +1024,17 @@ function bindKeyboard() {
             else if (e.key === 'g') { e.preventDefault(); groupSelected(); }
         }
         if (e.key === 'F5') { e.preventDefault(); launchPresentation(e.shiftKey ? 'presenter' : undefined); }
-        // Arrow keys: nudge selected canvas elements, navigate slides, or (Ctrl+Shift) reorder the deck
+        // Arrow keys: nudge/resize (Ctrl) selected canvas elements, navigate slides, or (Ctrl+Shift) reorder the deck
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            if (runtimeCanvas && runtimeCanvas.selectedIds.size > 0) {
+            if (runtimeCanvas && runtimeCanvas.selectedIds.size > 0 && e.ctrlKey) {
+                // Redimensionner au clavier — jusque-là seul le drag de poignée le permettait,
+                // impossible pour un utilisateur clavier-only.
+                e.preventDefault();
+                const step = e.shiftKey ? 10 : 1;
+                const dw = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+                const dh = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+                runtimeCanvas.resizeSelected(dw, dh);
+            } else if (runtimeCanvas && runtimeCanvas.selectedIds.size > 0) {
                 e.preventDefault();
                 const step = e.shiftKey ? 10 : 1;
                 const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;

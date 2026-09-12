@@ -300,6 +300,45 @@
         return false;
     };
 
+    const RESIZE_MIN_W = 40;
+    const RESIZE_MIN_H = 24;
+
+    /**
+     * Redimensionne au clavier (Ctrl+Flèche) chaque élément sélectionné indépendamment
+     * (pas de mise à l'échelle proportionnelle de groupe — utilisateur clavier-only,
+     * cf. handleMouseMove pour le drag qui gère lui la bbox de groupe).
+     */
+    const resizeSelected = (context, dw, dh) => {
+        const editor = context?.editor;
+        if (!editor) return false;
+
+        const ids = editor.selectedIds?.size > 0
+            ? [...editor.selectedIds]
+            : (editor.selectedId ? [editor.selectedId] : []);
+        if (!ids.length) return false;
+
+        let resized = false;
+        for (const id of ids) {
+            const el = findElementById(editor.elements, id);
+            if (!el || editor._isElementLocked(el)) continue;
+            el.w = Math.round(Math.max(RESIZE_MIN_W, el.w + dw));
+            el.h = Math.round(Math.max(RESIZE_MIN_H, el.h + dh));
+            const div = editor._dom(id);
+            if (div) {
+                div.style.width = el.w + 'px';
+                div.style.height = el.h + 'px';
+            }
+            resized = true;
+        }
+        if (!resized) return false;
+
+        if (editor.onPositionChange) {
+            editor.onPositionChange(findElementById(editor.elements, editor.selectedId));
+        }
+        editor.onChange(editor.serialize());
+        return true;
+    };
+
     const nudge = (context, dx, dy) => {
         const editor = context?.editor;
         if (!editor) return false;
@@ -439,6 +478,7 @@
         handleMouseMove,
         handleMouseUp,
         nudge,
+        resizeSelected,
         alignElements,
         distributeElements,
         autoLayoutSelected,
@@ -448,6 +488,7 @@
             handleMouseMove,
             handleMouseUp,
             nudge,
+            resizeSelected,
             alignElements,
             distributeElements,
             autoLayoutSelected,

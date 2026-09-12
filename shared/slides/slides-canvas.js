@@ -1866,7 +1866,8 @@ class CanvasEditor {
                 findAnchorAtScreenPoint: (cx, cy) => this._findAnchorAtScreenPoint(cx, cy),
                 highlightAnchor: hit => this._highlightAnchor(hit),
                 refreshConnectors: () => this._refreshConnectors(),
-            }, this._connHandleDrag, point, { x: e.clientX, y: e.clientY });
+            }, this._connHandleDrag, point, { x: e.clientX, y: e.clientY }, e.shiftKey);
+            if (this._connHandleDrag.role === 'endpoint') this._updateEndpointDragPreview(point);
             return;
         }
         CanvasTransformRuntime.handleMouseMove({
@@ -1880,6 +1881,7 @@ class CanvasEditor {
             const drag = this._connHandleDrag;
             this._connHandleDrag = null;
             if (!this._connectorMode) this.container.classList.remove('canvas-connector-mode');
+            if (drag.role === 'endpoint') this._hideEndpointDragPreview();
             CanvasConnectorsRuntime.endHandleDrag({
                 state: this,
                 refreshConnectors: () => this._refreshConnectors(),
@@ -1891,10 +1893,51 @@ class CanvasEditor {
         CanvasTransformRuntime.handleMouseUp({ editor: this });
     }
 
+    /**
+     * Prévisualisation en direct du glissement d'une extrémité de connecteur — sans ça,
+     * rien ne bouge visuellement pendant le drag (seul le rattachement se voit, au
+     * relâchement). Réutilise la ligne pointillée `.conn-temp` déjà utilisée pour la
+     * création de connecteur : ancrée sur l'extrémité FIXE (non glissée), elle suit le
+     * curseur et se cale sur l'ancre survolée le cas échéant.
+     */
+    _updateEndpointDragPreview(point) {
+        const drag = this._connHandleDrag;
+        if (!drag?.fixedElId) return;
+        let mx = point.x, my = point.y;
+        const hit = drag.pendingReattach;
+        if (hit) {
+            const targetEl = this.elements.find(e => e.id === hit.elId);
+            if (targetEl) {
+                const snapped = this._getAnchorPos(targetEl, hit.anchor);
+                mx = snapped.x; my = snapped.y;
+            }
+        }
+        CanvasConnectorsRuntime.updateTempLine({
+            connOverlay: this._connOverlay,
+            connCreation: { sourceId: drag.fixedElId, sourceAnchor: drag.fixedAnchor },
+            elements: this.elements,
+            getAnchorPos: (el, anchor) => this._getAnchorPos(el, anchor),
+            mx,
+            my,
+        });
+    }
+
+    _hideEndpointDragPreview() {
+        CanvasConnectorsRuntime.updateTempLine({
+            connOverlay: this._connOverlay,
+            connCreation: null,
+            elements: this.elements,
+        });
+    }
+
     /* ── Nudge & Align/Distribute ─────────────────────────── */
 
     nudge(dx, dy) {
         CanvasTransformRuntime.nudge({ editor: this }, dx, dy);
+    }
+
+    resizeSelected(dw, dh) {
+        CanvasTransformRuntime.resizeSelected({ editor: this }, dw, dh);
     }
 
     alignElements(direction) {

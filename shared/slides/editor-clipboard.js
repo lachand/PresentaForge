@@ -14,6 +14,10 @@
 
 let _clipboard = null;
 let _clipboardStyle = null;
+// Décalage cumulatif appliqué à chaque collage successif du même contenu — sans ça,
+// Ctrl+V ×3 empilait 3 copies à la position identique (+20/+20 depuis l'original à
+// chaque fois). Remis à zéro à chaque nouveau copier/couper.
+let _clipboardPasteCount = 0;
 const _clipboardRuntime = window.OEIEditorRuntimeState?.create
     ? window.OEIEditorRuntimeState.create(window)
     : null;
@@ -40,6 +44,7 @@ function clipboardCut() {
     const selected = runtimeCanvas.getSelectedElements();
     if (!selected.length) return;
     _clipboard = JSON.parse(JSON.stringify(selected));
+    _clipboardPasteCount = 0;
     selected.forEach(e => runtimeCanvas.remove(e.id));
     _clipboardNotify('Coupé', 'success');
 }
@@ -49,6 +54,7 @@ function clipboardCopy() {
     const selected = runtimeCanvas.getSelectedElements();
     if (!selected.length) return;
     _clipboard = JSON.parse(JSON.stringify(selected));
+    _clipboardPasteCount = 0;
     _clipboardNotify(selected.length > 1 ? `${selected.length} éléments copiés` : 'Copié', 'success');
 }
 function clipboardPaste() {
@@ -56,11 +62,13 @@ function clipboardPaste() {
     if (!_clipboard || !runtimeCanvas) return;
     const items = Array.isArray(_clipboard) ? _clipboard : [_clipboard];
     const maxZ = runtimeCanvas.elements.reduce((max, e) => Math.max(max, e.z || 0), 0);
+    _clipboardPasteCount += 1;
+    const offset = 20 * _clipboardPasteCount;
     const newIds = [];
     items.forEach((item, i) => {
         const el = JSON.parse(JSON.stringify(item));
         el.id = 'el_' + Math.random().toString(36).slice(2, 9);
-        el.x += 20; el.y += 20;
+        el.x += offset; el.y += offset;
         el.z = maxZ + 1 + i;
         runtimeCanvas.elements.push(el);
         runtimeCanvas._addElementDOM(el);
