@@ -645,6 +645,14 @@ class CanvasEditor {
 .cel-connector-overlay .conn-g { pointer-events:stroke; cursor:pointer; }
 .cel-connector-overlay .conn-hit { pointer-events:stroke; cursor:pointer; stroke:transparent; stroke-width:14; fill:none; }
 .cel-connector-overlay .conn-g.conn-selected .conn-line-bg { stroke:rgba(129,140,248,0.25); stroke-width:8; }
+.cel-connector-overlay .conn-handle { pointer-events:all; }
+.cel-connector-overlay .conn-handle:hover { filter:brightness(1.15); transform-box:fill-box; transform-origin:center; transform:scale(1.15); }
+.cel-conn-label-edit {
+    z-index:9500; font-size:13px; font-family:var(--sl-font-body, system-ui);
+    color:var(--sl-text,#e2e8f0); background:var(--sl-slide-bg, #1a1d27);
+    border:1px solid #818cf8; border-radius:4px; padding:2px 6px; min-width:60px;
+    text-align:center; outline:none; box-shadow:0 0 0 2px rgba(129,140,248,0.25);
+}
 .canvas-connector-mode { cursor:crosshair !important; }
 .canvas-connector-mode .cel { cursor:crosshair !important; }
 .cel-widget-placeholder, .cel-widget-loading {
@@ -868,6 +876,8 @@ class CanvasEditor {
         this._connectorMode = false;
         this._connCreation = null;        // { sourceId, sourceAnchor }
         this._selectedConnectorId = null;
+        this._selectedWaypointHandle = null; // { connId, index } — poignée d'angle armée, ciblée par Suppr
+        this._connHandleDrag = null;
         this.onConnectorSelect = () => {};
         this._marquee = null;
         this._marqueeDiv = null;
@@ -994,6 +1004,8 @@ class CanvasEditor {
         this.selectedId = null;
         this.selectedIds.clear();
         this._selectedConnectorId = null;
+        this._selectedWaypointHandle = null;
+        this._connHandleDrag = null;
         this._connCreation = null;
         this._captionRegistry = null;
         this._renderAll(bg);
@@ -1075,6 +1087,7 @@ class CanvasEditor {
     }
 
     select(id) {
+        this._selectedWaypointHandle = null;
         this.selectedId = id;
         this.selectedIds.clear();
         if (id) {
@@ -1183,16 +1196,139 @@ class CanvasEditor {
             marqueeDiv: this._marqueeDiv,
             addElementDOM: el => this._addElementDOM(el),
             refreshConnectors: () => this._refreshConnectors(),
-            onConnectorMouseDown: connId => this.selectConnector(connId),
+            onConnectorMouseDown: (connId, event) => {
+                // Connecteur déjà sélectionné + clic sur son tracé (elbow/rounded) :
+                // insère un point d'angle au lieu de re-sélectionner (no-op sinon).
+                if (connId === this._selectedConnectorId && event) {
+                    const rect = this.container.getBoundingClientRect();
+                    const point = { x: (event.clientX - rect.left) / this.scale, y: (event.clientY - rect.top) / this.scale };
+                    if (this._insertWaypointAtPoint(connId, point)) return;
+                }
+                this.selectConnector(connId);
+            },
+            onConnectorHandleMouseDown: (connId, handle, event) => this._startConnectorHandleDrag(connId, handle, event),
             resolveConnector: connId => this.connectors.find(conn => conn.id === connId) || null,
             onConnectorDblClick: (conn, event) => {
-                if (conn && this.onConnectorDblClick) this.onConnectorDblClick(conn, event);
+                if (!conn) return;
+                if (this.onConnectorDblClick) this.onConnectorDblClick(conn, event);
+                this._startConnectorLabelEdit(conn, event);
             },
             documentRef: document,
         });
         this._connOverlay = result.connOverlay || null;
         this._connBackOverlay = result.connBackOverlay || null;
         this._marqueeDiv = result.marqueeDiv || null;
+    }
+
+    /** Supprime la poignée d'angle actuellement armée (dernier waypoint saisi), s'il y en a une. */
+    removeSelectedWaypoint() {
+        const handle = this._selectedWaypointHandle;
+        if (!handle || handle.connId !== this._selectedConnectorId) return false;
+        const ok = CanvasConnectorsRuntime.removeWaypoint({
+            state: this,
+            refreshConnectors: () => this._refreshConnectors(),
+            notifyChange: () => this.onChange(this.serialize()),
+        }, handle.connId, handle.index);
+        if (ok) this._selectedWaypointHandle = null;
+        return ok;
+    }
+
+    _insertWaypointAtPoint(connId, point) {
+        return CanvasConnectorsRuntime.insertWaypointAtPoint({
+            state: this,
+            getAnchorPos: (el, anchor) => this._getAnchorPos(el, anchor),
+            getEffectiveElbowPoints: (conn, p1, p2) => CanvasHelpers.effectiveElbowPoints(conn, p1, p2),
+            distanceToSegment: (p, a, b) => CanvasHelpers.distanceToSegment(p, a, b),
+            refreshConnectors: () => this._refreshConnectors(),
+            notifyChange: () => this.onChange(this.serialize()),
+        }, connId, point);
+    }
+
+    _startConnectorHandleDrag(connId, handle, event) {
+        const drag = CanvasConnectorsRuntime.startHandleDrag({
+            state: this,
+            getAnchorPos: (el, anchor) => this._getAnchorPos(el, anchor),
+            getEffectiveElbowPoints: (conn, p1, p2) => CanvasHelpers.effectiveElbowPoints(conn, p1, p2),
+        }, connId, handle);
+        if (!drag) return;
+        this._connHandleDrag = drag;
+        // Poignée d'angle sélectionnée : cible d'un Suppr éventuel (voir editor-bindings.js).
+        this._selectedWaypointHandle = handle.role === 'waypoint' ? { connId, index: handle.index } : null;
+        if (handle.role === 'endpoint') this.container.classList.add('canvas-connector-mode');
+        event?.preventDefault?.();
+    }
+
+    /** Ancre (.cel-anchor) sous un point écran donné, si présente — utilisé pour le
+     *  survol pendant le glissement d'une extrémité de connecteur (réattachement). */
+    _findAnchorAtScreenPoint(clientX, clientY) {
+        const hitEl = document.elementFromPoint?.(clientX, clientY);
+        const anchorEl = hitEl?.closest?.('.cel-anchor');
+        if (!anchorEl) return null;
+        const elId = anchorEl.dataset?.elId;
+        const anchor = anchorEl.dataset?.anchor;
+        if (!elId || !anchor) return null;
+        return { elId, anchor, anchorEl };
+    }
+
+    _highlightAnchor(hit) {
+        if (this._lastHighlightedAnchorEl && this._lastHighlightedAnchorEl !== hit?.anchorEl) {
+            this._lastHighlightedAnchorEl.classList.remove('anchor-active');
+        }
+        if (hit?.anchorEl) hit.anchorEl.classList.add('anchor-active');
+        this._lastHighlightedAnchorEl = hit?.anchorEl || null;
+    }
+
+    _clearAnchorHighlight() {
+        if (this._lastHighlightedAnchorEl) this._lastHighlightedAnchorEl.classList.remove('anchor-active');
+        this._lastHighlightedAnchorEl = null;
+    }
+
+    /** Édition inline du label d'un connecteur (double-clic sur son tracé) — un simple
+     *  <input> positionné au milieu du connecteur, dans l'espace canvas non-zoomé (le
+     *  conteneur porte déjà le transform:scale du frame). */
+    _startConnectorLabelEdit(conn, event) {
+        if (this._connLabelEditEl) { this._connLabelEditEl.remove(); this._connLabelEditEl = null; }
+        const source = this.elements.find(e => e.id === conn.sourceId);
+        const target = this.elements.find(e => e.id === conn.targetId);
+        if (!source || !target) return;
+        const p1 = this._getAnchorPos(source, conn.sourceAnchor);
+        const p2 = this._getAnchorPos(target, conn.targetAnchor);
+        const lx = (p1.x + p2.x) / 2;
+        const ly = (p1.y + p2.y) / 2;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'cel-conn-label-edit';
+        input.value = conn.label || '';
+        input.placeholder = 'Libellé…';
+        input.style.left = `${lx}px`;
+        input.style.top = `${ly}px`;
+        input.style.transform = 'translate(-50%, -50%)';
+        input.style.position = 'absolute';
+        this.container.appendChild(input);
+        this._connLabelEditEl = input;
+        input.focus();
+        input.select();
+
+        const cleanup = () => {
+            if (this._connLabelEditEl !== input) return;
+            this._connLabelEditEl = null;
+            input.remove();
+        };
+        const commit = () => {
+            if (this._connLabelEditEl !== input) return;
+            const value = input.value.trim();
+            cleanup();
+            this.updateConnector(conn.id, { label: value });
+        };
+        input.addEventListener('keydown', e => {
+            e.stopPropagation();
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); cleanup(); }
+        });
+        input.addEventListener('mousedown', e => e.stopPropagation());
+        input.addEventListener('blur', commit);
+        event?.preventDefault?.();
     }
 
     _addElementDOM(el) {
@@ -1477,6 +1613,8 @@ class CanvasEditor {
             selectedConnectorId: this._selectedConnectorId,
             getConnectorPathData: conn => this._connectorPathData(conn),
             getAnchorPos: (el, anchor) => this._getAnchorPos(el, anchor),
+            getEffectiveElbowPoints: (conn, p1, p2) => CanvasHelpers.effectiveElbowPoints(conn, p1, p2),
+            getCurveControl: (conn, p1, p2) => conn.curveControl || CanvasHelpers.defaultCurveControl(p1, p2),
             escapeHtml: escHtml,
             documentRef: document,
         });
@@ -1537,6 +1675,7 @@ class CanvasEditor {
     }
 
     selectConnector(id) {
+        this._selectedWaypointHandle = null;
         CanvasConnectorsRuntime.selectConnector({
             state: this,
             clearElementSelection: () => {
@@ -1719,6 +1858,17 @@ class CanvasEditor {
     }
 
     _onMouseMove(e) {
+        if (this._connHandleDrag) {
+            const rect = this.container.getBoundingClientRect();
+            const point = { x: (e.clientX - rect.left) / this.scale, y: (e.clientY - rect.top) / this.scale };
+            CanvasConnectorsRuntime.updateHandleDrag({
+                state: this,
+                findAnchorAtScreenPoint: (cx, cy) => this._findAnchorAtScreenPoint(cx, cy),
+                highlightAnchor: hit => this._highlightAnchor(hit),
+                refreshConnectors: () => this._refreshConnectors(),
+            }, this._connHandleDrag, point, { x: e.clientX, y: e.clientY });
+            return;
+        }
         CanvasTransformRuntime.handleMouseMove({
             editor: this,
             computeSnap: payload => this._computeSnap(payload),
@@ -1726,6 +1876,18 @@ class CanvasEditor {
     }
 
     _onMouseUp() {
+        if (this._connHandleDrag) {
+            const drag = this._connHandleDrag;
+            this._connHandleDrag = null;
+            if (!this._connectorMode) this.container.classList.remove('canvas-connector-mode');
+            CanvasConnectorsRuntime.endHandleDrag({
+                state: this,
+                refreshConnectors: () => this._refreshConnectors(),
+                notifyChange: () => this.onChange(this.serialize()),
+                clearAnchorHighlight: () => this._clearAnchorHighlight(),
+            }, drag);
+            return;
+        }
         CanvasTransformRuntime.handleMouseUp({ editor: this });
     }
 

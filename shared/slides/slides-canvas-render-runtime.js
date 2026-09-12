@@ -18,19 +18,33 @@
         overlay.setAttribute('viewBox', '0 0 1280 720');
         overlay.innerHTML = CONNECTOR_OVERLAY_INNER;
 
-        if (typeof handlers.onConnectorMouseDown === 'function') {
-            overlay.addEventListener?.('mousedown', event => {
-                const group = event.target?.closest?.('.conn-g');
-                if (!group) return;
-                event.stopPropagation?.();
+        overlay.addEventListener?.('mousedown', event => {
+            const group = event.target?.closest?.('.conn-g');
+            if (!group) return;
+            event.stopPropagation?.();
+
+            // Poignée (extrémité/point d'angle/contrôle de courbe) : priorité sur la
+            // simple sélection — arme un drag de poignée dédié.
+            const handle = event.target?.closest?.('.conn-handle');
+            if (handle && typeof handlers.onConnectorHandleMouseDown === 'function') {
+                handlers.onConnectorHandleMouseDown(group.dataset?.connId, {
+                    role: handle.dataset?.handleRole,
+                    end: handle.dataset?.handleEnd || null,
+                    index: handle.dataset?.handleIndex != null ? Number(handle.dataset.handleIndex) : null,
+                }, event);
+                return;
+            }
+
+            if (typeof handlers.onConnectorMouseDown === 'function') {
                 handlers.onConnectorMouseDown(group.dataset?.connId, event);
-            });
-        }
+            }
+        });
 
         if (typeof handlers.onConnectorDblClick === 'function') {
             overlay.addEventListener?.('dblclick', event => {
                 const group = event.target?.closest?.('.conn-g');
                 if (!group) return;
+                if (event.target?.closest?.('.conn-handle')) return; // dblclick sur poignée : pas d'édition label
                 const connector = handlers.resolveConnector?.(group.dataset?.connId);
                 if (!connector) return;
                 event.stopPropagation?.();
@@ -55,6 +69,7 @@
         // Back overlay (z-index:0) for connectors anchored at center (passes behind elements)
         const connBackOverlay = createConnectorOverlay(documentRef, {
             onConnectorMouseDown: context.onConnectorMouseDown,
+            onConnectorHandleMouseDown: context.onConnectorHandleMouseDown,
             onConnectorDblClick: context.onConnectorDblClick,
             resolveConnector: context.resolveConnector,
         });
@@ -65,6 +80,7 @@
 
         const connOverlay = createConnectorOverlay(documentRef, {
             onConnectorMouseDown: context.onConnectorMouseDown,
+            onConnectorHandleMouseDown: context.onConnectorHandleMouseDown,
             onConnectorDblClick: context.onConnectorDblClick,
             resolveConnector: context.resolveConnector,
         });

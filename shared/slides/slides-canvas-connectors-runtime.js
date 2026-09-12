@@ -74,8 +74,27 @@
         if (isSelected && source && target) {
             const p1 = getAnchorPos(source, conn.sourceAnchor);
             const p2 = getAnchorPos(target, conn.targetAnchor);
-            group.innerHTML += `<circle cx="${p1.x}" cy="${p1.y}" r="5" fill="${stroke}" opacity="0.6" style="pointer-events:none;"/>`;
-            group.innerHTML += `<circle cx="${p2.x}" cy="${p2.y}" r="5" fill="${stroke}" opacity="0.6" style="pointer-events:none;"/>`;
+
+            // Extrémités : glissables pour réattacher le connecteur à une autre ancre/
+            // élément (voir handleConnectorHandleMouseDown / le mode "reattach" du drag).
+            group.innerHTML += `<circle class="conn-handle conn-handle-endpoint" data-handle-role="endpoint" data-handle-end="source" cx="${Number(p1.x)}" cy="${Number(p1.y)}" r="6" fill="${esc(stroke)}" stroke="#fff" stroke-width="1.5" style="cursor:move;"/>`;
+            group.innerHTML += `<circle class="conn-handle conn-handle-endpoint" data-handle-role="endpoint" data-handle-end="target" cx="${Number(p2.x)}" cy="${Number(p2.y)}" r="6" fill="${esc(stroke)}" stroke="#fff" stroke-width="1.5" style="cursor:move;"/>`;
+
+            const lineType = String(conn.lineType || 'straight');
+            if (lineType === 'elbow' || lineType === 'rounded') {
+                const getEffectiveElbowPoints = context.getEffectiveElbowPoints;
+                const pts = typeof getEffectiveElbowPoints === 'function' ? getEffectiveElbowPoints(conn, p1, p2) : [p1, p2];
+                const midPts = pts.slice(1, -1);
+                midPts.forEach((pt, i) => {
+                    group.innerHTML += `<circle class="conn-handle conn-handle-waypoint" data-handle-role="waypoint" data-handle-index="${Number(i)}" cx="${Number(pt.x)}" cy="${Number(pt.y)}" r="5" fill="#fff" stroke="${esc(stroke)}" stroke-width="2" style="cursor:move;"/>`;
+                });
+            } else if (lineType === 'curve') {
+                const getCurveControl = context.getCurveControl;
+                const cp = typeof getCurveControl === 'function' ? getCurveControl(conn, p1, p2) : { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+                group.innerHTML += `<line x1="${Number(p1.x)}" y1="${Number(p1.y)}" x2="${Number(cp.x)}" y2="${Number(cp.y)}" stroke="${esc(stroke)}" stroke-width="1" stroke-dasharray="3 3" opacity="0.5" style="pointer-events:none;"/>`;
+                group.innerHTML += `<line x1="${Number(cp.x)}" y1="${Number(cp.y)}" x2="${Number(p2.x)}" y2="${Number(p2.y)}" stroke="${esc(stroke)}" stroke-width="1" stroke-dasharray="3 3" opacity="0.5" style="pointer-events:none;"/>`;
+                group.innerHTML += `<circle class="conn-handle conn-handle-curve" data-handle-role="curve-control" cx="${Number(cp.x)}" cy="${Number(cp.y)}" r="5" fill="#fff" stroke="${esc(stroke)}" stroke-width="2" style="cursor:move;"/>`;
+            }
         }
 
         pathsG.appendChild(group);
@@ -227,7 +246,157 @@
         if (patch.label !== undefined) conn.label = patch.label;
         if (patch.sourceAnchor !== undefined) conn.sourceAnchor = patch.sourceAnchor;
         if (patch.targetAnchor !== undefined) conn.targetAnchor = patch.targetAnchor;
+        if (patch.sourceId !== undefined) conn.sourceId = patch.sourceId;
+        if (patch.targetId !== undefined) conn.targetId = patch.targetId;
+        if (patch.waypoints !== undefined) conn.waypoints = patch.waypoints;
+        if (patch.curveControl !== undefined) conn.curveControl = patch.curveControl;
         if (patch.style) Object.assign(conn.style || (conn.style = {}), patch.style);
+        context.refreshConnectors?.();
+        context.notifyChange?.();
+        return true;
+    };
+
+    /**
+     * Insère un nouveau point d'angle sur le segment le plus proche de `point`
+     * (types elbow/rounded uniquement) — déclenché par un clic sur le tracé d'un
+     * connecteur déjà sélectionné (voir CanvasEditor._onConnectorMouseDown).
+     * @param {object} context - { state, getAnchorPos, getEffectiveElbowPoints,
+     *   distanceToSegment, refreshConnectors, notifyChange }
+     * @param {string} id
+     * @param {{x:number,y:number}} point - coordonnées canvas (pas écran)
+     */
+    const insertWaypointAtPoint = (context, id, point) => {
+        const state = context?.state;
+        if (!state || !Array.isArray(state.connectors)) return false;
+        const conn = state.connectors.find(c => c.id === id);
+        if (!conn) return false;
+        const lineType = String(conn.lineType || 'straight');
+        if (lineType !== 'elbow' && lineType !== 'rounded') return false;
+        const source = resolveElement(state.elements, conn.sourceId);
+        const target = resolveElement(state.elements, conn.targetId);
+        if (!source || !target) return false;
+        const getAnchorPos = context.getAnchorPos;
+        const getEffectiveElbowPoints = context.getEffectiveElbowPoints;
+        const distanceToSegment = context.distanceToSegment;
+        if (typeof getAnchorPos !== 'function' || typeof getEffectiveElbowPoints !== 'function' || typeof distanceToSegment !== 'function') return false;
+
+        const p1 = getAnchorPos(source, conn.sourceAnchor);
+        const p2 = getAnchorPos(target, conn.targetAnchor);
+        const pts = getEffectiveElbowPoints(conn, p1, p2); // [p1, ...mid, p2]
+
+        let bestSeg = 0, bestDist = Infinity;
+        for (let i = 0; i < pts.length - 1; i++) {
+            const d = distanceToSegment(point, pts[i], pts[i + 1]);
+            if (d < bestDist) { bestDist = d; bestSeg = i; }
+        }
+        const newWaypoints = pts.slice(1, -1).map(p => ({ x: Math.round(p.x), y: Math.round(p.y) }));
+        newWaypoints.splice(bestSeg, 0, { x: Math.round(point.x), y: Math.round(point.y) });
+        conn.waypoints = newWaypoints;
+        context.refreshConnectors?.();
+        context.notifyChange?.();
+        return true;
+    };
+
+    /**
+     * Arme le glissement d'une poignée de connecteur (extrémité/point d'angle/
+     * contrôle de courbe). Pour une poignée de type "waypoint" sans `conn.waypoints`
+     * encore explicite (points auto-calculés), les fige d'abord dans `conn.waypoints`
+     * pour que le point glissé garde son index et que les autres ne sautent pas.
+     * @returns {object|null} l'état de drag armé (à stocker sur editor._connHandleDrag)
+     */
+    const startHandleDrag = (context, id, handle) => {
+        const state = context?.state;
+        if (!state || !Array.isArray(state.connectors) || !handle?.role) return null;
+        const conn = state.connectors.find(c => c.id === id);
+        if (!conn) return null;
+
+        if (handle.role === 'waypoint' && (!Array.isArray(conn.waypoints) || !conn.waypoints.length)) {
+            const source = resolveElement(state.elements, conn.sourceId);
+            const target = resolveElement(state.elements, conn.targetId);
+            const getAnchorPos = context.getAnchorPos;
+            const getEffectiveElbowPoints = context.getEffectiveElbowPoints;
+            if (source && target && typeof getAnchorPos === 'function' && typeof getEffectiveElbowPoints === 'function') {
+                const p1 = getAnchorPos(source, conn.sourceAnchor);
+                const p2 = getAnchorPos(target, conn.targetAnchor);
+                const pts = getEffectiveElbowPoints(conn, p1, p2);
+                conn.waypoints = pts.slice(1, -1).map(p => ({ x: Math.round(p.x), y: Math.round(p.y) }));
+            }
+        }
+
+        return {
+            connId: id,
+            role: handle.role,
+            end: handle.end || null,
+            index: handle.index,
+            origSourceId: conn.sourceId,
+            origSourceAnchor: conn.sourceAnchor,
+            origTargetId: conn.targetId,
+            origTargetAnchor: conn.targetAnchor,
+            pendingReattach: null,
+        };
+    };
+
+    /**
+     * Met à jour la poignée en cours de glissement. `point` (coordonnées canvas) sert
+     * au repositionnement direct des points d'angle/contrôle de courbe ; `screenPoint`
+     * (coordonnées écran client) sert au survol d'ancre pour le rattachement
+     * d'extrémité, via document.elementFromPoint côté CanvasEditor.
+     * Pour une extrémité, ne déplace pas encore le connecteur (le rattachement se
+     * fait au relâchement, cf. endHandleDrag) — seulement l'ancre survolée s'allume.
+     */
+    const updateHandleDrag = (context, drag, point, screenPoint) => {
+        const state = context?.state;
+        if (!state || !drag) return;
+        const conn = Array.isArray(state.connectors) ? state.connectors.find(c => c.id === drag.connId) : null;
+        if (!conn) return;
+
+        if (drag.role === 'waypoint' && drag.index != null && Array.isArray(conn.waypoints)) {
+            conn.waypoints[drag.index] = { x: Math.round(point.x), y: Math.round(point.y) };
+            context.refreshConnectors?.();
+            return;
+        }
+        if (drag.role === 'curve-control') {
+            conn.curveControl = { x: Math.round(point.x), y: Math.round(point.y) };
+            context.refreshConnectors?.();
+            return;
+        }
+        if (drag.role === 'endpoint' && screenPoint) {
+            const hit = context.findAnchorAtScreenPoint?.(screenPoint.x, screenPoint.y);
+            drag.pendingReattach = hit || null;
+            context.highlightAnchor?.(hit);
+        }
+    };
+
+    /** Termine le glissement — commite le rattachement d'extrémité si une ancre valide est survolée. */
+    const endHandleDrag = (context, drag) => {
+        if (!drag) return false;
+        context.clearAnchorHighlight?.();
+        if (drag.role !== 'endpoint' || !drag.pendingReattach) {
+            context.notifyChange?.();
+            return true;
+        }
+        const { elId, anchor } = drag.pendingReattach;
+        const patch = drag.end === 'source'
+            ? { sourceId: elId, sourceAnchor: anchor }
+            : { targetId: elId, targetAnchor: anchor };
+        updateConnector(context, drag.connId, patch);
+        return true;
+    };
+
+    /**
+     * Supprime un point d'angle précis (élément liste/waypoint) — déclenché par Suppr
+     * quand une poignée d'angle vient d'être armée (voir editor-bindings.js).
+     * @param {object} context - { state, refreshConnectors, notifyChange }
+     * @param {string} connId
+     * @param {number} index
+     */
+    const removeWaypoint = (context, connId, index) => {
+        const state = context?.state;
+        if (!state || !Array.isArray(state.connectors)) return false;
+        const conn = state.connectors.find(c => c.id === connId);
+        if (!conn || !Array.isArray(conn.waypoints) || index == null) return false;
+        if (index < 0 || index >= conn.waypoints.length) return false;
+        conn.waypoints.splice(index, 1);
         context.refreshConnectors?.();
         context.notifyChange?.();
         return true;
@@ -242,6 +411,17 @@
     const selectConnector = (context, id) => {
         const state = context?.state;
         if (!state) return null;
+        // Re-cliquer un connecteur DÉJÀ sélectionné est un no-op côté état : on évite de
+        // reconstruire tout l'overlay SVG (pathsG.innerHTML = '') entre le mousedown et le
+        // mouseup du même geste, ce qui remplacerait le nœud DOM cliqué et empêcherait le
+        // navigateur de synthétiser 'click'/'dblclick' (identité de nœud rompue) — un
+        // double-clic sur un connecteur déjà sélectionné ne déclencherait alors plus jamais
+        // l'édition inline du label.
+        if (id && id === state._selectedConnectorId) {
+            const already = getSelectedConnector({ state });
+            context.notifyConnectorSelect?.(already);
+            return already;
+        }
         state._selectedConnectorId = id;
         context.clearElementSelection?.();
         context.updateSelectionVisuals?.();
@@ -262,6 +442,11 @@
         updateConnector,
         selectConnector,
         getSelectedConnector,
+        insertWaypointAtPoint,
+        startHandleDrag,
+        updateHandleDrag,
+        endHandleDrag,
+        removeWaypoint,
         testUtils: Object.freeze({
             resolveElement,
             escapeHtml,
@@ -275,6 +460,11 @@
             updateConnector,
             selectConnector,
             getSelectedConnector,
+            insertWaypointAtPoint,
+            startHandleDrag,
+            updateHandleDrag,
+            endHandleDrag,
+            removeWaypoint,
         }),
     });
 })(window);

@@ -90,25 +90,29 @@
         }
 
         if (editor._resize) {
-            const { id, origEl, handle, startMX, startMY, aspectRatio } = editor._resize;
+            const { id, origEl, handle, startMX, startMY, aspectRatio, groupId, groupBBox, groupOrigRects } = editor._resize;
             const el = findElementById(editor.elements, id);
             if (!el) return true;
+            // Élément groupé : on redimensionne la boîte englobante du groupe comme
+            // référence (au lieu de l'élément cliqué seul), puis chaque membre est mis à
+            // l'échelle proportionnellement — voir l'application du scale plus bas.
+            const refOrig = groupBBox || origEl;
             const dx = (event.clientX - startMX) / editor.scale;
             const dy = (event.clientY - startMY) / editor.scale;
-            let { x, y, w, h } = origEl;
+            let { x, y, w, h } = refOrig;
             const MIN_W = 40;
             const MIN_H = 24;
 
-            if (handle.includes('e')) w = Math.max(MIN_W, origEl.w + dx);
+            if (handle.includes('e')) w = Math.max(MIN_W, refOrig.w + dx);
             if (handle.includes('w')) {
-                const nw = Math.max(MIN_W, origEl.w - dx);
-                x = origEl.x + (origEl.w - nw);
+                const nw = Math.max(MIN_W, refOrig.w - dx);
+                x = refOrig.x + (refOrig.w - nw);
                 w = nw;
             }
-            if (handle.includes('s')) h = Math.max(MIN_H, origEl.h + dy);
+            if (handle.includes('s')) h = Math.max(MIN_H, refOrig.h + dy);
             if (handle.includes('n')) {
-                const nh = Math.max(MIN_H, origEl.h - dy);
-                y = origEl.y + (origEl.h - nh);
+                const nh = Math.max(MIN_H, refOrig.h - dy);
+                y = refOrig.y + (refOrig.h - nh);
                 h = nh;
             }
 
@@ -117,24 +121,25 @@
                 const absDy = Math.abs(dy);
                 if (absDx / aspectRatio >= absDy) {
                     const newH = Math.max(MIN_H, w / aspectRatio);
-                    if (handle.includes('n')) y = origEl.y + origEl.h - newH;
+                    if (handle.includes('n')) y = refOrig.y + refOrig.h - newH;
                     h = newH;
                 } else {
                     const newW = Math.max(MIN_W, h * aspectRatio);
-                    if (handle.includes('w')) x = origEl.x + origEl.w - newW;
+                    if (handle.includes('w')) x = refOrig.x + refOrig.w - newW;
                     w = newW;
                 }
             }
 
-            el.x = Math.round(x);
-            el.y = Math.round(y);
-            el.w = Math.round(w);
-            el.h = Math.round(h);
+            // Rect de travail : la boîte englobante du groupe en redimensionnement de
+            // groupe, sinon l'élément lui-même — le snapping ci-dessous s'applique à
+            // cette référence commune, jamais directement à `el` (qui ne serait que
+            // l'élément cliqué, pas le groupe entier).
+            const rect = { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
 
             const SNAP = 8;
             const guideXs = [];
             const guideYs = [];
-            const others = editor.elements.filter(item => item.id !== id);
+            const others = editor.elements.filter(item => groupId ? item.groupId !== groupId : item.id !== id);
             const xCands = [0, 640, 1280];
             const yCands = [0, 360, 720];
             if (editor._gridSize > 0) {
@@ -148,10 +153,10 @@
             }
 
             if (handle.includes('e')) {
-                const right = el.x + el.w;
+                const right = rect.x + rect.w;
                 for (const cx of xCands) {
                     if (Math.abs(right - cx) < SNAP) {
-                        el.w = cx - el.x;
+                        rect.w = cx - rect.x;
                         guideXs.push(cx);
                         break;
                     }
@@ -159,19 +164,19 @@
             }
             if (handle.includes('w')) {
                 for (const cx of xCands) {
-                    if (Math.abs(el.x - cx) < SNAP) {
-                        el.w += el.x - cx;
-                        el.x = cx;
+                    if (Math.abs(rect.x - cx) < SNAP) {
+                        rect.w += rect.x - cx;
+                        rect.x = cx;
                         guideXs.push(cx);
                         break;
                     }
                 }
             }
             if (handle.includes('s')) {
-                const bottom = el.y + el.h;
+                const bottom = rect.y + rect.h;
                 for (const cy of yCands) {
                     if (Math.abs(bottom - cy) < SNAP) {
-                        el.h = cy - el.y;
+                        rect.h = cy - rect.y;
                         guideYs.push(cy);
                         break;
                     }
@@ -179,9 +184,9 @@
             }
             if (handle.includes('n')) {
                 for (const cy of yCands) {
-                    if (Math.abs(el.y - cy) < SNAP) {
-                        el.h += el.y - cy;
-                        el.y = cy;
+                    if (Math.abs(rect.y - cy) < SNAP) {
+                        rect.h += rect.y - cy;
+                        rect.y = cy;
                         guideYs.push(cy);
                         break;
                     }
@@ -189,33 +194,61 @@
             }
 
             if (guideXs.length === 0 && (handle.includes('e') || handle.includes('w'))) {
-                const lm = el.x;
-                const rm = 1280 - el.x - el.w;
+                const lm = rect.x;
+                const rm = 1280 - rect.x - rect.w;
                 if (Math.abs(lm - rm) < SNAP) {
-                    if (handle.includes('e')) el.w = 1280 - 2 * el.x;
-                    else el.x = Math.round((1280 - el.w) / 2);
+                    if (handle.includes('e')) rect.w = 1280 - 2 * rect.x;
+                    else rect.x = Math.round((1280 - rect.w) / 2);
                     guideXs.push(640);
                 }
             }
             if (guideYs.length === 0 && (handle.includes('n') || handle.includes('s'))) {
-                const tm = el.y;
-                const bm = 720 - el.y - el.h;
+                const tm = rect.y;
+                const bm = 720 - rect.y - rect.h;
                 if (Math.abs(tm - bm) < SNAP) {
-                    if (handle.includes('s')) el.h = 720 - 2 * el.y;
-                    else el.y = Math.round((720 - el.h) / 2);
+                    if (handle.includes('s')) rect.h = 720 - 2 * rect.y;
+                    else rect.y = Math.round((720 - rect.h) / 2);
                     guideYs.push(360);
                 }
             }
             editor._showGuides(guideXs, guideYs);
 
-            const div = editor._dom(id);
-            if (div) {
-                div.style.left = el.x + 'px';
-                div.style.top = el.y + 'px';
-                div.style.width = el.w + 'px';
-                div.style.height = el.h + 'px';
+            if (groupBBox && groupOrigRects) {
+                // Redimensionnement de groupe : chaque membre est mis à l'échelle
+                // proportionnellement à la transformation de la boîte englobante,
+                // pour préserver la mise en page relative du groupe.
+                const scaleX = groupBBox.w > 0 ? rect.w / groupBBox.w : 1;
+                const scaleY = groupBBox.h > 0 ? rect.h / groupBBox.h : 1;
+                for (const orig of groupOrigRects) {
+                    const member = findElementById(editor.elements, orig.id);
+                    if (!member) continue;
+                    member.x = Math.round(rect.x + (orig.x - groupBBox.x) * scaleX);
+                    member.y = Math.round(rect.y + (orig.y - groupBBox.y) * scaleY);
+                    member.w = Math.round(orig.w * scaleX);
+                    member.h = Math.round(orig.h * scaleY);
+                    const memberDiv = editor._dom(orig.id);
+                    if (memberDiv) {
+                        memberDiv.style.left = member.x + 'px';
+                        memberDiv.style.top = member.y + 'px';
+                        memberDiv.style.width = member.w + 'px';
+                        memberDiv.style.height = member.h + 'px';
+                    }
+                    if (editor.onPositionChange) editor.onPositionChange(member);
+                }
+            } else {
+                el.x = rect.x;
+                el.y = rect.y;
+                el.w = rect.w;
+                el.h = rect.h;
+                const div = editor._dom(id);
+                if (div) {
+                    div.style.left = el.x + 'px';
+                    div.style.top = el.y + 'px';
+                    div.style.width = el.w + 'px';
+                    div.style.height = el.h + 'px';
+                }
+                if (editor.onPositionChange) editor.onPositionChange(el);
             }
-            if (editor.onPositionChange) editor.onPositionChange(el);
             if (editor.connectors?.length) editor._refreshConnectors();
         }
 

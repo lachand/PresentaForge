@@ -1051,7 +1051,13 @@ function bindKeyboard() {
             notifyUndo(label, () => runtimeEditor.undo());
         }
         if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?.selectedIds?.size > 0) runtimeCanvas.removeSelected();
-        if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?._selectedConnectorId) runtimeCanvas.removeSelected();
+        if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?._selectedWaypointHandle) {
+            // Poignée d'angle armée (dernier waypoint saisi) : Suppr retire juste ce point,
+            // pas tout le connecteur — cohérent avec l'édition libre du nombre d'angles.
+            runtimeCanvas.removeSelectedWaypoint();
+        } else if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?._selectedConnectorId) {
+            runtimeCanvas.removeSelected();
+        }
         if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             openQuickInsert();

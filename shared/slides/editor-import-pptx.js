@@ -89,6 +89,10 @@ async function importPowerPoint() {
             notify('Import PPTX en cours…', 'warning');
             try {
                 const data = await _pptxParse(file);
+                const currentCount = editor?.data?.slides?.length || 0;
+                const msg = `Remplacer la présentation en cours (${currentCount} slide${currentCount > 1 ? 's' : ''}) par les ${data.slides.length} slides importées de ${file.name} ?\nCette action n'est pas annulable (Ctrl+Z ne reviendra pas en arrière).`;
+                const ok = window.OEIDialog?.confirm ? await window.OEIDialog.confirm(msg) : window.confirm(msg);
+                if (!ok) { notify('Import PPTX annulé', 'warning'); return resolve(false); }
                 editor.load(data);
                 notify(`Importé : ${data.slides.length} slides depuis ${file.name}`, 'success');
                 resolve(true);

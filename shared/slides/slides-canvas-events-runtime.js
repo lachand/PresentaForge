@@ -33,13 +33,34 @@
             if (targetClassList?.contains?.('cel-handle')) {
                 event.stopPropagation?.();
                 if (el.locked) return;
+                // Élément groupé : redimensionner l'élément seul déformerait la mise en
+                // page relative du groupe (chaque membre garde ses propres poignées,
+                // cf. .cel.selected .cel-handle). On redimensionne donc le groupe entier
+                // comme un bloc, à l'échelle, autour de sa boîte englobante.
+                const groupMembers = el.groupId
+                    ? editor.elements.filter(e => e.groupId === el.groupId)
+                    : null;
+                let groupBBox = null;
+                let groupOrigRects = null;
+                if (groupMembers && groupMembers.length > 1) {
+                    const minX = Math.min(...groupMembers.map(e => e.x));
+                    const minY = Math.min(...groupMembers.map(e => e.y));
+                    const maxX = Math.max(...groupMembers.map(e => e.x + e.w));
+                    const maxY = Math.max(...groupMembers.map(e => e.y + e.h));
+                    groupBBox = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+                    groupOrigRects = groupMembers.map(e => ({ id: e.id, x: e.x, y: e.y, w: e.w, h: e.h }));
+                }
+                const refRect = groupBBox || el;
                 editor._resize = {
                     id,
                     origEl: { ...el },
                     handle: event.target.dataset?.handle,
                     startMX: event.clientX,
                     startMY: event.clientY,
-                    aspectRatio: el.w / el.h,
+                    aspectRatio: refRect.w / refRect.h,
+                    groupId: groupBBox ? el.groupId : null,
+                    groupBBox,
+                    groupOrigRects,
                 };
                 event.preventDefault?.();
                 return;

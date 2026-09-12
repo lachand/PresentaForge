@@ -294,6 +294,18 @@
         }
     };
 
+    /** Distance d'un point à un segment [a,b] — utilisé pour trouver sur quel
+     *  segment d'un connecteur insérer un nouveau point d'angle au clic. */
+    const distanceToSegment = (p, a, b) => {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const lenSq = dx * dx + dy * dy;
+        if (lenSq === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+        let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+        const projX = a.x + t * dx, projY = a.y + t * dy;
+        return Math.hypot(p.x - projX, p.y - projY);
+    };
+
     const computeElbowPoints = (p1, a1, p2, a2, gap = 30) => {
         const from = { x: Number(p1?.x) || 0, y: Number(p1?.y) || 0 };
         const to = { x: Number(p2?.x) || 0, y: Number(p2?.y) || 0 };
@@ -347,24 +359,42 @@
         return d;
     };
 
+    /** Point de contrôle par défaut (auto) de la courbe de Bézier quadratique "curve". */
+    const defaultCurveControl = (p1, p2) => {
+        const mx = (p1.x + p2.x) / 2;
+        const my = (p1.y + p2.y) / 2;
+        const ddx = p2.x - p1.x;
+        const ddy = p2.y - p1.y;
+        return { x: mx - ddy * 0.3, y: my + ddx * 0.3 };
+    };
+
+    /** Liste des points intermédiaires effectifs d'un connecteur elbow/rounded :
+     *  conn.waypoints (personnalisés par l'utilisateur, glissés/ajoutés/retirés via les
+     *  poignées) s'ils existent, sinon le routage orthogonal auto-calculé. */
+    const effectiveElbowPoints = (conn, p1, p2) => {
+        if (Array.isArray(conn.waypoints) && conn.waypoints.length) {
+            return [p1, ...conn.waypoints.map(pt => ({ x: Number(pt?.x) || 0, y: Number(pt?.y) || 0 })), p2];
+        }
+        return computeElbowPoints(p1, conn.sourceAnchor, p2, conn.targetAnchor);
+    };
+
     const buildConnectorPathData = (conn, sourceRect, targetRect) => {
         if (!conn || !sourceRect || !targetRect) return null;
         const p1 = getAnchorPosition(sourceRect, conn.sourceAnchor);
         const p2 = getAnchorPosition(targetRect, conn.targetAnchor);
         switch (String(conn.lineType || 'straight')) {
             case 'curve': {
-                const mx = (p1.x + p2.x) / 2;
-                const my = (p1.y + p2.y) / 2;
-                const ddx = p2.x - p1.x;
-                const ddy = p2.y - p1.y;
-                return `M${p1.x},${p1.y} Q${mx - ddy * 0.3},${my + ddx * 0.3} ${p2.x},${p2.y}`;
+                const cp = conn.curveControl
+                    ? { x: Number(conn.curveControl.x) || 0, y: Number(conn.curveControl.y) || 0 }
+                    : defaultCurveControl(p1, p2);
+                return `M${p1.x},${p1.y} Q${cp.x},${cp.y} ${p2.x},${p2.y}`;
             }
             case 'elbow': {
-                const pts = computeElbowPoints(p1, conn.sourceAnchor, p2, conn.targetAnchor);
+                const pts = effectiveElbowPoints(conn, p1, p2);
                 return `M${pts.map(p => `${p.x},${p.y}`).join(' L')}`;
             }
             case 'rounded': {
-                const pts = computeElbowPoints(p1, conn.sourceAnchor, p2, conn.targetAnchor);
+                const pts = effectiveElbowPoints(conn, p1, p2);
                 return buildRoundedPolylinePath(pts);
             }
             default:
@@ -383,8 +413,11 @@
         getAnchorPosition,
         getAnchorDirection,
         computeElbowPoints,
+        distanceToSegment,
         buildRoundedPolylinePath,
         buildConnectorPathData,
+        defaultCurveControl,
+        effectiveElbowPoints,
         testUtils: Object.freeze({
             lineInRange,
             normalizeCodeExampleMode,
@@ -396,8 +429,11 @@
             getAnchorPosition,
             getAnchorDirection,
             computeElbowPoints,
+            distanceToSegment,
             buildRoundedPolylinePath,
             buildConnectorPathData,
+            defaultCurveControl,
+            effectiveElbowPoints,
         }),
     });
 })(window);

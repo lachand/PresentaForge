@@ -41,23 +41,23 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     // Group 3: canvas sub-runtimes — each registers itself on window.OEISlidesCanvas*,
     // consumed only by slides-canvas.js below. No cross-dependencies between them.
     [
-        '../shared/slides/slides-canvas-helpers.js?v=1',
+        '../shared/slides/slides-canvas-helpers.js?v=2',
         '../shared/slides/slides-canvas-code-runtime.js?v=3',
         '../shared/slides/slides-canvas-guides.js?v=1',
         '../shared/slides/slides-canvas-widget-runtime.js?v=1',
         '../shared/slides/slides-canvas-overflow-runtime.js?v=1',
-        '../shared/slides/slides-canvas-connectors-runtime.js?v=1',
+        '../shared/slides/slides-canvas-connectors-runtime.js?v=2',
         '../shared/slides/slides-canvas-dom-runtime.js?v=1',
         '../shared/slides/slides-canvas-selection-runtime.js?v=1',
-        '../shared/slides/slides-canvas-render-runtime.js?v=1',
-        '../shared/slides/slides-canvas-events-runtime.js?v=3',
-        '../shared/slides/slides-canvas-transform-runtime.js?v=1',
+        '../shared/slides/slides-canvas-render-runtime.js?v=2',
+        '../shared/slides/slides-canvas-events-runtime.js?v=4',
+        '../shared/slides/slides-canvas-transform-runtime.js?v=2',
         '../shared/slides/slides-canvas-special-runtime.js?v=2',
         '../shared/slides/slides-canvas-inline-edit-runtime.js?v=4',
         '../shared/slides/slides-canvas-content-runtime.js?v=2',
     ],
     // CanvasEditor class (depends on all sub-runtimes above)
-    ['../shared/slides/slides-canvas.js?v=25'],
+    ['../shared/slides/slides-canvas.js?v=26'],
     // Editor modules (mostly sequential — each may depend on previously registered globals)
     ['../shared/slides/editor-dialog.js?v=3'],
     ['../shared/slides/ui-toast.js?v=1'],
@@ -94,8 +94,8 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-save.js?v=12'],
     // Group 4: import handlers — each registers itself independently, no cross-deps
     [
-        '../shared/slides/editor-import-pptx.js?v=10',
-        '../shared/slides/editor-import-pdf.js?v=1',
+        '../shared/slides/editor-import-pptx.js?v=11',
+        '../shared/slides/editor-import-pdf.js?v=2',
         '../shared/slides/editor-markdown.js?v=9',
         '../shared/slides/editor-narration.js?v=9',
     ],
@@ -113,7 +113,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-enhancements.js?v=4'],
     ['../shared/slides/editor-resize.js?v=10'],
     ['../shared/slides/editor-checker.js?v=12'],
-    ['../shared/slides/editor-bindings.js?v=24'],
+    ['../shared/slides/editor-bindings.js?v=25'],
     ['../shared/slides/editor-main.js?v=3'],
 ]);
 
