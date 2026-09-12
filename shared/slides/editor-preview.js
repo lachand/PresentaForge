@@ -687,10 +687,14 @@ function bindBgPicker(container) {
 /* ── Convert template → canvas ─────────────────────────── */
 
 // Miroir de SPLIT_RICH_COLUMN_TYPES (shared/slides/slides-core.js) — non exportée
-// globalement, déjà dupliquée par shared/slides/import-pipeline.js (RICH_SPLIT_COLUMN_TYPES)
-// sous la même justification. Types de colonne "split" à contenu riche (stocké sous
-// col.data.*, pas col.text) que convertTemplateToCanvas doit convertir tels quels.
-const SPLIT_RICH_COLUMN_TYPES = new Set([
+// globalement, déjà dupliquée par shared/slides/import-pipeline.js sous le nom
+// RICH_SPLIT_COLUMN_TYPES (repris ici à l'identique : editor-preview.js et
+// slides-core.js sont deux scripts classiques chargés sur la même page — leurs
+// `const` de premier niveau partagent un seul environnement lexical global, un
+// même nom lève `SyntaxError: redeclaration of const` au chargement). Types de
+// colonne "split" à contenu riche (stocké sous col.data.*, pas col.text) que
+// convertTemplateToCanvas doit convertir tels quels.
+const RICH_SPLIT_COLUMN_TYPES = new Set([
     'image', 'video', 'latex', 'mermaid', 'table', 'highlight', 'card', 'definition',
     'smartart', 'diagramme', 'callout-box', 'quote', 'timeline-vertical', 'swot-grid', 'qrcode',
 ]);
@@ -806,7 +810,7 @@ async function convertTemplateToCanvas() {
             const lH = contentH - (lY - contentY);
             if (slide.left?.type === 'code') add({ type: 'code', x: 48, y: lY, w: splitColW, h: lH, data: { language: slide.left.language || 'text', code: slide.left.code || '' }, z: 2 });
             else if (slide.left?.type === 'bullets' || slide.left?.items) add({ type: 'list', x: 48, y: lY, w: splitColW, h: lH, data: { items: slide.left?.items || [] }, style: { fontSize: 18, color: 'var(--sl-text)' }, z: 2 });
-            else if (slide.left?.type && SPLIT_RICH_COLUMN_TYPES.has(slide.left.type)) add({ type: slide.left.type, x: 48, y: lY, w: splitColW, h: lH, data: { ...(slide.left.data || {}) }, style: { ...(slide.left.style || {}) }, z: 2 });
+            else if (slide.left?.type && RICH_SPLIT_COLUMN_TYPES.has(slide.left.type)) add({ type: slide.left.type, x: 48, y: lY, w: splitColW, h: lH, data: { ...(slide.left.data || {}) }, style: { ...(slide.left.style || {}) }, z: 2 });
             else add({ type: 'text', x: 48, y: lY, w: splitColW, h: lH, data: { text: slide.left?.text || '' }, style: { fontSize: 18, color: 'var(--sl-text)' }, z: 2 });
             const rX = 48 + splitColW + gap;
             let rY = contentY;
@@ -818,7 +822,7 @@ async function convertTemplateToCanvas() {
             const rH = contentH - (rY - contentY);
             if (slide.right?.type === 'code') add({ type: 'code', x: rX, y: rY, w: splitColW, h: rH, data: { language: slide.right.language || 'text', code: slide.right.code || '' }, z: 3 });
             else if (slide.right?.type === 'bullets' || slide.right?.items) add({ type: 'list', x: rX, y: rY, w: splitColW, h: rH, data: { items: slide.right?.items || [] }, style: { fontSize: 18, color: 'var(--sl-text)' }, z: 3 });
-            else if (slide.right?.type && SPLIT_RICH_COLUMN_TYPES.has(slide.right.type)) add({ type: slide.right.type, x: rX, y: rY, w: splitColW, h: rH, data: { ...(slide.right.data || {}) }, style: { ...(slide.right.style || {}) }, z: 3 });
+            else if (slide.right?.type && RICH_SPLIT_COLUMN_TYPES.has(slide.right.type)) add({ type: slide.right.type, x: rX, y: rY, w: splitColW, h: rH, data: { ...(slide.right.data || {}) }, style: { ...(slide.right.style || {}) }, z: 3 });
             else add({ type: 'text', x: rX, y: rY, w: splitColW, h: rH, data: { text: slide.right?.text || '' }, style: { fontSize: 18, color: 'var(--sl-text)' }, z: 3 });
             break;
         }
