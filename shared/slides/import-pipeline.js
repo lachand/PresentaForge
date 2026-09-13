@@ -22,7 +22,10 @@
     const AI_IMPORT_PIPELINE_KEY = global.OEIStorage?.KEYS?.AI_IMPORT_PIPELINE || 'oei-ai-import-pipeline';
     const AI_IMPORT_PIPELINE_DEFAULTS = Object.freeze({
         base64Mode: 'icons-only',
-        autoInjectIllustrations: true,
+        // Désactivé par défaut : l'auto-injection ajoutait des placeholders d'illustration
+        // (asset://icon/...) sur des decks édités à la main qui n'en demandaient pas.
+        // Reste activable via le réglage "Auto-injection d'illustrations" de l'éditeur.
+        autoInjectIllustrations: false,
         fetchRemoteImages: false,
         stepValidation: false,
         forceImageGeneration: false,
