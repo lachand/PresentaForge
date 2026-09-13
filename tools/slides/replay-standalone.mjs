@@ -541,6 +541,11 @@ body{min-height:100vh;display:flex;flex-direction:column}
   events.sort(function(a,b){ return Number(a && a.t || 0) - Number(b && b.t || 0); });
   var tracks = Array.isArray(payload.audioTracks) ? payload.audioTracks.slice() : [];
   tracks.sort(function(a,b){ return Number(a && a.startMs || 0) - Number(b && b.startMs || 0); });
+  // Décalage entre l'horloge des événements et le vrai temps 0 de l'audio enregistré
+  // (delai getUserMedia + init MediaRecorder côté enregistrement navigateur) — pertinent
+  // quand la session provient d'un export de session live (--session). Sans lui, un seek
+  // vers une ancre goTo pourtant correcte reste décalé d'une quantité fixe.
+  var audioStartOffsetMs = Math.max(0, Number(session.audioStartOffsetMs || 0));
 
   var title = String(payload.title || slidesData?.metadata?.title || 'Replay de session');
   var totalSlides = slides.length;
@@ -826,7 +831,8 @@ body{min-height:100vh;display:flex;flex-direction:column}
 
   function syncAudio(force) {
     if (!tracks.length) return;
-    var idx = findTrackForMs(playheadMs);
+    var audioClockMs = Math.max(0, playheadMs - audioStartOffsetMs);
+    var idx = findTrackForMs(audioClockMs);
     if (idx < 0) {
       try { audioEl.pause(); } catch (_) {}
       return;
@@ -834,7 +840,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
     var tr = tracks[idx] || {};
     var start = Math.max(0, Number(tr.startMs || 0));
     var offset = Math.max(0, Number(tr.offsetMs || 0));
-    var target = Math.max(0, (playheadMs - start + offset) / 1000);
+    var target = Math.max(0, (audioClockMs - start + offset) / 1000);
 
     if (idx !== activeTrackIndex) {
       activeTrackIndex = idx;
@@ -893,6 +899,26 @@ body{min-height:100vh;display:flex;flex-direction:column}
     }
     return best;
   }
+  // Diapositive jamais atteinte pendant l'enregistrement (deck modifié après coup, ou
+  // simplement sautée par le présentateur) : pas d'ancre exacte. On resynchronise quand
+  // même le curseur temporel (et donc l'audio/la piste active) sur l'ancre enregistrée
+  // la plus proche EN INDEX, pour ne jamais laisser l'audio décroché de ce qui est affiché.
+  function findClosestAnchorAnyIndex(targetIndex){
+    var best = null;
+    var bestIndexDist = Number.POSITIVE_INFINITY;
+    var bestTimeDist = Number.POSITIVE_INFINITY;
+    for (var i=0;i<slideAnchors.length;i++) {
+      var a = slideAnchors[i];
+      var indexDist = Math.abs(a.index - targetIndex);
+      var timeDist = Math.abs(a.t - playheadMs);
+      if (indexDist < bestIndexDist || (indexDist === bestIndexDist && timeDist < bestTimeDist)) {
+        bestIndexDist = indexDist;
+        bestTimeDist = timeDist;
+        best = a.t;
+      }
+    }
+    return best;
+  }
 
   function setPlaying(next){
     if (!!next === playing) return;
@@ -923,8 +949,15 @@ body{min-height:100vh;display:flex;flex-direction:column}
     setPlaying(false);
     var anchor = findNearestAnchorForSlide(target);
     if (anchor != null) { seek(anchor, true); return; }
+    // Pas d'ancre exacte pour cette diapositive : on l'affiche quand même, mais on
+    // recale le curseur (et donc l'audio) sur le moment enregistré le plus proche au
+    // lieu de laisser playheadMs — et l'audio — figés sur l'ancienne position.
+    var fallback = findClosestAnchorAnyIndex(target);
     manualSlideIndex = target;
+    if (fallback != null) playheadMs = clamp(fallback, 0, durationMs);
     renderState({ index: target, fragmentIndex: -1, black: false });
+    updateTimeUi();
+    syncAudio(true);
   }
 
   function scaleStage(){

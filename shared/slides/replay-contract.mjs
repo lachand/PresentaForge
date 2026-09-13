@@ -106,6 +106,11 @@ export function normalizeReplaySessionExport(session, options = {}) {
         }
         const audioCodec = toStringSafe(options.audioCodec, toStringSafe(source.audioCodec, '')).trim();
         if (audioCodec) normalized.audioCodec = audioCodec;
+        // Décalage (ms) entre l'horloge des événements et le vrai temps 0 de l'audio
+        // enregistré (delay `getUserMedia` + init MediaRecorder) — voir
+        // session-recording-runtime.js. Sans lui, tout seek forcé vers une ancre `goTo`
+        // pourtant correcte reste décalé d'une quantité fixe.
+        normalized.audioStartOffsetMs = Math.max(0, toInt(options.audioStartOffsetMs, toInt(source.audioStartOffsetMs, 0)));
     }
 
     normalized.sessionStats = summarizeReplaySession(normalized, slideCount);

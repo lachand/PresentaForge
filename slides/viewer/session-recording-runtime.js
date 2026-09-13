@@ -278,6 +278,9 @@ export function createSessionRecordingRuntime(params = {}) {
         audioTargetBitsPerSecond: recordAudioTargetBps,
         audioBitsPerSecond: 0,
         audioCodecLabel: '',
+        // Décalage (ms) entre `state.startAt` (horloge des événements) et le démarrage
+        // réel du MediaRecorder — voir le commentaire au point de calcul plus bas.
+        audioStartOffsetMs: 0,
         speechRecognition: null,
         speechEnabled: false,
         replayTimers: [],
@@ -573,6 +576,7 @@ export function createSessionRecordingRuntime(params = {}) {
             audioMimeType: state.audioMimeType || 'audio/webm',
             audioBitsPerSecond: Number(state.audioBitsPerSecond || state.audioTargetBitsPerSecond || 0) || 0,
             audioCodec: state.audioCodecLabel || '',
+            audioStartOffsetMs: Math.max(0, Math.round(Number(state.audioStartOffsetMs) || 0)),
         };
     };
 
@@ -599,6 +603,7 @@ export function createSessionRecordingRuntime(params = {}) {
             audioMimeType: meta.audioMimeType || 'audio/webm',
             audioBitsPerSecond: Number(meta.audioBitsPerSecond) || 0,
             audioCodec: meta.audioCodec || '',
+            audioStartOffsetMs: Math.max(0, Number(meta.audioStartOffsetMs) || 0),
         };
     };
 
@@ -618,6 +623,7 @@ export function createSessionRecordingRuntime(params = {}) {
                 audioMimeType: state.audioMimeType || 'audio/webm',
                 audioBitsPerSecond: Number(state.audioBitsPerSecond) || 0,
                 audioCodec: state.audioCodecLabel || '',
+                audioStartOffsetMs: Math.max(0, Math.round(Number(state.audioStartOffsetMs) || 0)),
                 events: state.events.slice(),
                 captions: state.captions.slice(),
                 autoNotesBySlide: JSON.parse(JSON.stringify(state.autoNotesBySlide || {})),
@@ -663,6 +669,7 @@ export function createSessionRecordingRuntime(params = {}) {
         state.audioBlob = null;
         state.audioBitsPerSecond = 0;
         state.audioCodecLabel = '';
+        state.audioStartOffsetMs = 0;
         state.lastSession = null;
         state.draftChunkIndex = 0;
         state.pendingDraftChunks = [];
@@ -697,11 +704,23 @@ export function createSessionRecordingRuntime(params = {}) {
                 state.audioMimeType = recorderSetup.mimeType || 'audio/webm';
                 state.audioBitsPerSecond = Number(recorderSetup.bitsPerSecond || recordAudioTargetBps) || recordAudioTargetBps;
                 state.audioCodecLabel = audioCodecLabelFromMime(state.audioMimeType);
+                // `state.startAt` (référence de tous les timestamps `t` des événements) est
+                // posé au tout début de startSessionRecording(), AVANT ce `await
+                // getUserMedia(...)` — qui peut prendre de quelques dizaines de ms à
+                // plusieurs secondes (invite de permission micro). L'audio du
+                // MediaRecorder, lui, ne commence réellement qu'à `.start()` ci-dessous.
+                // Sans correction, le temps 0 de l'audio ne correspond PAS au temps 0 des
+                // événements : un `goTo` vers une diapositive bien atteinte reste décalé
+                // d'un offset constant dès qu'on force un seek (Précédent/Suivant en
+                // replay), même si son ancre est correcte. On mesure ce décalage ici, au
+                // plus près du démarrage réel de l'enregistrement audio.
+                state.audioStartOffsetMs = Math.max(0, Math.round(recordElapsedMs(now())));
                 if (_draftAvailable()) {
                     Promise.resolve(recordingStore.updateMeta({
                         audioMimeType: state.audioMimeType,
                         audioBitsPerSecond: state.audioBitsPerSecond,
                         audioCodec: state.audioCodecLabel,
+                        audioStartOffsetMs: state.audioStartOffsetMs,
                     })).catch(() => {});
                 }
                 state.mediaRecorder.ondataavailable = ev => {
@@ -814,8 +833,13 @@ export function createSessionRecordingRuntime(params = {}) {
         state.replaying = true;
         updateUi();
         const events = Array.isArray(state.lastSession.events) ? state.lastSession.events : [];
+        // L'audio ci-dessous démarre à t=0 dès cet appel : les événements doivent donc
+        // être recalés sur le même décalage que celui mesuré à l'enregistrement (voir
+        // `state.audioStartOffsetMs` / startSessionRecording), sans quoi ce replay « live »
+        // dans le viewer souffre du même désync que l'export standalone.
+        const offsetMs = Math.max(0, Number(state.lastSession.audioStartOffsetMs) || 0);
         events.forEach(entry => {
-            const delay = Math.max(0, Number(entry?.t || 0));
+            const delay = Math.max(0, Number(entry?.t || 0) - offsetMs);
             const timer = setTimeoutFn(() => applyReplayEvent(entry), delay);
             state.replayTimers.push(timer);
         });
