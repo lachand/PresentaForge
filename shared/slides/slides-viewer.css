@@ -1643,7 +1643,7 @@
             text-align: left;
             font-size: 0.58rem;
             color: var(--on-surface-muted, #8a9099);
-            font-family: var(--font-mono, monospace);
+            font-family: var(--font-mono, monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
             pointer-events: none;
             line-height: 1.32;
             white-space: normal;

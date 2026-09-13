@@ -526,7 +526,7 @@ function openWidgetPluginsManager() {
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0">
                 <div style="border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px">
                     <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Installer un manifest JSON</div>
-                    <textarea id="plugin-manifest-input" placeholder='{"id":"my-plugin","name":"Mon plugin","widgets":[...]}' style="min-height:220px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px;font-size:0.74rem;font-family:var(--mono)"></textarea>
+                    <textarea id="plugin-manifest-input" placeholder='{"id":"my-plugin","name":"Mon plugin","widgets":[...]}' style="min-height:220px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px;font-size:0.74rem;font-family:var(--mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;"></textarea>
                     <div style="display:flex;gap:8px;justify-content:flex-end">
                         <button class="tb-btn ui-btn" id="plugin-manifest-file">Importer fichier</button>
                         <button class="tb-btn ui-btn primary ui-btn--primary" id="plugin-install">Installer / Mettre à jour</button>
@@ -539,7 +539,7 @@ function openWidgetPluginsManager() {
                             <input type="checkbox" id="plugin-policy-allow-remote">
                             Autoriser les scripts distants
                         </label>
-                        <textarea id="plugin-policy-origins" placeholder="https://cdn.example.org" style="min-height:58px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:0.72rem;font-family:var(--mono)"></textarea>
+                        <textarea id="plugin-policy-origins" placeholder="https://cdn.example.org" style="min-height:58px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:0.72rem;font-family:var(--mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;"></textarea>
                         <div style="display:flex;justify-content:flex-end;gap:8px">
                             <button class="tb-btn ui-btn" id="plugin-policy-save">Appliquer</button>
                         </div>

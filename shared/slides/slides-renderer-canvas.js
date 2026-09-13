@@ -267,7 +267,7 @@
                 const exampleSize = Math.round(base * 0.78);
                 content = `<div style="width:100%;height:100%;background:${tone.strongBg};border-left:4px solid ${tone.accent};border:1px solid ${tone.border};border-left-width:4px;border-radius:0 8px 8px 0;padding:0.75rem 1rem;overflow:auto;box-sizing:border-box;">
                     <div style="font-size:${Math.round(base * 0.72)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.2rem;">${esc(label)}</div>
-                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:${tone.accent};margin-bottom:0.35rem;font-size:${termSize}px;">${esc(el.data?.term||'')}</div>
+                    <div style="font-family:var(--sl-font-mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;font-weight:700;color:${tone.accent};margin-bottom:0.35rem;font-size:${termSize}px;">${esc(el.data?.term||'')}</div>
                     <div style="color:${s.color||'var(--sl-text)'};line-height:1.5;font-size:${bodySize}px;">${el.data?.definition||''}</div>
                     ${el.data?.example ? `<div style="margin-top:0.5rem;font-size:${exampleSize}px;color:var(--sl-muted);">${esc(exampleLabel)} : ${esc(el.data.example)}</div>` : ''}
                 </div>`;
@@ -341,11 +341,11 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;min-height:0;flex:1;">
                         <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-danger,#ef4444) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:var(--sl-code-bg,#0d1117);">
                             <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-danger,#ef4444);text-transform:uppercase;letter-spacing:0.03em;">Erreur fréquente</div>
-                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono,monospace);color:var(--sl-code-text,#f8fafc);white-space:pre-wrap;"><code class="language-${esc(lang)}">${esc(mistake)}</code></pre>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:var(--sl-code-text,#f8fafc);white-space:pre-wrap;"><code class="language-${esc(lang)}">${esc(mistake)}</code></pre>
                         </div>
                         <div style="display:flex;flex-direction:column;min-height:0;border:1px solid color-mix(in srgb,var(--sl-success,#22c55e) 40%,var(--sl-border,#2d3347));border-radius:8px;overflow:hidden;background:var(--sl-code-bg,#0d1117);">
                             <div style="padding:5px 8px;font-size:${Math.round(base * 0.66)}px;font-weight:700;color:var(--sl-success,#22c55e);text-transform:uppercase;letter-spacing:0.03em;">Correction</div>
-                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono,monospace);color:var(--sl-code-text,#f8fafc);white-space:pre-wrap;"><code class="language-${esc(lang)}">${esc(fix)}</code></pre>
+                            <pre style="margin:0;padding:8px 10px;flex:1;overflow:auto;font-size:${Math.round(base * 0.78)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:var(--sl-code-text,#f8fafc);white-space:pre-wrap;"><code class="language-${esc(lang)}">${esc(fix)}</code></pre>
                         </div>
                     </div>
                 </div>`;
@@ -412,10 +412,10 @@
                 if (mode === 'live') {
                     widget = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-height:0;">
                         <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);background:color-mix(in srgb,var(--sl-code-bg,#0d1117) 60%,#000);font-size:${Math.round(base * 0.66)}px;">
-                            <span style="font-family:var(--sl-font-mono);color:var(--sl-muted);text-transform:uppercase;">${esc(lang)}</span>
+                            <span style="font-family:var(--sl-font-mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:var(--sl-muted);text-transform:uppercase;">${esc(lang)}</span>
                             <span style="margin-left:auto;color:${tone.accent};font-weight:700;text-transform:uppercase;">Live</span>
                         </div>
-                        <pre style="margin:0;padding:8px 10px;font-size:${Math.round(base * 0.82)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono);color:var(--sl-code-text,#f8fafc);background:var(--sl-code-bg,#0d1117);white-space:pre;overflow:auto;flex:1;"><code class="language-${esc(lang)}">${esc(code)}</code></pre>
+                        <pre style="margin:0;padding:8px 10px;font-size:${Math.round(base * 0.82)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:var(--sl-code-text,#f8fafc);background:var(--sl-code-bg,#0d1117);white-space:pre;overflow:auto;flex:1;"><code class="language-${esc(lang)}">${esc(code)}</code></pre>
                     </div>`;
                 } else if (mode === 'stepper') {
                     const steps = Array.isArray(el.data?.stepperSteps) ? el.data.stepperSteps : [];
@@ -428,12 +428,12 @@
                         <div style="display:flex;flex-direction:column;gap:6px;padding:8px 10px;min-height:0;overflow:auto;">
                             <div style="font-size:${Math.round(base * 0.74)}px;color:var(--sl-heading);font-weight:600;">${esc(first.title || 'Étape 1')}</div>
                             <div style="font-size:${Math.round(base * 0.69)}px;color:var(--sl-muted);">${esc(first.detail || '')}</div>
-                            <pre style="margin:0;margin-top:auto;padding:7px 8px;border:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);border-radius:7px;background:var(--sl-code-bg,#0d1117);font-size:${Math.round(base * 0.82)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono);color:var(--sl-code-text,#f8fafc);white-space:pre;overflow:auto;"><code class="language-${esc(lang)}">${esc(first.code || '')}</code></pre>
+                            <pre style="margin:0;margin-top:auto;padding:7px 8px;border:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);border-radius:7px;background:var(--sl-code-bg,#0d1117);font-size:${Math.round(base * 0.82)}px;line-height:${codeLineHeight};font-family:var(--sl-font-mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:var(--sl-code-text,#f8fafc);white-space:pre;overflow:auto;"><code class="language-${esc(lang)}">${esc(first.code || '')}</code></pre>
                         </div>
                     </div>`;
                 }
                 content = `<div style="width:100%;height:100%;background:${tone.strongBg};border-left:4px solid ${tone.accent};border:1px solid ${tone.border};border-left-width:4px;border-radius:0 8px 8px 0;padding:0.75rem 1rem;box-sizing:border-box;display:flex;flex-direction:column;gap:0.55rem;overflow:hidden;--ce-accent:${tone.accent};">
-                    <div style="font-family:var(--sl-font-mono);font-weight:700;color:${tone.accent};font-size:${Math.round(base * 1.02)}px;text-transform:uppercase;letter-spacing:0.03em;">${esc(label)}</div>
+                    <div style="font-family:var(--sl-font-mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;font-weight:700;color:${tone.accent};font-size:${Math.round(base * 1.02)}px;text-transform:uppercase;letter-spacing:0.03em;">${esc(label)}</div>
                     <div style="color:var(--sl-text);font-size:${Math.round(base * 0.92)}px;line-height:1.45;max-height:36%;overflow:auto;">${el.data?.text || ''}</div>
                     <div style="flex:1;min-height:110px;border:1px solid color-mix(in srgb,var(--sl-border,#2d3347) 45%,#cbd5e1 55%);border-radius:8px;overflow:hidden;background:var(--sl-code-bg,#0d1117);">${widget}</div>
                 </div>`;
@@ -579,7 +579,7 @@
                 const display = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
                 content = `<div class="${P}-timer-content" data-duration="${dur}" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;">
                     ${label ? `<div style="font-size:${Math.round(base * 0.4)}px;color:var(--sl-muted);font-weight:600;text-transform:uppercase;">${esc(label)}</div>` : ''}
-                    <div class="${P}-timer-display" style="font-size:${base}px;color:${s.color||'var(--sl-heading)'};font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--sl-font-mono,monospace);">${display}</div>
+                    <div class="${P}-timer-display" style="font-size:${base}px;color:${s.color||'var(--sl-heading)'};font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;">${display}</div>
                     <div style="display:flex;gap:0.5rem;margin-top:0.3rem;">
                         <button class="${P}-timer-btn ${P}-timer-start" title="Démarrer" style="pointer-events:auto;">▶</button>
                         <button class="${P}-timer-btn ${P}-timer-pause" title="Pause" style="display:none;pointer-events:auto;">⏸</button>
@@ -672,16 +672,16 @@
                 const autoRun = el.data?.autoRun ? 'data-autorun="1"' : '';
                 content = `<div class="${P}-codelive-pending" data-language="${lang}" ${autoRun} style="width:100%;height:100%;display:flex;flex-direction:column;border-radius:10px;overflow:hidden;border:1px solid var(--sl-border,#2d3347);">
                     <div class="${P}-codelive-toolbar" style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:color-mix(in srgb,var(--sl-surface,#1e2130) 90%,#000);border-bottom:1px solid var(--sl-border,#2d3347);">
-                        <span style="font-size:0.75rem;color:var(--sl-muted,#64748b);font-family:var(--sl-font-mono,monospace);text-transform:uppercase;">${lang}</span>
+                        <span style="font-size:0.75rem;color:var(--sl-muted,#64748b);font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;text-transform:uppercase;">${lang}</span>
                         <span style="flex:1"></span>
                         <button class="${P}-codelive-run" style="pointer-events:auto;padding:4px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;">▶ Exécuter</button>
                         <button class="${P}-codelive-clear" style="pointer-events:auto;padding:4px 10px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-muted,#64748b);font-size:0.7rem;cursor:pointer;">Effacer</button>
                     </div>
                     <div style="display:flex;flex:1;min-height:0;">
-                        <div class="${P}-codelive-editor" style="flex:1;min-width:0;position:relative;overflow:hidden;"><textarea class="${P}-codelive-code" style="width:100%;height:100%;background:var(--sl-slide-bg,#141620);color:var(--sl-heading,#e2e8f0);border:none;padding:12px;font-family:var(--sl-font-mono,monospace);font-size:14px;resize:none;outline:none;box-sizing:border-box;tab-size:4;">${code}</textarea></div>
+                        <div class="${P}-codelive-editor" style="flex:1;min-width:0;position:relative;overflow:hidden;"><textarea class="${P}-codelive-code" style="width:100%;height:100%;background:var(--sl-slide-bg,#141620);color:var(--sl-heading,#e2e8f0);border:none;padding:12px;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;font-size:14px;resize:none;outline:none;box-sizing:border-box;tab-size:4;">${code}</textarea></div>
                         <div class="${P}-codelive-output" style="flex:0 0 40%;border-left:1px solid var(--sl-border,#2d3347);background:var(--sl-code-bg,#0d1117);display:flex;flex-direction:column;">
                             <div style="padding:4px 10px;font-size:0.65rem;color:var(--sl-muted,#64748b);text-transform:uppercase;border-bottom:1px solid var(--sl-border,#2d3347);">Sortie</div>
-                            <pre class="${P}-codelive-console" style="flex:1;margin:0;padding:10px;font-size:13px;color:var(--sl-code-text,#e2e8f0);background:var(--sl-code-bg,#0d1117);font-family:var(--sl-font-mono,monospace);overflow:auto;white-space:pre-wrap;"></pre>
+                            <pre class="${P}-codelive-console" style="flex:1;margin:0;padding:10px;font-size:13px;color:var(--sl-code-text,#e2e8f0);background:var(--sl-code-bg,#0d1117);font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;overflow:auto;white-space:pre-wrap;"></pre>
                         </div>
                     </div>
                 </div>`;
@@ -706,7 +706,7 @@
                         <span style="display:inline-flex;width:18px;height:18px;color:var(--sl-primary,#818cf8);" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.1 9a3 3 0 1 1 5.8 1c-.6 1-1.7 1.4-2.4 2.2-.4.4-.5.8-.5 1.3"/><circle cx="12" cy="17" r="1"/></svg></span>
                         <span style="font-size:var(--sl-label-size,0.8rem);font-weight:700;color:var(--sl-primary,#818cf8);text-transform:uppercase;letter-spacing:0.05em;line-height:1.3;">${label}</span>
                         <span style="flex:1"></span>
-                        <span class="${P}-quizlive-timer" style="font-family:var(--sl-font-mono,monospace);font-size:var(--sl-note-size,1rem);color:var(--sl-muted,#64748b);">${duration}s</span>
+                        <span class="${P}-quizlive-timer" style="font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;font-size:var(--sl-note-size,1rem);color:var(--sl-muted,#64748b);">${duration}s</span>
                         <button class="${P}-quizlive-start" style="pointer-events:auto;padding:5px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:var(--sl-label-size,0.75rem);font-weight:600;cursor:pointer;">Lancer</button>
                     </div>
                     <div class="${P}-quizlive-question" style="font-size:calc(var(--sl-text-size,22px) * 1.02);font-weight:600;color:var(--sl-heading,#f1f5f9);line-height:1.4;">${question}</div>
@@ -903,7 +903,7 @@
                     <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#22c55e;">${title}</div>
                     <div class="${P}-algostepper-step-title" style="font-size:0.9rem;color:var(--sl-heading,#f1f5f9);"></div>
                     <div class="${P}-algostepper-step-detail" style="font-size:0.78rem;color:var(--sl-muted,#64748b);"></div>
-                    <pre class="${P}-algostepper-code" style="margin:0;flex:1;min-height:0;padding:8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);font-size:0.7rem;font-family:var(--sl-font-mono,monospace);overflow:auto;"></pre>
+                    <pre class="${P}-algostepper-code" style="margin:0;flex:1;min-height:0;padding:8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);font-size:0.7rem;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;overflow:auto;"></pre>
                     <div style="display:flex;gap:8px;">
                         <button class="${P}-algostepper-prev" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.72rem;cursor:pointer;">Précédent</button>
                         <button class="${P}-algostepper-next" style="pointer-events:auto;padding:5px 10px;border-radius:8px;border:none;background:#22c55e;color:#052e16;font-size:0.72rem;font-weight:700;cursor:pointer;">Suivant</button>

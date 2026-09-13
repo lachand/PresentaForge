@@ -533,7 +533,7 @@ class CanvasEditor {
 .cel-code-edit {
     position:absolute; inset:0; margin:0; box-sizing:border-box;
     width:100%; height:100%;
-    font-family:var(--sl-font-mono,monospace); font-size:13px; line-height:1.6; tab-size:4;
+    font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0; font-size:13px; line-height:1.6; tab-size:4;
     white-space:pre-wrap; word-break:break-word;
     padding:0.75rem 1rem;
 }
@@ -565,7 +565,7 @@ class CanvasEditor {
 .cel-hl-lang-select {
     flex:none; border:none; outline:none; cursor:pointer;
     background:var(--sl-code-bg,#0d1117); color:var(--sl-code-text,#e2e8f0);
-    font-family:var(--sl-font-mono,monospace); font-size:11px;
+    font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0; font-size:11px;
     padding:0.35rem 0.75rem; border-bottom:1px solid rgba(226,232,240,0.12);
 }
 /* Portail d'édition code/highlight : hors du canvas zoomé (transform:scale() du frame,
@@ -585,7 +585,7 @@ class CanvasEditor {
 .cel-def-edit-field:focus { background:rgba(129,140,248,0.08); border-radius:3px; }
 .cel-def-inline-label { font-size:0.75em; color:var(--sl-muted,#64748b); user-select:none; }
 .cel-inline-code {
-    font-family: var(--sl-font-mono,monospace);
+    font-family: var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
     background: rgba(129,140,248,0.12);
     padding: 0.1em 0.3em;
     border-radius: 3px;
@@ -678,7 +678,7 @@ class CanvasEditor {
     overflow: auto;
     box-sizing: border-box;
 }
-.cel-def-term { font-family: var(--sl-font-mono, monospace); font-weight: 700; color: var(--sl-primary, #818cf8); margin-bottom: 0.35rem; font-size: 1em; }
+.cel-def-term { font-family: var(--sl-font-mono, monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0; font-weight: 700; color: var(--sl-primary, #818cf8); margin-bottom: 0.35rem; font-size: 1em; }
 .cel-def-body { color: var(--sl-text, #cbd5e1); font-size: 0.9em; line-height: 1.5; }
 .cel-def-example { margin-top: 0.5rem; font-size: 0.82em; color: var(--sl-muted, #64748b); }
 .cel-code-example-content {
@@ -695,7 +695,7 @@ class CanvasEditor {
     overflow: hidden;
 }
 .cel-code-example-label {
-    font-family: var(--sl-font-mono, monospace);
+    font-family: var(--sl-font-mono, monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
     font-weight: 700;
     color: var(--sl-primary, #818cf8);
     font-size: 1em;
@@ -753,7 +753,7 @@ class CanvasEditor {
     font-size: 0.66rem;
 }
 .cel-codeexample-live-lang {
-    font-family: var(--sl-font-mono, monospace);
+    font-family: var(--sl-font-mono, monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
     color: var(--sl-muted, #64748b);
     text-transform: uppercase;
 }
@@ -769,7 +769,7 @@ class CanvasEditor {
     padding: 8px 10px;
     font-size: 0.72rem;
     line-height: var(--ce-code-line-height, var(--sl-code-line-height, 1.58));
-    font-family: var(--sl-font-mono, monospace);
+    font-family: var(--sl-font-mono, monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
     color: var(--sl-text, #e2e8f0);
     white-space: pre;
     overflow: auto;
@@ -809,7 +809,7 @@ class CanvasEditor {
     background: color-mix(in srgb, var(--sl-slide-bg, #1a1d27) 80%, #000);
     font-size: 0.66rem;
     line-height: var(--ce-code-line-height, var(--sl-code-line-height, 1.58));
-    font-family: var(--sl-font-mono, monospace);
+    font-family: var(--sl-font-mono, monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
     color: var(--sl-text, #e2e8f0);
     white-space: pre;
     overflow: auto;

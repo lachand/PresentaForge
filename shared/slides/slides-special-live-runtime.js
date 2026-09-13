@@ -467,7 +467,7 @@
                 }
                 listEl.innerHTML = sorted.map((row, i) => `
                     <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;">
-                        <span style="width:22px;font-family:var(--sl-font-mono,monospace);color:var(--sl-muted,#64748b);">${i + 1}.</span>
+                        <span style="width:22px;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:var(--sl-muted,#64748b);">${i + 1}.</span>
                         <span style="flex:1;color:var(--sl-text,#e2e8f0);font-size:0.72rem;">${SlidesRenderer.esc(row.pseudo || 'Anonyme')}</span>
                         <span style="color:var(--sl-heading,#f1f5f9);font-weight:700;font-size:0.72rem;">${Number(row.score || 0).toLocaleString()}</span>
                     </div>
@@ -507,9 +507,9 @@
             const before = String(el.dataset.before || '');
             const after = String(el.dataset.after || '');
             if (!host || !slider) return;
-            host.innerHTML = `<pre style="position:absolute;inset:0;margin:0;padding:10px;overflow:auto;font-size:0.72rem;font-family:var(--sl-font-mono,monospace);color:#cbd5e1;background:#0b1020;">${before}</pre>
+            host.innerHTML = `<pre style="position:absolute;inset:0;margin:0;padding:10px;overflow:auto;font-size:0.72rem;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:#cbd5e1;background:#0b1020;">${before}</pre>
                 <div class="${P}-codecompare-after-wrap" style="position:absolute;inset:0;overflow:hidden;width:50%;border-right:2px solid rgba(167,139,250,0.9);">
-                    <pre style="margin:0;padding:10px;overflow:auto;font-size:0.72rem;font-family:var(--sl-font-mono,monospace);color:#e2e8f0;background:#0f172a;">${after}</pre>
+                    <pre style="margin:0;padding:10px;overflow:auto;font-size:0.72rem;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:#e2e8f0;background:#0f172a;">${after}</pre>
                 </div>`;
             const afterWrap = host.querySelector(`.${P}-codecompare-after-wrap`);
             const publishCodeCompareState = (extraState = {}) => emitAudienceElementState(el, 'code-compare', Object.assign({
@@ -699,7 +699,7 @@
             const renderEditable = () => {
                 host.innerHTML = safeItems.map((item, i) => `
                     <div class="sl-rankorder-row" data-idx="${i}" style="display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;">
-                        <span style="font-family:var(--sl-font-mono,monospace);font-size:0.72rem;color:var(--sl-muted,#64748b);">${i + 1}.</span>
+                        <span style="font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;font-size:0.72rem;color:var(--sl-muted,#64748b);">${i + 1}.</span>
                         <span style="font-size:0.76rem;color:var(--sl-text,#e2e8f0);">${SlidesRenderer.esc(item)}</span>
                         <span style="display:flex;gap:4px;">
                             <button type="button" class="${P}-rank-up" data-idx="${i}" style="pointer-events:auto;padding:2px 6px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-text,#e2e8f0);font-size:0.68rem;cursor:pointer;">↑</button>
@@ -734,7 +734,7 @@
                 if (!src.length) {
                     host.innerHTML = safeItems.map((item, i) => `
                         <div style="display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;">
-                            <span style="font-family:var(--sl-font-mono,monospace);font-size:0.72rem;color:var(--sl-muted,#64748b);">${i + 1}.</span>
+                            <span style="font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;font-size:0.72rem;color:var(--sl-muted,#64748b);">${i + 1}.</span>
                             <span style="font-size:0.76rem;color:var(--sl-text,#e2e8f0);">${SlidesRenderer.esc(item)}</span>
                         </div>
                     `).join('');
@@ -742,7 +742,7 @@
                 }
                 host.innerHTML = src.map((row, i) => `
                     <div style="display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;">
-                        <span style="font-family:var(--sl-font-mono,monospace);font-size:0.72rem;color:var(--sl-muted,#64748b);">${i + 1}.</span>
+                        <span style="font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;font-size:0.72rem;color:var(--sl-muted,#64748b);">${i + 1}.</span>
                         <span style="font-size:0.76rem;color:var(--sl-text,#e2e8f0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${SlidesRenderer.esc(row?.label || '')}</span>
                         <span style="font-size:0.68rem;color:var(--sl-muted,#64748b);">${Number(row?.score || 0)} pts</span>
                     </div>

@@ -948,7 +948,7 @@ ${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n
 .pv-notes-content{font-size:var(--pv-notes-font-size,1.1rem);line-height:1.7;color:#f1f5f9;white-space:pre-wrap;word-wrap:break-word}
 .pv-notes-empty{color:rgba(255,255,255,.2);font-style:italic;font-size:.9rem}
 .pv-controls{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.08)}
-.pv-timer-display{font-family:'SF Mono','Fira Code',monospace;font-size:1.6rem;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;user-select:none;letter-spacing:.05em;transition:color .2s}
+.pv-timer-display{font-family:'SF Mono','Fira Code',monospace;font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;font-size:1.6rem;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;user-select:none;letter-spacing:.05em;transition:color .2s}
 .pv-timer-display.running{color:#4ade80}
 .pv-timer-display:hover{color:rgba(255,255,255,.8)}
 .pv-progress-badge{font-size:.85rem;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;font-weight:500}

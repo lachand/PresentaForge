@@ -88,7 +88,7 @@ class WidgetPickerModal {
 .wpm-meta-tag { font-size:0.6rem; padding:1px 6px; border-radius:5px; background:var(--primary-muted,rgba(129,140,248,0.12)); color:var(--primary,#818cf8); }
 .wpm-cfg-section { flex-direction:column; gap:4px; }
 .wpm-config-lbl { font-size:0.7rem; font-weight:700; color:var(--muted,#64748b); }
-.wpm-config-ta { width:100%; padding:6px 8px; font-size:0.72rem; font-family:var(--mono,monospace);
+.wpm-config-ta { width:100%; padding:6px 8px; font-size:0.72rem; font-family:var(--mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
   background:var(--card,#222635); border:1px solid var(--border,#2d3347); border-radius:6px;
   color:var(--text,#cbd5e1); resize:vertical; min-height:60px; max-height:100px; box-sizing:border-box; }
 .wpm-config-ta:focus { outline:none; border-color:var(--primary,#818cf8); }

@@ -82,7 +82,7 @@
     const _renderError = (label, detail, source) => `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
             padding:12px 16px;border-radius:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);
-            color:#f87171;font-size:0.78rem;font-family:var(--mono,monospace);text-align:left;max-width:100%;">
+            color:#f87171;font-size:0.78rem;font-family:var(--mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;text-align:left;max-width:100%;">
             <div style="font-weight:700;letter-spacing:.02em;">⚠ ${_esc(label)}</div>
             ${detail ? `<div style="opacity:.8;word-break:break-word;">${_esc(detail)}</div>` : ''}
             ${source ? `<pre style="margin:4px 0 0;padding:6px 8px;border-radius:4px;background:rgba(0,0,0,.25);

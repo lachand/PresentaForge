@@ -511,7 +511,7 @@ function openTemplatePopover(slide, refEvent) {
         } else if (field.type === 'textarea') {
             html += `<textarea data-field="${field.key}" placeholder="${escAttr(field.placeholder || '')}">${esc(val || '')}</textarea>`;
         } else if (field.type === 'code') {
-            html += `<textarea class="code-field" data-field="${field.key}" style="font-family:var(--mono)">${esc(val || '')}</textarea>`;
+            html += `<textarea class="code-field" data-field="${field.key}" style="font-family:var(--mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;">${esc(val || '')}</textarea>`;
         } else if (field.type === 'select') {
             html += `<select data-field="${field.key}">${(field.options || []).map(o => `<option value="${o}"${o === val ? ' selected' : ''}>${o}</option>`).join('')}</select>`;
         } else if (field.type === 'widget-select') {
@@ -534,7 +534,7 @@ function openTemplatePopover(slide, refEvent) {
         } else if (field.type === 'matrix') {
             const rows = Array.isArray(val) ? val : [];
             const txt = rows.map(r => (Array.isArray(r) ? r.join(' | ') : String(r ?? ''))).join('\n');
-            html += `<textarea class="code-field" data-field-matrix="${field.key}" placeholder="Cellule A | Cellule B | Cellule C" style="font-family:var(--mono)">${esc(txt)}</textarea>`;
+            html += `<textarea class="code-field" data-field-matrix="${field.key}" placeholder="Cellule A | Cellule B | Cellule C" style="font-family:var(--mono);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;">${esc(txt)}</textarea>`;
         } else if (field.type === 'image-src') {
             const cur = String(val || '');
             const isData = /^data:image\//i.test(cur);

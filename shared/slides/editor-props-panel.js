@@ -452,11 +452,11 @@ function updatePropsPanel() {
             </div>
             <div class="props-section">
                 <div class="props-section-title">Erreur frequente</div>
-                <textarea id="sp-mf-mistake" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.mistake || '')}</textarea>
+                <textarea id="sp-mf-mistake" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.mistake || '')}</textarea>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Correction</div>
-                <textarea id="sp-mf-fix" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.fix || '')}</textarea>
+                <textarea id="sp-mf-fix" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.fix || '')}</textarea>
             </div>`;
             break;
         }
@@ -485,7 +485,7 @@ function updatePropsPanel() {
             </div>
             <div class="props-section">
                 <div class="props-section-title">Critères (JSON)</div>
-                <textarea id="sp-rb-rows" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(JSON.stringify(rows, null, 2))}</textarea>
+                <textarea id="sp-rb-rows" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(rows, null, 2))}</textarea>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"criterion":"…","descriptors":["…","…","…"]}]</div>
             </div>`;
             break;
@@ -506,7 +506,7 @@ function updatePropsPanel() {
                 <div class="props-row"><label>Couleur</label><select id="sp-term-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Langage</label><select id="sp-term-lang"><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Session</label>
-                <textarea id="sp-term-script" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.script || '')}</textarea>
+                <textarea id="sp-term-script" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.script || '')}</textarea>
             </div>`;
             break;
         }
@@ -535,7 +535,7 @@ function updatePropsPanel() {
                     <div class="props-section-title">Stepper</div>
                     <div class="props-row"><label>Titre</label><input type="text" id="sp-ce-stepper-title" value="${escAttr(d.stepperTitle || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                     <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Étapes JSON</label>
-                    <textarea id="sp-ce-stepper-steps" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(JSON.stringify(steps, null, 2))}</textarea>
+                    <textarea id="sp-ce-stepper-steps" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(steps, null, 2))}</textarea>
                     <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"title":"...","detail":"...","code":"..."}]</div>
                 </div>`;
             } else {
@@ -543,7 +543,7 @@ function updatePropsPanel() {
                     <div class="props-section-title">${mode === 'live' ? 'Code Live' : 'Code / Terminal'}</div>
                     <div class="props-row"><label>Langage</label><select id="sp-ce-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
                     <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code</label>
-                    <textarea id="sp-ce-code" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
+                    <textarea id="sp-ce-code" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
                 </div>`;
             }
             break;
@@ -653,7 +653,7 @@ function updatePropsPanel() {
         case 'mermaid':
             html = `<div class="props-section">
                 <div class="props-section-title">Diagramme Mermaid</div>
-                <textarea id="sp-mermaid-code" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
+                <textarea id="sp-mermaid-code" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
                 <div style="font-size:0.62rem;color:var(--muted);margin-top:4px">Syntaxe <a href="https://mermaid.js.org/syntax/flowchart.html" target="_blank" style="color:var(--primary)">Mermaid</a></div>
             </div>`;
             break;
@@ -765,7 +765,7 @@ function updatePropsPanel() {
         case 'latex':
             html = `<div class="props-section">
                 <div class="props-section-title">Équation LaTeX</div>
-                <textarea id="sp-latex-expr" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(d.expression || '')}</textarea>
+                <textarea id="sp-latex-expr" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(d.expression || '')}</textarea>
                 <div style="font-size:0.62rem;color:var(--muted);margin-top:4px">Syntaxe KaTeX (LaTeX)</div>
             </div>`;
             break;
@@ -802,7 +802,7 @@ function updatePropsPanel() {
                 <div class="props-row"><label>Couleur</label><select id="sp-hl-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Lang</label><select id="sp-hl-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash / Terminal</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="json"${d.language === 'json' ? ' selected' : ''}>JSON</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code</label>
-                <textarea id="sp-hl-code" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
+                <textarea id="sp-hl-code" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Zones surlignées</div>
@@ -851,7 +851,7 @@ function updatePropsPanel() {
                 <div class="props-section-title">Code Live</div>
                 <div class="props-row"><label>Langage</label><select id="sp-cl-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option></select></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code initial</label>
-                <textarea id="sp-cl-code" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
+                <textarea id="sp-cl-code" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
                 <div class="props-row" style="margin-top:6px"><label>Auto-run</label><input type="checkbox" id="sp-cl-autorun"${d.autoRun ? ' checked' : ''}></div>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:6px;line-height:1.4">Python : exécuté via <a href="https://pyodide.org" target="_blank" style="color:var(--primary)">Pyodide</a> (WASM)<br>JS : exécuté dans le navigateur</div>
             </div>`;
@@ -1030,9 +1030,9 @@ function updatePropsPanel() {
                 <div class="props-section-title">Comparateur de code</div>
                 <div class="props-row"><label>Lang</label><input type="text" id="sp-cc-lang" value="${escAttr(d.language || 'text')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Avant</label>
-                <textarea id="sp-cc-before" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(d.before || '')}</textarea>
+                <textarea id="sp-cc-before" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(d.before || '')}</textarea>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Après</label>
-                <textarea id="sp-cc-after" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(d.after || '')}</textarea>
+                <textarea id="sp-cc-after" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(d.after || '')}</textarea>
             </div>`;
             break;
 
@@ -1041,7 +1041,7 @@ function updatePropsPanel() {
                 <div class="props-section-title">Algo stepper</div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-as-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Étapes JSON</label>
-                <textarea id="sp-as-steps" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.steps || [], null, 2))}</textarea>
+                <textarea id="sp-as-steps" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.steps || [], null, 2))}</textarea>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"title":"","detail":"","code":""}]</div>
             </div>`;
             break;
@@ -1052,7 +1052,7 @@ function updatePropsPanel() {
                 <div class="props-row"><label>Image</label><input type="text" id="sp-ga-src" value="${escAttr(d.src || '')}" placeholder="../images/..." style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <div class="props-row"><label>Texte alt</label><input type="text" id="sp-ga-alt" value="${escAttr(d.alt || '')}" placeholder="Description de l'image annotée" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Notes JSON</label>
-                <textarea id="sp-ga-notes" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.notes || [], null, 2))}</textarea>
+                <textarea id="sp-ga-notes" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.notes || [], null, 2))}</textarea>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"x":25,"y":40,"text":"..."}]</div>
             </div>`;
             break;
@@ -1071,7 +1071,7 @@ function updatePropsPanel() {
                 <div class="props-section-title">Kanban mini</div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-kb-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Colonnes JSON</label>
-                <textarea id="sp-kb-columns" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.columns || [], null, 2))}</textarea>
+                <textarea id="sp-kb-columns" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.columns || [], null, 2))}</textarea>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"name":"À faire","cards":["..."]}]</div>
             </div>`;
             break;
@@ -1091,7 +1091,7 @@ function updatePropsPanel() {
                 <div class="props-section-title">Flashcards</div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-fc-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Cartes JSON</label>
-                <textarea id="sp-fc-cards" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.cards || [], null, 2))}</textarea>
+                <textarea id="sp-fc-cards" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.cards || [], null, 2))}</textarea>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"front":"...","back":"..."}]</div>
             </div>`;
             break;

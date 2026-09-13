@@ -260,7 +260,7 @@
                 const limit = Math.max(3, Math.min(10, Number(el.data?.limit || 5)));
                 const rows = Array.from({ length: limit }).map((_, i) => `
                     <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;">
-                        <span style="width:22px;font-family:var(--sl-font-mono,monospace);color:var(--sl-muted,#64748b);">${i + 1}.</span>
+                        <span style="width:22px;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:var(--sl-muted,#64748b);">${i + 1}.</span>
                         <span style="flex:1;color:var(--sl-text,#e2e8f0);font-size:0.72rem;">Étudiant</span>
                         <span style="color:var(--sl-heading,#f1f5f9);font-weight:700;font-size:0.72rem;">0</span>
                     </div>
@@ -282,8 +282,8 @@
             }
             case 'code-compare': {
                 return `<div style="width:100%;height:100%;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div style="border:1px solid var(--sl-border,#2d3347);border-radius:8px;overflow:auto;"><div style="padding:4px 8px;font-size:0.66rem;color:var(--sl-muted,#64748b);border-bottom:1px solid var(--sl-border,#2d3347);">Avant</div><pre style="margin:0;padding:8px;font-size:0.66rem;font-family:var(--sl-font-mono,monospace);">${escHtml(el.data?.before || '')}</pre></div>
-                    <div style="border:1px solid var(--sl-border,#2d3347);border-radius:8px;overflow:auto;"><div style="padding:4px 8px;font-size:0.66rem;color:var(--sl-muted,#64748b);border-bottom:1px solid var(--sl-border,#2d3347);">Après</div><pre style="margin:0;padding:8px;font-size:0.66rem;font-family:var(--sl-font-mono,monospace);">${escHtml(el.data?.after || '')}</pre></div>
+                    <div style="border:1px solid var(--sl-border,#2d3347);border-radius:8px;overflow:auto;"><div style="padding:4px 8px;font-size:0.66rem;color:var(--sl-muted,#64748b);border-bottom:1px solid var(--sl-border,#2d3347);">Avant</div><pre style="margin:0;padding:8px;font-size:0.66rem;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;">${escHtml(el.data?.before || '')}</pre></div>
+                    <div style="border:1px solid var(--sl-border,#2d3347);border-radius:8px;overflow:auto;"><div style="padding:4px 8px;font-size:0.66rem;color:var(--sl-muted,#64748b);border-bottom:1px solid var(--sl-border,#2d3347);">Après</div><pre style="margin:0;padding:8px;font-size:0.66rem;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;">${escHtml(el.data?.after || '')}</pre></div>
                 </div>`;
             }
             case 'algo-stepper': {
@@ -293,7 +293,7 @@
                     <div style="font-size:0.74rem;font-weight:700;color:#22c55e;text-transform:uppercase;">Algo stepper</div>
                     <div style="font-size:0.83rem;color:var(--sl-heading,#f1f5f9);">${escHtml(first.title || 'Étape 1')}</div>
                     <div style="font-size:0.74rem;color:var(--sl-muted,#64748b);">${escHtml(first.detail || '')}</div>
-                    <pre style="margin:0;margin-top:auto;padding:8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);font-size:0.66rem;font-family:var(--sl-font-mono,monospace);">${escHtml(first.code || '')}</pre>
+                    <pre style="margin:0;margin-top:auto;padding:8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;background:color-mix(in srgb,var(--sl-slide-bg,#1a1d27) 80%,#000);font-size:0.66rem;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;">${escHtml(first.code || '')}</pre>
                 </div>`;
             }
             case 'gallery-annotable': {
@@ -312,7 +312,7 @@
             case 'rank-order': {
                 const title = escHtml(el.data?.title || 'Classement');
                 const items = Array.isArray(el.data?.items) ? el.data.items : [];
-                const rows = items.slice(0, 6).map((it, i) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;font-size:0.73rem;"><span style="font-family:var(--sl-font-mono,monospace);color:var(--sl-muted,#64748b);min-width:20px;">${i + 1}.</span><span>${escHtml(it)}</span></div>`).join('');
+                const rows = items.slice(0, 6).map((it, i) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--sl-border,#2d3347);border-radius:8px;font-size:0.73rem;"><span style="font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;color:var(--sl-muted,#64748b);min-width:20px;">${i + 1}.</span><span>${escHtml(it)}</span></div>`).join('');
                 return `<div style="width:100%;height:100%;padding:10px;box-sizing:border-box;border:1px solid var(--sl-border,#2d3347);border-radius:10px;display:flex;flex-direction:column;gap:8px;">
                     <div style="font-size:0.74rem;font-weight:700;color:#0ea5e9;text-transform:uppercase;">${title}</div>
                     <div style="display:flex;flex-direction:column;gap:6px;overflow:auto;">${rows}</div>
