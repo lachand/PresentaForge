@@ -493,6 +493,18 @@ body { background: var(--sl-bg); }
 .sl-widget-static-name { font-size: 0.9rem; font-weight: 600; color: var(--sl-heading); }
 .sl-widget-static-desc { font-size: 0.75rem; color: var(--sl-muted); text-align: center; }
 
+/* Diagramme draw.io — placeholder vide + SVG statique mis en cache */
+.sl-drawio-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 0.4rem;
+    border: 2px dashed var(--sl-border, #2d3347);
+    border-radius: 8px;
+    color: var(--sl-muted, #64748b);
+    font-size: 13px;
+}
+.sl-drawio-render { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.sl-drawio-render svg { width: 100%; height: 100%; }
+
 /* Progress bar override */
 .reveal .progress { height: 3px; background: var(--sl-border); }
 .reveal .progress span { background: var(--sl-primary); }

@@ -658,6 +658,13 @@ function updatePropsPanel() {
             </div>`;
             break;
 
+        case 'drawio':
+            html = `<div class="props-section">
+                <div class="props-section-title">Diagramme UML (draw.io)</div>
+                <button type="button" id="sp-drawio-edit" class="wpm-trigger-btn" style="width:100%">${d.svg ? 'Modifier le diagramme' : 'Créer le diagramme'}</button>
+            </div>`;
+            break;
+
         case 'diagramme': {
             const chartType = DIAGRAM_CHART_TYPES.includes(String(d.chartType || '').toLowerCase())
                 ? String(d.chartType).toLowerCase()
@@ -1490,6 +1497,14 @@ function _bindPropsPanel(el) {
 
         case 'mermaid':
             bind('sp-mermaid-code', inp => canvasEditor.updateData(id, { data: { code: inp.value } }));
+            break;
+
+        case 'drawio':
+            document.getElementById('sp-drawio-edit')?.addEventListener('click', () => {
+                canvasEditor._openDiagramEditor(canvasEditor._dom(id), el)?.then(result => {
+                    if (result) updatePropsPanel();
+                });
+            });
             break;
 
         case 'diagramme':

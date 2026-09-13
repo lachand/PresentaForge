@@ -6,7 +6,7 @@
     <!-- Chantier 8 (sécurité) — CSP stricte (enforce). Un CSP `Report-Only` via <meta>
          est ignoré par les navigateurs : politique appliquée directement, après
          extraction des scripts inline (plus aucun bloc JS dans le HTML). Voir docs/developer/SECURITY_MODEL.md. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob: https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com; frame-src 'self' blob: https://*.firebaseapp.com https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com; base-uri 'self'; form-action 'self'; object-src 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob: https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com; frame-src 'self' blob: https://*.firebaseapp.com https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com https://embed.diagrams.net; base-uri 'self'; form-action 'self'; object-src 'none'">
     <title>presentaForge — Éditeur</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=7">
-    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=42">
+    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=43">
     <link rel="stylesheet" href="../shared/components/widgets.css">
     <style id="sl-preview-theme"></style>
     <style id="sl-thumb-css"></style>
@@ -206,6 +206,7 @@
                     <button class="el-type-btn el-color-callout" id="btn-insert-callout" data-tooltip="Callout box|Encadré info/warning/success/danger"><span class="el-icon"><span class="ms">info</span></span>Callout box</button>
 <button class="el-type-btn el-color-mermaid" data-el="mermaid" data-tooltip="Diagramme|Mermaid (graphes, flowcharts)"><span class="el-icon"><span class="ms">hub</span></span>Mermaid</button>
                     <button class="el-type-btn el-color-diagram" data-el="diagramme" data-tooltip="Diagramme|Graphique à partir d'un tableau de données"><span class="el-icon"><span class="ms">bar_chart</span></span>Diagramme</button>
+                    <button class="el-type-btn el-color-drawio" data-el="drawio" data-tooltip="Diagramme|UML via draw.io (diagrams.net)"><span class="el-icon"><span class="ms">schema</span></span>UML</button>
                     <button class="el-type-btn el-color-latex" data-el="latex" data-tooltip="Équation|LaTeX / KaTeX"><span class="el-icon"><span class="ms">functions</span></span>LaTeX</button>
                     <button class="el-type-btn el-color-timer" data-el="timer" data-tooltip="Minuteur|Compte à rebours interactif"><span class="el-icon"><span class="ms">timer</span></span>Timer</button>
                     <button class="el-type-btn el-color-iframe" data-el="iframe" data-tooltip="Iframe|Contenu web embarqué"><span class="el-icon"><span class="ms">web</span></span>Iframe</button>
@@ -827,6 +828,6 @@
 <!-- ═══════ SCRIPTS ═══════ -->
 <script src="../shared/slides/firebase-storage.js?v=3"></script>
 <script src="../shared/slides/firebase-modal.js?v=3"></script>
-<script type="module" src="editor-bootstrap.js?v=4"></script>
+<script type="module" src="editor-bootstrap.js?v=5"></script>
 </body>
 </html>

@@ -36,6 +36,7 @@ const _quickInsertItems = [
     { id: 'callout', label: 'Callout', keywords: 'callout info warning tip encadré', iconSelector: '#btn-insert-callout .el-icon', iconKey: 'question' },
     { id: 'mermaid', label: 'Diagramme Mermaid', keywords: 'mermaid diagramme graphe flowchart sequence', iconSelector: '#ribbon-insertion .el-type-btn[data-el="mermaid"] .el-icon', iconKey: 'diagram' },
     { id: 'diagramme', label: 'Diagramme', keywords: 'diagramme chart graphique bar line pie area donut radar scatter bubble histogram boxplot waterfall funnel heatmap treemap sankey gantt jauge radial gauge combo stacked 100', iconSelector: '#ribbon-insertion .el-type-btn[data-el="diagramme"] .el-icon', iconKey: 'diagram' },
+    { id: 'drawio', label: 'Diagramme UML (draw.io)', keywords: 'drawio uml diagramme diagrams.net classe sequence schema', iconSelector: '#ribbon-insertion .el-type-btn[data-el="drawio"] .el-icon', iconKey: 'diagram' },
     { id: 'latex', label: 'Équation LaTeX', keywords: 'latex equation math formule katex', iconSelector: '#ribbon-insertion .el-type-btn[data-el="latex"] .el-icon', iconKey: 'book' },
     { id: 'timer', label: 'Minuteur', keywords: 'timer minuteur countdown chrono temps', iconSelector: '#ribbon-insertion .el-type-btn[data-el="timer"] .el-icon', iconKey: 'clock' },
     { id: 'iframe', label: 'Iframe', keywords: 'iframe embed url site web page', iconSelector: '#ribbon-insertion .el-type-btn[data-el="iframe"] .el-icon', iconKey: 'integration' },
@@ -218,6 +219,7 @@ function _doQuickInsert(id) {
         case 'card':
         case 'mermaid':
         case 'diagramme':
+        case 'drawio':
         case 'latex':
         case 'timer':
         case 'iframe':

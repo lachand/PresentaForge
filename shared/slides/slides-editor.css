@@ -649,6 +649,7 @@ html, body {
 .el-color-video { --el-color: #ef4444; }
 .el-color-callout { --el-color: #3b82f6; }
 .el-color-mermaid { --el-color: #ff6f91; }
+.el-color-drawio { --el-color: #f97316; }
 .el-color-latex { --el-color: #a78bfa; }
 .el-color-timer { --el-color: #f59e0b; }
 .el-color-iframe { --el-color: #14b8a6; }

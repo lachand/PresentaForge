@@ -543,6 +543,17 @@
                 content = `<div class="${P}-mermaid-pending" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><pre style="display:none">${esc(code)}</pre><div class="${P}-mermaid-render" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"></div></div>`;
                 break;
             }
+            case 'drawio': {
+                const svg = el.data?.svg || '';
+                content = svg
+                    ? `<div class="${P}-drawio-render">${svg}</div>`
+                    : `<div class="${P}-drawio-placeholder">
+                           <span style="font-size:1.5rem">⌗</span>
+                           <span>Diagramme UML</span>
+                           <span style="font-size:0.75em;opacity:0.8">Double-cliquez pour créer un diagramme</span>
+                       </div>`;
+                break;
+            }
             case 'diagramme': {
                 const s = el.style || {};
                 content = SlidesShared.renderDiagrammeBlock(el.data || {}, s, opts.typography, {

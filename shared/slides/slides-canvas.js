@@ -101,6 +101,7 @@ class CanvasEditor {
         { id: 'video',      icon: '▶',   label: 'Vidéo',      w: 560, h: 315 },
         { id: 'mermaid',    icon: 'MMD', label: 'Mermaid',    w: 700, h: 400 },
         { id: 'diagramme',  icon: 'CH',  label: 'Diagramme',  w: 760, h: 380 },
+        { id: 'drawio',     icon: 'UML', label: 'UML (draw.io)', w: 700, h: 480 },
         { id: 'latex',      icon: 'FX',  label: 'LaTeX',      w: 500, h: 120 },
         { id: 'timer',      icon: 'TM',  label: 'Timer',      w: 200, h: 100 },
         { id: 'iframe',     icon: 'WEB', label: 'Iframe',     w: 700, h: 450 },
@@ -293,6 +294,8 @@ class CanvasEditor {
                     },
                     style: {},
                 };
+            case 'drawio':
+                return { ...base, data: { xml: '', svg: '' }, style: {} };
             case 'latex':
                 return { ...base, data: { expression: 'E = mc^2' }, style: { color: 'var(--sl-text)' } };
             case 'timer':
@@ -655,7 +658,7 @@ class CanvasEditor {
 }
 .canvas-connector-mode { cursor:crosshair !important; }
 .canvas-connector-mode .cel { cursor:crosshair !important; }
-.cel-widget-placeholder, .cel-widget-loading {
+.cel-widget-placeholder, .cel-widget-loading, .cel-drawio-placeholder {
     width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
     border: 2px dashed var(--sl-border, #2d3347);
@@ -664,6 +667,8 @@ class CanvasEditor {
     font-size: 13px;
     flex-direction: column; gap: 0.4rem;
 }
+.cel-drawio-render { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.cel-drawio-render svg { width: 100%; height: 100%; }
 .cel-def-content {
     width: 100%; height: 100%;
     background: color-mix(in srgb, var(--sl-primary, #818cf8) 8%, var(--sl-slide-bg, #1a1d27));
@@ -1856,6 +1861,19 @@ class CanvasEditor {
 
     _startInlineEditMermaid(div, el) {
         CanvasInlineEditRuntime.startInlineEditMermaid({ editor: this }, div, el);
+    }
+
+    /**
+     * Ouvre l'éditeur draw.io en modale (pas une édition en place comme les
+     * _startInlineEditXxx ci-dessus — draw.io a besoin de tout l'écran).
+     * @returns {Promise<{xml:string,svg:string}|null>}
+     */
+    _openDiagramEditor(div, el) {
+        if (!window.OEIDrawioModal) return Promise.resolve(null);
+        return window.OEIDrawioModal.open({ xml: el.data?.xml || '' }).then(result => {
+            if (result) this.updateData(el.id, { data: { xml: result.xml, svg: result.svg } });
+            return result;
+        });
     }
 
     _onMouseMove(e) {

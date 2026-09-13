@@ -154,6 +154,7 @@
             else if (['poll-likert', 'debate-mode', 'postit-wall'].includes(el.type)) editor._startInlineEditPromptField(div, el);
             else if (el.type === 'audience-roulette') editor._startInlineEditAudienceRoulette(div, el);
             else if (el.type === 'mermaid') editor._startInlineEditMermaid(div, el);
+            else if (el.type === 'drawio') editor._openDiagramEditor(div, el);
             else if (el.type === 'timer') editor._startInlineEditTimerLabel(div, el);
             else editor.onDblClick?.(el, event);
         });
