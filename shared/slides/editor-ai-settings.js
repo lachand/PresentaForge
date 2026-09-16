@@ -21,6 +21,12 @@
     const AI_GEMINI_SETTINGS_KEY = storage?.KEYS?.AI_GEMINI_SETTINGS || 'oei-ai-gemini-settings';
     const AI_CLAUDE_SETTINGS_KEY = storage?.KEYS?.AI_CLAUDE_SETTINGS || 'oei-ai-claude-settings';
     const AI_PROVIDER_KEY = storage?.KEYS?.AI_PROVIDER || 'oei-ai-provider';
+    // Marqueur de migration ponctuelle (2026-09-17) : avant le 2026-09-13, l'auto-injection
+    // d'illustrations était activée par défaut (bug). Un réglage `autoInjectIllustrations: true`
+    // persisté avant cette date reste sinon collé pour toujours (le motif `!== false` traite
+    // toute valeur non explicitement `false` comme vraie). On force une remise à `false` une
+    // seule fois par navigateur, sans écraser un futur choix explicite de l'utilisateur.
+    const AI_IMPORT_PIPELINE_AUTOINJECT_RESET_KEY = 'oei-ai-import-pipeline-autoinject-reset-v1';
     const AI_IMAGE_GENERATION_ENABLED = false;
     const AI_PROVIDERS = Object.freeze(['gemini', 'claude']);
 
@@ -157,7 +163,7 @@
             : AI_IMPORT_PIPELINE_DEFAULTS.base64Mode;
         return {
             base64Mode,
-            autoInjectIllustrations: src.autoInjectIllustrations !== false,
+            autoInjectIllustrations: src.autoInjectIllustrations === true,
             fetchRemoteImages: src.fetchRemoteImages === true,
             stepValidation: src.stepValidation === true,
             forceImageGeneration: AI_IMAGE_GENERATION_ENABLED ? (src.forceImageGeneration === true) : false,
@@ -203,6 +209,13 @@
     }
 
     function getAIImportPipelineSettings() {
+        if (!_readJSON(AI_IMPORT_PIPELINE_AUTOINJECT_RESET_KEY, false)) {
+            const stored = _readJSON(AI_IMPORT_PIPELINE_KEY, null);
+            if (stored && typeof stored === 'object' && stored.autoInjectIllustrations !== false) {
+                _writeJSON(AI_IMPORT_PIPELINE_KEY, { ...stored, autoInjectIllustrations: false });
+            }
+            _writeJSON(AI_IMPORT_PIPELINE_AUTOINJECT_RESET_KEY, true);
+        }
         return _sanitizeAIImportPipelineSettings(_readJSON(AI_IMPORT_PIPELINE_KEY, AI_IMPORT_PIPELINE_DEFAULTS));
     }
 

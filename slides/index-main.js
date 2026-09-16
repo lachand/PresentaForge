@@ -570,6 +570,10 @@
         _localFilters.tag = String(e.target.value || '');
         renderLocalDecks();
     });
+    document.getElementById('firebase-search')?.addEventListener('input', e => {
+        _firebaseFilterQuery = String(e.target.value || '');
+        renderFirebaseDecks();
+    });
 
     document.addEventListener('click', e => {
         const target = e.target.closest('[data-action]');
@@ -697,10 +701,25 @@
         return `${base}viewer.html?firebase=${encodeURIComponent(uid)}/${encodeURIComponent(id)}`;
     }
 
+    let _firebaseFilterQuery = '';
+
+    function _filterFirebaseDecks(decks, query) {
+        const q = String(query || '').trim().toLocaleLowerCase('fr');
+        if (!q) return decks;
+        return decks.filter(({ p }) => {
+            const title = String(p?.title || '').toLocaleLowerCase('fr');
+            const course = String(p?.course || '').toLocaleLowerCase('fr');
+            return title.includes(q) || course.includes(q);
+        });
+    }
+
     function renderFirebaseDecks() {
         const host = document.getElementById('firebase-grid');
         const countEl = document.getElementById('firebase-count');
+        const toolsEl = document.getElementById('firebase-tools');
         if (!host) return;
+
+        if (toolsEl) toolsEl.style.display = _firebaseDecks.length ? 'block' : 'none';
 
         if (!_firebaseDecks.length) {
             host.innerHTML = '<div class="firebase-empty">Aucune présentation Firebase. Sauvegardez depuis l\'éditeur pour commencer.</div>';
@@ -712,18 +731,25 @@
 
         const uid = window.OEIFirebase?.getUser()?.uid || '';
 
-        // Group by course
+        // Group by course (après filtre recherche)
+        const withIdx = _firebaseDecks.map((p, idx) => ({ p, idx }));
+        const filtered = _filterFirebaseDecks(withIdx, _firebaseFilterQuery);
+        if (!filtered.length) {
+            host.innerHTML = '<div class="firebase-empty">Aucun résultat pour cette recherche.</div>';
+            return;
+        }
         const courses = {};
-        _firebaseDecks.forEach((p, idx) => {
-            const key = p.course || '';
+        filtered.forEach(entry => {
+            const key = entry.p.course || '';
             if (!courses[key]) courses[key] = [];
-            courses[key].push({ p, idx });
+            courses[key].push(entry);
         });
 
         const sections = Object.keys(courses).sort((a, b) => {
             if (!a) return 1; if (!b) return -1;
             return a.localeCompare(b, 'fr');
         });
+        const showHeadings = sections.length > 1 || (sections.length === 1 && sections[0]);
 
         const renderCard = ({ p, idx }) => {
             const titleText = p.thumb?.text || p.title || '';
@@ -740,6 +766,7 @@
                     <div class="pres-meta">
                         <span class="chip">${icon('clock')} ${_fmtDate(p.modified)}</span>
                         ${p.course ? `<span class="chip chip--course">${esc(p.course)}</span>` : ''}
+                        <button type="button" class="pres-card-move-btn" data-action="move-firebase" data-fb-idx="${idx}" title="Changer de cours">&#x1F3F7;</button>
                     </div>
                     <div class="pres-actions">
                         <button type="button" class="card-btn primary" data-action="present-firebase" data-fb-idx="${idx}">${icon('play')} Présenter</button>
@@ -754,7 +781,7 @@
         };
 
         host.innerHTML = sections.map(course => `
-            ${course ? `<h4 class="firebase-course-heading">${esc(course)}</h4>` : ''}
+            ${showHeadings ? `<h4 class="firebase-course-heading"><span>${course ? esc(course) : 'Sans cours'}</span>${course ? `<button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${esc(course)}">renommer</button>` : ''}</h4>` : ''}
             <div class="pres-grid">${courses[course].map(renderCard).join('')}</div>
         `).join('');
     }
@@ -810,15 +837,55 @@
         }
     }
 
+    // Déplace une présentation vers un autre cours (mise à jour légère : ne touche
+    // pas au JSON, potentiellement gros/fragmenté — voir updatePresentationCourse).
+    async function moveFirebaseDeck(idx) {
+        const p = _firebaseDecks[idx];
+        if (!p) return;
+        const known = [...new Set(_firebaseDecks.map(x => x.course).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+        const hint = known.length ? `\n\nCours existants : ${known.join(', ')}` : '';
+        const next = prompt(`Cours pour « ${p.title} » (vide = sans cours) :${hint}`, p.course || '');
+        if (next === null) return;
+        const trimmed = next.trim();
+        if (trimmed === (p.course || '')) return;
+        try {
+            await window.OEIFirebase.updatePresentationCourse(p.id, trimmed);
+            p.course = trimmed;
+            renderFirebaseDecks();
+        } catch (e) {
+            await OEIDialog.alert('Erreur : ' + e.message);
+        }
+    }
+
+    // Renomme EN BLOC toutes les présentations actuellement rangées dans `course`
+    // (fusion possible si le nouveau nom correspond à un cours déjà existant).
+    async function renameFirebaseCourse(course) {
+        const affected = _firebaseDecks.filter(p => (p.course || '') === course);
+        if (!affected.length) return;
+        const next = prompt(`Renommer le cours « ${course} » (${affected.length} présentation${affected.length > 1 ? 's' : ''}) :`, course);
+        if (next === null) return;
+        const trimmed = next.trim();
+        if (trimmed === course) return;
+        try {
+            await Promise.all(affected.map(p => window.OEIFirebase.updatePresentationCourse(p.id, trimmed)));
+            affected.forEach(p => { p.course = trimmed; });
+            renderFirebaseDecks();
+        } catch (e) {
+            await OEIDialog.alert('Erreur : ' + e.message);
+        }
+    }
+
     // Handle Firebase action clicks (delegated)
     document.addEventListener('click', e => {
-        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"]');
+        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"]');
         if (!target) return;
         const action = target.dataset.action;
         const idx = Number(target.dataset.fbIdx);
         if (action === 'present-firebase') openFirebaseDeck(idx, 'viewer');
         else if (action === 'edit-firebase') openFirebaseDeck(idx, 'editor');
         else if (action === 'delete-firebase') deleteFirebaseDeck(idx);
+        else if (action === 'move-firebase') moveFirebaseDeck(idx);
+        else if (action === 'rename-course-firebase') renameFirebaseCourse(target.dataset.course || '');
         else if (action === 'copy-link-firebase') {
             const uid = target.dataset.fbUid;
             const id  = target.dataset.fbId;

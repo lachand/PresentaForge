@@ -391,6 +391,14 @@
         await col.doc(id).delete();
     }
 
+    // Renomme le "cours" (dossier de regroupement) d'une présentation sans re-télécharger
+    // ni réécrire son contenu JSON (potentiellement gros/fragmenté) — ne touche que le
+    // champ `course` du document méta.
+    async function updatePresentationCourse(id, course) {
+        const col = _presCol();
+        await col.doc(id).update({ course: String(course || '').trim() });
+    }
+
     // ── Export ────────────────────────────────────────────────────────────────
 
     window.OEIFirebase = {
@@ -414,5 +422,6 @@
         loadPublicPresentation,
         savePresentation,
         deletePresentation,
+        updatePresentationCourse,
     };
 })();

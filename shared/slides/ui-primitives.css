@@ -619,13 +619,43 @@ body.dark {
     border-radius: 8px;
     text-align: center;
 }
+.fbm-list-toolbar { margin-bottom: 8px; }
+.fbm-filter-input { width: 100%; }
 .fbm-list-area {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
     max-height: 340px;
     overflow-y: auto;
     padding-right: 4px;
+}
+.fbm-group { display: flex; flex-direction: column; }
+.fbm-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--on-surface-variant, #414750);
+    cursor: pointer;
+    list-style: none;
+}
+.fbm-group-header::-webkit-details-marker { display: none; }
+.fbm-group-header::before {
+    content: '▸';
+    font-size: 0.7rem;
+    transition: transform 0.12s;
+}
+.fbm-group[open] > .fbm-group-header::before { transform: rotate(90deg); }
+.fbm-group-count { font-weight: 400; color: var(--on-surface-muted, #8a9099); text-transform: none; letter-spacing: normal; }
+.fbm-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
 }
 .fbm-loading, .fbm-empty {
     text-align: center;

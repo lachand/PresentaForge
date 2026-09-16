@@ -318,7 +318,10 @@ body {
     border: 1px dashed var(--outline-variant);
     border-radius: var(--radius-lg);
 }
+.firebase-tools { display: none; margin-bottom: 12px; }
+.firebase-tools .local-filter-input { width: 100%; }
 .firebase-course-heading {
+    display: flex; align-items: center; gap: 8px;
     font-family: var(--font-editorial);
     font-size: 0.75rem; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.08em;
@@ -326,6 +329,27 @@ body {
     margin: 16px 0 8px;
 }
 .firebase-course-heading:first-child { margin-top: 0; }
+.firebase-course-rename-btn {
+    font-size: 0.6875rem; font-weight: 600;
+    text-transform: none; letter-spacing: normal;
+    padding: 2px 8px;
+    background: var(--surface-container-high);
+    color: var(--on-surface-variant);
+    border: none; border-radius: 999px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.12s, background 0.12s;
+}
+.firebase-course-heading:hover .firebase-course-rename-btn,
+.firebase-course-rename-btn:focus-visible { opacity: 1; }
+.firebase-course-rename-btn:hover { background: var(--surface-container-highest); }
+.pres-card-move-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.9rem; line-height: 1; padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    color: var(--on-surface-variant);
+}
+.pres-card-move-btn:hover { background: var(--surface-container-high); }
 .cover-kicker--public { color: var(--tertiary); }
 .chip--course { background: var(--primary-fixed); color: var(--on-primary-fixed-variant); }
 .firebase-loading {

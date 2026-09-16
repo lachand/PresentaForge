@@ -93,6 +93,24 @@
         }
     };
 
+    const _writeStoredJSON = (key, value) => {
+        if (!key) return false;
+        if (global.OEIStorage?.setJSON) return global.OEIStorage.setJSON(key, value);
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+            return true;
+        } catch (_) {
+            return false;
+        }
+    };
+
+    // Marqueur de migration ponctuelle (2026-09-17) : avant le 2026-09-13, l'auto-injection
+    // d'illustrations était activée par défaut (bug). Un réglage `autoInjectIllustrations: true`
+    // persisté avant cette date reste sinon collé pour toujours (le motif `!== false` traite
+    // toute valeur non explicitement `false` comme vraie). On force une remise à `false` une
+    // seule fois par navigateur, sans écraser un futur choix explicite de l'utilisateur.
+    const AI_IMPORT_PIPELINE_AUTOINJECT_RESET_KEY = 'oei-ai-import-pipeline-autoinject-reset-v1';
+
     const _sanitizeAIImportPipelineSettings = (raw = {}) => {
         const src = (raw && typeof raw === 'object') ? raw : {};
         const toInt = (value, fallback, min, max) => {
@@ -105,7 +123,7 @@
             : AI_IMPORT_PIPELINE_DEFAULTS.base64Mode;
         return {
             base64Mode,
-            autoInjectIllustrations: src.autoInjectIllustrations !== false,
+            autoInjectIllustrations: src.autoInjectIllustrations === true,
             fetchRemoteImages: src.fetchRemoteImages === true,
             stepValidation: src.stepValidation === true,
             forceImageGeneration: src.forceImageGeneration === true,
@@ -117,6 +135,13 @@
     const getAIImportPipelineSettings = (override = null) => {
         if (override && typeof override === 'object') {
             return _sanitizeAIImportPipelineSettings(override);
+        }
+        if (!_readStoredJSON(AI_IMPORT_PIPELINE_AUTOINJECT_RESET_KEY, false)) {
+            const stored = _readStoredJSON(AI_IMPORT_PIPELINE_KEY, null);
+            if (stored && typeof stored === 'object' && stored.autoInjectIllustrations !== false) {
+                _writeStoredJSON(AI_IMPORT_PIPELINE_KEY, { ...stored, autoInjectIllustrations: false });
+            }
+            _writeStoredJSON(AI_IMPORT_PIPELINE_AUTOINJECT_RESET_KEY, true);
         }
         return _sanitizeAIImportPipelineSettings(_readStoredJSON(AI_IMPORT_PIPELINE_KEY, AI_IMPORT_PIPELINE_DEFAULTS));
     };

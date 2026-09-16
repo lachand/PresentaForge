@@ -46,6 +46,57 @@
         if (el) el.remove();
     }
 
+    // Nom de groupe affiché pour les présentations sans cours renseigné.
+    const NO_COURSE_LABEL = 'Sans cours';
+
+    /** Liste triée des cours distincts (non vides), pour l'auto-complétion (datalist). */
+    function _distinctCourses(presentations) {
+        const set = new Set();
+        (presentations || []).forEach(p => {
+            const c = String(p?.course || '').trim();
+            if (c) set.add(c);
+        });
+        return [...set].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+    }
+
+    /**
+     * Groupe les présentations par cours (clé exacte, tronquée). Les groupes sont triés
+     * alphabétiquement ; le groupe "Sans cours" (course vide) est toujours placé en dernier.
+     * L'ordre des présentations à l'intérieur d'un groupe est conservé (déjà trié par date
+     * de modification par listPresentations()).
+     * @returns {{ course: string, label: string, items: object[] }[]}
+     */
+    function _groupByCourse(presentations) {
+        const groups = new Map(); // course trimmée ('' = sans cours) -> items
+        (presentations || []).forEach(p => {
+            const key = String(p?.course || '').trim();
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(p);
+        });
+        const entries = [...groups.entries()].map(([course, items]) => ({
+            course,
+            label: course || NO_COURSE_LABEL,
+            items,
+        }));
+        entries.sort((a, b) => {
+            if (!a.course && b.course) return 1;
+            if (a.course && !b.course) return -1;
+            return a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' });
+        });
+        return entries;
+    }
+
+    /** Filtre par titre OU cours (insensible à la casse/accents), avant regroupement. */
+    function _filterPresentations(presentations, query) {
+        const q = String(query || '').trim().toLocaleLowerCase('fr');
+        if (!q) return presentations || [];
+        return (presentations || []).filter(p => {
+            const title = String(p?.title || '').toLocaleLowerCase('fr');
+            const course = String(p?.course || '').toLocaleLowerCase('fr');
+            return title.includes(q) || course.includes(q);
+        });
+    }
+
     function _overlay(content) {
         _close();
         const div       = document.createElement('div');
@@ -263,6 +314,9 @@
     <div class="fbm-user-badge">${_esc(user ? user.email : '')}</div>
     <button class="fbm-close" id="fbm-close">&#x2715;</button>
   </div>
+  <div class="fbm-list-toolbar">
+    <input class="fbm-input fbm-filter-input" id="fbm-filter" type="search" placeholder="Rechercher un titre ou un cours…">
+  </div>
   <div class="fbm-list-area" id="fbm-list-area">
     <div class="fbm-loading">Chargement…</div>
   </div>
@@ -270,12 +324,13 @@
   <div class="fbm-save-bar">
     <span class="fbm-save-title-label">Titre :</span>
     <input class="fbm-input fbm-save-title-input" id="fbm-save-title" type="text" placeholder="Nom de la présentation…">
-    <input class="fbm-input" id="fbm-save-course" type="text" placeholder="Cours (ex: L1 Info, Algo…)" style="max-width:180px">
+    <input class="fbm-input" id="fbm-save-course" type="text" placeholder="Cours (ex: L1 Info, Algo…)" style="max-width:180px" list="fbm-course-list">
     <label class="fbm-save-public-label" title="Toute personne disposant du lien peut voir la présentation">
       <input type="checkbox" id="fbm-save-public"> Partage public
     </label>
     <button class="fbm-btn fbm-btn-primary" id="fbm-do-save">Sauvegarder</button>
   </div>` : ''}
+  <datalist id="fbm-course-list"></datalist>
   <div class="fbm-list-footer">
     <button class="fbm-btn fbm-btn-ghost" id="fbm-signout">Se déconnecter</button>
   </div>
@@ -290,12 +345,21 @@
 
         // Load list
         let presentations = [];
+        const refreshCourseList = () => {
+            const dl = overlay.querySelector('#fbm-course-list');
+            if (dl) dl.innerHTML = _distinctCourses(presentations).map(c => `<option value="${_esc(c)}">`).join('');
+        };
         try {
             presentations = await window.OEIFirebase.listPresentations();
+            refreshCourseList();
             _renderList(overlay, presentations, ctx);
         } catch (e) {
             overlay.querySelector('#fbm-list-area').innerHTML = `<div class="fbm-empty">Erreur : ${_esc(e.message)}</div>`;
         }
+
+        overlay.querySelector('#fbm-filter').addEventListener('input', (e) => {
+            _renderList(overlay, presentations, ctx, e.target.value);
+        });
 
         // Pre-fill save title + course
         if (isSave) {
@@ -332,7 +396,7 @@
         }
     }
 
-    function _renderList(overlay, presentations, ctx) {
+    function _renderList(overlay, presentations, ctx, query = '') {
         const isSave = ctx.mode === 'save';
         const area   = overlay.querySelector('#fbm-list-area');
 
@@ -341,18 +405,60 @@
             return;
         }
 
-        const html = presentations.map(p => `
+        const visible = _filterPresentations(presentations, query);
+        if (visible.length === 0) {
+            area.innerHTML = '<div class="fbm-empty">Aucun résultat pour cette recherche.</div>';
+            return;
+        }
+
+        const renderRow = p => `
 <div class="fbm-pres-row" data-id="${_esc(p.id)}">
   <div class="fbm-pres-info">
     <span class="fbm-pres-title">${_esc(p.title)}</span>
     <span class="fbm-pres-date">${_fmt(p.modified)}</span>
   </div>
   <div class="fbm-pres-actions">
+    <button class="fbm-btn fbm-btn-ghost fbm-btn-sm fbm-course-btn" data-id="${_esc(p.id)}" title="Changer de cours">&#x1F3F7;</button>
     ${!isSave ? `<button class="fbm-btn fbm-btn-primary fbm-btn-sm fbm-open-btn" data-id="${_esc(p.id)}">Ouvrir</button>` : `<button class="fbm-btn fbm-btn-secondary fbm-btn-sm fbm-overwrite-btn" data-id="${_esc(p.id)}" data-title="${_esc(p.title)}">Écraser</button>`}
     <button class="fbm-btn fbm-btn-danger fbm-btn-sm fbm-delete-btn" data-id="${_esc(p.id)}">&#x1F5D1;</button>
   </div>
-</div>`).join('');
+</div>`;
+
+        const groups = _groupByCourse(visible);
+        const html = groups.map(g => `
+<details class="fbm-group" open>
+  <summary class="fbm-group-header">
+    <span>${_esc(g.label)} <span class="fbm-group-count">(${g.items.length})</span></span>
+  </summary>
+  <div class="fbm-group-body">${g.items.map(renderRow).join('')}</div>
+</details>`).join('');
         area.innerHTML = html;
+
+        // Rename/move a single presentation to another course (mise à jour légère,
+        // sans re-télécharger le JSON de la présentation).
+        area.querySelectorAll('.fbm-course-btn').forEach(btn => {
+            btn.onclick = async () => {
+                const p = presentations.find(x => x.id === btn.dataset.id);
+                if (!p) return;
+                const known = _distinctCourses(presentations);
+                const hint = known.length ? `\n\nCours existants : ${known.join(', ')}` : '';
+                const next = window.prompt(`Cours pour « ${p.title} » (vide = sans cours) :${hint}`, p.course || '');
+                if (next === null) return; // annulé
+                const trimmed = next.trim();
+                if (trimmed === (p.course || '')) return;
+                btn.disabled = true;
+                try {
+                    await window.OEIFirebase.updatePresentationCourse(p.id, trimmed);
+                    p.course = trimmed;
+                    const dl = overlay.querySelector('#fbm-course-list');
+                    if (dl) dl.innerHTML = _distinctCourses(presentations).map(c => `<option value="${_esc(c)}">`).join('');
+                    _renderList(overlay, presentations, ctx, overlay.querySelector('#fbm-filter')?.value || '');
+                } catch (e) {
+                    btn.disabled = false;
+                    _showError('fbm-list-error', 'Erreur : ' + e.message);
+                }
+            };
+        });
 
         // Open buttons
         area.querySelectorAll('.fbm-open-btn').forEach(btn => {
@@ -489,5 +595,8 @@
         }
     }
 
-    window.OEIFirebaseModal = { open };
+    window.OEIFirebaseModal = {
+        open,
+        testUtils: { groupByCourse: _groupByCourse, filterPresentations: _filterPresentations, distinctCourses: _distinctCourses },
+    };
 })();

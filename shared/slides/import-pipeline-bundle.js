@@ -260,7 +260,7 @@
     const normalizeIllustrationPlan = (rawPlan, data, report, settings, deps = {}) => {
         const slides = Array.isArray(data?.slides) ? data.slides : [];
         const maxItems = getMaxIllustrations(settings);
-        const autoInject = settings?.autoInjectIllustrations !== false;
+        const autoInject = settings?.autoInjectIllustrations === true;
         let list = Array.isArray(rawPlan) ? rawPlan : [];
 
         if (!list.length && autoInject) {
