@@ -2487,12 +2487,12 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 if (_room.active) {
                     roomBroadcast({ type: ROOM_MSG.SLIDE_CHANGE, index: idx, fragmentOrder: -1, fragmentIndex: -1 });
                     const _kpSlide = slides[idx];
-                    const _kpPoints = Array.isArray(_kpSlide?.keypoints) && _kpSlide.keypoints.length
+                    // Les notes orateur ne doivent jamais être envoyées aux étudiants : pas de
+                    // repli sur `notes` ici, seulement les points clés explicitement destinés
+                    // aux étudiants. Si l'auteur du deck n'en a pas saisi, on n'envoie rien.
+                    const _kpPoints = Array.isArray(_kpSlide?.keypoints)
                         ? _kpSlide.keypoints.map(p => String(p || '').trim()).filter(Boolean)
-                        : (_kpSlide?.notes || '').split('\n')
-                            .map(l => l.replace(/^[\-\*•]\s*/, '').trim())
-                            .filter(Boolean)
-                            .slice(0, 5);
+                        : [];
                     roomBroadcast({ type: ROOM_MSG.ROOM_KEYNOTE, points: _kpPoints });
                 }
                 // Persist current slide for resume
@@ -2845,7 +2845,12 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 card.id = `rv-card-${i}`;
                 const html = SlidesRenderer.renderSlide(slide, i, opts);
                 const title = _esc(slide.title || slide.quote || slide.term || `Slide ${i + 1}`);
-                const notes = slide.notes ? `<div class="rv-notes"><div class="rv-notes-label">Notes</div><div class="rv-notes-body">${_esc(slide.notes)}</div></div>` : '';
+                // Révision autonome = vue étudiant : on ne montre jamais les notes orateur ici,
+                // seulement les points clés destinés aux étudiants (si l'auteur du deck en a saisi).
+                const kp = Array.isArray(slide.keypoints) ? slide.keypoints.map(p => String(p || '').trim()).filter(Boolean) : [];
+                const notes = kp.length
+                    ? `<div class="rv-notes"><div class="rv-notes-label">Points clés</div><div class="rv-notes-body"><ul class="rv-keypoints-list">${kp.map(p => `<li>${_esc(p)}</li>`).join('')}</ul></div></div>`
+                    : '';
                 card.innerHTML = `
                     <div class="rv-card-num">Slide ${i + 1}</div>
                     <div class="rv-card-title">${title}</div>

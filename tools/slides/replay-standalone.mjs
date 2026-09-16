@@ -590,11 +590,14 @@ body{min-height:100vh;display:flex;flex-direction:column}
     themeEl.textContent = '';
   }
 
+  // Le lecteur de replay n'affiche jamais les notes orateur (retirées du DOM avant
+  // affichage) ; includeNotes:false évite aussi de les embarquer en clair dans le HTML exporté.
   var replayOpts = (window.SlidesShared && window.SlidesShared.buildRenderOptions)
-    ? window.SlidesShared.buildRenderOptions(slidesData, { showSlideNumber: false, footerText: null })
+    ? window.SlidesShared.buildRenderOptions(slidesData, { showSlideNumber: false, footerText: null, includeNotes: false })
     : {
       showSlideNumber: false,
       footerText: null,
+      includeNotes: false,
       totalSlides: totalSlides,
       chapterNumbers: (window.SlidesRenderer && window.SlidesRenderer._buildChapterNumbers)
         ? window.SlidesRenderer._buildChapterNumbers(slides, !!slidesData.autoNumberChapters)
@@ -1226,9 +1229,11 @@ body{min-height:100vh;display:flex;flex-direction:column}
       ? window.SlidesThemes.generateCSS(themeInput) : '';
   } catch(_){ themeEl.textContent = ''; }
 
+  // Le lecteur de replay n'affiche jamais les notes orateur (retirées du DOM avant
+  // affichage) ; includeNotes:false évite aussi de les embarquer en clair dans le HTML exporté.
   var replayOpts = (window.SlidesShared && window.SlidesShared.buildRenderOptions)
-    ? window.SlidesShared.buildRenderOptions(slidesData, { showSlideNumber: false, footerText: null })
-    : { showSlideNumber: false, footerText: null, totalSlides: totalSlides,
+    ? window.SlidesShared.buildRenderOptions(slidesData, { showSlideNumber: false, footerText: null, includeNotes: false })
+    : { showSlideNumber: false, footerText: null, includeNotes: false, totalSlides: totalSlides,
         chapterNumbers: {}, typography: (window.SlidesShared && window.SlidesShared.resolveTypographyDefaults)
           ? window.SlidesShared.resolveTypographyDefaults(slidesData.typography) : {} };
 

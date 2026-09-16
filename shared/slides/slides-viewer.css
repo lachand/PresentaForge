@@ -2625,3 +2625,5 @@ body.viewer-review { background: #0f1117; color: #e2e8f0; overflow-y: auto; }
 }
 .rv-notes-label { font-size: 0.65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #3b82f6; margin-bottom: 6px; }
 .rv-notes-body { font-size: 0.82rem; color: #94a3b8; white-space: pre-wrap; line-height: 1.6; }
+.rv-keypoints-list { margin: 0; padding-left: 1.2em; }
+.rv-keypoints-list li { margin: 2px 0; }

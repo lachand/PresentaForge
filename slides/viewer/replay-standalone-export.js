@@ -33,6 +33,10 @@ export function buildReplayStandaloneHtml({
         totalSlides: slides.length,
         chapterNumbers: slidesRenderer._buildChapterNumbers(slides, data.autoNumberChapters),
         typography: slidesShared.resolveTypographyDefaults(data.typography),
+        // Le lecteur de replay n'affiche jamais les notes orateur (il les retire même du DOM
+        // avant affichage) ; autant ne pas les embarquer du tout dans le payload exporté,
+        // extractible en clair via "Afficher la source" sinon.
+        includeNotes: false,
     };
     const payload = buildReplayStandalonePayload({
         title,

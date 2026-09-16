@@ -799,6 +799,11 @@ async function exportHTML() {
         totalSlides: visibleSlides.length,
         chapterNumbers: SlidesRenderer._buildChapterNumbers(visibleSlides, data.autoNumberChapters),
         typography: SlidesShared.resolveTypographyDefaults(data.typography),
+        // Les notes orateur ne doivent exister que pour l'orateur et seulement en mode
+        // présentation live — jamais dans un fichier exporté, distribuable hors de tout
+        // contrôle. Le mode présentateur intégré à ce HTML reste fonctionnel (minuteur,
+        // écran noir, navigation) mais sans panneau de notes.
+        includeNotes: false,
     };
     const slidesHTML = visibleSlides.map((slide, i) =>
         SlidesRenderer.renderSlide(slide, i, htmlOpts)
@@ -879,12 +884,14 @@ if (!window.ExerciseRunnerPage) window.ExerciseRunnerPage = window.ConceptPage;<
     // on inline les VRAIS runtimes + un bootstrap, pas de copie divergente.
     const specialRuntimeInline = await _buildSpecialRuntimeInline();
 
-    // Check whether any slide has notes
-    const hasNotes = visibleSlides.some(s => s.notes);
+    // Notes orateur : jamais embarquées dans un export distribuable (voir includeNotes:false
+    // ci-dessus) — le panneau de notes du mode présentateur intégré à ce fichier reste donc
+    // vide. `hasNotes` reflète ce choix plutôt que le contenu réel du deck.
+    const hasNotes = false;
 
     // Serialize visible slides data for presenter mode (minimal: only what presenter needs)
     const presenterSlidesData = JSON.stringify(visibleSlides.map(s => ({
-        notes: s.notes || '',
+        notes: '',
         bg: s.bg || ''
     })));
 
@@ -1444,6 +1451,11 @@ async function _buildOfflineExportDocument(data) {
         totalSlides: visibleSlides.length,
         chapterNumbers: SlidesRenderer._buildChapterNumbers(visibleSlides, data.autoNumberChapters),
         typography: SlidesShared.resolveTypographyDefaults(data.typography),
+        // Les notes orateur ne doivent exister que pour l'orateur et seulement en mode
+        // présentation live — jamais dans un fichier exporté, distribuable hors de tout
+        // contrôle. Le mode présentateur intégré à ce HTML reste fonctionnel (minuteur,
+        // écran noir, navigation) mais sans panneau de notes.
+        includeNotes: false,
     };
     const slidesHTML = visibleSlides.map((slide, i) =>
         SlidesRenderer.renderSlide(slide, i, htmlOpts)
@@ -1451,8 +1463,10 @@ async function _buildOfflineExportDocument(data) {
 
     const dims = ASPECT_DIMS[data?.metadata?.aspect || '16:9'] || [1280, 720];
     const titleEsc = esc(data.metadata?.title || 'Présentation');
+    // Notes orateur jamais embarquées dans un export distribuable (voir includeNotes:false
+    // ci-dessus) — le panneau de notes du mode présentateur intégré reste donc vide.
     const presenterSlidesData = JSON.stringify(visibleSlides.map(s => ({
-        notes: s.notes || '', bg: s.bg || ''
+        notes: '', bg: s.bg || ''
     })));
     const inlineCSS = resources.css.join('\n') + '\n' + fontCSS;
     // NB : l'export offline n'inline pas (encore) les scripts widgets — les slots
@@ -1637,10 +1651,16 @@ function exportMarkdown() {
             _mdTemplateSlide(slide, lines, i);
         }
 
-        // Speaker notes
-        if (slide.notes) {
+        // Points clés étudiants — jamais les notes orateur ici : cet export Markdown
+        // générique a une audience ambiguë (peut être partagé). Pour les notes orateur,
+        // utiliser les exports dédiés "Imprimer les notes orateur" / "Notes → Markdown".
+        if (Array.isArray(slide.keypoints) && slide.keypoints.length) {
             lines.push('');
-            lines.push('> **Notes :** ' + slide.notes.replace(/\n/g, ' '));
+            lines.push('> **À retenir :**');
+            for (const p of slide.keypoints) {
+                const clean = _mdStripHtml(String(p || '').trim()).replace(/\n/g, ' ');
+                if (clean) lines.push('> - ' + clean);
+            }
         }
         lines.push('');
     }
@@ -1870,9 +1890,15 @@ function _buildStudentExportDocument(data) {
         const slideHtml = SlidesRenderer.renderSlide(slide, i, htmlOpts);
         const title = slide.title || `Slide ${num}`;
         const titleClean = title.replace(/<[^>]*>/g, '').slice(0, 60);
+        // Points clés étudiants (jamais les notes orateur, réservées au mode présentation).
+        const kp = Array.isArray(slide.keypoints) ? slide.keypoints.map(p => String(p || '').trim()).filter(Boolean) : [];
+        const keypointsHtml = kp.length
+            ? `<div class="stu-keypoints"><div class="stu-keypoints-label">À retenir</div><ul class="stu-keypoints-list">${kp.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>`
+            : '';
         slideCards += `<div class="stu-card" id="slide-${num}">
             <div class="stu-card-header"><span class="stu-num">${num}</span> ${esc(titleClean)}</div>
             <div class="stu-slide-wrap"><div class="stu-slide-inner reveal">${slideHtml}</div></div>
+            ${keypointsHtml}
         </div>\n`;
 
         navItems += `<a href="#slide-${num}" class="stu-nav-item"><span class="stu-nav-num">${num}</span>${esc(titleClean)}</a>\n`;
@@ -1918,6 +1944,10 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #fef8f5; color: 
 .stu-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #00508d, #2869a9); color: #fff; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
 .stu-slide-wrap { position: relative; width: 100%; padding-top: ${(dims[1] / dims[0] * 100).toFixed(2)}%; overflow: hidden; background: var(--sl-bg, #1a1a2e); }
 .stu-slide-inner { position: absolute; top: 0; left: 0; width: ${dims[0]}px; height: ${dims[1]}px; transform-origin: top left; }
+.stu-keypoints { padding: 14px 16px; background: #f8f2ef; border-top: 1px solid #ede7e4; }
+.stu-keypoints-label { font-family: 'Manrope', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #00508d; margin-bottom: 6px; }
+.stu-keypoints-list { margin: 0; padding-left: 1.2em; font-size: 0.85rem; color: #414750; line-height: 1.6; }
+.stu-keypoints-list li { margin: 2px 0; }
 
 /* Slide rendering */
 ${themeCSS}
