@@ -22,6 +22,7 @@ export function formatToolbarTimer(seconds) {
  *   rootElement?: HTMLElement | null,
  *   setIntervalFn?: typeof setInterval,
  *   clearIntervalFn?: typeof clearInterval,
+ *   canPresent?: boolean,
  * }} context
  */
 export function initNormalModeToolbar(context = {}) {
@@ -41,6 +42,29 @@ export function initNormalModeToolbar(context = {}) {
     const btnEditor = documentRef.getElementById('btn-editor');
     const btnFirebase = documentRef.getElementById('btn-firebase');
     const timerEl = documentRef.getElementById('sl-timer');
+    const keyboardHintEl = documentRef.getElementById('sl-keyboard-hint');
+    const shortcutsPresenterRow = documentRef.getElementById('sl-shortcuts-presenter-row');
+
+    // Le mode présentateur montre les notes orateur : jamais accessible depuis le mode
+    // normal (celui que voit tout étudiant ayant le lien) sans preuve qu'on est bien
+    // l'enseignant. `setCanPresent` est appelé par viewer-main.js une fois la vérification
+    // faite (synchrone pour un deck local sans propriétaire possible → toujours false ;
+    // asynchrone pour un deck Firebase, une fois l'état d'authentification connu).
+    let canPresent = context.canPresent === true;
+    const _applyCanPresent = () => {
+        if (btnNotes) btnNotes.style.display = canPresent ? '' : 'none';
+        if (keyboardHintEl) {
+            keyboardHintEl.textContent = canPresent
+                ? '← → Espace · F plein écran · O overview · P/S présentateur · W tableau blanc · T minuteur · R reset · Échap barre d\'outils'
+                : '← → Espace · F plein écran · O overview · W tableau blanc · T minuteur · R reset · Échap barre d\'outils';
+        }
+        if (shortcutsPresenterRow) shortcutsPresenterRow.style.display = canPresent ? '' : 'none';
+    };
+    _applyCanPresent();
+    const setCanPresent = (value) => {
+        canPresent = value === true;
+        _applyCanPresent();
+    };
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) rootElement?.requestFullscreen?.();
@@ -103,6 +127,7 @@ export function initNormalModeToolbar(context = {}) {
         viewerRuntime.revealDeck?.toggleOverview?.();
     });
     btnNotes?.addEventListener('click', () => {
+        if (!canPresent) return;
         openPresenterView();
     });
     btnEditor?.addEventListener('click', () => {
@@ -192,16 +217,17 @@ export function initNormalModeToolbar(context = {}) {
         }
         if (event.key === '?') { _openShortcutsModal(); return; }
         if (event.key === 'f' || event.key === 'F') toggleFullscreen();
-        if (event.key === 'p' || event.key === 'P') openPresenterView();
+        if (canPresent && (event.key === 'p' || event.key === 'P')) openPresenterView();
         if (event.key === 't' || event.key === 'T') timerToggle();
         if (event.key === 'r' || event.key === 'R') timerReset();
         if (event.key === 'w' || event.key === 'W') wbToggle();
-        if (event.key === 's' || event.key === 'S') openPresenterView();
+        if (canPresent && (event.key === 's' || event.key === 'S')) openPresenterView();
     });
 
     return {
         timerToggle,
         timerReset,
         timerFmt: formatToolbarTimer,
+        setCanPresent,
     };
 }

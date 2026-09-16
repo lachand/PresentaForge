@@ -134,11 +134,13 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
         const isReviewMode = params.get('mode') === 'review';
         // Firebase public share: ?firebase=<uid>/<id>
         const _firebaseParam = params.get('firebase');
+        let _fbOwnerUid = null;
         if (_firebaseParam) {
             const _sep = _firebaseParam.indexOf('/');
             if (_sep > 0) {
                 const _fbUid = _firebaseParam.slice(0, _sep);
                 const _fbId  = _firebaseParam.slice(_sep + 1);
+                _fbOwnerUid = _fbUid;
                 // Will be loaded async in loadData override below
                 file = '__firebase_public__';
                 window._firebasePublicLoad = async () => {
@@ -148,6 +150,31 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     return fb.loadPublicPresentation(_fbUid, _fbId);
                 };
             }
+        }
+
+        // Les notes orateur (mode présentateur) ne doivent être accessibles qu'à
+        // l'enseignant, jamais à un visiteur du lien partagé avec les étudiants :
+        //  - deck relayé depuis l'éditeur (__draft__) : toujours l'enseignant, par
+        //    construction (canal privé à cet onglet — window.__oeiPresentDeck/IndexedDB/
+        //    localStorage) ;
+        //  - deck Firebase public (?firebase=<uid>/<id>) : seulement si l'utilisateur
+        //    connecté est bien le propriétaire (auth().currentUser.uid === uid) ;
+        //  - deck local statique (?file=<chemin>) : aucune notion de propriétaire
+        //    possible sans backend — jamais autorisé depuis ce lien.
+        async function resolveCanPresent() {
+            if (file === null) return true; // __draft__ (relais éditeur, voir plus haut)
+            if (_fbOwnerUid) {
+                try {
+                    const fb = window.OEIFirebase;
+                    if (!fb) return false;
+                    await fb.ready();
+                    const user = typeof fb.getUser === 'function' ? fb.getUser() : null;
+                    return !!(user && user.uid === _fbOwnerUid);
+                } catch (_) {
+                    return false;
+                }
+            }
+            return false;
         }
         const Storage = window.OEIStorage || null;
         const STORAGE_KEYS = Storage?.KEYS || {};
@@ -2893,7 +2920,14 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             try {
                 const data = await loadData();
                 if (isPresenterMode) {
-                    initPresenterMode(data);
+                    // Les notes orateur ne sont montrées qu'à l'enseignant : on revérifie
+                    // ici (pas seulement au niveau du bouton/raccourci) car ?mode=presenter
+                    // reste tapable directement dans l'URL par n'importe qui ayant le lien.
+                    if (await resolveCanPresent()) {
+                        initPresenterMode(data);
+                    } else {
+                        await initRevealMode(data);
+                    }
                 } else if (isAudienceMode) {
                     await initAudienceMode(data);
                 } else if (isReviewMode) {
@@ -2922,7 +2956,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
 
         // ── Normal mode toolbar buttons ──────────────────
         if (!isPresenterMode && !isAudienceMode && !isReviewMode) {
-            initNormalModeToolbar({
+            const _normalToolbar = initNormalModeToolbar({
                 viewerRuntime: ViewerRuntime,
                 wbToggle,
                 openPresenterView: () => {
@@ -2934,4 +2968,9 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     window.location.href = 'editor.html';
                 },
             });
+            // Le bouton/raccourci « Présentateur » ne s'affiche que si cette session
+            // passerait effectivement la vérification (même logique que dans boot()) —
+            // pas de bouton qui échouerait silencieusement ou boucler sans jamais entrer
+            // en mode présentateur.
+            resolveCanPresent().then(ok => _normalToolbar?.setCanPresent?.(ok)).catch(() => {});
         }
