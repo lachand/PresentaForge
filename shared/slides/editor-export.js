@@ -1690,7 +1690,14 @@ function _mdTemplateSlide(slide, lines, idx) {
             if (slide.title) lines.push(`### ${slide.title}`);
             lines.push('');
             if (Array.isArray(slide.items)) {
-                for (const item of slide.items) lines.push(`- ${_mdStripHtml(item)}`);
+                for (const item of slide.items) {
+                    if (item && typeof item === 'object' && !Array.isArray(item)) {
+                        lines.push(`- ${_mdStripHtml(item.text || '')}`);
+                        for (const sub of (item.sub || [])) lines.push(`  - ${_mdStripHtml(sub)}`);
+                    } else {
+                        lines.push(`- ${_mdStripHtml(item)}`);
+                    }
+                }
             }
             break;
         case 'code':
@@ -1749,9 +1756,9 @@ function _mdCanvasSlide(slide, lines, idx) {
             case 'list':
                 if (Array.isArray(el.data?.items)) {
                     for (const item of el.data.items) {
-                        if (item && typeof item === 'object' && Array.isArray(item.sub)) {
+                        if (item && typeof item === 'object' && !Array.isArray(item)) {
                             lines.push(`- ${_mdStripHtml(item.text || '')}`);
-                            for (const sub of item.sub) lines.push(`  - ${_mdStripHtml(sub)}`);
+                            for (const sub of (item.sub || [])) lines.push(`  - ${_mdStripHtml(sub)}`);
                         } else {
                             lines.push(`- ${_mdStripHtml(item)}`);
                         }

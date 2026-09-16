@@ -283,21 +283,24 @@ export function createRoomPeerLifecycleRuntime(params = {}) {
         room.peer.on('error', err => {
             const peerError = err || {};
             if (peerError.type === 'unavailable-id') {
-                setRoomIdInputsDisabledFn(false);
-                room.active = false;
-                roomSetStatus('ID de salle déjà utilisé.', 'error');
-                runRoomPreviewUpdater();
+                // Repli complet (détruit room.peer) plutôt qu'un simple room.active=false : sinon
+                // ce Peer resterait pendu en mémoire, jamais démonté, et le prochain clic sur
+                // « Ouvrir salle » recréerait un Peer sur le même roomId pendant que l'ancien
+                // (zombie) est peut-être toujours enregistré côté serveur de signalisation →
+                // nouvel échec immédiat en unavailable-id, silencieux pour l'utilisateur.
+                closeTransport({ statusText: 'ID de salle déjà utilisé.', statusTone: 'error' });
                 return;
             }
             if (isNetworkPeerError(peerError.type)) {
                 schedulePeerReconnect(peerError.type);
                 return;
             }
-            setRoomIdInputsDisabledFn(false);
-            room.active = false;
-            roomSetStatus(`Erreur salle: ${roomEsc(peerError.message || String(peerError))}`, 'error');
-            runRoomPreviewUpdater();
-            roomUpdatePanel();
+            // Toute autre erreur fatale (ex. type 'webrtc' — ICE/négociation WebRTC en échec,
+            // fréquent sur réseau restrictif : eduroam, filaire universitaire avec pare-feu
+            // NAT symétrique, partage de connexion mobile) : même repli complet, pour la même
+            // raison — voir commentaire ci-dessus. Avant ce correctif, room.peer n'était jamais
+            // détruit ici, ce qui bloquait toute réouverture ultérieure de la salle.
+            closeTransport({ statusText: `Erreur salle: ${roomEsc(peerError.message || String(peerError))}`, statusTone: 'error' });
         });
         return true;
     };

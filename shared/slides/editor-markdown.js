@@ -142,9 +142,9 @@ function _slidesToMarkdown(slides) {
                         parts.push('```' + (el.data?.language || '') + '\n' + (el.data?.code || '') + '\n```');
                     } else if (el.type === 'list') {
                         (el.data?.items || []).forEach(item => {
-                            if (item && typeof item === 'object' && Array.isArray(item.sub)) {
+                            if (item && typeof item === 'object' && !Array.isArray(item)) {
                                 parts.push(`- ${item.text || ''}`);
-                                item.sub.forEach(sub => parts.push(`  - ${sub}`));
+                                (item.sub || []).forEach(sub => parts.push(`  - ${sub}`));
                             } else {
                                 parts.push(`- ${item}`);
                             }

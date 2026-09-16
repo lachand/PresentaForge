@@ -217,8 +217,12 @@
                 const base = SlidesShared.resolveElementFontSize('list', s, opts.typography, 22);
                 const liCls = el.data?.revealItems ? ' class="fragment"' : '';
                 const renderListItem = i => {
-                    if (i && typeof i === 'object' && Array.isArray(i.sub)) {
-                        const subItems = i.sub.map(sub => `<li${liCls}>${SlidesShared.formatInlineRichText(sub)}</li>`).join('');
+                    if (i && typeof i === 'object' && !Array.isArray(i)) {
+                        // Forme { text, sub? } — sub est optionnel (item sans sous-liste) : ne
+                        // jamais tomber dans le repli formatInlineRichText(i) plus bas, qui
+                        // stringifierait l'objet en littéral "[object Object]".
+                        const sub = Array.isArray(i.sub) ? i.sub : [];
+                        const subItems = sub.map(s => `<li${liCls}>${SlidesShared.formatInlineRichText(s)}</li>`).join('');
                         return `<li${liCls}>${SlidesShared.formatInlineRichText(i.text || '')}${subItems ? `<ul>${subItems}</ul>` : ''}</li>`;
                     }
                     return `<li${liCls}>${SlidesShared.formatInlineRichText(i)}</li>`;
@@ -489,7 +493,13 @@
                     ? `<div style="font-size:${titleSize}px;font-weight:${titleWeight};color:${s.titleColor||tone.accent};border-bottom:1px solid ${cardBorder};padding-bottom:0.5rem;margin-bottom:0.75rem;">${esc(el.data.title)}</div>`
                     : '';
                 const liCls = el.data?.revealItems ? ' class="fragment"' : '';
-                const items = (el.data?.items || []).map(i => `<li${liCls}>${SlidesShared.formatInlineRichText(i)}</li>`).join('');
+                // items de carte = strings à plat (pas de sous-liste éditable, contrairement à
+                // 'list') — mais tolère un item { text } malformé sans le stringifier en
+                // "[object Object]" (ex. donnée importée/générée hors de l'éditeur canvas).
+                const items = (el.data?.items || [])
+                    .map(raw => raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw.text || '') : raw)
+                    .map(i => `<li${liCls}>${SlidesShared.formatInlineRichText(i)}</li>`)
+                    .join('');
                 content = `<div style="width:100%;height:100%;background:${cardFill};border:1px solid ${cardBorder};border-left:3px solid ${tone.accent};border-radius:${radiusCss};padding:${cardPad};overflow:auto;box-sizing:border-box;">
                     ${cardTitle}
                     <ul style="margin:0;padding-left:1.4em;font-size:${base}px;color:${s.color||'var(--sl-text)'};text-align:left;">${items}</ul>

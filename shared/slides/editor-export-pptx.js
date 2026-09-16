@@ -141,9 +141,9 @@ function _pptxExportCanvasSlide(pptSlide, slideData, dims, tc) {
                 });
                 const textRows = [];
                 items.forEach(item => {
-                    if (item && typeof item === 'object' && Array.isArray(item.sub)) {
+                    if (item && typeof item === 'object' && !Array.isArray(item)) {
                         textRows.push(listRow(item.text || ''));
-                        item.sub.forEach(sub => textRows.push(listRow(sub, 20)));
+                        (item.sub || []).forEach(sub => textRows.push(listRow(sub, 20)));
                     } else {
                         textRows.push(listRow(item));
                     }
