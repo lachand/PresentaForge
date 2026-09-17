@@ -57,6 +57,13 @@ async function _optimizeDataImageUrl(dataUrl, options = {}) {
         return { changed: false, dataUrl, before: 0, after: 0 };
     }
     const before = _estimateDataUrlBytes(dataUrl);
+    // Un <canvas> ne capture qu'UNE frame (la première affichée) : réencoder un GIF animé via
+    // toDataURL() écraserait l'animation par une image statique (et le forcerait en JPEG, cf.
+    // primaryMime plus bas). Pas d'encodeur GIF côté client dans cette pipeline → on laisse le
+    // GIF inchangé quelle que soit sa taille plutôt que de casser silencieusement l'animation.
+    if (/^data:image\/gif/i.test(dataUrl)) {
+        return { changed: false, dataUrl, before, after: before };
+    }
     const maxBytes = Math.max(32_000, Number(options.maxBytes || 280_000));
     const maxDimension = Math.max(320, Number(options.maxDimension || 1920));
     const maxPixels = Math.max(200_000, Number(options.maxPixels || 2_400_000));

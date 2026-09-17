@@ -845,7 +845,7 @@
                 : (titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`));
             return `
             <article class="pres-card">
-                <div class="pres-cover" style="${coverStyle}">
+                <div class="pres-cover" style="${esc(coverStyle)}">
                     ${p.public ? '<span class="cover-kicker cover-kicker--public">Public</span>' : '<span class="cover-kicker">Firebase</span>'}
                     ${coverInner}
                 </div>
