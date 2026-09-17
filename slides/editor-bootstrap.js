@@ -103,10 +103,10 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ],
     // Export pipeline (sequential: media → main → pptx+qr)
     ['../shared/slides/editor-export-media.js?v=2'],
-    ['../shared/slides/editor-export.js?v=25'],
+    ['../shared/slides/editor-export.js?v=26'],
     // Group 5: export siblings — both depend on export.js, not on each other
     [
-        '../shared/slides/editor-export-pptx.js?v=2',
+        '../shared/slides/editor-export-pptx.js?v=3',
         '../shared/slides/editor-export-qr.js?v=1',
     ],
     ['../shared/slides/editor-timeline.js?v=8'],
@@ -116,8 +116,8 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-resize.js?v=10'],
     ['../shared/slides/editor-checker.js?v=12'],
     ['../shared/slides/banner-picker.js?v=1'],
-    ['../shared/slides/editor-bindings.js?v=27'],
-    ['../shared/slides/editor-main.js?v=3'],
+    ['../shared/slides/editor-bindings.js?v=28'],
+    ['../shared/slides/editor-main.js?v=4'],
 ]);
 
 loadClassicScriptGroups(EDITOR_BOOTSTRAP_GROUPS, {

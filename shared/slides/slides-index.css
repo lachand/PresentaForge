@@ -396,6 +396,36 @@ body {
     color: var(--on-surface-muted); font-size: 0.875rem;
     font-style: italic;
 }
+/* ── Sélection multiple (édition/export groupés) ────────────── */
+.pres-select-box {
+    position: absolute; top: 8px; left: 8px; z-index: 3;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+}
+.pres-select-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+.firebase-bulk-bar {
+    display: none;
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface-container-lowest);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-2);
+    z-index: 40;
+}
+.firebase-bulk-bar.is-visible { display: flex; }
+.firebase-bulk-bar #firebase-bulk-count { font-size: 0.8125rem; font-weight: 600; color: var(--on-surface); white-space: nowrap; }
+.firebase-bulk-actions { display: flex; align-items: center; gap: 8px; }
+.firebase-bulk-clear {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.9rem; line-height: 1; padding: 4px 6px;
+    border-radius: var(--radius-sm, 6px);
+    color: var(--on-surface-variant);
+}
+.firebase-bulk-clear:hover { background: var(--surface-container-high); }
 
 /* ── Section headers ─────────────────────────────────────── */
 .db-section { margin-bottom: 36px; }

@@ -27,6 +27,40 @@ if (EditorRuntime?.bindLegacyGlobals) {
     });
 }
 
+// ── Mode export groupé (déclenché par une iframe cachée depuis slides/index.html via
+// shared/slides/bulk-actions-modal.js) : editor.html?firebase=<id>&batchExport=<format>. Le
+// flag doit être posé AVANT init() (plus bas dans ce fichier) pour que
+// shared/slides/editor-bindings.js puisse désactiver l'auto-sauvegarde Firestore 60s pendant
+// un export potentiellement long — voir _runBatchExportAndNotify() plus bas.
+const _batchExportParams = new URLSearchParams(location.search);
+const _batchExportFormat = _batchExportParams.get('batchExport'); // 'html-offline' | 'pdf' | 'pptx' | null
+const _batchExportToken = _batchExportParams.get('batchToken') || '';
+window.__OEI_BATCH_EXPORT_MODE = !!_batchExportFormat;
+
+/**
+ * Exporte le deck déjà chargé (voir resolveInitialDeck) dans `format` et renvoie le résultat
+ * (Blob + nom de fichier, ou erreur) à la fenêtre parente par postMessage — jamais de
+ * téléchargement réel déclenché depuis cette iframe cachée. `location.origin` explicite dans
+ * les deux sens (jamais '*'), `token` pour que le parent distingue plusieurs iframes
+ * concurrentes du même export groupé.
+ */
+async function _runBatchExportAndNotify(format, token) {
+    const post = (payload) => {
+        try { window.parent.postMessage({ type: 'oei-batch-export-result', token, ...payload }, location.origin); } catch (_) {}
+    };
+    try {
+        if (!editor.data) throw new Error('Présentation non chargée');
+        let result;
+        if (format === 'pdf') result = await exportPDF({ returnBlob: true });
+        else if (format === 'html-offline') result = await exportHTMLOffline({ returnBlob: true });
+        else if (format === 'pptx') result = await exportPPTX({ returnBlob: true });
+        else throw new Error('Format export inconnu : ' + format);
+        post({ ok: true, blob: result.blob, fileName: result.fileName });
+    } catch (err) {
+        post({ ok: false, error: String((err && err.message) || err) });
+    }
+}
+
 /* ── init() — Bootstrap the editor ─────────────────────── */
 
 /**
@@ -106,10 +140,13 @@ function init() {
     initEditorTheme();
     const params = new URLSearchParams(location.search);
 
-    resolveInitialDeck(params).catch(err => {
+    const _resolveDeckPromise = resolveInitialDeck(params).catch(err => {
         console.error('[editor] resolveInitialDeck', err);
         if (!(editor._loadGen > 0)) editor.new();
     });
+    if (_batchExportFormat) {
+        _resolveDeckPromise.then(() => _runBatchExportAndNotify(_batchExportFormat, _batchExportToken));
+    }
 
     buildThemeSelect();
     bindToolbar();

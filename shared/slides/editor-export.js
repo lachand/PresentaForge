@@ -445,7 +445,7 @@ function _injectStaticFallbacks(container) {
     });
 }
 
-async function exportPDF() {
+async function exportPDF(opts = {}) {
     const data = editor.data;
     if (!data) return;
     const dims = ASPECT_DIMS[data.metadata?.aspect] || [1280, 720];
@@ -529,10 +529,18 @@ async function exportPDF() {
             creator: 'OEI Slides Editor',
         });
 
-        pdf.save(`${(data.metadata?.title || 'presentation').replace(/[^a-zA-Z0-9àéèùêîôâ _-]/g, '')}.pdf`);
+        const fileName = `${(data.metadata?.title || 'presentation').replace(/[^a-zA-Z0-9àéèùêîôâ _-]/g, '')}.pdf`;
+        if (opts.returnBlob) {
+            notify(`PDF généré (${data.slides.length} slides)`, 'success');
+            return { blob: pdf.output('blob'), fileName };
+        }
+        pdf.save(fileName);
         notify(`PDF exporté (${data.slides.length} slides)`, 'success');
     } catch (e) {
         console.error('[OEI] PDF export error:', e);
+        // Mode export groupé (iframe cachée, sans geste utilisateur) : jamais le fallback
+        // print (window.open + window.print()), on laisse l'appelant gérer l'échec proprement.
+        if (opts.returnBlob) throw e;
         notify('Erreur export PDF: ' + e.message, 'error');
         // Fallback to print-based export
         _exportPDFPrint();
@@ -1525,7 +1533,7 @@ ${_SPECIAL_MOUNT_BOOTSTRAP}
     };
 }
 
-async function exportHTMLOffline() {
+async function exportHTMLOffline(opts = {}) {
     notify('Export offline en cours (téléchargement des ressources)…', 'warning');
 
     try {
@@ -1533,10 +1541,15 @@ async function exportHTMLOffline() {
         if (!data) return;
         const offlineDoc = await _buildOfflineExportDocument(data);
         const blob = new Blob([offlineDoc.html], { type: 'text/html' });
+        if (opts.returnBlob) {
+            notify('HTML offline généré (Reveal.js intégré)', 'success');
+            return { blob, fileName: offlineDoc.fileName };
+        }
         _downloadBlob(blob, offlineDoc.fileName);
         notify('HTML offline exporté (Reveal.js intégré)', 'success');
     } catch (err) {
         console.error('[OEI] Offline export error:', err);
+        if (opts.returnBlob) throw err;
         notify('Erreur export offline : ' + err.message, 'error');
     }
 }

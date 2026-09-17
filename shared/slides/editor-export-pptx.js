@@ -9,7 +9,7 @@
 
 /* ── Export PPTX ────────────────────────────────────────────────────────── */
 
-async function exportPPTX() {
+async function exportPPTX(opts = {}) {
     const data = editor.data;
     if (!data) return;
 
@@ -69,10 +69,17 @@ async function exportPPTX() {
         }
 
         const filename = (meta.title || 'presentation').replace(/[^a-zA-Z0-9àéèùêîôâ _-]/g, '');
-        await pptx.writeFile({ fileName: `${filename}.pptx` });
+        const fileName = `${filename}.pptx`;
+        if (opts.returnBlob) {
+            const blob = await pptx.write({ outputType: 'blob' });
+            notify(`PowerPoint généré (${data.slides.length} slides)`, 'success');
+            return { blob, fileName };
+        }
+        await pptx.writeFile({ fileName });
         notify(`PowerPoint exporté (${data.slides.length} slides)`, 'success');
     } catch (e) {
         console.error('[OEI] PPTX export error:', e);
+        if (opts.returnBlob) throw e;
         notify('Erreur export PPTX : ' + e.message, 'error');
     }
 }

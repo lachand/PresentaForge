@@ -422,6 +422,27 @@
         await col.doc(id).update({ course: String(course || '').trim() });
     }
 
+    // Mise à jour légère de métadonnées pour l'édition groupée (page d'accueil, sélection
+    // multiple) : cours/niveau/tags, sans jamais toucher au JSON (potentiellement fragmenté).
+    // `patch` ne contient que les champs à écrire — un champ absent reste inchangé côté
+    // Firestore (édition groupée partielle : un champ vide dans le formulaire ne doit pas
+    // écraser les valeurs existantes des présentations sélectionnées).
+    async function updatePresentationMeta(id, patch = {}) {
+        const col = _presCol();
+        const update = {};
+        if (Object.prototype.hasOwnProperty.call(patch, 'course')) {
+            update.course = String(patch.course || '').trim();
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'level')) {
+            update.level = String(patch.level || '').trim();
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'tags') && Array.isArray(patch.tags)) {
+            update.tags = [...new Set(patch.tags.map(t => String(t || '').trim()).filter(Boolean))];
+        }
+        if (!Object.keys(update).length) return;
+        await col.doc(id).update(update);
+    }
+
     // ── Bandeaux de cours (collection dédiée : "course" est une simple chaîne libre sur
     // chaque présentation, pas une entité — il faut un endroit séparé pour porter un réglage
     // par cours) ──────────────────────────────────────────────────────────────────────────
@@ -519,6 +540,7 @@
         savePresentation,
         deletePresentation,
         updatePresentationCourse,
+        updatePresentationMeta,
         getCourseBanner,
         listCourseBanners,
         setCourseBanner,

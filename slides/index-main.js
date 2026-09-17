@@ -656,6 +656,11 @@
     let _firebaseViewMode = 'course';   // 'course' | 'flat' | 'level' | 'tag'
     let _firebaseDrillGroup = null;     // { mode, key, label } | null
     let _firebaseCourseBanners = {};    // course -> {color,icon,image} | undefined, via listCourseBanners()
+    let _firebaseSelectionMode = false; // affiche les cases à cocher sur les cartes
+    // Sélection indexée par id (pas par index de tableau) : idx n'est stable que le temps d'un
+    // rendu et est invalidé par le splice() de deleteFirebaseDeck (v. plus bas) — un id survit
+    // aux suppressions, renommages de cours et changements de mode de vue sans bookkeeping.
+    let _firebaseSelectedIds = new Set();
 
     // Une couleur de bandeau vient de Firestore (donnée non fiable par principe, même si elle
     // ne peut normalement provenir que d'un <input type="color">) et atterrit dans un attribut
@@ -731,6 +736,16 @@
         setFirebaseCourseBanners: banners => { _firebaseCourseBanners = banners || {}; },
         esc,
         escAttr,
+        // Sélection multiple (édition/export groupés) : exposé pour vérifier que la sélection
+        // (indexée par id) survit bien à une suppression/un renommage réels, pas juste simulés.
+        setFirebaseDecks: decks => { _firebaseDecks = decks || []; },
+        getFirebaseDecks: () => _firebaseDecks,
+        getSelectedIds: () => [..._firebaseSelectedIds],
+        selectIds: ids => { (ids || []).forEach(id => _firebaseSelectedIds.add(id)); },
+        setSelectionMode: v => { _firebaseSelectionMode = !!v; },
+        isSelectionMode: () => _firebaseSelectionMode,
+        deleteFirebaseDeck,
+        renameFirebaseCourse,
     };
 
     function _fmtDate(iso) {
@@ -796,6 +811,19 @@
         document.querySelectorAll('.firebase-view-tab').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.viewMode === _firebaseViewMode);
         });
+        const selectBtn = document.getElementById('btn-firebase-select-mode');
+        if (selectBtn) selectBtn.classList.toggle('active', _firebaseSelectionMode);
+    }
+
+    // Met à jour la barre d'actions groupées sans relancer un rendu complet de la grille
+    // (évite un saut de scroll à chaque case cochée — appelé par le listener `change` délégué).
+    function _updateFirebaseBulkBar() {
+        const bar = document.getElementById('firebase-bulk-bar');
+        if (!bar) return;
+        const n = _firebaseSelectedIds.size;
+        bar.classList.toggle('is-visible', n > 0);
+        const countEl = document.getElementById('firebase-bulk-count');
+        if (countEl) countEl.textContent = `${n} présentation${n > 1 ? 's' : ''} sélectionnée${n > 1 ? 's' : ''}`;
     }
 
     function renderFirebaseDecks() {
@@ -845,9 +873,14 @@
             const coverInner = safeImage ? '' : (banner?.icon
                 ? `<span class="cover-icon cover-icon--emoji" aria-hidden="true">${esc(banner.icon)}</span>`
                 : (titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`));
+            const selectBoxHtml = _firebaseSelectionMode ? `
+                <label class="pres-select-box">
+                    <input type="checkbox" class="pres-select-checkbox" data-fb-select-id="${escAttr(p.id)}" ${_firebaseSelectedIds.has(p.id) ? 'checked' : ''}>
+                </label>` : '';
             return `
             <article class="pres-card">
                 <div class="pres-cover" style="${escAttr(coverStyle)}">
+                    ${selectBoxHtml}
                     ${p.public ? '<span class="cover-kicker cover-kicker--public">Public</span>' : '<span class="cover-kicker">Firebase</span>'}
                     ${coverInner}
                 </div>
@@ -872,8 +905,9 @@
         };
 
         const courseActionsHtml = (mode, key) => (mode === 'course' && key) ? `
-            <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${esc(key)}">renommer</button>
-            <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${esc(key)}">bandeau</button>
+            <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${escAttr(key)}">renommer</button>
+            <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${escAttr(key)}">bandeau</button>
+            <button type="button" class="firebase-course-rename-btn" data-action="export-course-firebase" data-course="${escAttr(key)}">exporter</button>
         ` : '';
 
         // Drill-down actif : en-tête « Retour » + grille à plat des seules présentations de
@@ -884,11 +918,15 @@
             const groups = _groupFirebaseByMode(mode, filtered);
             const current = groups.find(g => g.key === key);
             const items = current ? current.items : [];
+            const selectAllHtml = (mode === 'course' && key) ? `
+                <button type="button" class="firebase-course-rename-btn" data-action="select-all-course-firebase" data-course="${escAttr(key)}">tout sélectionner</button>
+            ` : '';
             host.innerHTML = `
                 <div class="firebase-drill-header">
                     <button type="button" class="firebase-drill-back" data-action="firebase-drill-back">&larr; Retour</button>
                     <span class="firebase-drill-title">${esc(current ? current.label : _firebaseDrillGroup.label)}</span>
                     ${courseActionsHtml(mode, key)}
+                    ${selectAllHtml}
                 </div>
                 <div class="pres-grid">${items.length ? items.map(renderCard).join('') : '<div class="firebase-empty">Aucun résultat pour cette recherche.</div>'}</div>
             `;
@@ -963,6 +1001,7 @@
         try {
             await window.OEIFirebase.deletePresentation(p.id);
             _firebaseDecks.splice(idx, 1);
+            _firebaseSelectedIds.delete(p.id);
             renderFirebaseDecks();
         } catch (e) {
             await OEIDialog.alert('Erreur : ' + e.message);
@@ -1044,9 +1083,52 @@
         });
     }
 
+    // Édition groupée (niveau/tags/cours) sur les présentations sélectionnées — délègue à
+    // shared/slides/bulk-actions-modal.js (même esprit que window.OEIBannerPicker).
+    function editFirebaseSelection(items) {
+        if (!window.OEIBulkEditModal || !items.length) return;
+        const knownCourses = [...new Set(_firebaseDecks.map(p => p.course).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+        window.OEIBulkEditModal.open({
+            items,
+            knownCourses,
+            onDone: ({ succeeded = [], failed = [] } = {}) => {
+                succeeded.forEach(({ id, patch }) => {
+                    const p = _firebaseDecks.find(d => d.id === id);
+                    if (!p || !patch) return;
+                    if (patch.course !== undefined) p.course = patch.course;
+                    if (patch.level !== undefined) p.level = patch.level;
+                    if (patch.tags !== undefined) p.tags = patch.tags;
+                });
+                _firebaseSelectionMode = false;
+                _firebaseSelectedIds.clear();
+                renderFirebaseDecks();
+                if (failed.length) {
+                    OEIDialog.alert(`Échec de la mise à jour pour : ${failed.map(f => f.title || f.id).join(', ')}`);
+                }
+            },
+        });
+    }
+
+    // Export groupé (ZIP si 2+ présentations) — délègue à shared/slides/bulk-actions-modal.js.
+    function exportFirebaseSelection(items) {
+        if (!window.OEIBulkExportModal || !items.length) return;
+        window.OEIBulkExportModal.open({ items });
+    }
+
+    // Coche/décoche une case de sélection sans relancer un rendu complet (évite un saut de
+    // scroll) — listener séparé du click délégué ci-dessous, qui ne cible pas les checkboxes.
+    document.addEventListener('change', e => {
+        const cb = e.target.closest('.pres-select-checkbox');
+        if (!cb) return;
+        const id = cb.dataset.fbSelectId;
+        if (!id) return;
+        if (cb.checked) _firebaseSelectedIds.add(id); else _firebaseSelectedIds.delete(id);
+        _updateFirebaseBulkBar();
+    });
+
     // Handle Firebase action clicks (delegated)
     document.addEventListener('click', e => {
-        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"]');
+        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
         if (!target) return;
         const action = target.dataset.action;
         const idx = Number(target.dataset.fbIdx);
@@ -1056,6 +1138,32 @@
         else if (action === 'move-firebase') moveFirebaseDeck(idx);
         else if (action === 'rename-course-firebase') renameFirebaseCourse(target.dataset.course || '');
         else if (action === 'edit-course-banner-firebase') editFirebaseCourseBanner(target.dataset.course || '');
+        else if (action === 'export-course-firebase') {
+            const course = target.dataset.course || '';
+            exportFirebaseSelection(_firebaseDecks.filter(p => (p.course || '') === course));
+        }
+        else if (action === 'select-all-course-firebase') {
+            const course = target.dataset.course || '';
+            _firebaseSelectionMode = true;
+            _firebaseDecks.filter(p => (p.course || '') === course).forEach(p => _firebaseSelectedIds.add(p.id));
+            renderFirebaseDecks();
+        }
+        else if (action === 'firebase-toggle-select') {
+            _firebaseSelectionMode = !_firebaseSelectionMode;
+            if (!_firebaseSelectionMode) _firebaseSelectedIds.clear();
+            renderFirebaseDecks();
+        }
+        else if (action === 'firebase-bulk-edit') {
+            editFirebaseSelection(_firebaseDecks.filter(p => _firebaseSelectedIds.has(p.id)));
+        }
+        else if (action === 'firebase-bulk-export') {
+            exportFirebaseSelection(_firebaseDecks.filter(p => _firebaseSelectedIds.has(p.id)));
+        }
+        else if (action === 'firebase-bulk-clear') {
+            _firebaseSelectionMode = false;
+            _firebaseSelectedIds.clear();
+            renderFirebaseDecks();
+        }
         else if (action === 'firebase-view-mode') {
             _firebaseViewMode = target.dataset.viewMode || 'course';
             _firebaseDrillGroup = null;

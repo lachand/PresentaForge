@@ -505,25 +505,29 @@ function bindToolbar() {
     }
     window._saveToFirebaseNow = _saveToFirebaseNow;
 
-    // Firebase — sauvegarde automatique toutes les 60s
+    // Firebase — sauvegarde automatique toutes les 60s. Désactivée en mode export groupé
+    // (window.__OEI_BATCH_EXPORT_MODE, posé par editor-main.js) : un export lent (PDF/PPTX sur
+    // un gros deck) ne doit jamais déclencher une écriture Firestore non sollicitée.
     let _fbAutoSaveHash = null;
-    setInterval(async () => {
-        const fb = window.OEIFirebase;
-        if (!_fbUploadAllowed(fb)) return;
-        const data = activeEditor?.data;
-        if (!data) return;
-        // Hash rapide pour détecter les changements
-        const json  = JSON.stringify(data);
-        const hash  = json.length + '|' + json.slice(0, 120);
-        if (hash === _fbAutoSaveHash) return;
-        window.updateFirebaseCloudBadge?.('syncing');
-        try {
-            const course = data.metadata?.course || '';
-            await fb.savePresentation(JSON.parse(json), fb.getCurrentId(), { course });
-            _fbAutoSaveHash = hash;
-            window.updateFirebaseCloudBadge?.('saved');
-        } catch { window.updateFirebaseCloudBadge?.('error'); }
-    }, 60_000);
+    if (!window.__OEI_BATCH_EXPORT_MODE) {
+        setInterval(async () => {
+            const fb = window.OEIFirebase;
+            if (!_fbUploadAllowed(fb)) return;
+            const data = activeEditor?.data;
+            if (!data) return;
+            // Hash rapide pour détecter les changements
+            const json  = JSON.stringify(data);
+            const hash  = json.length + '|' + json.slice(0, 120);
+            if (hash === _fbAutoSaveHash) return;
+            window.updateFirebaseCloudBadge?.('syncing');
+            try {
+                const course = data.metadata?.course || '';
+                await fb.savePresentation(JSON.parse(json), fb.getCurrentId(), { course });
+                _fbAutoSaveHash = hash;
+                window.updateFirebaseCloudBadge?.('saved');
+            } catch { window.updateFirebaseCloudBadge?.('error'); }
+        }, 60_000);
+    }
 
     // Rafraîchir le badge cloud au démarrage si Firebase déjà connecté
     // (resolveInitialDeck a la charge d'armer « saved » après un vrai rechargement).
