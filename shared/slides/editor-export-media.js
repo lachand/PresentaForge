@@ -123,3 +123,7 @@ async function _optimizeDataImageUrl(dataUrl, options = {}) {
     }
     return { changed: true, dataUrl: optimized, before, after };
 }
+
+// Exposé ici (pas seulement dans editor-export.js) car ce fichier est aussi chargé seul par
+// index.html (sans le reste du pipeline export) — voir shared/slides/banner-picker.js.
+window.optimizeDataImageUrl = _optimizeDataImageUrl;

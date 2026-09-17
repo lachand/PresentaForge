@@ -389,6 +389,31 @@ body.dark {
     opacity: 0.9;
 }
 
+/* ── Bandeau (shared/slides/banner-picker.js) ────────────── */
+.bp-body { display: flex; flex-direction: column; gap: 12px; }
+.bp-preview {
+    height: 64px;
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface-container-high, #ede7e4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    border: 1px solid var(--outline-variant, #c1c7d2);
+}
+.bp-field { display: flex; flex-direction: column; gap: 4px; }
+.bp-field label { font-size: 0.8125rem; color: var(--on-surface-variant, #414750); }
+.bp-field input[type="color"] {
+    width: 100%;
+    height: 34px;
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--surface-container-highest, #e7e1de);
+    padding: 2px;
+    cursor: pointer;
+}
+.bp-image-status { font-size: 0.75rem; color: var(--on-surface-muted, #8a9099); }
+
 /* ── Tabs ───────────────────────────────────────────────── */
 .ui-tabs {
     display: flex;
@@ -674,6 +699,19 @@ body.dark {
 }
 .fbm-pres-row:hover { background: var(--surface-container-high, #ede7e4); }
 .fbm-pres-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fbm-pres-title-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.fbm-banner-dot {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--surface-container-highest, #e7e1de);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6875rem;
+    line-height: 1;
+}
 .fbm-pres-title {
     font-size: 0.875rem;
     font-weight: 600;
@@ -686,6 +724,7 @@ body.dark {
 .fbm-pres-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .fbm-save-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
     background: var(--surface-container-low, #f8f2ef);
@@ -694,7 +733,7 @@ body.dark {
     margin-top: 4px;
 }
 .fbm-save-title-label { font-size: 0.8125rem; color: var(--on-surface-variant, #414750); white-space: nowrap; }
-.fbm-save-title-input { flex: 1; min-width: 0; }
+.fbm-save-title-input { flex: 1 1 160px; min-width: 120px; }
 .fbm-save-public-label {
     display: flex; align-items: center; gap: 5px;
     font-size: 0.8125rem; color: var(--on-surface-variant, #414750);

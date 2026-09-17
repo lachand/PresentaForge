@@ -97,6 +97,22 @@
         });
     }
 
+    // Une couleur de bandeau vient de Firestore (donnée non fiable par principe, même si elle
+    // ne peut normalement provenir que d'un <input type="color">) et atterrit dans un attribut
+    // style="…" : même regex de validation que slides/index-main.js (_colorFromTitle/thumbBg).
+    function _safeCssColor(value) {
+        return (typeof value === 'string' && /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d%,.\s/]+\)|[a-z-]+|(linear|radial)-gradient\([^"'<>]+\))$/i.test(value.trim()))
+            ? value.trim() : null;
+    }
+
+    /** Bandeau propre à la présentation, sinon bandeau par défaut de son cours, sinon rien. */
+    function _resolveBanner(p, courseBanners) {
+        const own = p?.banner && (p.banner.color || p.banner.icon || p.banner.image) ? p.banner : null;
+        if (own) return own;
+        const course = p?.course;
+        return (course && courseBanners && courseBanners[course]) || null;
+    }
+
     function _overlay(content) {
         _close();
         const div       = document.createElement('div');
@@ -325,6 +341,7 @@
     <span class="fbm-save-title-label">Titre :</span>
     <input class="fbm-input fbm-save-title-input" id="fbm-save-title" type="text" placeholder="Nom de la présentation…">
     <input class="fbm-input" id="fbm-save-course" type="text" placeholder="Cours (ex: L1 Info, Algo…)" style="max-width:180px" list="fbm-course-list">
+    <button class="fbm-btn fbm-btn-ghost" id="fbm-save-banner-btn" title="Bandeau de la présentation">&#x1F3F7; Bandeau</button>
     <label class="fbm-save-public-label" title="Toute personne disposant du lien peut voir la présentation">
       <input type="checkbox" id="fbm-save-public"> Partage public
     </label>
@@ -345,20 +362,26 @@
 
         // Load list
         let presentations = [];
+        let courseBanners = {};
         const refreshCourseList = () => {
             const dl = overlay.querySelector('#fbm-course-list');
             if (dl) dl.innerHTML = _distinctCourses(presentations).map(c => `<option value="${_esc(c)}">`).join('');
         };
         try {
-            presentations = await window.OEIFirebase.listPresentations();
+            const [decks, banners] = await Promise.all([
+                window.OEIFirebase.listPresentations(),
+                window.OEIFirebase.listCourseBanners().catch(() => ({})),
+            ]);
+            presentations = decks;
+            courseBanners = banners;
             refreshCourseList();
-            _renderList(overlay, presentations, ctx);
+            _renderList(overlay, presentations, ctx, '', courseBanners);
         } catch (e) {
             overlay.querySelector('#fbm-list-area').innerHTML = `<div class="fbm-empty">Erreur : ${_esc(e.message)}</div>`;
         }
 
         overlay.querySelector('#fbm-filter').addEventListener('input', (e) => {
-            _renderList(overlay, presentations, ctx, e.target.value);
+            _renderList(overlay, presentations, ctx, e.target.value, courseBanners);
         });
 
         // Pre-fill save title + course
@@ -366,6 +389,17 @@
             const meta = ctx.currentData && ctx.currentData.metadata;
             overlay.querySelector('#fbm-save-title').value = meta?.title || '';
             overlay.querySelector('#fbm-save-course').value = meta?.course || '';
+            let pendingBanner = (meta?.banner && (meta.banner.color || meta.banner.icon || meta.banner.image)) ? { ...meta.banner } : null;
+
+            overlay.querySelector('#fbm-save-banner-btn').onclick = () => {
+                if (!window.OEIBannerPicker) return;
+                window.OEIBannerPicker.open({
+                    title: 'Bandeau de la présentation',
+                    initial: pendingBanner || {},
+                    onSave: b => { pendingBanner = b; },
+                    onClear: () => { pendingBanner = null; },
+                });
+            };
 
             overlay.querySelector('#fbm-do-save').onclick = async () => {
                 const inputTitle  = overlay.querySelector('#fbm-save-title').value.trim();
@@ -375,6 +409,8 @@
                 if (dataToSave.metadata) {
                     if (inputTitle)  dataToSave.metadata.title  = inputTitle;
                     if (inputCourse) dataToSave.metadata.course = inputCourse;
+                    if (pendingBanner) dataToSave.metadata.banner = { ...pendingBanner };
+                    else delete dataToSave.metadata.banner;
                 }
 
                 // Check if overwriting existing
@@ -384,7 +420,7 @@
                 const btn = overlay.querySelector('#fbm-do-save');
                 btn.disabled = true; btn.textContent = 'Sauvegarde…';
                 try {
-                    const id = await window.OEIFirebase.savePresentation(dataToSave, existingId || undefined, { public: isPublic, course: inputCourse });
+                    const id = await window.OEIFirebase.savePresentation(dataToSave, existingId || undefined, { public: isPublic, course: inputCourse, banner: pendingBanner });
                     _showSuccess(overlay, '&#x2714; Sauvegardé avec succès !');
                     setTimeout(_close, 1200);
                     if (ctx.onSave) ctx.onSave(id);
@@ -396,7 +432,7 @@
         }
     }
 
-    function _renderList(overlay, presentations, ctx, query = '') {
+    function _renderList(overlay, presentations, ctx, query = '', courseBanners = {}) {
         const isSave = ctx.mode === 'save';
         const area   = overlay.querySelector('#fbm-list-area');
 
@@ -411,10 +447,15 @@
             return;
         }
 
-        const renderRow = p => `
+        const renderRow = p => {
+            const banner = _resolveBanner(p, courseBanners);
+            const safeColor = banner ? _safeCssColor(banner.color) : null;
+            const dotStyle = safeColor ? ` style="background:${safeColor}"` : '';
+            const dot = banner ? `<span class="fbm-banner-dot"${dotStyle}>${_esc(banner.icon || '')}</span>` : '';
+            return `
 <div class="fbm-pres-row" data-id="${_esc(p.id)}">
   <div class="fbm-pres-info">
-    <span class="fbm-pres-title">${_esc(p.title)}</span>
+    <div class="fbm-pres-title-row">${dot}<span class="fbm-pres-title">${_esc(p.title)}</span></div>
     <span class="fbm-pres-date">${_fmt(p.modified)}</span>
   </div>
   <div class="fbm-pres-actions">
@@ -423,6 +464,7 @@
     <button class="fbm-btn fbm-btn-danger fbm-btn-sm fbm-delete-btn" data-id="${_esc(p.id)}">&#x1F5D1;</button>
   </div>
 </div>`;
+        };
 
         const groups = _groupByCourse(visible);
         const html = groups.map(g => `
@@ -452,7 +494,7 @@
                     p.course = trimmed;
                     const dl = overlay.querySelector('#fbm-course-list');
                     if (dl) dl.innerHTML = _distinctCourses(presentations).map(c => `<option value="${_esc(c)}">`).join('');
-                    _renderList(overlay, presentations, ctx, overlay.querySelector('#fbm-filter')?.value || '');
+                    _renderList(overlay, presentations, ctx, overlay.querySelector('#fbm-filter')?.value || '', courseBanners);
                 } catch (e) {
                     btn.disabled = false;
                     _showError('fbm-list-error', 'Erreur : ' + e.message);

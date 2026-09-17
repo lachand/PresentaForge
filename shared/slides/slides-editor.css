@@ -1092,6 +1092,19 @@ html, body {
     font-size: 0.72rem;
     color: var(--muted);
 }
+.meta-banner-row { display: flex; align-items: center; gap: 8px; }
+.meta-banner-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg-secondary, #23262e);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
 .footer-field-inline {
     margin-bottom: 10px;
 }

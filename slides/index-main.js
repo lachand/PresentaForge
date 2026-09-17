@@ -653,6 +653,83 @@
     // ── Firebase section ──────────────────────────────────────────────────────
 
     let _firebaseDecks = [];
+    let _firebaseViewMode = 'course';   // 'course' | 'flat' | 'level' | 'tag'
+    let _firebaseDrillGroup = null;     // { mode, key, label } | null
+    let _firebaseCourseBanners = {};    // course -> {color,icon,image} | undefined, via listCourseBanners()
+
+    // Une couleur de bandeau vient de Firestore (donnée non fiable par principe, même si elle
+    // ne peut normalement provenir que d'un <input type="color">) et atterrit dans un attribut
+    // style="…" : même regex de validation que _localDecks/thumbBg un peu plus haut dans ce
+    // fichier, et que shared/slides/firebase-modal.js (_safeCssColor).
+    function _safeFirebaseBannerColor(value) {
+        return (typeof value === 'string' && /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d%,.\s/]+\)|[a-z-]+|(linear|radial)-gradient\([^"'<>]+\))$/i.test(value.trim()))
+            ? value.trim() : null;
+    }
+
+    /** Bandeau propre à la présentation, sinon bandeau par défaut de son cours, sinon rien. */
+    function _resolveFirebaseBanner(p) {
+        const own = p?.banner && (p.banner.color || p.banner.icon || p.banner.image) ? p.banner : null;
+        if (own) return own;
+        const course = p?.course;
+        return (course && _firebaseCourseBanners[course]) || null;
+    }
+
+    function _sortGroupKeys(keys) {
+        return keys.sort((a, b) => {
+            if (!a) return 1; if (!b) return -1;
+            return a.localeCompare(b, 'fr');
+        });
+    }
+
+    function _groupFirebaseByCourse(entries) {
+        const groups = {};
+        entries.forEach(entry => {
+            const key = entry.p.course || '';
+            (groups[key] || (groups[key] = [])).push(entry);
+        });
+        return _sortGroupKeys(Object.keys(groups)).map(key => ({ key, label: key || 'Sans cours', items: groups[key] }));
+    }
+
+    function _groupFirebaseByLevel(entries) {
+        const groups = {};
+        entries.forEach(entry => {
+            const key = String(entry.p.level || '').trim();
+            (groups[key] || (groups[key] = [])).push(entry);
+        });
+        return _sortGroupKeys(Object.keys(groups)).map(key => ({ key, label: key || 'Sans niveau', items: groups[key] }));
+    }
+
+    // Une présentation à plusieurs tags apparaît dans CHAQUE groupe correspondant (vrai
+    // système de tags, pas juste le premier).
+    function _groupFirebaseByTag(entries) {
+        const groups = {};
+        entries.forEach(entry => {
+            const tags = Array.isArray(entry.p.tags) && entry.p.tags.length ? entry.p.tags : [''];
+            tags.forEach(tag => {
+                const key = String(tag || '').trim();
+                (groups[key] || (groups[key] = [])).push(entry);
+            });
+        });
+        return _sortGroupKeys(Object.keys(groups)).map(key => ({ key, label: key || 'Sans tag', items: groups[key] }));
+    }
+
+    function _groupFirebaseByMode(mode, entries) {
+        if (mode === 'level') return _groupFirebaseByLevel(entries);
+        if (mode === 'tag') return _groupFirebaseByTag(entries);
+        return _groupFirebaseByCourse(entries);
+    }
+
+    // Exposé pour test uniquement (logique de regroupement pure, dont le fan-out multi-tags,
+    // difficile à vérifier via de simples assertions regex sur le code source) — même esprit
+    // que testUtils dans shared/slides/firebase-modal.js.
+    window.__firebaseGroupingTestUtils = {
+        groupFirebaseByCourse: _groupFirebaseByCourse,
+        groupFirebaseByLevel: _groupFirebaseByLevel,
+        groupFirebaseByTag: _groupFirebaseByTag,
+        filterFirebaseDecks: _filterFirebaseDecks,
+        resolveFirebaseBanner: _resolveFirebaseBanner,
+        setFirebaseCourseBanners: banners => { _firebaseCourseBanners = banners || {}; },
+    };
 
     function _fmtDate(iso) {
         if (!iso) return '';
@@ -713,6 +790,12 @@
         });
     }
 
+    function _updateFirebaseViewSwitcher() {
+        document.querySelectorAll('.firebase-view-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.viewMode === _firebaseViewMode);
+        });
+    }
+
     function renderFirebaseDecks() {
         const host = document.getElementById('firebase-grid');
         const countEl = document.getElementById('firebase-count');
@@ -720,6 +803,7 @@
         if (!host) return;
 
         if (toolsEl) toolsEl.style.display = _firebaseDecks.length ? 'block' : 'none';
+        _updateFirebaseViewSwitcher();
 
         if (!_firebaseDecks.length) {
             host.innerHTML = '<div class="firebase-empty">Aucune présentation Firebase. Sauvegardez depuis l\'éditeur pour commencer.</div>';
@@ -731,41 +815,46 @@
 
         const uid = window.OEIFirebase?.getUser()?.uid || '';
 
-        // Group by course (après filtre recherche)
+        // Filtre de recherche appliqué en premier, dans tous les cas (vue d'ensemble ou
+        // drill-down) — recalculé à chaque rendu, donc toujours cohérent avec les actions de
+        // renommage/déplacement qui mutent _firebaseDecks en place.
         const withIdx = _firebaseDecks.map((p, idx) => ({ p, idx }));
         const filtered = _filterFirebaseDecks(withIdx, _firebaseFilterQuery);
         if (!filtered.length) {
             host.innerHTML = '<div class="firebase-empty">Aucun résultat pour cette recherche.</div>';
             return;
         }
-        const courses = {};
-        filtered.forEach(entry => {
-            const key = entry.p.course || '';
-            if (!courses[key]) courses[key] = [];
-            courses[key].push(entry);
-        });
-
-        const sections = Object.keys(courses).sort((a, b) => {
-            if (!a) return 1; if (!b) return -1;
-            return a.localeCompare(b, 'fr');
-        });
-        const showHeadings = sections.length > 1 || (sections.length === 1 && sections[0]);
 
         const renderCard = ({ p, idx }) => {
+            const banner = _resolveFirebaseBanner(p);
             const titleText = p.thumb?.text || p.title || '';
-            const thumbBg   = p.thumb?.bg || (titleText ? _colorFromTitle(titleText) : null);
-            const coverStyle = thumbBg ? `background:${thumbBg}` : '--cover:#00508d';
+            const safeImage = (banner?.image && /^data:image\//i.test(banner.image)) ? banner.image.replace(/["\\]/g, '') : null;
+            const safeColor = banner ? _safeFirebaseBannerColor(banner.color) : null;
+            let coverStyle;
+            if (safeImage) coverStyle = `background:center/cover no-repeat url("${safeImage}")`;
+            else if (safeColor) coverStyle = `background:${safeColor}`;
+            else {
+                const thumbBg = p.thumb?.bg || (titleText ? _colorFromTitle(titleText) : null);
+                coverStyle = thumbBg ? `background:${thumbBg}` : '--cover:#00508d';
+            }
+            // Priorité d'affichage dans la vignette : image de bandeau (rien par-dessus, pour
+            // ne pas surcharger) > icône emoji du bandeau > texte extrait de la 1ère slide >
+            // icône SVG générique.
+            const coverInner = safeImage ? '' : (banner?.icon
+                ? `<span class="cover-icon cover-icon--emoji" aria-hidden="true">${esc(banner.icon)}</span>`
+                : (titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`));
             return `
             <article class="pres-card">
                 <div class="pres-cover" style="${coverStyle}">
                     ${p.public ? '<span class="cover-kicker cover-kicker--public">Public</span>' : '<span class="cover-kicker">Firebase</span>'}
-                    ${titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`}
+                    ${coverInner}
                 </div>
                 <div class="pres-content">
                     <h3 class="pres-title">${esc(p.title)}</h3>
                     <div class="pres-meta">
                         <span class="chip">${icon('clock')} ${_fmtDate(p.modified)}</span>
                         ${p.course ? `<span class="chip chip--course">${esc(p.course)}</span>` : ''}
+                        ${p.level ? `<span class="chip">${esc(p.level)}</span>` : ''}
                         <button type="button" class="pres-card-move-btn" data-action="move-firebase" data-fb-idx="${idx}" title="Changer de cours">&#x1F3F7;</button>
                     </div>
                     <div class="pres-actions">
@@ -780,9 +869,45 @@
             </article>`;
         };
 
-        host.innerHTML = sections.map(course => `
-            ${showHeadings ? `<h4 class="firebase-course-heading"><span>${course ? esc(course) : 'Sans cours'}</span>${course ? `<button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${esc(course)}">renommer</button>` : ''}</h4>` : ''}
-            <div class="pres-grid">${courses[course].map(renderCard).join('')}</div>
+        const courseActionsHtml = (mode, key) => (mode === 'course' && key) ? `
+            <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${esc(key)}">renommer</button>
+            <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${esc(key)}">bandeau</button>
+        ` : '';
+
+        // Drill-down actif : en-tête « Retour » + grille à plat des seules présentations de
+        // ce groupe, recalculées à chaque rendu depuis la liste filtrée (les actions de
+        // renommage/déplacement restent cohérentes sans code spécial).
+        if (_firebaseDrillGroup) {
+            const { mode, key } = _firebaseDrillGroup;
+            const groups = _groupFirebaseByMode(mode, filtered);
+            const current = groups.find(g => g.key === key);
+            const items = current ? current.items : [];
+            host.innerHTML = `
+                <div class="firebase-drill-header">
+                    <button type="button" class="firebase-drill-back" data-action="firebase-drill-back">&larr; Retour</button>
+                    <span class="firebase-drill-title">${esc(current ? current.label : _firebaseDrillGroup.label)}</span>
+                    ${courseActionsHtml(mode, key)}
+                </div>
+                <div class="pres-grid">${items.length ? items.map(renderCard).join('') : '<div class="firebase-empty">Aucun résultat pour cette recherche.</div>'}</div>
+            `;
+            return;
+        }
+
+        if (_firebaseViewMode === 'flat') {
+            host.innerHTML = `<div class="pres-grid">${filtered.map(renderCard).join('')}</div>`;
+            return;
+        }
+
+        const mode = _firebaseViewMode;
+        const groups = _groupFirebaseByMode(mode, filtered);
+        const showHeadings = groups.length > 1 || (groups.length === 1 && groups[0].key);
+
+        host.innerHTML = groups.map(g => `
+            ${showHeadings ? `<h4 class="firebase-course-heading" data-action="firebase-drill" data-group-mode="${mode}" data-group-key="${esc(g.key)}">
+                <span>${esc(g.label)} <span class="firebase-group-count">(${g.items.length})</span></span>
+                ${courseActionsHtml(mode, g.key)}
+            </h4>` : ''}
+            <div class="pres-grid">${g.items.map(renderCard).join('')}</div>
         `).join('');
     }
 
@@ -795,7 +920,12 @@
         }
         host.innerHTML = '<div class="firebase-loading">Chargement depuis Firebase…</div>';
         try {
-            _firebaseDecks = await window.OEIFirebase.listPresentations();
+            const [decks, banners] = await Promise.all([
+                window.OEIFirebase.listPresentations(),
+                window.OEIFirebase.listCourseBanners().catch(() => ({})),
+            ]);
+            _firebaseDecks = decks;
+            _firebaseCourseBanners = banners;
             renderFirebaseDecks();
         } catch (e) {
             host.innerHTML = `<div class="firebase-empty">Erreur : ${esc(e.message)}</div>`;
@@ -868,16 +998,53 @@
         if (trimmed === course) return;
         try {
             await Promise.all(affected.map(p => window.OEIFirebase.updatePresentationCourse(p.id, trimmed)));
+            await window.OEIFirebase.renameCourseBanner(course, trimmed).catch(() => {});
             affected.forEach(p => { p.course = trimmed; });
+            const banner = _firebaseCourseBanners[course];
+            if (banner) {
+                if (!_firebaseCourseBanners[trimmed]) _firebaseCourseBanners[trimmed] = banner;
+                delete _firebaseCourseBanners[course];
+            }
+            // Un renommage pendant un drill-down doit suivre le cours vers son nouveau nom
+            // plutôt que de revenir brutalement à la vue d'ensemble.
+            if (_firebaseDrillGroup && _firebaseDrillGroup.mode === 'course' && _firebaseDrillGroup.key === course) {
+                _firebaseDrillGroup = { mode: 'course', key: trimmed, label: trimmed || 'Sans cours' };
+            }
             renderFirebaseDecks();
         } catch (e) {
             await OEIDialog.alert('Erreur : ' + e.message);
         }
     }
 
+    async function editFirebaseCourseBanner(course) {
+        if (!window.OEIBannerPicker) return;
+        window.OEIBannerPicker.open({
+            title: `Bandeau du cours « ${course || 'Sans cours'} »`,
+            initial: _firebaseCourseBanners[course] || {},
+            onSave: async banner => {
+                try {
+                    await window.OEIFirebase.setCourseBanner(course, banner);
+                    _firebaseCourseBanners[course] = banner;
+                    renderFirebaseDecks();
+                } catch (e) {
+                    await OEIDialog.alert('Erreur : ' + e.message);
+                }
+            },
+            onClear: async () => {
+                try {
+                    await window.OEIFirebase.setCourseBanner(course, null);
+                    delete _firebaseCourseBanners[course];
+                    renderFirebaseDecks();
+                } catch (e) {
+                    await OEIDialog.alert('Erreur : ' + e.message);
+                }
+            },
+        });
+    }
+
     // Handle Firebase action clicks (delegated)
     document.addEventListener('click', e => {
-        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"]');
+        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"]');
         if (!target) return;
         const action = target.dataset.action;
         const idx = Number(target.dataset.fbIdx);
@@ -886,6 +1053,24 @@
         else if (action === 'delete-firebase') deleteFirebaseDeck(idx);
         else if (action === 'move-firebase') moveFirebaseDeck(idx);
         else if (action === 'rename-course-firebase') renameFirebaseCourse(target.dataset.course || '');
+        else if (action === 'edit-course-banner-firebase') editFirebaseCourseBanner(target.dataset.course || '');
+        else if (action === 'firebase-view-mode') {
+            _firebaseViewMode = target.dataset.viewMode || 'course';
+            _firebaseDrillGroup = null;
+            renderFirebaseDecks();
+        }
+        else if (action === 'firebase-drill') {
+            const mode = target.dataset.groupMode || 'course';
+            const key = target.dataset.groupKey || '';
+            const labelEl = target.querySelector('span');
+            const label = labelEl ? labelEl.textContent.replace(/\s*\(\d+\)\s*$/, '').trim() : (key || 'Sans cours');
+            _firebaseDrillGroup = { mode, key, label };
+            renderFirebaseDecks();
+        }
+        else if (action === 'firebase-drill-back') {
+            _firebaseDrillGroup = null;
+            renderFirebaseDecks();
+        }
         else if (action === 'copy-link-firebase') {
             const uid = target.dataset.fbUid;
             const id  = target.dataset.fbId;

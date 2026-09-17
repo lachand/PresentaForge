@@ -203,7 +203,8 @@ async function optimizeMediaForExport(options = {}) {
     });
 }
 
-window.optimizeDataImageUrl = _optimizeDataImageUrl;
+// window.optimizeDataImageUrl est exposé par editor-export-media.js (chargé aussi seul
+// sur index.html, sans le reste de ce pipeline export).
 window.optimizePresentationMedia = optimizePresentationMedia;
 window.optimizeMediaForExport = optimizeMediaForExport;
 

@@ -256,8 +256,11 @@
     async function listPresentations() {
         const snap = await _presCol().orderBy('modified', 'desc').get();
         return snap.docs.map(d => {
-            const { title, modified, public: isPublic, course, thumb } = d.data();
-            return { id: d.id, title: title || 'Sans titre', modified, public: !!isPublic, course: course || '', thumb: thumb || null };
+            const { title, modified, public: isPublic, course, thumb, banner, level, tags } = d.data();
+            return {
+                id: d.id, title: title || 'Sans titre', modified, public: !!isPublic, course: course || '',
+                thumb: thumb || null, banner: banner || null, level: level || '', tags: Array.isArray(tags) ? tags : [],
+            };
         });
     }
 
@@ -357,15 +360,35 @@
         }
         const col   = _presCol();
         const id    = existingId || col.doc().id;
-        const title = (presentationData.metadata && presentationData.metadata.title) || 'Sans titre';
-        const course = opts.course || (presentationData.metadata && presentationData.metadata.course) || '';
+        const meta_ = presentationData.metadata || {};
+        const title = meta_.title || 'Sans titre';
+        const course = opts.course || meta_.course || '';
         const isPublic = typeof opts.public === 'boolean' ? opts.public : false;
         const thumb = _computeThumb(presentationData);
-        const meta = { id, title, modified: new Date().toISOString(), public: isPublic, course, thumb: thumb || null };
+        const level = opts.level || meta_.level || '';
+        const tagsIn = opts.tags || meta_.tags || [];
+        const tags = [...new Set((Array.isArray(tagsIn) ? tagsIn : []).map(t => String(t || '').trim()).filter(Boolean))];
+        const bannerIn = opts.banner || meta_.banner || null;
+        const banner = (bannerIn && (bannerIn.color || bannerIn.icon || bannerIn.image))
+            ? { color: String(bannerIn.color || ''), icon: String(bannerIn.icon || ''), image: String(bannerIn.image || '') }
+            : null;
+        const meta = {
+            id, title, modified: new Date().toISOString(), public: isPublic, course, thumb: thumb || null,
+            banner, level, tags,
+        };
 
         const bytes = (typeof TextEncoder !== 'undefined') ? new TextEncoder().encode(json).length : json.length;
+        // banner.image (base64 inline, jusqu'à ~150-200 Ko, cf. banner-picker.js maxImageBytes)
+        // reste TOUJOURS sur le document racine (jamais découpé, seul `json` l'est) — inclus
+        // dans la décision de découpage pour ne jamais laisser `json` (jusqu'à 768 Ko) ET un
+        // gros bandeau cohabiter sur un même document au-delà de la limite Firestore (~1 Mio) :
+        // si la somme dépasse le seuil, `json` part entièrement en fragments et le doc racine
+        // ne garde plus que `meta` (bandeau compris), largement sous la limite.
+        const bannerImageBytes = banner && banner.image
+            ? ((typeof TextEncoder !== 'undefined') ? new TextEncoder().encode(banner.image).length : banner.image.length)
+            : 0;
 
-        if (bytes <= _CHUNK_BYTES) {
+        if (bytes + bannerImageBytes <= _CHUNK_BYTES) {
             await col.doc(id).set({ ...meta, json, chunks: 0 });
             if (existingId) await _clearParts(col, id, 0); // efface d'anciens fragments
             return id;
@@ -399,6 +422,79 @@
         await col.doc(id).update({ course: String(course || '').trim() });
     }
 
+    // ── Bandeaux de cours (collection dédiée : "course" est une simple chaîne libre sur
+    // chaque présentation, pas une entité — il faut un endroit séparé pour porter un réglage
+    // par cours) ──────────────────────────────────────────────────────────────────────────
+
+    // Hash déterministe de la chaîne EXACTE du cours (même sensibilité à la casse que le
+    // regroupement par cours de firebase-modal.js/index-main.js — "Algo" ≠ "algo") : un id de
+    // document Firestore stable, sans dépendre d'une normalisation/minusculisation qui romprait
+    // cette cohérence. Même idiome que _colorFromTitle (slides/index-main.js).
+    function _courseSlug(course) {
+        const trimmed = String(course || '').trim();
+        if (!trimmed) return '__none__';
+        let h = 5381;
+        for (let i = 0; i < trimmed.length; i++) h = ((h * 33) ^ trimmed.charCodeAt(i)) | 0;
+        return 'c-' + (h >>> 0).toString(36);
+    }
+
+    function _courseSettingsCol() {
+        if (!isReady()) throw new Error('Firebase non prêt');
+        return _db.collection('users').doc(_user.uid).collection('courseSettings');
+    }
+
+    function _sanitizeBanner(banner) {
+        if (!banner || (!banner.color && !banner.icon && !banner.image)) return null;
+        return { color: String(banner.color || ''), icon: String(banner.icon || ''), image: String(banner.image || '') };
+    }
+
+    async function getCourseBanner(course) {
+        const trimmed = String(course || '').trim();
+        const snap = await _courseSettingsCol().doc(_courseSlug(trimmed)).get();
+        if (!snap.exists) return null;
+        const data = snap.data() || {};
+        if (data.course !== trimmed) return null; // collision de hash improbable : on ignore plutôt que d'afficher le mauvais bandeau
+        return data.banner || null;
+    }
+
+    // Un seul aller-retour réseau pour tous les cours (au chargement de la page/modale),
+    // plutôt qu'un appel par cours.
+    async function listCourseBanners() {
+        const snap = await _courseSettingsCol().get();
+        const map = {};
+        snap.docs.forEach(d => {
+            const data = d.data() || {};
+            if (data.course) map[data.course] = data.banner || null;
+        });
+        return map;
+    }
+
+    async function setCourseBanner(course, banner) {
+        const trimmed = String(course || '').trim();
+        const col = _courseSettingsCol();
+        const sanitized = _sanitizeBanner(banner);
+        if (!sanitized) {
+            await col.doc(_courseSlug(trimmed)).delete();
+            return;
+        }
+        await col.doc(_courseSlug(trimmed)).set({ course: trimmed, banner: sanitized, updated: new Date().toISOString() });
+    }
+
+    // Déplace le bandeau lors d'un renommage en bloc d'un cours (renameFirebaseCourse). Si le
+    // cours de destination a déjà son propre bandeau, on le conserve tel quel et on abandonne
+    // celui de l'ancien — cohérent avec la fusion silencieuse déjà en place pour le renommage
+    // des présentations elles-mêmes (pas de nouvelle UI de résolution de conflit).
+    async function renameCourseBanner(oldCourse, newCourse) {
+        const banner = await getCourseBanner(oldCourse);
+        if (!banner) return;
+        // Après un renommage en bloc (renameFirebaseCourse), plus aucune présentation ne porte
+        // le nom `oldCourse` : son réglage de bandeau doit être nettoyé dans tous les cas, sinon
+        // il reste orphelin et resurgirait si ce nom de cours était un jour réutilisé.
+        const destination = await getCourseBanner(newCourse);
+        if (!destination) await setCourseBanner(newCourse, banner);
+        await setCourseBanner(oldCourse, null);
+    }
+
     // ── Export ────────────────────────────────────────────────────────────────
 
     window.OEIFirebase = {
@@ -423,5 +519,9 @@
         savePresentation,
         deletePresentation,
         updatePresentationCourse,
+        getCourseBanner,
+        listCourseBanners,
+        setCourseBanner,
+        renameCourseBanner,
     };
 })();

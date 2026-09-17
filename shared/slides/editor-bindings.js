@@ -109,6 +109,24 @@ function buildThemeSelect() {
 
 const _META_ASPECT_OPTIONS = ['16:9', '4:3', 'a4'];
 let _metadataModalBound = false;
+// Bandeau en cours d'édition dans la modale de métadonnées (choisi via OEIBannerPicker,
+// distinct des champs texte classiques — voir _applyMetaBannerSwatch/_saveMetadataFromModal).
+let _pendingMetaBanner = null;
+
+function _applyMetaBannerSwatch(modal) {
+    const swatch = modal?.querySelector('#meta-banner-swatch');
+    if (!swatch) return;
+    const b = _pendingMetaBanner;
+    if (b && (b.color || b.icon || b.image)) {
+        swatch.style.background = b.image ? `center/cover no-repeat url("${b.image}"), ${b.color || '#00508d'}` : (b.color || '#00508d');
+        swatch.textContent = b.image ? '' : (b.icon || '');
+        swatch.classList.add('is-set');
+    } else {
+        swatch.style.background = '';
+        swatch.textContent = '';
+        swatch.classList.remove('is-set');
+    }
+}
 
 function _metadataToday() {
     return new Date().toISOString().slice(0, 10);
@@ -151,8 +169,19 @@ function _ensureMetadataModal() {
                         <input type="text" id="meta-institution-input" placeholder="ex: Université, Lycée, école">
                     </div>
                     <div class="field">
+                        <label for="meta-tags-input">Tags</label>
+                        <input type="text" id="meta-tags-input" placeholder="ex: TD, projet, révision (séparés par des virgules)">
+                    </div>
+                    <div class="field">
                         <label for="meta-id-input">Identifiant interne</label>
                         <input type="text" id="meta-id-input" placeholder="ex: cours-algo-l1">
+                    </div>
+                    <div class="field">
+                        <label>Bandeau</label>
+                        <div class="meta-banner-row">
+                            <span class="meta-banner-swatch" id="meta-banner-swatch"></span>
+                            <button type="button" class="tb-btn ui-btn" id="meta-banner-btn">Choisir…</button>
+                        </div>
                     </div>
                     <div class="field">
                         <label for="meta-aspect-input">Format</label>
@@ -209,11 +238,14 @@ function _populateMetadataModal(modal) {
     modal.querySelector('#meta-course-input').value = String(meta.course || '');
     modal.querySelector('#meta-level-input').value = String(meta.level || '');
     modal.querySelector('#meta-institution-input').value = String(meta.institution || '');
+    modal.querySelector('#meta-tags-input').value = Array.isArray(meta.tags) ? meta.tags.join(', ') : '';
     modal.querySelector('#meta-id-input').value = String(meta.id || '');
     modal.querySelector('#meta-description-input').value = String(meta.description || '');
     modal.querySelector('#meta-created-input').value = String(meta.created || _metadataToday());
     modal.querySelector('#meta-modified-input').value = String(meta.modified || _metadataToday());
     if (aspectSel) aspectSel.value = _META_ASPECT_OPTIONS.includes(meta.aspect) ? meta.aspect : '16:9';
+    _pendingMetaBanner = (meta.banner && (meta.banner.color || meta.banner.icon || meta.banner.image)) ? { ...meta.banner } : null;
+    _applyMetaBannerSwatch(modal);
 }
 
 function _saveMetadataFromModal(modal) {
@@ -234,10 +266,15 @@ function _saveMetadataFromModal(modal) {
         course: String(modal.querySelector('#meta-course-input')?.value || '').trim(),
         level: String(modal.querySelector('#meta-level-input')?.value || '').trim(),
         institution: String(modal.querySelector('#meta-institution-input')?.value || '').trim(),
+        tags: String(modal.querySelector('#meta-tags-input')?.value || '')
+            .split(',').map(s => s.trim()).filter(Boolean)
+            .filter((t, i, arr) => arr.indexOf(t) === i),
         description: String(modal.querySelector('#meta-description-input')?.value || '').trim(),
         created: String(modal.querySelector('#meta-created-input')?.value || '').trim() || String(prevMeta.created || _metadataToday()),
         modified: _metadataToday(),
     };
+    if (_pendingMetaBanner) nextMeta.banner = { ..._pendingMetaBanner };
+    else delete nextMeta.banner;
     const idValue = String(modal.querySelector('#meta-id-input')?.value || '').trim();
     if (idValue) nextMeta.id = idValue;
     else delete nextMeta.id;
@@ -269,6 +306,15 @@ function openMetadataModal() {
                 _setMetadataModalOpen(modal, false);
                 _bindingsNotify('Métadonnées mises à jour', 'success');
             }
+        });
+        modal.querySelector('#meta-banner-btn')?.addEventListener('click', () => {
+            if (!window.OEIBannerPicker) return;
+            window.OEIBannerPicker.open({
+                title: 'Bandeau de la présentation',
+                initial: _pendingMetaBanner || {},
+                onSave: banner => { _pendingMetaBanner = banner; _applyMetaBannerSwatch(modal); },
+                onClear: () => { _pendingMetaBanner = null; _applyMetaBannerSwatch(modal); },
+            });
         });
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape' && modal.classList.contains('is-open')) _setMetadataModalOpen(modal, false);
