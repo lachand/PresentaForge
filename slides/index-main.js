@@ -491,7 +491,7 @@
                 : '';
             return `
             <article class="pres-card">
-                <div class="pres-cover" style="${esc(coverStyle)}">
+                <div class="pres-cover" style="${escAttr(coverStyle)}">
                     ${miniHtml ? `<div class="pres-slide-mini-outer"><div class="pres-slide-mini-inner">${miniHtml}</div></div>` : ''}
                     <span class="cover-kicker">${esc(deck.sourceLabel || (deck.source === 'recent' ? 'Récente' : 'Bibliothèque'))}</span>
                     ${titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`}
@@ -729,6 +729,8 @@
         filterFirebaseDecks: _filterFirebaseDecks,
         resolveFirebaseBanner: _resolveFirebaseBanner,
         setFirebaseCourseBanners: banners => { _firebaseCourseBanners = banners || {}; },
+        esc,
+        escAttr,
     };
 
     function _fmtDate(iso) {
@@ -845,7 +847,7 @@
                 : (titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`));
             return `
             <article class="pres-card">
-                <div class="pres-cover" style="${esc(coverStyle)}">
+                <div class="pres-cover" style="${escAttr(coverStyle)}">
                     ${p.public ? '<span class="cover-kicker cover-kicker--public">Public</span>' : '<span class="cover-kicker">Firebase</span>'}
                     ${coverInner}
                 </div>
