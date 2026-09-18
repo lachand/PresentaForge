@@ -165,6 +165,10 @@ function _ensureMetadataModal() {
                         <input type="text" id="meta-level-input" placeholder="ex: Licence 2, Master 1, Terminale">
                     </div>
                     <div class="field">
+                        <label for="meta-seance-input">N° de séance</label>
+                        <input type="number" id="meta-seance-input" min="1" step="1" placeholder="ex: 3">
+                    </div>
+                    <div class="field">
                         <label for="meta-institution-input">Établissement</label>
                         <input type="text" id="meta-institution-input" placeholder="ex: Université, Lycée, école">
                     </div>
@@ -237,6 +241,7 @@ function _populateMetadataModal(modal) {
     modal.querySelector('#meta-author-input').value = String(meta.author || '');
     modal.querySelector('#meta-course-input').value = String(meta.course || '');
     modal.querySelector('#meta-level-input').value = String(meta.level || '');
+    modal.querySelector('#meta-seance-input').value = meta.seance != null ? String(meta.seance) : '';
     modal.querySelector('#meta-institution-input').value = String(meta.institution || '');
     modal.querySelector('#meta-tags-input').value = Array.isArray(meta.tags) ? meta.tags.join(', ') : '';
     modal.querySelector('#meta-id-input').value = String(meta.id || '');
@@ -278,6 +283,11 @@ function _saveMetadataFromModal(modal) {
     const idValue = String(modal.querySelector('#meta-id-input')?.value || '').trim();
     if (idValue) nextMeta.id = idValue;
     else delete nextMeta.id;
+
+    const seanceRaw = String(modal.querySelector('#meta-seance-input')?.value || '').trim();
+    const seanceValue = seanceRaw !== '' ? Math.round(Number(seanceRaw)) : NaN;
+    if (Number.isFinite(seanceValue) && seanceValue >= 1) nextMeta.seance = seanceValue;
+    else delete nextMeta.seance;
 
     const aspectValue = String(modal.querySelector('#meta-aspect-input')?.value || '').trim();
     nextMeta.aspect = _META_ASPECT_OPTIONS.includes(aspectValue) ? aspectValue : (prevMeta.aspect || '16:9');

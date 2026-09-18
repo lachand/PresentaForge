@@ -444,6 +444,23 @@ body.dark {
 .bulk-export-row.ok .bulk-export-row-status { color: var(--success, #16a34a); }
 .bulk-export-row.err .bulk-export-row-status { color: var(--error, #b3261e); }
 
+/* ── Multi-import-modal.js : import multi-JSON groupé en cours (page d'accueil) ─────────── */
+.multi-import-list { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; }
+.multi-import-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--surface-container-high, #ede7e4);
+}
+.multi-import-row--error { background: color-mix(in srgb, var(--error, #b3261e) 10%, transparent); }
+.multi-import-row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.multi-import-title { font-size: 0.875rem; font-weight: 600; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi-import-file { font-size: 0.75rem; color: var(--on-surface-muted, #8a9099); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi-import-error { font-size: 0.8125rem; color: var(--error, #b3261e); }
+.multi-import-hint { font-size: 0.75rem; color: var(--on-surface-muted, #8a9099); }
+.multi-import-seance-label { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--on-surface-variant, #414750); flex-shrink: 0; }
+.multi-import-seance { width: 64px; }
+
 /* ── Tabs ───────────────────────────────────────────────── */
 .ui-tabs {
     display: flex;

@@ -391,6 +391,7 @@ body {
 .cover-icon--emoji { width: auto; height: auto; font-size: 1.75rem; line-height: 1; }
 .cover-kicker--public { color: var(--tertiary); }
 .chip--course { background: var(--primary-fixed); color: var(--on-primary-fixed-variant); }
+.chip--seance { background: var(--secondary-fixed); color: var(--on-secondary-fixed-variant); }
 .firebase-loading {
     text-align: center; padding: 20px 0;
     color: var(--on-surface-muted); font-size: 0.875rem;
@@ -497,6 +498,8 @@ body {
     transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--primary) 25%, var(--outline-variant));
 }
+.pres-card[draggable="true"] { cursor: grab; }
+.pres-card.is-dragging { opacity: 0.4; cursor: grabbing; }
 .pres-cover {
     height: 96px;
     background: linear-gradient(140deg,

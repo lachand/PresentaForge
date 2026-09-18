@@ -556,8 +556,62 @@
         input.click();
     }
 
+    // Import multi-fichiers → regroupement en cours Firebase (bouton dédié de la section "Mes
+    // présentations Firebase" — ce regroupement n'existe que côté Firebase, cf. metadata.course).
+    // Chaque fichier passe par le même pipeline de validation/normalisation que l'import
+    // mono-fichier ci-dessus (onOpenFile) ; un fichier invalide n'annule pas les autres, la revue
+    // finale (cours + n° de séance par fichier) est déléguée à shared/slides/multi-import-modal.js.
+    async function onMultiImportFiles() {
+        if (!window.OEIFirebase?.isReady()) {
+            await OEIDialog.alert('Connectez-vous à Firebase avant d’importer plusieurs decks : le regroupement par cours est stocké sur Firebase.');
+            return;
+        }
+        if (!window.OEIMultiImportModal) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.multiple = true;
+        input.onchange = async e => {
+            const files = Array.from(e.target.files || []);
+            if (!files.length) return;
+            const items = await Promise.all(files.map(async file => {
+                try {
+                    const text = await file.text();
+                    const result = await window.OEIImportPipeline.importFromText(text);
+                    return { fileName: file.name, ok: true, data: result.data, report: result.report };
+                } catch (err) {
+                    return { fileName: file.name, ok: false, error: err?.message || 'fichier invalide' };
+                }
+            }));
+            const knownCourses = [...new Set(_firebaseDecks.map(p => p.course).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+            window.OEIMultiImportModal.open({
+                items,
+                knownCourses,
+                existingDecks: _firebaseDecks,
+                onImportOne: async (data, course, seance) => {
+                    data.metadata = data.metadata || {};
+                    data.metadata.course = course;
+                    if (seance != null) data.metadata.seance = seance; else delete data.metadata.seance;
+                    await window.OEIFirebase.savePresentation(data, null, { course, seance });
+                },
+                onDone: ({ failed = [], course } = {}) => {
+                    loadFirebaseDecks().then(() => {
+                        _firebaseViewMode = 'course';
+                        _firebaseDrillGroup = course ? { mode: 'course', key: course, label: course || 'Sans cours' } : null;
+                        renderFirebaseDecks();
+                    });
+                    if (failed.length) {
+                        OEIDialog.alert(`Échec de l’import pour : ${failed.map(f => `${f.fileName} (${f.error})`).join(', ')}`);
+                    }
+                },
+            });
+        };
+        input.click();
+    }
+
     document.getElementById('btn-open-file')?.addEventListener('click', onOpenFile);
     document.getElementById('btn-open-file-card')?.addEventListener('click', onOpenFile);
+    document.getElementById('btn-firebase-multi-import')?.addEventListener('click', onMultiImportFiles);
     document.getElementById('local-search')?.addEventListener('input', e => {
         _localFilters.search = String(e.target.value || '');
         renderLocalDecks();
@@ -686,13 +740,27 @@
         });
     }
 
+    // Séance croissante d'abord ; les decks sans séance restent en fin de groupe, dans leur
+    // ordre relatif d'origine (tri stable — déjà trié par date de modification décroissante en
+    // amont par listPresentations()).
+    function _sortBySeance(items) {
+        return items.slice().sort((a, b) => {
+            const sa = Number.isFinite(a.p.seance) ? a.p.seance : null;
+            const sb = Number.isFinite(b.p.seance) ? b.p.seance : null;
+            if (sa == null && sb == null) return 0;
+            if (sa == null) return 1;
+            if (sb == null) return -1;
+            return sa - sb;
+        });
+    }
+
     function _groupFirebaseByCourse(entries) {
         const groups = {};
         entries.forEach(entry => {
             const key = entry.p.course || '';
             (groups[key] || (groups[key] = [])).push(entry);
         });
-        return _sortGroupKeys(Object.keys(groups)).map(key => ({ key, label: key || 'Sans cours', items: groups[key] }));
+        return _sortGroupKeys(Object.keys(groups)).map(key => ({ key, label: key || 'Sans cours', items: _sortBySeance(groups[key]) }));
     }
 
     function _groupFirebaseByLevel(entries) {
@@ -731,6 +799,7 @@
         groupFirebaseByCourse: _groupFirebaseByCourse,
         groupFirebaseByLevel: _groupFirebaseByLevel,
         groupFirebaseByTag: _groupFirebaseByTag,
+        sortBySeance: _sortBySeance,
         filterFirebaseDecks: _filterFirebaseDecks,
         resolveFirebaseBanner: _resolveFirebaseBanner,
         setFirebaseCourseBanners: banners => { _firebaseCourseBanners = banners || {}; },
@@ -776,8 +845,11 @@
         const fb = window.OEIFirebase;
         const badge = document.getElementById('firebase-user-badge');
         const btn = document.getElementById('btn-firebase-connect');
+        const importBtn = document.getElementById('btn-firebase-multi-import');
         if (!badge || !btn) return;
-        if (fb && fb.isReady()) {
+        const ready = !!(fb && fb.isReady());
+        if (importBtn) importBtn.hidden = !ready;
+        if (ready) {
             const user = fb.getUser();
             badge.textContent = user ? user.email : '';
             badge.style.display = 'inline';
@@ -877,8 +949,12 @@
                 <label class="pres-select-box">
                     <input type="checkbox" class="pres-select-checkbox" data-fb-select-id="${escAttr(p.id)}" ${_firebaseSelectedIds.has(p.id) ? 'checked' : ''}>
                 </label>` : '';
+            // Glisser-déposer pour réordonner les séances : uniquement pertinent en vue "Par
+            // cours" (regroupement d'ensemble ou drill-down), où data-fb-id identifie la carte
+            // indépendamment de son index (invalidé par un ré-rendu).
+            const draggableAttr = _firebaseViewMode === 'course' ? ` draggable="true" data-fb-id="${escAttr(p.id)}"` : '';
             return `
-            <article class="pres-card">
+            <article class="pres-card"${draggableAttr}>
                 <div class="pres-cover" style="${escAttr(coverStyle)}">
                     ${selectBoxHtml}
                     ${p.public ? '<span class="cover-kicker cover-kicker--public">Public</span>' : '<span class="cover-kicker">Firebase</span>'}
@@ -890,6 +966,7 @@
                         <span class="chip">${icon('clock')} ${_fmtDate(p.modified)}</span>
                         ${p.course ? `<span class="chip chip--course">${esc(p.course)}</span>` : ''}
                         ${p.level ? `<span class="chip">${esc(p.level)}</span>` : ''}
+                        ${p.seance != null ? `<span class="chip chip--seance">Séance ${p.seance}</span>` : ''}
                         <button type="button" class="pres-card-move-btn" data-action="move-firebase" data-fb-idx="${idx}" title="Changer de cours">&#x1F3F7;</button>
                     </div>
                     <div class="pres-actions">
@@ -928,7 +1005,7 @@
                     ${courseActionsHtml(mode, key)}
                     ${selectAllHtml}
                 </div>
-                <div class="pres-grid">${items.length ? items.map(renderCard).join('') : '<div class="firebase-empty">Aucun résultat pour cette recherche.</div>'}</div>
+                <div class="pres-grid"${mode === 'course' ? ` data-group-key="${escAttr(key)}"` : ''}>${items.length ? items.map(renderCard).join('') : '<div class="firebase-empty">Aucun résultat pour cette recherche.</div>'}</div>
             `;
             return;
         }
@@ -947,7 +1024,7 @@
                 <span>${esc(g.label)} <span class="firebase-group-count">(${g.items.length})</span></span>
                 ${courseActionsHtml(mode, g.key)}
             </h4>` : ''}
-            <div class="pres-grid">${g.items.map(renderCard).join('')}</div>
+            <div class="pres-grid"${mode === 'course' ? ` data-group-key="${escAttr(g.key)}"` : ''}>${g.items.map(renderCard).join('')}</div>
         `).join('');
     }
 
@@ -1026,6 +1103,29 @@
         } catch (e) {
             await OEIDialog.alert('Erreur : ' + e.message);
         }
+    }
+
+    // Glisser-déposer (vue "Par cours") : seance = position dans le DOM du groupe déposé, ne
+    // réécrit sur Firestore que les decks dont la valeur a changé. Pas de sens pour le bucket
+    // "Sans cours" (pas de data-group-key sur son .pres-grid, cf. renderFirebaseDecks).
+    async function persistSeanceOrder(grid) {
+        const course = grid.dataset.groupKey || '';
+        if (!course) return;
+        const ids = [...grid.querySelectorAll('.pres-card[data-fb-id]')].map(el => el.dataset.fbId);
+        const changed = [];
+        ids.forEach((id, i) => {
+            const p = _firebaseDecks.find(d => d.id === id);
+            if (!p) return;
+            const n = i + 1;
+            if (p.seance !== n) { p.seance = n; changed.push({ id, seance: n }); }
+        });
+        if (!changed.length) return;
+        try {
+            await Promise.all(changed.map(c => window.OEIFirebase.updatePresentationMeta(c.id, { seance: c.seance })));
+        } catch (e) {
+            await OEIDialog.alert('Erreur lors de la mise à jour de l’ordre : ' + e.message);
+        }
+        renderFirebaseDecks();
     }
 
     // Renomme EN BLOC toutes les présentations actuellement rangées dans `course`
@@ -1191,6 +1291,45 @@
                 setTimeout(() => { target.textContent = orig; }, 2000);
             }).catch(() => prompt('Lien de partage :', url));
         }
+    });
+
+    // Glisser-déposer pour réordonner les séances au sein d'un cours (vue "Par cours" — cf.
+    // draggableAttr dans renderCard et data-group-key sur .pres-grid). Délégué sur document,
+    // comme le reste de cette section, car la grille est reconstruite à chaque rendu.
+    let _fbDragEl = null;
+
+    document.addEventListener('dragstart', e => {
+        const card = e.target.closest('.pres-card[draggable="true"]');
+        if (!card) return;
+        const grid = card.closest('.pres-grid');
+        if (!grid || !grid.dataset.groupKey) { e.preventDefault(); return; }
+        _fbDragEl = card;
+        card.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', card.dataset.fbId || '');
+    });
+
+    document.addEventListener('dragover', e => {
+        if (!_fbDragEl) return;
+        const grid = _fbDragEl.closest('.pres-grid');
+        if (!grid || !grid.contains(e.target)) return;
+        e.preventDefault();
+        const target = e.target.closest('.pres-card');
+        if (!target || target === _fbDragEl) return;
+        const rect = target.getBoundingClientRect();
+        const before = (e.clientY - rect.top) < rect.height / 2;
+        grid.insertBefore(_fbDragEl, before ? target : target.nextSibling);
+    });
+
+    document.addEventListener('drop', e => {
+        if (_fbDragEl) e.preventDefault();
+    });
+
+    document.addEventListener('dragend', () => {
+        if (_fbDragEl) _fbDragEl.classList.remove('is-dragging');
+        const grid = _fbDragEl?.closest('.pres-grid') || null;
+        _fbDragEl = null;
+        if (grid) persistSeanceOrder(grid);
     });
 
     function _openFirebaseModal() {

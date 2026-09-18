@@ -256,10 +256,11 @@
     async function listPresentations() {
         const snap = await _presCol().orderBy('modified', 'desc').get();
         return snap.docs.map(d => {
-            const { title, modified, public: isPublic, course, thumb, banner, level, tags } = d.data();
+            const { title, modified, public: isPublic, course, thumb, banner, level, tags, seance } = d.data();
             return {
                 id: d.id, title: title || 'Sans titre', modified, public: !!isPublic, course: course || '',
                 thumb: thumb || null, banner: banner || null, level: level || '', tags: Array.isArray(tags) ? tags : [],
+                seance: Number.isFinite(seance) ? seance : null,
             };
         });
     }
@@ -372,9 +373,12 @@
         const banner = (bannerIn && (bannerIn.color || bannerIn.icon || bannerIn.image))
             ? { color: String(bannerIn.color || ''), icon: String(bannerIn.icon || ''), image: String(bannerIn.image || '') }
             : null;
+        const seanceIn = opts.seance ?? meta_.seance;
+        const seanceNum = (seanceIn == null || String(seanceIn).trim() === '') ? NaN : Number(seanceIn);
+        const seance = Number.isFinite(seanceNum) ? Math.round(seanceNum) : null;
         const meta = {
             id, title, modified: new Date().toISOString(), public: isPublic, course, thumb: thumb || null,
-            banner, level, tags,
+            banner, level, tags, seance,
         };
 
         const bytes = (typeof TextEncoder !== 'undefined') ? new TextEncoder().encode(json).length : json.length;
@@ -438,6 +442,10 @@
         }
         if (Object.prototype.hasOwnProperty.call(patch, 'tags') && Array.isArray(patch.tags)) {
             update.tags = [...new Set(patch.tags.map(t => String(t || '').trim()).filter(Boolean))];
+        }
+        if (Object.prototype.hasOwnProperty.call(patch, 'seance')) {
+            const n = patch.seance == null ? NaN : Number(patch.seance);
+            update.seance = Number.isFinite(n) ? Math.round(n) : null;
         }
         if (!Object.keys(update).length) return;
         await col.doc(id).update(update);
