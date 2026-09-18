@@ -376,6 +376,79 @@ async function _fetchWidgetCss() {
     return _widgetCssCache;
 }
 
+/* ── Widget runtime inlining (scripts + CSS + mount) — partagé entre tous les
+   exports HTML autonomes (exportHTML, offline, étudiant) pour éviter que
+   certains n'inlinent que le CSS, ou rien du tout, et laissent des slots
+   .sl-sim-container vides. ── */
+async function _buildWidgetRuntimeInline(data) {
+    const usedWidgets = collectUsedWidgets(data.slides);
+    if (usedWidgets.size === 0) {
+        return { hasWidgets: false, css: '', scripts: '', mountScript: '' };
+    }
+    const css = await _fetchWidgetCss();
+
+    const scriptSet = new Set();
+    const registry = {};
+    for (const wid of usedWidgets) {
+        const entry = CanvasEditor.WIDGET_REGISTRY[wid];
+        if (entry) {
+            // Dépendances déclarées (générateurs de trace…) inlinées AVANT le widget.
+            if (Array.isArray(entry.deps)) {
+                for (const dep of entry.deps) {
+                    if (typeof dep === 'string' && dep) scriptSet.add(dep);
+                }
+            }
+            scriptSet.add(entry.script);
+            registry[wid] = { global: entry.global };
+        }
+    }
+    // Stubs de base requis par les widgets Page-based (TcpHandshakePage, etc.)
+    let scripts = `<script>if (!window.ConceptPage) window.ConceptPage = class { constructor() {} async init() {} };
+if (!window.SimulationPage) window.SimulationPage = window.ConceptPage;
+if (!window.ExerciseRunnerPage) window.ExerciseRunnerPage = window.ConceptPage;<\/script>\n`;
+    for (const scriptPath of scriptSet) {
+        try {
+            const resp = await fetch('../shared/components/' + scriptPath);
+            if (resp.ok) {
+                const code = (await resp.text()).replace(/<\/script/gi, '<\\/script');
+                scripts += `<script>/* widget: ${scriptPath} */\n${code}\n<\/script>\n`;
+            } else {
+                console.warn('[OEI] Widget script non disponible (HTTP ' + resp.status + '):', scriptPath);
+            }
+        } catch(e) {
+            console.warn('[OEI] Could not inline widget script:', scriptPath, e);
+        }
+    }
+    const regJSON = JSON.stringify(registry);
+    const mountScript = `<script>
+(function() {
+    var WREG = ${regJSON};
+    window._mountOEIWidgets = function() {
+        var slots = document.querySelectorAll('.sl-sim-container[data-widget]');
+        for (var i = 0; i < slots.length; i++) {
+            var slot = slots[i];
+            if (slot.dataset.mounted) continue;
+            var wid = slot.dataset.widget;
+            if (!wid) continue;
+            var reg = WREG[wid];
+            if (!reg) { slot.textContent = 'Widget indisponible: ' + wid; continue; }
+            try {
+                var cls = window[reg.global];
+                if (!cls || typeof cls.mount !== 'function') { slot.textContent = 'Widget non disponible: ' + wid; continue; }
+                var config = JSON.parse(slot.dataset.config || '{}');
+                cls.mount(slot, Object.assign({}, config, { type: wid }));
+                slot.dataset.mounted = '1';
+            } catch(e) {
+                slot.textContent = 'Erreur widget: ' + (e.message || String(e));
+            }
+        }
+    };
+})();
+<\/script>`;
+
+    return { hasWidgets: true, css, scripts, mountScript };
+}
+
 /* ── Theme CSS helper (inline, no dependency on slides-core cache) ── */
 function _buildThemeRootCSS(themeData) {
     const _d = SlidesThemes.BUILT_IN.dark;
@@ -818,74 +891,12 @@ async function exportHTML() {
         SlidesRenderer.renderSlide(slide, i, htmlOpts)
     ).join('\n');
 
-    const usedWidgets = collectUsedWidgets(data.slides);
-    const widgetCss = usedWidgets.size > 0 ? await _fetchWidgetCss() : '';
+    const widgetRuntime = await _buildWidgetRuntimeInline(data);
+    const widgetCss = widgetRuntime.css;
+    const inlineWidgetScripts = widgetRuntime.scripts;
+    const mountScript = widgetRuntime.mountScript;
 
-    // Inline widget scripts for standalone export
-    let inlineWidgetScripts = '';
-    let mountScript = '';
-    if (usedWidgets.size > 0) {
-        const scriptSet = new Set();
-        const registry = {};
-        for (const wid of usedWidgets) {
-            const entry = CanvasEditor.WIDGET_REGISTRY[wid];
-            if (entry) {
-                // Dépendances déclarées (générateurs de trace…) inlinées AVANT le widget.
-                if (Array.isArray(entry.deps)) {
-                    for (const dep of entry.deps) {
-                        if (typeof dep === 'string' && dep) scriptSet.add(dep);
-                    }
-                }
-                scriptSet.add(entry.script);
-                registry[wid] = { global: entry.global };
-            }
-        }
-        // Stubs de base requis par les widgets Page-based (TcpHandshakePage, etc.)
-        inlineWidgetScripts = `<script>if (!window.ConceptPage) window.ConceptPage = class { constructor() {} async init() {} };
-if (!window.SimulationPage) window.SimulationPage = window.ConceptPage;
-if (!window.ExerciseRunnerPage) window.ExerciseRunnerPage = window.ConceptPage;<\/script>\n`;
-        for (const scriptPath of scriptSet) {
-            try {
-                const resp = await fetch('../shared/components/' + scriptPath);
-                if (resp.ok) {
-                    const code = await resp.text();
-                    inlineWidgetScripts += `<script>/* widget: ${scriptPath} */\n${code}\n<\/script>\n`;
-                } else {
-                    console.warn('[OEI] Widget script non disponible (HTTP ' + resp.status + '):', scriptPath);
-                }
-            } catch(e) {
-                console.warn('[OEI] Could not inline widget script:', scriptPath, e);
-            }
-        }
-        const regJSON = JSON.stringify(registry);
-        mountScript = `<script>
-(function() {
-    var WREG = ${regJSON};
-    window._mountOEIWidgets = function() {
-        var slots = document.querySelectorAll('.sl-sim-container[data-widget]');
-        for (var i = 0; i < slots.length; i++) {
-            var slot = slots[i];
-            if (slot.dataset.mounted) continue;
-            var wid = slot.dataset.widget;
-            if (!wid) continue;
-            var reg = WREG[wid];
-            if (!reg) { slot.textContent = 'Widget indisponible: ' + wid; continue; }
-            try {
-                var cls = window[reg.global];
-                if (!cls || typeof cls.mount !== 'function') { slot.textContent = 'Widget non disponible: ' + wid; continue; }
-                var config = JSON.parse(slot.dataset.config || '{}');
-                cls.mount(slot, Object.assign({}, config, { type: wid }));
-                slot.dataset.mounted = '1';
-            } catch(e) {
-                slot.textContent = 'Erreur widget: ' + (e.message || String(e));
-            }
-        }
-    };
-})();
-<\/script>`;
-    }
-
-    const mountCall = usedWidgets.size > 0
+    const mountCall = widgetRuntime.hasWidgets
         ? `\nReveal.addEventListener('slidechanged', function(){ window._mountOEIWidgets(); });\nwindow._mountOEIWidgets();`
         : '';
 
@@ -1478,10 +1489,8 @@ async function _buildOfflineExportDocument(data) {
         notes: '', bg: s.bg || ''
     })));
     const inlineCSS = resources.css.join('\n') + '\n' + fontCSS;
-    // NB : l'export offline n'inline pas (encore) les scripts widgets — les slots
-    // .sl-sim-container restent vides. On inline neanmoins widgets.css quand le deck
-    // contient des widgets, pour rester coherent avec exportHTML().
-    const widgetCss = collectUsedWidgets(data.slides).size > 0 ? await _fetchWidgetCss() : '';
+    const widgetRuntime = await _buildWidgetRuntimeInline(data);
+    const widgetCss = widgetRuntime.css;
 
     const html = `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1500,6 +1509,8 @@ ${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n
 </head><body>
 <div class="reveal" id="reveal-root"><div class="slides" id="slides-root">${slidesHTML}</div></div>
 
+${widgetRuntime.scripts}
+${widgetRuntime.mountScript}
 <script>
 var _pvSlidesData = ${presenterSlidesData};
 <\/script>
@@ -1518,6 +1529,7 @@ var deck = new Reveal(document.getElementById('reveal-root'), {
     controls: true, progress: true, slideNumber: true
 });
 deck.initialize();
+${widgetRuntime.hasWidgets ? "Reveal.addEventListener('slidechanged', function(){ window._mountOEIWidgets(); });\nwindow._mountOEIWidgets();" : ''}
 <\/script>
 ${specialRuntimeInline}
 <script>
@@ -1881,7 +1893,7 @@ window.exportMarkdown = exportMarkdown;
  * - Notes displayed below each slide
  * - Print-optimized CSS
  */
-function _buildStudentExportDocument(data) {
+async function _buildStudentExportDocument(data) {
     if (!data) return null;
     const visibleSlides = (data.slides || []).filter(s => !s.hidden);
     if (!visibleSlides.length) return null;
@@ -1889,6 +1901,7 @@ function _buildStudentExportDocument(data) {
     const rawCSS = SlidesThemes.generateCSS(themeData);
     const _stripRootBody = css => css.replace(/:root\s*\{[^}]*\}/g, '').replace(/body\s*\{[^}]*\}/g, '');
     const themeCSS = _stripRootBody(rawCSS);
+    const widgetRuntime = await _buildWidgetRuntimeInline(data);
 
     const dims = ASPECT_DIMS[data.metadata?.aspect || '16:9'] || [1280, 720];
     const titleEsc = esc(data.metadata?.title || 'Présentation');
@@ -1973,6 +1986,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #fef8f5; color: 
 /* Slide rendering */
 ${themeCSS}
 .reveal section { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+${widgetRuntime.css ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n' + widgetRuntime.css : ''}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -2004,6 +2018,9 @@ ${themeCSS}
     </div>
     ${slideCards}
 </main>
+${widgetRuntime.scripts}
+${widgetRuntime.mountScript}
+${widgetRuntime.hasWidgets ? '<script>window._mountOEIWidgets();<\/script>' : ''}
 <script>
 // Responsive slide scaling
 function scaleSlides() {
@@ -2108,7 +2125,7 @@ async function _ensureJSZipLoaded() {
 async function exportStudentHTML() {
     const data = editor.data;
     if (!data) return;
-    const built = _buildStudentExportDocument(data);
+    const built = await _buildStudentExportDocument(data);
     if (!built) { notify('Aucun slide à exporter', 'warning'); return; }
 
     const blob = new Blob([built.html], { type: 'text/html' });
@@ -2123,7 +2140,7 @@ async function exportStudentHTML() {
 async function exportCoursePack() {
     const data = editor.data;
     if (!data) return;
-    const built = _buildStudentExportDocument(data);
+    const built = await _buildStudentExportDocument(data);
     if (!built) { notify('Aucun slide à exporter', 'warning'); return; }
     try {
         await _ensureJSZipLoaded();
