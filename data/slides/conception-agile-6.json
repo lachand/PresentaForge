@@ -24,7 +24,7 @@
       "type": "bullets",
       "title": "Objectifs du cours",
       "items": [
-        "Comprendre ce qu'est un agent IA et choisir le bon niveau d'autonomie pour une tâche donnée",
+        "Comprendre un agent IA et le bon niveau d'autonomie selon la tâche",
         "Configurer et utiliser le Model Context Protocol (MCP) en connaissance de cause",
         "Maîtriser l'économie des tokens pour travailler plus vite et moins cher",
         "Écrire un fichier d'instructions (CLAUDE.md / AGENTS.md) efficace pour un projet",
@@ -376,7 +376,7 @@
           "h": 200,
           "z": 1,
           "data": {
-            "html": "Question volontairement directe, posée sans détour.<br><br>Le reste de ce cours n'est pas une réponse toute faite - c'est de quoi vous permettre de vous forger la votre, en connaissance de cause plutôt que par peur ou par hype."
+            "html": "Question posée sans détour - ce cours vous donne de quoi vous forger votre propre réponse, en connaissance de cause."
           },
           "style": {
             "fontSize": 26,
@@ -465,19 +465,39 @@
         },
         {
           "id": "el_qcb1ezn",
-          "type": "timeline-vertical",
-          "x": 240,
-          "y": 150,
-          "w": 800,
-          "h": 460,
+          "type": "table",
+          "x": 100,
+          "y": 160,
+          "w": 1080,
+          "h": 400,
           "z": 1,
           "data": {
-            "title": "Trois générations",
-            "steps": [
-              "Systèmes experts (1970s-90s) : règles écrites à la main par des experts humains, compétents sur une tâche très étroite",
-              "Machine learning / deep learning (2000s-2010s) : le système apprend des régularités à partir de données, pour une tâche spécialisée (classification d'image, traduction...)",
-              "Large Language Models - LLM (2018-aujourd'hui) : un seul modèle généraliste, compréhension et génération de langage naturel sur une immense variété de tâches"
+            "rows": [
+              [
+                "Génération",
+                "Période",
+                "Caractéristique"
+              ],
+              [
+                "Systèmes experts",
+                "1970s-1990s",
+                "Règles écrites à la main par des experts humains, compétents sur une tâche très étroite"
+              ],
+              [
+                "Machine learning / deep learning",
+                "2000s-2010s",
+                "Le système apprend des régularités à partir de données, pour une tâche spécialisée (classification d'image, traduction...)"
+              ],
+              [
+                "Large Language Models (LLM)",
+                "2018-aujourd'hui",
+                "Un seul modèle généraliste, compréhension et génération de langage naturel sur une immense variété de tâches"
+              ]
             ]
+          },
+          "style": {
+            "fontSize": 16,
+            "headerBg": "var(--sl-primary)"
           }
         }
       ],
@@ -658,13 +678,13 @@
       "type": "bullets",
       "title": "Les limites actuelles des LLM",
       "items": [
-        "Des réponses erronées peuvent être données avec la même assurance qu'une réponse correcte (<b>hallucination</b>)",
+        "Erronée ou correcte : même assurance apparente (<b>hallucination</b>)",
         "Peu ou pas d'information fiable sur le niveau de certitude du modèle lui-même",
         {
           "text": "Deux atténuations partielles, pas des solutions complètes :",
           "sub": [
-            "Modèles à recherche intégrée (\"grounding\") : citent des sources web réelles, réduisent mais n'éliminent pas les erreurs",
-            "Modèles de raisonnement (voir chapitre suivant) : délibèrent avant de répondre, réduisent certaines erreurs de logique mais pas les hallucinations factuelles"
+            "Modèles à recherche intégrée (\"grounding\") : citent des sources réelles, réduisent sans éliminer les erreurs",
+            "Modèles de raisonnement : délibèrent avant de répondre, réduisent les erreurs de logique, pas les hallucinations factuelles"
           ]
         }
       ],
@@ -847,16 +867,16 @@
         {
           "text": "Outils terminal / \"agent lourd\" :",
           "sub": [
-            "<b>Claude Code</b> (Anthropic) : lit le code, planifie, exécute, vérifie, itère - orienté raisonnement multi-fichiers complexe",
+            "<b>Claude Code</b> (Anthropic) : lit, planifie, exécute, vérifie, itère - raisonnement multi-fichiers",
             "<b>Codex CLI</b> (OpenAI) : binaire open source, bundlé avec ChatGPT Plus/Pro"
           ]
         },
         {
           "text": "IDE agentiques :",
           "sub": [
-            "<b>Cursor</b> : mode Composer pour des refactors multi-fichiers en langage naturel, ~1 Md$ de revenu annuel récurrent en 2026",
+            "<b>Cursor</b> : mode Composer, refactors multi-fichiers en langage naturel (~1 Md$ ARR en 2026)",
             "<b>Windsurf</b> : système Cascade, indexation automatique de gros codebases",
-            "<b>GitHub Copilot</b> : le plus large parc installé (~42% du marché payant, JetBrains AI Pulse Survey 2026), mode agent/workspace intégré"
+            "<b>GitHub Copilot</b> : plus large parc installé (~42% du marché payant), mode agent intégré"
           ]
         }
       ],
@@ -874,12 +894,12 @@
           "text": "Isoler l'espace de travail de l'agent :",
           "sub": [
             "Sandboxing / conteneur quand c'est possible",
-            "Travailler sur une branche dédiée, ou un <i>worktree</i> Git séparé (lien avec le chapitre Git du cours CI/CD)"
+            "Travailler sur une branche dédiée ou un <i>worktree</i> Git séparé"
           ]
         },
-        "Configurer des permissions/approbations pour les actions sensibles (écriture, exécution de commande, accès réseau)",
-        "<b>Toujours relire le diff avant de committer</b> - un agent qui \"a l'air\" d'avoir réussi peut avoir introduit une régression silencieuse",
-        "Ne jamais laisser un agent avoir accès à des secrets de production sans contrôle strict"
+        "Permissions/approbations pour les actions sensibles (écriture, commande, réseau)",
+        "<b>Toujours relire le diff avant de committer</b> - \"ça a l'air de marcher\" n'exclut pas une régression silencieuse",
+        "Jamais d'accès aux secrets de production sans contrôle strict"
       ],
       "notes": "Lien direct et explicite avec le chapitre \"Sécurité de la chaîne CI/CD\" du cours précédent (branches, revue de code, permissions minimales) : les mêmes réflexes s'appliquent, avec en plus la spécificité que l'auteur des changements n'est plus un humain qui a \"l'intuition\" du risque de ce qu'il modifie. Le worktree Git séparé est une pratique de plus en plus répandue : ça permet à un agent de travailler sur une copie isolée du dépôt sans risquer d'écraser du travail en cours dans le répertoire principal.",
       "keypoints": [
@@ -927,32 +947,39 @@
         },
         {
           "id": "el_2nx9fwn",
-          "type": "decision-tree",
-          "x": 140,
-          "y": 150,
-          "w": 1000,
-          "h": 440,
+          "type": "table",
+          "x": 100,
+          "y": 160,
+          "w": 1080,
+          "h": 480,
           "z": 1,
           "data": {
-            "root": "Quelle est la nature de la tâche ?",
-            "branches": [
-              {
-                "label": "Retouche mineure et locale (renommer une variable, corriger un typo)",
-                "outcome": "Autocomplétion suffit"
-              },
-              {
-                "label": "Refactor multi-fichiers dans un domaine bien compris",
-                "outcome": "Agent supervisé (validation à chaque étape sensible)"
-              },
-              {
-                "label": "Tâche répétitive, bien cadrée, à fort volume (migration mécanique, mise à jour de dépendances)",
-                "outcome": "Agent autonome + revue à posteriori"
-              },
-              {
-                "label": "Décision d'architecture ou code touchant la sécurité/les paiements",
-                "outcome": "Agent supervisé au maximum, jamais autonome sans revue humaine complète"
-              }
+            "rows": [
+              [
+                "Type de tâche",
+                "Niveau d'autonomie recommandé"
+              ],
+              [
+                "Retouche mineure et locale (renommer une variable, corriger un typo)",
+                "Autocomplétion suffit"
+              ],
+              [
+                "Refactor multi-fichiers dans un domaine bien compris",
+                "Agent supervisé (validation à chaque étape sensible)"
+              ],
+              [
+                "Tâche répétitive, bien cadrée, à fort volume (migration mécanique, mise à jour de dépendances)",
+                "Agent autonome + revue à posteriori"
+              ],
+              [
+                "Décision d'architecture ou code touchant la sécurité/les paiements",
+                "Agent supervisé au maximum, jamais autonome sans revue humaine complète"
+              ]
             ]
+          },
+          "style": {
+            "fontSize": 16,
+            "headerBg": "var(--sl-primary)"
           }
         }
       ],
@@ -1005,11 +1032,35 @@
           "x": 140,
           "y": 150,
           "w": 1000,
-          "h": 420,
+          "h": 160,
           "z": 1,
           "data": {
             "label": "Le tournant identifié par Andrej Karpathy",
-            "text": "Andrej Karpathy (ex-OpenAI/Tesla, chercheur influent, également à l'origine du terme \"vibe coding\") situe fin 2025 un point de bascule : le passage du \"vibe coding\" (accepter le code généré sans trop le questionner) à ce qu'il nomme l'<b>\"ingénierie agentique\"</b> (agentic engineering) - une discipline avec ses propres compétences.<br><br><b>5 compétences clés qu'il identifie :</b> concevoir des spécifications précises avant de solliciter l'agent, savoir relire un diff pour en juger la qualité architecturale (pas juste \"ça marche\"), concevoir des évaluations/tests qui donnent un signal fiable à l'agent, exercer une vigilance sécurité constante, et développer du goût (\"taste\") pour juger ce qui est réellement bien conçu."
+            "text": "Andrej Karpathy (ex-OpenAI/Tesla, à l'origine du terme \"vibe coding\") situe fin 2025 le passage du \"vibe coding\" à l'<b>\"ingénierie agentique\"</b> (agentic engineering) - une discipline avec ses propres compétences."
+          }
+        },
+        {
+          "id": "el_k3n9w2p",
+          "type": "card",
+          "x": 140,
+          "y": 330,
+          "w": 1000,
+          "h": 280,
+          "z": 1,
+          "data": {
+            "title": "5 compétences clés de l'ingénierie agentique",
+            "items": [
+              "Concevoir des spécifications précises avant de solliciter l'agent",
+              "Relire un diff pour juger sa qualité architecturale (pas juste \"ça marche\")",
+              "Concevoir des évaluations/tests qui donnent un signal fiable",
+              "Exercer une vigilance sécurité constante",
+              "Développer du goût (\"taste\") pour ce qui est réellement bien conçu"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
           }
         }
       ],
@@ -1023,15 +1074,15 @@
       "type": "bullets",
       "title": "Les Skills : des instructions réutilisables et invocables",
       "items": [
-        "Complément aux fichiers d'instructions globaux (CLAUDE.md/AGENTS.md, chapitre 5) : un <b>Skill</b> est un paquet d'instructions ciblé sur une tâche précise, que l'agent charge <b>à la demande</b> plutôt que de porter en permanence dans son contexte",
+        "Un <b>Skill</b> : paquet d'instructions ciblé, chargé <b>à la demande</b> plutôt que gardé en permanence dans le contexte",
         {
-          "text": "Exemple concret : une skill \"revue de sécurité\" ou \"génération de diagrammes\" qui contient",
+          "text": "Exemple : une skill \"revue de sécurité\" ou \"génération de diagrammes\"",
           "sub": [
             "des instructions détaillées propres à cette tâche",
             "éventuellement des scripts ou gabarits associés"
           ]
         },
-        "Avantage direct sur l'économie de tokens (chapitre 4) : le contexte reste léger tant que la compétence n'est pas nécessaire"
+        "Avantage tokens (chapitre 4) : contexte léger tant que la compétence n'est pas utilisée"
       ],
       "notes": "Modularité is the point : plutôt qu'un seul fichier d'instructions géant qui grossit indéfiniment (et coûte cher en tokens à chaque appel, voir chapitre suivant), les Skills permettent de ranger des instructions spécialisées à côté, chargées seulement quand la tâche le justifie. Faire le parallèle avec une bibliothèque logicielle : on importe un module quand on en à besoin, on ne charge pas tout le code disponible au démarrage.",
       "keypoints": [
@@ -1074,17 +1125,151 @@
       "notes": "Chapitre technique mais court : le concept central (problème M fois N résolu par un standard) se comprend en une slide, le reste est de l'illustration et de la sécurité."
     },
     {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_h8gwjke",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Ce que MCP change concrètement"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_8lzntsx",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_3awfvll",
+          "type": "card",
+          "x": 140,
+          "y": 160,
+          "w": 460,
+          "h": 430,
+          "z": 1,
+          "data": {
+            "title": "Sans MCP",
+            "items": [
+              "Copier-coller le message d'erreur, le fichier concerné, parfois plusieurs fichiers liés",
+              "L'agent ne voit que ce que vous avez pensé à lui donner, rien de plus",
+              "Pour un état réel (PR, ligne en base) : aller le chercher soi-même et le coller"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_5j2jyrq",
+          "type": "card",
+          "x": 680,
+          "y": 160,
+          "w": 460,
+          "h": 430,
+          "z": 1,
+          "data": {
+            "title": "Avec MCP",
+            "items": [
+              "Lit directement le fichier, remonte l'historique git, explore les fichiers liés",
+              "Consulte une vraie source (base de données, API, GitHub) et peut agir dessus",
+              "Il travaille sur l'état réel du projet, pas sur un extrait figé"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_jues36z",
+          "type": "callout-box",
+          "x": 140,
+          "y": 600,
+          "w": 1000,
+          "h": 100,
+          "z": 1,
+          "data": {
+            "label": "À retenir",
+            "text": "MCP : des yeux et des mains sur le monde réel, pas plus d'intelligence."
+          }
+        }
+      ],
+      "notes": "Cette comparaison est le point de départ du chapitre : avant de voir COMMENT MCP fonctionne (mécanisme M x N vu à la slide suivante), il faut que la classe comprenne POURQUOI ça compte concrètement. Faire réagir la salle : qui a déjà copié-collé un message d'erreur entier, ou un fichier complet, dans une conversation avec une IA ? C'est exactement le geste que MCP rend inutile pour les sources connectées. Insister sur la formule \"yeux et mains\" : elle est reprise volontairement simple pour rester mémorable, et elle prépare directement la slide suivante (le problème M x N que ce nouvel accès généralisé pose s'il fallait l'implémenter à la main pour chaque paire outil/source).",
+      "keypoints": [
+        "Sans MCP, un agent ne voit que ce qu'on lui colle manuellement dans la conversation - avec MCP, il peut lire, consulter et agir directement sur les sources réelles (fichiers, bases de données, GitHub...).",
+        "MCP ne rend pas le modèle plus intelligent : il lui donne un accès direct au monde réel plutôt que de le limiter à ce qu'on pense à lui fournir."
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Ce qu'un agent équipé de MCP peut faire",
+      "items": [
+        {
+          "text": "Développement :",
+          "sub": [
+            "Lire le code ET l'historique git pour comprendre un bug, sans rassembler le contexte à la main",
+            "Consulter les issues et PR GitHub liées avant de proposer une solution"
+          ]
+        },
+        {
+          "text": "Données et suivi :",
+          "sub": [
+            "Interroger une base/API en lecture : des chiffres réels, pas des estimations",
+            "État des lieux (tests, déploiements) en consultant plusieurs sources d'un coup"
+          ]
+        },
+        {
+          "text": "Communication et organisation :",
+          "sub": [
+            "Créer un ticket, envoyer un message, planifier une tâche - directement, sans repasser par vous"
+          ]
+        },
+        "Point commun : l'agent AGIT sur le monde réel, pas seulement sur du texte fourni"
+      ],
+      "notes": "Ces exemples sont volontairement variés (code, données, communication) pour montrer que MCP n'est pas qu'un outil de développeur·se : le même principe s'applique à n'importe quel outil disposant d'un serveur MCP. Insister sur la nuance \"en lecture\" pour les bases de données et API : un agent qui interroge des données réelles ne devrait pas, par défaut, avoir le droit d'écrire ou de modifier sans validation humaine explicite - lien direct avec le chapitre 2 (niveaux d'autonomie) et la slide sécurité qui suit dans ce chapitre (principe du moindre privilège).",
+      "keypoints": [
+        "Un agent équipé de serveurs MCP peut agir concrètement sur plusieurs domaines : code et historique git, données réelles (bases de données, API), communication et organisation (tickets, messages).",
+        "Le principe du moindre privilège s'applique dès la conception : accès en LECTURE par défaut, l'écriture/action n'étant autorisée que quand c'est réellement nécessaire et supervisé."
+      ]
+    },
+    {
       "type": "bullets",
       "title": "Le problème que MCP résout",
       "items": [
-        "Un agent est utile seulement s'il peut agir sur de vraies données et de vrais outils (fichiers, bases de données, API, navigateur...)",
+        "Un agent est utile s'il peut agir sur de vraies données et outils (fichiers, bases, API, navigateur...)",
         {
-          "text": "Sans standard, il faut intégrer chaque outil IA a chaque source de données séparément :",
+          "text": "Sans standard : chaque outil IA doit s'intégrer séparément à chaque source",
           "sub": [
             "M outils IA x N sources de données = M x N intégrations sur-mesure à écrire et maintenir"
           ]
         },
-        "MCP normalise l'interface entre les deux : chaque source de données expose UN serveur MCP, chaque outil IA parle le protocole MCP -> <b>M + N</b> intégrations au lieu de M x N"
+        "MCP normalise l'interface : chaque source expose UN serveur, chaque outil parle MCP -> <b>M + N</b> au lieu de M x N"
       ],
       "notes": "Faire le parallèle avec un problème déjà bien connu en informatique : c'est exactement le même raisonnement qui a motivé la standardisation de ODBC/JDBC pour les bases de données, ou de USB pour les périphériques - un connecteur standard plutôt qu'une intégration sur mesure pour chaque paire. MCP a été créé par Anthropic (novembre 2024), puis adopté par OpenAI, Google DeepMind et Microsoft en un peu plus d'un an.",
       "keypoints": [
@@ -1155,13 +1340,13 @@
         {
           "text": "<b>Tools</b> (outils)",
           "sub": [
-            "Des actions que le modèle peut déclencher : lire un fichier, exécuter une requête, envoyer un message..."
+            "Actions déclenchables : lire un fichier, exécuter une requête, envoyer un message..."
           ]
         },
         {
           "text": "<b>Resources</b> (ressources)",
           "sub": [
-            "Des données que le modèle peut consulter : le contenu d'un fichier, le résultat d'une requête..."
+            "Données consultables : contenu d'un fichier, résultat d'une requête..."
           ]
         },
         {
@@ -1170,7 +1355,7 @@
             "Des gabarits de prompts prédéfinis et paramétrables, fournis par le serveur"
           ]
         },
-        "Exemples de serveurs MCP courants : système de fichiers, GitHub, base de données SQL, navigateur (Playwright), Slack..."
+        "Serveurs courants : fichiers, GitHub, base SQL, navigateur (Playwright), Slack..."
       ],
       "notes": "Ne pas s'attarder sur les 3 primitives dans le détail technique (hors scope de ce cours) - retenir surtout 'Tools' qui est de loin la primitive la plus utilisée en pratique (un outil = une action que l'agent peut déclencher).",
       "keypoints": [
@@ -1249,7 +1434,7 @@
       "type": "bullets",
       "title": "Adoption et gouvernance (2026)",
       "items": [
-        "MCP donné par Anthropic à l'Agentic AI Foundation (sous la Linux Foundation), annoncé le 9 décembre 2025",
+        "MCP donné par Anthropic à l'Agentic AI Foundation (Linux Foundation), 9 décembre 2025",
         {
           "text": "Co-fondateurs et membres de soutien :",
           "sub": [
@@ -1257,12 +1442,135 @@
             "AWS, Google, Microsoft, Cloudflare, GitHub, Bloomberg (membres de soutien)"
           ]
         },
-        "Adoption très rapide : des centaines de millions de téléchargements du kit de développement en un peu plus d'un an"
+        "Adoption rapide : centaines de millions de téléchargements du kit en un peu plus d'un an"
       ],
       "notes": "Chiffres et faits de gouvernance issus d'une recherche web au moment de la préparation du cours (septembre 2026) - source : communiqué officiel de la Linux Foundation (9 décembre 2025, linuxfoundation.org) annonçant la formation de l'Agentic AI Foundation, confirmé par le blog officiel MCP (blog.modelcontextprotocol.io) et par OpenAI (openai.com). Le point pédagogique le plus important au-delà des chiffres : le fait qu'Anthropic ait donné la gouvernance du protocole à une fondation neutre (plutôt que de le garder propriétaire) est ce qui a permis une adoption aussi large et rapide par des concurrents directs (OpenAI, Google) - un choix stratégique délibérément ouvert.",
       "keypoints": [
         "MCP est passé d'un projet interne Anthropic (nov. 2024) à un standard gouverné par la Linux Foundation (fin 2025), avec OpenAI, Google et Microsoft comme contributeurs.",
         "Le choix de gouvernance ouverte (fondation neutre plutôt que standard propriétaire) explique en grande partie la vitesse d'adoption par des concurrents directs."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_9rq6k2l",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Se connecter à un serveur MCP : local ou distant"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_nxonosk",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_4smafns",
+          "type": "table",
+          "x": 100,
+          "y": 160,
+          "w": 1080,
+          "h": 300,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "",
+                "Local (stdio)",
+                "Distant (hébergé)"
+              ],
+              [
+                "Où tourne le serveur",
+                "Sur la machine, lancé comme process (ex. via npx)",
+                "Chez le fournisseur (SaaS), accessible en HTTP"
+              ],
+              [
+                "Authentification",
+                "Souvent une clé API à stocker localement",
+                "OAuth : autorisation via le fournisseur, révocable à tout moment"
+              ],
+              [
+                "Installation",
+                "Nécessite Node.js/Python et la commande du serveur",
+                "Aucune installation, juste une autorisation à accorder"
+              ],
+              [
+                "Exemples 2026",
+                "Serveur filesystem, scripts internes à l'équipe",
+                "GitHub, Linear, Notion, Stripe, Sentry, Figma (endpoints officiels hébergés)"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "headerBg": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_6cujf4g",
+          "type": "callout-box",
+          "x": 100,
+          "y": 480,
+          "w": 1080,
+          "h": 130,
+          "z": 1,
+          "data": {
+            "label": "À retenir",
+            "text": "L'exemple précédent est du LOCAL. En 2026, les grands éditeurs SaaS publient de plus en plus de serveurs DISTANTS avec OAuth - plus simple, et révocable depuis le fournisseur."
+          }
+        }
+      ],
+      "notes": "En 2024-2025, le mode local (stdio) était la norme quasi unique. En 2026, les éditeurs SaaS basculent massivement vers des serveurs MCP hébergés avec OAuth : Notion propose un flux d'autorisation \"en un clic\" qui accorde à l'intégration MCP les mêmes permissions que l'utilisateur a normalement dans l'application ; Stripe expose ses fonctions de paiement (clients, charges, abonnements, remboursements) via un serveur hébergé officiel ; Sentry fait tourner le sien sur Cloudflare Workers, authentifié via le compte Sentry existant. L'avantage sécurité de OAuth par rapport à une clé API gérée localement : pas de secret longue durée à protéger sur la machine, et la révocation est immédiate depuis le fournisseur si besoin. Sources : developers.notion.com, documentation Stripe (@stripe/agent-toolkit), blog Sentry - recherche web au moment de la préparation du cours (septembre 2026).",
+      "keypoints": [
+        "Un serveur MCP peut tourner en LOCAL (stdio, process lancé sur la machine, ex. npx, vu à la slide précédente) ou à DISTANCE (hébergé chez le fournisseur, accessible en HTTP).",
+        "En 2026, le mode distant avec authentification OAuth devient la norme chez les grands éditeurs SaaS (GitHub, Linear, Notion, Stripe, Sentry...) : plus simple à installer, et l'accès est révocable depuis le tableau de bord du fournisseur - contrairement à une clé API stockée en local."
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Où trouver des serveurs MCP fiables",
+      "items": [
+        "Privilégier les registres officiels ou les endpoints publiés par l'éditeur, pas un script trouvé au hasard",
+        {
+          "text": "Quelques catégories courantes en 2026 :",
+          "sub": [
+            "Développement : GitHub, GitLab, système de fichiers",
+            "Design et gestion de projet : Figma, Linear, Notion",
+            "Paiement : Stripe",
+            "Observabilité : Sentry",
+            "Navigateur : Playwright"
+          ]
+        },
+        "Même \"officiel\" : appliquer le moindre privilège - accès limité au strict nécessaire"
+      ],
+      "notes": "Ce panorama n'est pas exhaustif - l'écosystème MCP compte déjà plusieurs centaines de serveurs publics en 2026. Le message pédagogique qui survivra à la liste précise : privilégier une source fiable et identifiée plutôt qu'un script MCP téléchargé sans vérification, exactement le même réflexe que pour une dépendance logicielle classique (lien direct avec le slopsquatting vu au chapitre 6 - un attaquant peut tout aussi bien publier un faux serveur MCP malveillant qu'un faux paquet npm).",
+      "keypoints": [
+        "L'écosystème MCP couvre déjà de nombreuses catégories d'outils en 2026 (dev, design/gestion de projet, paiement, observabilité, navigateur...) - privilégier les serveurs publiés officiellement par l'éditeur plutôt qu'une source anonyme.",
+        "Même un serveur MCP réputé fiable doit être installé avec le principe du moindre privilège (rappel de la slide précédente) - la confiance dans l'éditeur ne dispense pas de limiter les accès accordés."
       ]
     },
     {
@@ -1313,7 +1621,7 @@
           "z": 1,
           "data": {
             "label": "Risque d'injection de prompt via un outil",
-            "text": "Un serveur MCP renvoie du CONTENU au modèle (résultat d'une recherche, contenu d'un fichier, réponse d'une API...). Si ce contenu est mal maîtrise (page web arbitraire, fichier partage par un tiers), il peut contenir des instructions cachées qui tentent de détourner le comportement de l'agent - une forme d'injection de prompt via les données plutôt que via l'utilisateur.<br><br><b>Principe de précaution :</b> n'installer que des serveurs MCP dont la source est fiable, et appliquer le principe du moindre privilège (un serveur filesystem ne devrait avoir accès qu'au dossier nécessaire, pas à tout le disque).",
+            "text": "Un serveur MCP renvoie du CONTENU au modèle (fichier, page web, réponse API...) - du contenu non maîtrisé peut cacher des instructions détournant l'agent.<br><br><b>Principe de précaution :</b> source fiable uniquement, et moindre privilège (accès limité au strict nécessaire).",
             "labelTone": "warning"
           }
         }
@@ -1373,7 +1681,7 @@
       "type": "bullets",
       "title": "Fenêtre de contexte et coût",
       "items": [
-        "La <b>fenêtre de contexte</b> est la quantité totale de tokens qu'un modèle peut \"voir\" en même temps (instructions + historique + documents fournis + réponse à venir)",
+        "La <b>fenêtre de contexte</b> : quantité totale de tokens visibles en même temps (instructions + historique + documents + réponse)",
         {
           "text": "Le coût d'une requête dépend de deux compteurs distincts :",
           "sub": [
@@ -1381,7 +1689,7 @@
             "Tokens de <b>sortie</b> (output) : ce que le modèle génère en réponse"
           ]
         },
-        "Les tokens de sortie coûtent en général nettement plus cher que les tokens d'entrée (souvent 3 à 5 fois plus)"
+        "Tokens de sortie : souvent 3 à 5 fois plus chers que l'entrée"
       ],
       "notes": "Point pratique immédiat à faire réaliser : demander une réponse courte et ciblée n'est pas qu'une question de confort de lecture, c'est aussi une décision économique - les tokens de sortie sont les plus chers. Une question mal cadrée qui produit une réponse 3 fois trop longue coûte réellement plus cher, pas juste \"plus de temps à lire\".",
       "keypoints": [
@@ -1473,7 +1781,7 @@
           "h": 100,
           "z": 1,
           "data": {
-            "html": "Rentable dès la <b>2e lecture</b> d'un même préfixe. Utile pour : instructions système longues, gros documents de référence réutilisés, historique d'une conversation longue."
+            "html": "Rentable dès la <b>2e lecture</b> d'un même préfixe : instructions système, documents de référence, historique de conversation longue."
           },
           "style": {
             "fontSize": 19,
@@ -1496,19 +1804,19 @@
         {
           "text": "Être concis et précis dans les demandes",
           "sub": [
-            "Une instruction claire évite les allers-retours de clarification, chacun coûtant des tokens supplémentaires"
+            "Une instruction claire évite les allers-retours de clarification (chacun coûte des tokens)"
           ]
         },
         {
           "text": "Éviter de recoller un gros contenu déjà fourni",
           "sub": [
-            "Préférer une référence de fichier (\"relis le fichier X\") à un copier-coller intégral quand l'outil le permet"
+            "Référence de fichier (\"relis X\") plutôt que copier-coller intégral, quand possible"
           ]
         },
         {
           "text": "Résumer/compacter une conversation longue",
           "sub": [
-            "Beaucoup d'outils agentiques le proposent automatiquement (ex. /compact) : le contexte accumulé est condensé en un résumé plus court"
+            "Beaucoup d'outils le proposent automatiquement (ex. /compact) : contexte condensé en résumé"
           ]
         },
         {
@@ -1518,13 +1826,238 @@
             "Un grand modèle pour une tâche difficile qui exige du raisonnement profond"
           ]
         },
-        "Limiter les allers-retours d'outils inutiles (ne pas relire un fichier déjà lu dans la même session sans raison)"
+        "Limiter les relectures d'outils inutiles (fichier déjà lu dans la session)",
+        "Suivre sa consommation réelle (tableaux de bord, alertes de budget) plutôt que deviner"
       ],
-      "notes": "Ces 5 conseils sont directement actionnables dès la prochaine session de travail - insister pour que la classe les retienne comme des réflexes plutôt que comme de la théorie. Le choix du modèle dimensionné à la tâche est souvent le levier le plus puissant en pratique : utiliser systématiquement le modèle le plus cher/puissant \"pour être sûr\" est un réflexe coûteux et souvent inutile pour des tâches simples.",
+      "notes": "Ces 6 conseils sont directement actionnables dès la prochaine session de travail - insister pour que la classe les retienne comme des réflexes plutôt que comme de la théorie. Le choix du modèle dimensionné à la tâche est souvent le levier le plus puissant en pratique : utiliser systématiquement le modèle le plus cher/puissant \"pour être sûr\" est un réflexe coûteux et souvent inutile pour des tâches simples.",
       "keypoints": [
-        "5 réflexes concrets : être concis, référencer plutôt que recoller, compacter les longues conversations, dimensionner le modèle à la tâche, éviter les relectures d'outils redondantes.",
+        "6 réflexes concrets : être concis, référencer plutôt que recoller, compacter les longues conversations, dimensionner le modèle à la tâche, éviter les relectures d'outils redondantes, suivre sa consommation réelle.",
         "Utiliser systématiquement le modèle le plus puissant \"pour être sûr\" est un réflexe coûteux : la plupart des tâches simples et répétitives n'en ont pas besoin."
       ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_ybyk9zz",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Quel modèle pour quelle tâche ?"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_ha2s50l",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_roc4d50",
+          "type": "table",
+          "x": 100,
+          "y": 160,
+          "w": 1080,
+          "h": 480,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Type de tâche",
+                "Modèle recommandé"
+              ],
+              [
+                "Tâche simple, répétitive, à fort volume (classification, extraction, reformulation)",
+                "Modèle rapide et économique (gamme d'entrée, ex. \"Haiku\")"
+              ],
+              [
+                "Tâche quotidienne de complexité moyenne (code courant, rédaction, résumé)",
+                "Modèle intermédiaire, bon compromis coût/capacité (ex. \"Sonnet\")"
+              ],
+              [
+                "Tâche complexe ou critique (architecture, sécurité, raisonnement profond)",
+                "Modèle le plus capable disponible (ex. \"Opus\"), même si plus lent et plus cher"
+              ],
+              [
+                "Un modèle plus faible échoue plusieurs fois de suite sur la même tâche",
+                "Monter en gamme plutôt que reformuler indéfiniment le même prompt"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "headerBg": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "Ce découpage en 3 familles (rapide / intermédiaire / le plus capable) se retrouve chez tous les grands fournisseurs, pas seulement Anthropic - le nom des gammes change, le principe reste identique. Insister sur le 4e cas, très fréquent en pratique : un réflexe coûteux consiste à essayer dix formulations différentes du même prompt sur un modèle trop faible pour la tâche, alors que changer de modèle règle souvent le problème en un seul essai. Lien direct avec le chapitre 9 (lire un benchmark) : le \"meilleur\" modèle dans l'absolu n'existe pas, seulement le modèle le mieux adapté À CETTE tâche précise.",
+      "keypoints": [
+        "3 familles de modèles chez la plupart des fournisseurs : rapide/économique, intermédiaire, le plus capable - le choix dépend de la tâche, pas d'une hiérarchie absolue.",
+        "Réflexe à corriger : si un modèle \"faible\" échoue plusieurs fois sur une tâche, changer de modèle est souvent plus efficace que reformuler indéfiniment le même prompt dessus."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_z0w7l57",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Combien coûte un token, en ordre de grandeur ?"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_vccmu36",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_6hunm2i",
+          "type": "diagramme",
+          "x": 140,
+          "y": 160,
+          "w": 700,
+          "h": 340,
+          "z": 1,
+          "data": {
+            "chartType": "bar",
+            "title": "Prix indicatif par million de tokens (USD, sept. 2026)",
+            "rows": [
+              [
+                "",
+                "Entrée",
+                "Sortie"
+              ],
+              [
+                "Modèle rapide",
+                1,
+                5
+              ],
+              [
+                "Modèle intermédiaire",
+                3,
+                15
+              ],
+              [
+                "Le plus capable",
+                5,
+                25
+              ]
+            ]
+          }
+        },
+        {
+          "id": "el_d7dxymh",
+          "type": "callout-box",
+          "x": 870,
+          "y": 160,
+          "w": 310,
+          "h": 340,
+          "z": 1,
+          "data": {
+            "label": "À retenir",
+            "text": "Facteur ~5 entre le modèle le plus rapide et le plus capable. Sortie : 3 à 5x le prix de l'entrée. Batch (tâches non urgentes) : ~50% de remise en plus."
+          }
+        }
+      ],
+      "notes": "Chiffres à titre d'ordre de grandeur, arrondis et anonymisés par gamme plutôt que par nom de modèle précis - sourcés sur les grilles tarifaires publiques d'Anthropic au moment de la préparation du cours (septembre 2026) ; les prix absolus changent souvent, ce tableau sera daté. Le message qui survit à la date précise : le RAPPORT de prix entre les gammes (environ 1 à 5) et entre entrée/sortie (3 à 5x) reste une bonne intuition même quand les chiffres exacts auront changé. Le traitement par lots (batch) est un levier peu connu des étudiant·e·s : pour une tâche qui n'a pas besoin d'une réponse immédiate (traitement de fond, gros volume), la remise d'environ 50% s'additionne à celle du cache de prompt déjà vu.",
+      "keypoints": [
+        "Ordre de grandeur à retenir (sept. 2026, arrondi) : environ un facteur 5 entre le modèle le plus rapide et le plus capable d'une même famille, et un facteur 3 à 5 entre le prix de l'entrée et de la sortie, quel que soit le modèle.",
+        "Le traitement par lots (batch), pour les tâches non urgentes, ajoute une remise d'environ 50% - un levier simple, cumulable avec le cache de prompt."
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Changer de modèle en cours de route",
+      "items": [
+        "Une même tâche traverse souvent plusieurs phases, pas toutes au même niveau",
+        {
+          "text": "Exemple sur un refactor de grande ampleur :",
+          "sub": [
+            "Cadrage et architecture -> modèle le plus capable (erreurs coûteuses à corriger plus tard)",
+            "Exécution répétitive (boilerplate, renommages, tests) -> modèle rapide, suffisant",
+            "Relecture finale et détection de bugs subtils -> repasser sur un modèle capable"
+          ]
+        },
+        "Beaucoup d'outils permettent de changer de modèle en cours de session",
+        "\"Modèle dimensionné à la PHASE\" prolonge \"modèle dimensionné à la TÂCHE\" : les phases n'ont pas toutes le même besoin"
+      ],
+      "notes": "Idée à faire atterrir concrètement : sur un refactor de grande ampleur, il est courant de commencer une session avec un modèle capable pour poser le plan, puis de laisser un modèle plus rapide dérouler les changements mécaniques une fois le plan validé, puis de repasser sur un modèle capable pour la relecture finale - un mélange de gammes AU SEIN d'une même tâche, pas seulement d'une tâche à l'autre. Lien à faire avec le chapitre 2 (niveaux d'autonomie) : cette approche est cohérente avec le principe de superviser davantage les étapes à fort enjeu (cadrage, relecture) et de laisser plus d'autonomie aux étapes mécaniques.",
+      "keypoints": [
+        "Une même tâche complexe traverse souvent plusieurs phases qui ne demandent pas toutes le même modèle : cadrage (modèle capable), exécution répétitive (modèle rapide), relecture finale (modèle capable à nouveau).",
+        "Beaucoup d'outils agentiques permettent de changer de modèle en cours de session - un réflexe à acquérir plutôt que de rester sur un seul modèle par confort."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_oq1kfe4",
+          "type": "quiz-live",
+          "x": 140,
+          "y": 60,
+          "w": 1000,
+          "h": 600,
+          "z": 1,
+          "data": {
+            "question": "Une équipe utilise son modèle le plus capable (donc plus cher et plus lent) pour TOUTES ses tâches, y compris le renommage mécanique d'une variable dans 200 fichiers. Quel est le bon réflexe ?",
+            "duration": 30,
+            "answer": 1,
+            "options": [
+              "Continuer ainsi : plus le modèle est capable, mieux c'est dans tous les cas",
+              "Basculer sur un modèle rapide et économique pour cette tâche répétitive, et garder le modèle capable pour les décisions à fort enjeu",
+              "Arrêter d'utiliser l'IA pour les tâches répétitives",
+              "Diviser la tâche en 200 sessions séparées avec le même modèle capable"
+            ],
+            "explanation": "Un renommage mécanique et répétitif ne demande pas de raisonnement profond : un modèle rapide et économique suffit largement et coûte beaucoup moins cher. Réserver le modèle le plus capable aux tâches où la profondeur de raisonnement fait une vraie différence (architecture, sécurité, relecture finale) est le réflexe à la fois économique et pratique à acquérir."
+          }
+        }
+      ],
+      "notes": "Quiz de synthèse - laisser le temps de répondre puis débriefer l'explication."
     },
     {
       "type": "canvas",
@@ -1574,7 +2107,7 @@
           "z": 1,
           "data": {
             "myth": "Plus je donne de contexte à l'agent, meilleure est la réponse.",
-            "reality": "Au-delà d'un certain volume, le contexte inutile dilue l'attention du modèle <em>et</em> coûte plus de tokens - la pertinence prime sur la quantité. Un dossier entier collé \"au cas où\" est souvent pire qu'un extrait ciblé."
+            "reality": "Le contexte inutile dilue l'attention <em>et</em> coûte des tokens - la pertinence prime sur la quantité. Un dossier entier \"au cas où\" est souvent pire qu'un extrait ciblé."
           }
         }
       ],
@@ -1689,7 +2222,7 @@
           "h": 460,
           "z": 1,
           "data": {
-            "html": "Extrait authentique du fichier <code>CLAUDE.md</code> utilisé au quotidien pour ce projet (celui qui a servi à générer les decks de toute cette séquence de cours, y compris celui-ci).<br><br>Notez ce qu'il contient : des <b>conventions concrètes et vérifiables</b> (comment nommer un fichier, une classe), pas une description générale du projet."
+            "html": "Extrait authentique du <code>CLAUDE.md</code> utilisé au quotidien pour ce projet.<br><br>Des <b>conventions concrètes et vérifiables</b> (nommage de fichier, de classe), pas une description générale."
           },
           "style": {
             "fontSize": 19,
@@ -1765,7 +2298,7 @@
           "h": 460,
           "z": 1,
           "data": {
-            "html": "Ce même projet va plus loin qu'un unique CLAUDE.md : un dossier <code>docs/ai/</code> entier, avec des fichiers numérotés (<code>00_SYSTEM_MAP.md</code>, <code>01_MODULE_INDEX.md</code>...) pensés spécifiquement pour qu'un agent s'y retrouve vite.<br><br>Ici : un fichier qui contient littéralement des <b>prompts prêts à copier-coller</b> pour les tâches récurrentes."
+            "html": "Ce projet va plus loin : un dossier <code>docs/ai/</code> entier, fichiers numérotés (<code>00_SYSTEM_MAP.md</code>...) pour qu'un agent s'y retrouve vite.<br><br>Ici : des <b>prompts prêts à copier-coller</b> pour les tâches récurrentes."
           },
           "style": {
             "fontSize": 19,
@@ -1785,7 +2318,7 @@
       "type": "bullets",
       "title": "Le standard émergent AGENTS.md",
       "items": [
-        "Lancé conjointement par Google, OpenAI, Factory, Sourcegraph et Cursor : un format ouvert commun, indépendant de l'outil utilisé",
+        "Lancé par Google, OpenAI, Factory, Sourcegraph et Cursor : un format ouvert, indépendant de l'outil",
         {
           "text": "Adoption rapide (chiffres 2026) :",
           "sub": [
@@ -1793,8 +2326,8 @@
             "Plus de 30 outils agentiques compatibles"
           ]
         },
-        "Désormais géré par l'Agentic AI Foundation, sous la Linux Foundation (même structure de gouvernance que MCP, chapitre précédent)",
-        "Principe : \"comme un README, mais pour les agents\" - format Markdown libre, sections habituelles : aperçu du projet, commandes de build/test, conventions de code, sécurité"
+        "Géré par l'Agentic AI Foundation, Linux Foundation (même gouvernance que MCP)",
+        "\"Comme un README, mais pour les agents\" - Markdown libre : aperçu, commandes build/test, conventions, sécurité"
       ],
       "notes": "Ce standard répond à un vrai problème pratique : avant lui, un projet qui voulait supporter plusieurs outils agentiques (Claude Code, Cursor, Copilot...) devait maintenir un fichier différent pour chacun (CLAUDE.md, .cursor/rules, .github/copilot-instructions.md...), avec le risque qu'ils divergent. AGENTS.md propose un fichier UNIQUE que la plupart des outils savent lire - CLAUDE.md reste pertinent pour des instructions spécifiques à Claude Code, mais AGENTS.md peut porter le contenu commun à tous les outils.",
       "keypoints": [
@@ -1892,10 +2425,10 @@
       "type": "bullets",
       "title": "Bonnes pratiques de rédaction",
       "items": [
-        "Être <b>spécifique et concret</b> : \"utilise kebab-case pour les IDs\" plutôt que \"suis les bonnes pratiques\"",
-        "Garder le fichier <b>à jour</b> : un fichier d'instructions obsolète est pire qu'aucun fichier (il induit l'agent en erreur avec confiance)",
-        "Ne pas sur-documenter ce qui est déjà lisible directement dans le code (l'agent peut lire le code lui-même)",
-        "Documenter surtout ce qui n'est PAS évident depuis le code : conventions implicites, pièges connus, commandes de validation"
+        "<b>Spécifique et concret</b> : \"kebab-case pour les IDs\" plutôt que \"suis les bonnes pratiques\"",
+        "<b>À jour</b> : un fichier obsolète est pire qu'aucun fichier (induit l'agent en erreur en confiance)",
+        "Ne pas sur-documenter ce qui est déjà lisible dans le code",
+        "Documenter ce qui n'est PAS évident : conventions implicites, pièges, commandes de validation"
       ],
       "notes": "Ce dernier point rejoint directement une règle déjà posée dans le CLAUDE.md montré plus tôt dans ce cours (\"Code patterns, conventions, architecture... peuvent être dérivés par la lecture du projet actuel\" - à NE PAS mettre en mémoire/instructions). Le bon fichier d'instructions documente la partie invisible : le POURQUOI d'un choix, un piège déjà rencontré, une commande qu'on oublie toujours de lancer - pas ce que l'agent peut découvrir seul en lisant le code.",
       "keypoints": [
@@ -1942,12 +2475,12 @@
       "title": "La loi de l'instrument",
       "items": [
         "Selon Sharlyn Lauby : <i>\"Tous les problèmes sont des clous quand on a un marteau.\"</i>",
-        "Une confiance excessive dans un outil unique pousse à l'utiliser même quand il n'est pas adapté",
+        "Confiance excessive dans un outil : on l'utilise même quand il n'est pas adapté",
         {
           "text": "En pratique avec l'IA :",
           "sub": [
-            "Certaines tâches sont adaptables à un LLM (rédaction, génération de code répétitif, résumé)",
-            "D'autres ne devraient être confiées qu'à l'outil fait pour elles (un calcul exact -> une calculatrice/un programme déterministe, pas un LLM)"
+            "Adaptées à un LLM : rédaction, code répétitif, résumé",
+            "D'autres à l'outil fait pour elles (calcul exact -> calculatrice, pas un LLM)"
           ]
         }
       ],
@@ -1961,9 +2494,9 @@
       "type": "bullets",
       "title": "Le risque de sur-complexification",
       "items": [
-        "Un agent peut produire une solution qui \"marche\" mais est plus complexe que nécessaire (couches d'abstraction inutiles, dépendances superflues)",
-        "Il n'a pas le contexte du projet à long terme ni le jugement sur ce qui sera maintenable dans 6 mois",
-        "Une solution générée doit être évaluée avec les mêmes critères qu'une solution écrite par un·e collègue junior : fonctionne-t-elle, mais aussi est-elle simple et compréhensible ?"
+        "Une solution qui \"marche\" peut être plus complexe que nécessaire (abstractions, dépendances superflues)",
+        "Pas de contexte long terme ni de jugement sur la maintenabilité à 6 mois",
+        "Mêmes critères qu'un·e collègue junior : ça marche, mais est-ce simple et compréhensible ?"
       ],
       "notes": "Point à illustrer avec un exemple vécu si possible : un agent auquel on demande \"trie cette liste\" peut proposer une classe entière avec un pattern de stratégie configurable, alors qu'un simple appel à une fonction de tri native suffisait. Le problème n'est pas que le code soit FAUX, c'est qu'il soit inutilement compliqué à maintenir - un risque d'autant plus insidieux qu'un code qui fonctionne inspire une fausse confiance.",
       "keypoints": [
@@ -1975,9 +2508,9 @@
       "type": "bullets",
       "title": "L'importance de comprendre le code qu'on ne relit pas soi-même",
       "items": [
-        "Accepter un changement généré sans le comprendre transfère la responsabilité de la compréhension... à personne",
-        "En cas de bug en production, quelqu'un devra comprendre et corriger ce code - souvent pas la même personne qui l'a généré",
-        "Comprendre un changement ne veut pas dire l'avoir tapé soi-même : ça veut dire pouvoir l'expliquer et le déboguer"
+        "Accepter sans comprendre transfère la responsabilité... à personne",
+        "En cas de bug, quelqu'un devra comprendre et corriger - souvent pas qui l'a généré",
+        "Comprendre ne veut pas dire avoir tapé soi-même : pouvoir l'expliquer et le déboguer"
       ],
       "notes": "Distinction importante à faire : \"j'ai écrit ce code moi-même\" et \"je comprends ce code\" ne sont PAS la même chose et n'ont jamais été parfaitement équivalents (même avant l'IA, on copiait déjà du code Stack Overflow) - mais l'IA rend beaucoup plus facile d'accumuler du code jamais vraiment compris, à un rythme bien plus rapide qu'avant. Le vrai critère professionnel reste : pourrais-je expliquer ce que fait ce code à un·e collègue, et le déboguer si besoin ?",
       "keypoints": [
@@ -2033,7 +2566,7 @@
           "z": 1,
           "data": {
             "label": "Rappel du terme (vu au chapitre 2)",
-            "text": "\"Vibe coding\" (Andrej Karpathy, début 2025) : accepter le code généré par l'IA sans le questionner, en se fiant uniquement à l'impression que \"ça a l'air de marcher\".<br><br>Le coût caché n'est pas seulement technique (dette, bugs latents) : une consommation de tokens non maîtrisée sur une session longue et peu cadrée peut aussi représenter un coût financier direct significatif, en plus du temps perdu à corriger a posteriori ce qui a été mal cadré au départ.",
+            "text": "\"Vibe coding\" (Karpathy, 2025) : accepter le code sans le questionner, sur la seule impression que \"ça a l'air de marcher\".<br><br>Coût caché au-delà de la dette technique : une session longue et mal cadrée consomme aussi beaucoup plus de tokens.",
             "labelTone": "warning"
           }
         }
@@ -2091,7 +2624,7 @@
           "z": 1,
           "data": {
             "label": "Quand l'IA invente un nom de paquet qui n'existe pas (encore)",
-            "text": "Un LLM peut halluciner le nom d'une dépendance qui n'existe pas - un phénomène documenté chez tous les modèles (environ <b>1 génération sur 5</b> contient au moins un nom de paquet halluciné, selon une étude citée par la Cloud Security Alliance).<br><br>Le risque : un attaquant publie un paquet malveillant sous ce nom halluciné (souvent réutilisé de façon récurrente par les modèles) - un développeur ou un agent qui l'installe sans vérifier exécute du code attaquant. Le terme <b>\"slopsquatting\"</b> (jeu de mots sur \"typosquatting\") a été proposé par le chercheur en sécurité Seth Larson.",
+            "text": "Un LLM peut halluciner un nom de dépendance inexistant (environ <b>1 génération sur 5</b>, selon la Cloud Security Alliance).<br><br>Le risque : un attaquant publie un paquet malveillant sous ce nom - qui l'installe sans vérifier exécute du code attaquant. Terme : <b>\"slopsquatting\"</b> (Seth Larson).",
             "labelTone": "danger"
           }
         }
@@ -2201,7 +2734,7 @@
       "type": "bullets",
       "title": "Fournir du contexte de façon délibérée",
       "items": [
-        "Le contexte fourni doit être <b>pertinent</b>, pas seulement abondant (rappel du chapitre économie des tokens)",
+        "Le contexte doit être <b>pertinent</b>, pas seulement abondant",
         {
           "text": "Un bon contexte de départ inclut typiquement :",
           "sub": [
@@ -2223,7 +2756,7 @@
       "items": [
         "Une première réponse imparfaite est normale, pas un échec de l'outil",
         "Préciser ce qui ne convient pas plutôt que reformuler toute la demande depuis zéro",
-        "Une conversation qui affine progressivement est souvent plus efficace qu'un unique prompt \"parfait\" écrit à l'avance"
+        "Affiner progressivement bat souvent le prompt \"parfait\" écrit à l'avance"
       ],
       "notes": "Nuance importante avec le chapitre économie des tokens : itérer n'est pas gratuit non plus (chaque tour consomme des tokens) - l'équilibre à trouver est entre une première demande raisonnablement bien cadrée ET une itération assumée plutôt que redoutée quand le résultat n'est pas parfait du premier coup.",
       "keypoints": [
@@ -2235,13 +2768,13 @@
       "title": "Toujours relire et tester - jamais de confiance aveugle",
       "items": [
         "Un résultat qui \"a l'air\" correct n'est pas la même chose qu'un résultat vérifié",
-        "Faire tourner les tests existants (ou en écrire si absents) reste la responsabilité de la personne qui committe, pas de l'agent",
+        "Faire tourner les tests (ou en écrire) reste la responsabilité de qui committe, pas de l'agent",
         {
           "text": "Le contrôle de version comme <b>filet de sécurité</b> :",
           "sub": [
             "Committer avant de laisser un agent modifier du code existant",
             "Relire le diff produit avant de committer le résultat",
-            "Un rollback (`git checkout`, `git reset`) reste toujours possible si le point de départ est propre"
+            "Rollback (`git checkout`/`reset`) toujours possible si le départ est propre"
           ]
         }
       ],
@@ -2299,7 +2832,7 @@
           "z": 1,
           "data": {
             "myth": "L'IA \"comprend\" le code qu'elle génère, comme le ferait un développeur senior.",
-            "reality": "L'IA prédit un texte statistiquement plausible (rappel du chapitre 2) - elle peut produire du code syntaxiquement correct et fonctionnellement erroné avec la même assurance apparente. La \"compréhension\" reste un raccourci de langage commode, pas une réalité cognitive comparable à celle d'un humain."
+            "reality": "L'IA prédit un texte statistiquement plausible - du code syntaxiquement correct peut être fonctionnellement erroné, avec la même assurance apparente. \"Comprendre\" reste un raccourci de langage, pas une réalité cognitive humaine."
           }
         }
       ],
@@ -2356,7 +2889,7 @@
           "z": 1,
           "data": {
             "myth": "L'IA remplace la relecture de code (code review) entre humains.",
-            "reality": "Une revue de code humaine ne vérifie pas seulement \"est-ce que ça marche\" : elle transmet une connaissance partagée de l'équipe, questionne des choix d'architecture, et engage une responsabilité collective. Une IA peut AIDER la revue (repérer des patterns suspects, proposer des tests manquants), elle ne la remplace pas."
+            "reality": "Une revue humaine ne vérifie pas que \"ça marche\" : elle transmet une connaissance d'équipe, questionne l'architecture, engage une responsabilité collective. Une IA peut AIDER, pas remplacer."
           }
         }
       ],
@@ -2451,7 +2984,7 @@
               "N'est plus \"basé sur GPT-3\" : sélecteur de modèle multi-fournisseurs",
               "Modèles disponibles : familles GPT, Claude (Sonnet/Opus) et Gemini selon l'abonnement",
               "Mode agent/workspace intégré (plus seulement de la complétion)",
-              "Reste l'outil au plus large parc installé (~42% du marché payant, JetBrains AI Pulse Survey 2026)"
+              "Le plus large parc installé (~42% du marché payant, 2026)"
             ]
           },
           "style": {
@@ -2494,9 +3027,9 @@
       "title": "Génération d'interfaces : v0 (Vercel)",
       "items": [
         "Rebaptisé <b>v0.app</b> en janvier 2026 (anciennement v0.dev)",
-        "N'est plus un simple générateur de composants UI : devenu un constructeur d'applications complet (base de données, API, authentification, déploiement)",
+        "N'est plus un générateur de composants UI : un constructeur d'applications complet (base, API, auth, déploiement)",
         "Plus de 6 millions de développeur·se·s sur la plateforme (mars 2026)",
-        "Détail amusant : le moteur de génération de code est <b>Claude</b> (Anthropic) - un outil concurrent d'Anthropic sur le terrain \"produit\" utilise pourtant son modèle en coulisses"
+        "Détail amusant : le moteur de génération est <b>Claude</b> (Anthropic) - un concurrent \"produit\" utilise son modèle en coulisses"
       ],
       "notes": "Le point amusant (Claude qui propulse v0) est un bon rappel pédagogique : la couche \"modèle\" et la couche \"produit/outil\" sont de plus en plus dissociées dans l'écosystème - un même modèle peut se retrouver derrière plusieurs produits concurrents entre eux. Exemple de prompt à faire tester en direct si le temps le permet : \"Generate a landing page for [projet de la classe], material design, formulaire d'inscription par email.\"",
       "keypoints": [
@@ -2511,7 +3044,7 @@
         {
           "text": "Génération conversationnelle (Claude, ChatGPT et équivalents) :",
           "sub": [
-            "Décrire une application dans le chat, obtenir un prototype fonctionnel immédiatement visible et modifiable",
+            "Décrire une appli dans le chat, obtenir un prototype visible et modifiable immédiatement",
             "Utile pour prototyper vite une idée avant de l'implémenter \"pour de vrai\""
           ]
         },
@@ -2716,8 +3249,8 @@
           "data": {
             "title": "Ce qu'il mesure",
             "items": [
-              "Résolution de VRAIES issues GitHub (bugs réels signalés sur des projets open source réels), pas des exercices artificiels",
-              "Le modèle doit produire un patch qui fait passer les tests de non-régression du projet"
+              "Résolution de VRAIES issues GitHub (bugs réels, projets open source réels), pas d'exercices artificiels",
+              "Le modèle doit produire un patch qui passe les tests de non-régression"
             ]
           },
           "style": {
@@ -2757,7 +3290,7 @@
           "z": 1,
           "data": {
             "label": "Limite à connaître",
-            "text": "Un benchmark proche de la saturation (tous les meilleurs modèles proches à quelques points près) perd son pouvoir discriminant : au-delà d'un certain niveau, il ne permet plus de distinguer clairement les modèles entre eux sur cette capacité précise."
+            "text": "Un benchmark proche de la saturation perd son pouvoir discriminant : il ne distingue plus clairement les modèles entre eux."
           }
         }
       ],
@@ -2816,8 +3349,8 @@
           "data": {
             "title": "Ce qu'il mesure",
             "items": [
-              "Capacité d'abstraction et de généralisation sur des puzzles visuels inédits, conçus pour résister à la mémorisation/au bourrage",
-              "Chaque tâche est nouvelle : impossible de la \"connaître\" par cœur depuis l'entraînement"
+              "Abstraction et généralisation sur des puzzles visuels inédits, conçus contre la mémorisation",
+              "Chaque tâche est nouvelle - impossible à \"connaître\" par cœur"
             ]
           },
           "style": {
@@ -2863,7 +3396,7 @@
           "z": 1,
           "data": {
             "label": "Ce que ça change",
-            "text": "Contrairement à SWE-bench (proche de la saturation), ARC-AGI-2 montre encore un écart net entre les meilleurs modèles. Le nouveau test a aussi fait chuter nettement les scores par rapport à ARC-AGI-1 : signe qu'il est bien plus difficile."
+            "text": "Contrairement à SWE-bench, ARC-AGI-2 montre encore un écart net entre les meilleurs modèles - et un net recul des scores vs ARC-AGI-1."
           }
         }
       ],
@@ -2922,7 +3455,7 @@
           "data": {
             "title": "Ce qu'il mesure",
             "items": [
-              "Questions scientifiques (biologie, physique, chimie) de niveau doctorat, écrites pour être difficiles même pour des non-spécialistes du domaine précis avec un accès internet"
+              "Questions scientifiques (biologie, physique, chimie) de niveau doctorat, difficiles même avec accès internet"
             ]
           },
           "style": {
@@ -2968,7 +3501,7 @@
           "z": 1,
           "data": {
             "label": "Conséquence méthodologique",
-            "text": "Un benchmark saturé devient un simple test \"passe / ne passe pas\" plutôt qu'un vrai classement. Les chercheurs se tournent vers des évaluations plus récentes et difficiles (ex. SuperGPQA, HLE) pour continuer à distinguer les modèles de pointe."
+            "text": "Un benchmark saturé devient un simple \"passe / ne passe pas\". Les chercheurs se tournent vers des évaluations plus dures (SuperGPQA, HLE)."
           }
         }
       ],
@@ -3027,7 +3560,7 @@
           "data": {
             "title": "Ce qu'il mesure",
             "items": [
-              "Pas un score de réussite classique : la DURÉE d'une tâche (mesurée en temps qu'un·e professionnel·le humain·e mettrait à la réaliser) qu'un agent peut mener à bien de façon autonome, avec un taux de succès donné (souvent 50%)"
+              "Pas un score classique : la DURÉE d'une tâche qu'un agent mène de façon autonome, à un taux de succès donné (souvent 50%)"
             ]
           },
           "style": {
@@ -3085,7 +3618,7 @@
           "z": 1,
           "data": {
             "label": "Attention, courbe illustrative",
-            "text": "Seuls le point \"aujourd'hui\" (~16h, à la limite de fiabilité du test) et le taux de doublement (~4 mois) sont des chiffres sourcés (METR, metr.org). Les points intermédiaires reconstruisent mathématiquement ce taux, ce ne sont pas des mesures indépendantes - à dire à la classe.",
+            "text": "Seuls \"aujourd'hui\" (~16h) et le taux de doublement (~4 mois) sont sourcés (METR). Les points intermédiaires reconstruisent mathématiquement ce taux.",
             "labelTone": "info"
           }
         }
@@ -3175,7 +3708,7 @@
           "h": 70,
           "z": 1,
           "data": {
-            "html": "METR n'apparaît pas ici : il mesure une <b>durée</b> (heures), pas un pourcentage - les deux ne se comparent pas sur le même axe (voir slide précédente)."
+            "html": "METR n'apparaît pas ici : il mesure une <b>durée</b> (heures), pas un pourcentage."
           },
           "style": {
             "fontSize": 18,
@@ -3195,16 +3728,16 @@
       "type": "bullets",
       "title": "Ce qu'il faut retenir au-delà des chiffres",
       "items": [
-        "Les chiffres précis de ce chapitre seront <b>datés</b> d'ici quelques mois - c'est attendu, pas un défaut du cours",
+        "Les chiffres de ce chapitre seront <b>datés</b> d'ici quelques mois - c'est attendu",
         {
           "text": "Ce qui reste vrai plus longtemps :",
           "sub": [
             "Un benchmark saturé perd son pouvoir de classement (SWE-bench, GPQA Diamond)",
-            "Un benchmark conçu pour résister au bourrage reste discriminant plus longtemps (ARC-AGI-2)",
-            "Mesurer la DURÉE d'autonomie utile (METR) est une façon différente et complémentaire de mesurer le progrès, pas juste un score de plus"
+            "Conçu pour résister au bourrage : reste discriminant plus longtemps (ARC-AGI-2)",
+            "La DURÉE d'autonomie (METR) : une façon différente et complémentaire de mesurer le progrès"
           ]
         },
-        "Toujours vérifier : qui a publié le chiffre, avec quelle méthodologie, et est-il reproductible ?"
+        "Toujours vérifier : qui publie, quelle méthodologie, reproductible ?"
       ],
       "notes": "Conclure ce chapitre en reliant à l'accroche du cours (rythme de sortie des modèles, chapitre 0/titre) : la bonne réaction face à un nouveau chiffre spectaculaire n'est ni l'enthousiasme aveugle ni le rejet systématique, c'est la question 'comment ce chiffre a-t-il été mesuré, et que mesure-t-il vraiment ?'",
       "keypoints": [
@@ -3286,28 +3819,70 @@
         },
         {
           "id": "el_2g8nqxy",
-          "type": "timeline-vertical",
-          "x": 240,
+          "type": "diagramme",
+          "x": 140,
           "y": 160,
-          "w": 800,
-          "h": 460,
+          "w": 1000,
+          "h": 340,
           "z": 1,
           "data": {
-            "title": "Sorties 2026, par ordre chronologique",
-            "steps": [
-              "24 juillet - Claude Opus 5 (Anthropic)",
-              "3 août - Qwen3.8-Max (Alibaba)",
-              "12 août - Grok 4.6 (xAI)",
-              "12 août - DeepSeek V4-Pro (DeepSeek)",
-              "13 août - Gemini 3.7 Flash (Google)",
-              "26 août - GLM-5.3-Flash (Zhipu)",
-              "1er septembre - Claude Fable 5.1 / Mythos 5.1 (Anthropic)",
-              "3 septembre - GPT-6 Astra (OpenAI)"
+            "chartType": "bar",
+            "title": "Jours écoulés depuis la sortie précédente",
+            "rows": [
+              [
+                "",
+                "Jours"
+              ],
+              [
+                "Opus 5",
+                0
+              ],
+              [
+                "Qwen3.8-Max",
+                10
+              ],
+              [
+                "Grok 4.6",
+                9
+              ],
+              [
+                "DeepSeek V4-Pro",
+                0
+              ],
+              [
+                "Gemini 3.7 Flash",
+                1
+              ],
+              [
+                "GLM-5.3-Flash",
+                13
+              ],
+              [
+                "Fable/Mythos 5.1",
+                6
+              ],
+              [
+                "GPT-6 Astra",
+                2
+              ]
             ]
+          }
+        },
+        {
+          "id": "el_9pk4c3z",
+          "type": "callout-box",
+          "x": 140,
+          "y": 515,
+          "w": 1000,
+          "h": 145,
+          "z": 1,
+          "data": {
+            "label": "À retenir",
+            "text": "24 juillet -> 3 septembre 2026 : 8 sorties majeures en 41 jours, parfois plusieurs la même semaine. Écart médian entre deux sorties : quelques jours."
           }
         }
       ],
-      "notes": "Liste à jour au moment de la préparation de ce cours (mi-septembre 2026) - EXPLICITEMENT vouée à devenir incomplète très vite, c'est le point. Format timeline plutôt que tableau : c'est le RESSERREMENT des dates qui porte l'argument (8 sorties majeures en 6 semaines), une frise verticale le rend plus immédiatement visible qu'un tableau à 3 colonnes. Le message n'est pas \"retenez ces 8 noms\", c'est \"un modèle nommé dans un cours a une durée de vie de pertinence de quelques mois, pas de quelques années\" - d'où l'insistance de tout ce cours sur les MÉCANISMES (agents, MCP, tokens, benchmarks) plutôt que sur des produits précis qui seront remplacés avant la fin du cursus de la classe.",
+      "notes": "Liste à jour au moment de la préparation de ce cours (mi-septembre 2026) - EXPLICITEMENT vouée à devenir incomplète très vite, c'est le point. Format graphique en barres (nombre de jours écoulés depuis la sortie PRÉCÉDENTE, pas depuis la première) plutôt que tableau : c'est le RESSERREMENT des dates qui porte l'argument (8 sorties majeures en 6 semaines) - des barres majoritairement courtes rendent ce rythme immédiatement visible, ce qu'un tableau à 3 colonnes ou une simple liste chronologique ne montraient pas aussi clairement. Le message n'est pas \"retenez ces 8 noms\", c'est \"un modèle nommé dans un cours a une durée de vie de pertinence de quelques mois, pas de quelques années\" - d'où l'insistance de tout ce cours sur les MÉCANISMES (agents, MCP, tokens, benchmarks) plutôt que sur des produits précis qui seront remplacés avant la fin du cursus de la classe.",
       "keypoints": [
         "8 modèles majeurs sortis chez des éditeurs différents en moins de deux mois (juillet-septembre 2026) : le rythme de sortie lui-même est la donnée la plus significative de ce tableau, pas tel ou tel nom précis.",
         "Un modèle nommé dans un cours a une pertinence de quelques mois : d'où l'accent mis tout au long de cette séance sur des mécanismes durables plutôt que sur des produits précis."
@@ -3317,15 +3892,15 @@
       "type": "bullets",
       "title": "Nuancer \"l'IA comme assistant, jamais remplaçant\"",
       "items": [
-        "Principe posé dans l'édition précédente du cours (2024) : toujours garder la main, l'IA ne fait qu'assister",
+        "Principe 2024 : toujours garder la main, l'IA ne fait qu'assister",
         {
-          "text": "Toujours vrai comme <b>principe de prudence</b>, mais à nuancer avec ce qui a été vu ce semestre :",
+          "text": "Vrai comme <b>principe de prudence</b>, à nuancer avec ce semestre :",
           "sub": [
-            "Les agents autonomes (chapitre 2) enchaînent déjà plusieurs actions sans validation intermédiaire, sur des tâches bien cadrées",
-            "L'horizon d'autonomie utile s'allonge rapidement (chapitre 9, METR) - \"assister\" et \"agir de façon autonome sur un périmètre défini\" ne s'opposent plus aussi nettement qu'en 2024"
+            "Les agents autonomes enchaînent déjà plusieurs actions sans validation intermédiaire, sur des tâches cadrées",
+            "L'horizon d'autonomie s'allonge vite (METR) - \"assister\" et \"agir de façon autonome\" s'opposent moins qu'en 2024"
           ]
         },
-        "Le principe qui reste stable : une supervision humaine reste nécessaire, mais son GRAIN change - de \"valider chaque ligne\" à \"cadrer la tâche et vérifier le résultat global\""
+        "Stable : la supervision reste nécessaire, mais son GRAIN change - de \"valider chaque ligne\" à \"cadrer et vérifier le résultat\""
       ],
       "notes": "Ce recadrage est le point de synthèse le plus important du cours : on ne dit pas aux étudiant·e·s d'abandonner la vigilance, on leur dit que la vigilance se déplace - moins de micro-validation ligne à ligne, plus de soin apporté au cadrage en amont (spécification, chapitre 2) et à la vérification en aval (tests, revue de diff, chapitres 6-7). C'est un changement de NATURE du contrôle, pas un abandon du contrôle.",
       "keypoints": [

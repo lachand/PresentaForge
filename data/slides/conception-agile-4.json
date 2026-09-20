@@ -24,10 +24,10 @@
       "type": "bullets",
       "title": "Objectifs du cours",
       "items": [
-        "Expliquer ce que l'intégration continue (CI) ajoute à la delivery et au déploiement continus (CD)",
-        "Choisir une stratégie de branches adaptée à un contexte de projet (Trunk Based vs Git Flow)",
-        "Lire et écrire un pipeline GitHub Actions ou GitLab CI en respectant les bonnes pratiques 2026 (secrets, permissions, cache, matrice)",
-        "Relier la CI/CD aux enjeux de sécurité de la chaîne logicielle (secrets, dépendances, revue de code)"
+        "Expliquer ce que la CI ajoute à la delivery et au déploiement continus (CD)",
+        "Choisir une stratégie de branches adaptée au projet (Trunk Based vs Git Flow)",
+        "Lire et écrire un pipeline GitHub Actions/GitLab CI selon les bonnes pratiques 2026",
+        "Relier la CI/CD aux enjeux de sécurité de la chaîne logicielle"
       ],
       "notes": "Ce cours est plus technique et outillé que les précédents. Annoncer le déroulé : fondamentaux -> branches -> environnements/qualité -> livrables -> GitHub Actions -> sécurité -> GitLab CI -> autres outils. Insister sur le fait que la plupart des étudiant·e·s utiliseront GitHub Actions ou GitLab CI en stage/premier emploi : c'est la partie la plus \"employable\" du cours.",
       "keypoints": [
@@ -140,7 +140,7 @@
           "h": 80,
           "z": 1,
           "data": {
-            "html": "Chaque étape peut échouer et bloquer les suivantes : un pipeline CI est une chaîne, pas une liste de vérifications indépendantes."
+            "html": "Chaque étape peut bloquer les suivantes : un pipeline CI est une chaîne, pas des vérifications indépendantes."
           },
           "style": {
             "fontSize": 18,
@@ -968,7 +968,7 @@
             "Packaging"
           ]
         },
-        "Objectif : qu'un livrable soit toujours reproductible depuis le code source, jamais construit \"à la main\""
+        "Objectif : un livrable toujours reproductible depuis le code source, jamais construit \"à la main\""
       ],
       "notes": "Le point clé : si produire un livrable nécessite une étape manuelle sur la machine d'une personne précise, ce n'est pas de la CI/CD - c'est un facteur bus (\"bus factor\") caché. Tout ce qui produit le livrable final doit être scriptable et rejouable par n'importe qui, y compris la CI elle-même.",
       "keypoints": [
@@ -1049,7 +1049,7 @@
           "h": 480,
           "z": 1,
           "data": {
-            "html": "La documentation est le plus souvent générée automatiquement à partir des commentaires et annotations du code (statique ou dynamique).<br><br><b>Exemples d'outils :</b><br>- Doxygen (multi-langage)<br>- Swagger / OpenAPI (documentation d'API REST)<br>- JSDoc, Sphinx, rustdoc..."
+            "html": "Généralement générée automatiquement à partir des commentaires et annotations du code.<br><br><b>Exemples d'outils :</b><br>- Doxygen (multi-langage)<br>- Swagger / OpenAPI (API REST)<br>- JSDoc, Sphinx, rustdoc..."
           },
           "style": {
             "fontSize": 19,
@@ -1908,7 +1908,7 @@
           "h": 70,
           "z": 1,
           "data": {
-            "html": "Un <b>environment</b> GitHub (ex. \"production\") peut exiger une approbation manuelle avant de s'exécuter, restreindre les branches autorisées à s'y déployer, et masquer des secrets spécifiques à cet environnement."
+            "html": "Un <b>environment</b> GitHub (ex. \"production\") peut exiger une approbation manuelle, restreindre les branches autorisées, et masquer des secrets spécifiques."
           },
           "style": {
             "fontSize": 18,
@@ -2029,10 +2029,10 @@
       "type": "bullets",
       "title": "Pourquoi la CI/CD est une cible",
       "items": [
-        "Le pipeline a souvent accès à des <b>secrets</b> puissants (déploiement, cloud, registre de paquets)",
+        "Le pipeline a souvent accès à des <b>secrets</b> puissants (déploiement, cloud, paquets)",
         "Il exécute du <b>code tiers</b> de confiance implicite (actions, dépendances npm/pip...)",
-        "Une compromission du pipeline peut se propager <b>à tous les utilisateurs</b> du logiciel publié",
-        "Conséquence : sécuriser la CI/CD, ce n'est pas optionnel, c'est sécuriser la chaîne d'approvisionnement logicielle (<i>supply chain</i>)"
+        "Une compromission du pipeline peut toucher <b>tous les utilisateurs</b> du logiciel publié",
+        "Sécuriser la CI/CD, c'est sécuriser la chaîne d'approvisionnement logicielle (<i>supply chain</i>)"
       ],
       "notes": "Donner un exemple marquant pour ancrer l'idée : plusieurs incidents de sécurité majeurs de ces dernières années (npm, PyPI, actions GitHub compromises) ne viennent pas d'une faille dans le code de l'entreprise elle-même, mais d'une dépendance ou d'une action tierce compromise dans SA chaîne de build. On l'a déjà vu avec l'épinglage par SHA plus tôt : ce chapitre généralise cette logique.",
       "keypoints": [
@@ -2655,7 +2655,7 @@
           "z": 1,
           "data": {
             "label": "Contexte historique",
-            "text": "Travis CI a été l'un des tout premiers services de CI intégrés à GitHub (populaire dans l'écosystème open source jusque vers 2019-2020). Un changement de modèle économique (passage payant plus agressif pour les dépôts open source) a fortement réduit son usage depuis, au profit de GitHub Actions. Vous pouvez encore croiser un fichier <code>.travis.yml</code> dans d'anciens projets open source, mais ce n'est plus un choix par défaut pour un nouveau projet en 2026.",
+            "text": "L'un des tout premiers services de CI intégrés à GitHub (populaire jusque vers 2019-2020). Un changement de modèle économique a fortement réduit son usage depuis, au profit de GitHub Actions.<br><br>Vous pouvez encore croiser un fichier <code>.travis.yml</code> dans d'anciens projets, mais ce n'est plus un choix par défaut en 2026.",
             "labelTone": "warning"
           }
         }

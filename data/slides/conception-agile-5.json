@@ -105,7 +105,7 @@
           "h": 420,
           "z": 1,
           "data": {
-            "html": "En 2015, Volkswagen est prise en flagrant délit d'avoir équipé des millions de véhicules diesel d'un logiciel truqueur (\"defeat device\") : le code détectait qu'il était en test d'homologation (position du volant, vitesse, durée du cycle) et n'activait le contrôle anti-pollution que dans ce cas précis. Sur route réelle, les émissions de NOx dépassaient les normes jusqu'à 40 fois.<br><br>Un ingénieur ayant participé au développement de ce logiciel a été condamné à <b>40 mois de prison ferme</b> et 200 000 $ d'amende aux États-Unis (2017)."
+            "html": "2015 : Volkswagen équipe des millions de véhicules diesel d'un logiciel truqueur (\"defeat device\") - il détecte le test d'homologation et n'active le contrôle anti-pollution que dans ce cas. Sur route réelle : émissions de NOx jusqu'à 40 fois la norme.<br><br>Un ingénieur ayant développé ce logiciel : <b>40 mois de prison ferme</b> et 200 000 $ d'amende (États-Unis, 2017)."
           },
           "style": {
             "fontSize": 20,
@@ -134,7 +134,7 @@
           "h": 70,
           "z": 1,
           "data": {
-            "text": "Un clin d'oeil de la culture développeur"
+            "text": "Un clin d'œil de la culture développeur"
           },
           "style": {
             "fontSize": 38,
@@ -362,7 +362,7 @@
           "h": 480,
           "z": 1,
           "data": {
-            "html": "Depuis les années 1950, les laboratoires photo calibraient l'exposition, le contraste et le rendu des couleurs à l'aide de cartes-étalon (\"cartes Shirley\", du nom du premier mannequin photographié) représentant systématiquement des <b>femmes à peau claire</b>.<br><br>Conséquence directe : pendant des décennies, la pellicule photo elle-même rendait mal les peaux foncées (sous-exposition, perte de détails) - un biais matériel, pas seulement logiciel, qui a précédé et anticipé les biais algorithmiques vus juste avant."
+            "html": "Depuis les années 1950, les laboratoires photo calibraient exposition/contraste/couleurs sur des cartes-étalon (\"cartes Shirley\") représentant systématiquement des <b>femmes à peau claire</b>.<br><br>Conséquence : la pellicule elle-même rendait mal les peaux foncées pendant des décennies - un biais matériel, antérieur aux biais algorithmiques."
           },
           "style": {
             "fontSize": 19,
@@ -442,7 +442,7 @@
           "h": 400,
           "z": 1,
           "data": {
-            "html": "La part des femmes en informatique a <b>augmenté</b> jusqu'au milieu des années 1980 (~37%), puis a <b>chuté</b> pendant que toutes les autres filières scientifiques progressaient. Hypothèse la plus documentée : l'arrivée de l'ordinateur personnel, massivement commercialisé comme un \"jouet de garçon\" dans les années 1980, a créé un écart de familiarité à l'entrée des études qui a ensuite été interprété (à tort) comme un écart de talent \"naturel\"."
+            "html": "La part des femmes en informatique a <b>augmenté</b> jusqu'au milieu des années 1980 (~37%), puis a <b>chuté</b> pendant que les autres filières scientifiques progressaient.<br><br>Hypothèse documentée : l'ordinateur personnel, commercialisé comme \"jouet de garçon\", a créé un écart de familiarité ensuite interprété (à tort) comme un écart de talent \"naturel\"."
           },
           "style": {
             "fontSize": 19,
@@ -584,7 +584,7 @@
           "h": 460,
           "z": 1,
           "data": {
-            "html": "Casque de chantier, foulard, barbe fournie, masque sanitaire : autant de situations parfaitement banales où un système de reconnaissance faciale entraîné sur des visages \"dégagés\" échoue. Ces échecs ne sont pas anecdotiques quand ces systèmes sont déployés pour du contrôle d'accès, de la surveillance policière ou de l'authentification bancaire - un taux d'échec plus élevé pour certaines apparences se traduit directement en friction, voire en exclusion, disproportionnée."
+            "html": "Casque de chantier, foulard, barbe fournie, masque sanitaire : des situations banales où un système entraîné sur des visages \"dégagés\" échoue.<br><br>Déployé pour du contrôle d'accès ou de la surveillance : un taux d'échec plus élevé pour certaines apparences se traduit en friction, voire en exclusion, disproportionnée."
           },
           "style": {
             "fontSize": 19,
@@ -664,7 +664,7 @@
           "h": 420,
           "z": 1,
           "data": {
-            "html": "En 2017, une étude de Stanford affirme qu'un modèle entraîné sur des photos de profils de rencontre peut prédire l'orientation sexuelle d'une personne à partir de son visage avec une précision supérieure au hasard.<br><br>Critiquée massivement par les associations LGBTQ+ (GLAAD, HRC) et une partie de la communauté scientifique : biais méthodologiques probables (corrélats indirects comme le style vestimentaire ou l'angle de prise de vue plutôt qu'une vraie \"signature faciale\"), et surtout un <b>risque réel et grave</b> dans les pays où l'homosexualité est criminalisée."
+            "html": "2017 : une étude de Stanford affirme qu'un modèle entraîné sur des photos de rencontre peut prédire l'orientation sexuelle à partir du visage, mieux que le hasard.<br><br>Critiquée par les associations LGBTQ+ (GLAAD, HRC) : biais méthodologiques probables (style vestimentaire, angle de prise de vue), et surtout un <b>risque réel et grave</b> où l'homosexualité est criminalisée."
           },
           "style": {
             "fontSize": 18,
@@ -729,8 +729,8 @@
           "data": {
             "title": "Justice prédictive : COMPAS",
             "items": [
-              "Algorithme utilisé dans plusieurs tribunaux américains pour évaluer le risque de récidive",
-              "Enquête ProPublica (2016) : taux de \"faux positifs\" (risque surestimé) presque deux fois plus élevé pour les personnes noires que blanches, à infraction comparable"
+              "Utilisé dans plusieurs tribunaux américains pour évaluer le risque de récidive",
+              "ProPublica (2016) : \"faux positifs\" presque 2x plus fréquents pour les personnes noires, à infraction comparable"
             ]
           },
           "style": {
@@ -750,8 +750,8 @@
           "data": {
             "title": "Recrutement automatisé : Amazon",
             "items": [
-              "Outil interne de tri de CV entraîné sur 10 ans de recrutements passés (majoritairement masculins dans la tech)",
-              "L'outil a appris à pénaliser les CV mentionnant \"femme\" (ex. \"capitaine du club d'échecs féminin\") - abandonné en 2018"
+              "Tri de CV entraîné sur 10 ans de recrutements passés, majoritairement masculins",
+              "A appris à pénaliser les CV mentionnant \"femme\" (ex. \"club d'échecs féminin\") - abandonné en 2018"
             ]
           },
           "style": {
@@ -771,8 +771,8 @@
           "data": {
             "title": "Génération d'images : Gemini (2024)",
             "items": [
-              "Pour corriger un biais de sous-représentation, le générateur d'images de Google a sur-corrigé",
-              "Résultat : des images historiquement incohérentes (ex. soldats allemands de 1943 générés avec une diversité anachronique) - controverse publique, fonctionnalité suspendue temporairement"
+              "Pour corriger un biais de sous-représentation, Google a sur-corrigé",
+              "Résultat : images historiquement incohérentes (soldats allemands de 1943 anachroniques) - fonctionnalité suspendue"
             ]
           },
           "style": {
@@ -836,8 +836,8 @@
           "h": 340,
           "z": 1,
           "data": {
-            "myth": "Un algorithme ne peut pas être raciste ou sexiste : ce n'est que des mathématiques, donc c'est neutre et objectif.",
-            "reality": "Un algorithme apprend les régularités statistiques de ses <b>données d'entraînement</b>. Si ces données reflètent des discriminations humaines passées (recrutements, condamnations, photos...), l'algorithme les reproduit et souvent les <b>amplifie</b> - la neutralité mathématique du calcul n'empêche en rien la reproduction d'un biais social."
+            "myth": "Un algorithme, ce n'est que des mathématiques : donc neutre et objectif.",
+            "reality": "Un algorithme apprend les régularités de ses <b>données d'entraînement</b>. Si ces données reflètent des discriminations passées, il les reproduit et souvent les <b>amplifie</b> - la neutralité du calcul n'empêche rien."
           }
         }
       ],
@@ -968,7 +968,7 @@
       "number": "04",
       "title": "Dark Patterns",
       "subtitle": "Quand l'interface est conçue pour vous manipuler",
-      "notes": "Le plus gros chapitre du cours (le catalogue est volontairement exhaustif : c'est un chapitre \"à collectionner\", les étudiant·e·s reconnaîtront presque tous ces patterns dans des services qu'ils utilisent déjà). Rythme suggéré : ne pas commenter chaque capture plus de 45 secondes, le pattern doit se reconnaître d'un coup d'oeil - sinon la slide de définition d'après-coup perd son effet."
+      "notes": "Le plus gros chapitre du cours (le catalogue est volontairement exhaustif : c'est un chapitre \"à collectionner\", les étudiant·e·s reconnaîtront presque tous ces patterns dans des services qu'ils utilisent déjà). Rythme suggéré : ne pas commenter chaque capture plus de 45 secondes, le pattern doit se reconnaître d'un coup d'œil - sinon la slide de définition d'après-coup perd son effet."
     },
     {
       "type": "canvas",
@@ -1041,7 +1041,7 @@
           "h": 300,
           "z": 1,
           "data": {
-            "html": "Avant de nommer les patterns un par un : regardez cet écran 10 secondes.<br><br>Qu'est-ce qui vous dérange ? Qu'est-ce que le concepteur de cet écran a fait pour orienter votre choix sans vous le dire explicitement ?"
+            "html": "Avant de nommer les patterns : regardez cet écran 10 secondes.<br><br>Qu'est-ce qui vous dérange ? Qu'est-ce que le concepteur a fait pour orienter votre choix sans le dire ?"
           },
           "style": {
             "fontSize": 22,
@@ -1194,7 +1194,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> l'utilisateur pense que son action va produire un certain résultat. Une action totalement différente (souvent inverse) est réalisée à la place.<br><br><b>Exemple :</b> sur d'anciennes versions de Windows, cliquer sur la croix de fermeture de la fenêtre de mise à jour ne l'annulait pas : elle programmait la mise à jour, exactement l'inverse de ce que le symbole \"X\" signifie universellement."
+            "html": "<b>Principe :</b> l'utilisateur croit qu'une action produit un résultat - une action différente (souvent inverse) est réalisée à la place.<br><br><b>Exemple :</b> sur d'anciennes versions de Windows, fermer la fenêtre de mise à jour ne l'annulait pas : elle la programmait, l'inverse de ce que signifie le \"X\"."
           },
           "style": {
             "fontSize": 20,
@@ -1274,7 +1274,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> une publicité est mise en forme pour ressembler à un élément de contenu ou de navigation légitime, au point de se confondre avec l'action que l'utilisateur cherchait à faire.<br><br><b>Exemple :</b> sur cette page, le vrai bouton de téléchargement (bleu, en haut) est moins visuellement dominant que la publicité verte \"DOWNLOAD\" juste en dessous - de nombreux utilisateurs cliquent sur la pub par erreur, parfois installant un logiciel indésirable au passage."
+            "html": "<b>Principe :</b> une publicité imite un élément de contenu ou de navigation légitime, au point de se confondre avec l'action recherchée.<br><br><b>Exemple :</b> ici, le vrai bouton de téléchargement (bleu) est moins dominant que la pub verte \"DOWNLOAD\" en dessous - de nombreux clics par erreur, parfois un logiciel indésirable."
           },
           "style": {
             "fontSize": 20,
@@ -1352,7 +1352,7 @@
           "z": 1,
           "data": {
             "label": "Pourquoi pas de capture ici",
-            "text": "Contrairement aux autres patterns de ce chapitre, celui-ci se manifeste au moment précis où le prix change en arrière-plan - difficile à capturer en une seule image fixe sans montrer tout un flux. La définition et l'exemple suffisent à le reconnaître.",
+            "text": "Ce pattern se manifeste au moment précis où le prix change en arrière-plan - difficile à capturer en une seule image fixe. La définition et l'exemple suffisent à le reconnaître.",
             "labelTone": "info"
           }
         }
@@ -1426,7 +1426,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> un service, une fois autorisé à accéder à votre carnet de contacts (souvent pour \"trouver vos amis\"), envoie en votre nom des sollicitations à toutes vos connaissances - vous devenez littéralement le spammeur sans l'avoir décidé.<br><br><b>Exemple :</b> LinkedIn est LE cas d'école de ce pattern, au point d'avoir fait l'objet d'un recours collectif (class action) aux États-Unis pour l'envoi de relances automatiques répétées au nom de ses utilisateurs."
+            "html": "<b>Principe :</b> un service autorisé à accéder à vos contacts envoie en votre nom des sollicitations - vous devenez le spammeur sans l'avoir décidé.<br><br><b>Exemple :</b> LinkedIn, cas d'école, a fait l'objet d'un recours collectif aux États-Unis pour ces relances automatiques."
           },
           "style": {
             "fontSize": 20,
@@ -1518,7 +1518,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> le prix annoncé au début du parcours d'achat n'est pas le prix final. Des frais supplémentaires (service, traitement, livraison...) n'apparaissent qu'après que l'utilisateur a déjà investi du temps et des informations personnelles dans le processus.<br><br><b>Exemple :</b> sur StubHub, un billet affiché à 310$ devient 401,13$ (+29%) une fois les frais de service et de traitement ajoutés, révélés seulement après saisie des coordonnées."
+            "html": "<b>Principe :</b> le prix annoncé n'est pas le prix final - des frais apparaissent seulement après que l'utilisateur a déjà investi temps et données.<br><br><b>Exemple :</b> sur StubHub, un billet à 310$ devient 401,13$ (+29%) une fois les frais révélés, après saisie des coordonnées."
           },
           "style": {
             "fontSize": 20,
@@ -1605,7 +1605,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> une option coûteuse est mise en avant visuellement, tandis que l'option gratuite/moins chère est rendue difficile à trouver ou à activer, sans être techniquement cachée.<br><br><b>Exemple :</b> Ryanair, pour refuser l'assurance voyage proposée par défaut, obligeait à sélectionner \"No Travel Insurance Required\" dans un menu déroulant de PAYS, classé alphabétiquement entre deux noms de pays - un cas devenu une référence dans le domaine."
+            "html": "<b>Principe :</b> l'option coûteuse est mise en avant, l'option gratuite est difficile à trouver - sans être techniquement cachée.<br><br><b>Exemple :</b> Ryanair : refuser l'assurance voyage exigeait de choisir \"No Travel Insurance Required\" dans un menu déroulant de PAYS, entre deux noms de pays."
           },
           "style": {
             "fontSize": 20,
@@ -1685,7 +1685,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> les informations nécessaires pour comparer objectivement deux offres (unité de prix, quantité réelle, caractéristiques) sont présentées de façon volontairement incohérente d'un produit à l'autre.<br><br><b>Exemple :</b> ici, un sachet de pommes est étiqueté au prix \"au kilo\" tandis qu'un sachet quasi identique est étiqueté au prix \"à la pièce\" - impossible de comparer en un coup d'oeil laquelle des deux offres est réellement la plus avantageuse."
+            "html": "<b>Principe :</b> les informations pour comparer deux offres (unité, quantité) sont présentées de façon volontairement incohérente d'un produit à l'autre.<br><br><b>Exemple :</b> un sachet de pommes étiqueté au kilo, un autre quasi identique étiqueté à la pièce - impossible de comparer d'un coup d'œil."
           },
           "style": {
             "fontSize": 20,
@@ -1772,7 +1772,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> l'utilisateur est amené à partager plus d'informations personnelles qu'il ne le souhaiterait, via des réglages de confidentialité pré-activés et une formulation rassurante qui minimise la portée réelle du partage.<br><br><b>Exemple :</b> en 2016, WhatsApp (racheté par Facebook en 2014) a mis à jour ses conditions avec un interrupteur PRÉ-ACTIVÉ de partage des données de compte avec Facebook, accompagné du texte rassurant \"vos discussions et votre numéro ne seront PAS partagés\" - qui n'empêchait pas le partage d'autres métadonnées (contacts, fréquence d'usage...)."
+            "html": "<b>Principe :</b> l'utilisateur partage plus qu'il ne le voudrait, via des réglages pré-activés et une formulation rassurante qui minimise la portée réelle.<br><br><b>Exemple :</b> 2016, WhatsApp : interrupteur PRÉ-ACTIVÉ de partage avec Facebook, avec le texte rassurant \"vos discussions ne seront PAS partagées\" - qui n'empêchait pas le partage d'autres métadonnées."
           },
           "style": {
             "fontSize": 20,
@@ -1852,7 +1852,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> s'inscrire à un service est rapide et simple (souvent 2-3 clics). S'en désinscrire ou résilier est délibérément complexe, long, ou nécessite des étapes disproportionnées (appel téléphonique obligatoire, formulaire papier, délai de rétractation caché...).<br><br><b>Nom :</b> référence aux pièges à cafards (\"on entre facilement, on ne sort jamais\")."
+            "html": "<b>Principe :</b> s'inscrire est rapide (2-3 clics) ; se désinscrire est délibérément complexe (appel obligatoire, formulaire papier, délai caché...).<br><br><b>Nom :</b> référence aux pièges à cafards (\"on entre facilement, on ne sort jamais\")."
           },
           "style": {
             "fontSize": 20,
@@ -1932,7 +1932,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> une option payante supplémentaire est ajoutée automatiquement (ou semi-automatiquement, via un choix pré-coché) au panier, sans action explicite de l'utilisateur pour la demander.<br><br><b>Exemple :</b> lors d'une réservation de vol, des options comme le choix de siège ou l'assurance sont parfois pré-ajoutées au prix total, visible seulement si l'utilisateur vérifie attentivement le détail du panier avant de payer."
+            "html": "<b>Principe :</b> une option payante est ajoutée au panier automatiquement (ou via une case pré-cochée), sans demande explicite.<br><br><b>Exemple :</b> réservation de vol : choix de siège ou assurance parfois pré-ajoutés, visibles seulement si on vérifie le détail du panier."
           },
           "style": {
             "fontSize": 20,
@@ -2012,7 +2012,7 @@
           "h": 440,
           "z": 1,
           "data": {
-            "html": "<b>Principe :</b> une question est formulée de façon volontairement alambiquée (double négation, phrase longue) pour que sa lecture rapide laisse croire qu'elle demande l'inverse de ce qu'elle demande réellement.<br><br><b>Exemple :</b> ici, la case PRÉ-COCHÉE autorise l'usage marketing des données personnelles - sa formulation longue et positive (\"You agree to... using your information...\") se lit vite comme une formalité anodine, alors que la case réellement importante (accepter les conditions d'utilisation) est celle qui reste décochée."
+            "html": "<b>Principe :</b> une question est formulée de façon alambiquée (double négation, phrase longue) pour laisser croire à sa lecture rapide qu'elle demande l'inverse.<br><br><b>Exemple :</b> la case PRÉ-COCHÉE autorise l'usage marketing des données - sa formulation longue se lit comme une formalité, alors que la case vraiment importante reste décochée."
           },
           "style": {
             "fontSize": 18,
@@ -2092,7 +2092,7 @@
           "h": 420,
           "z": 1,
           "data": {
-            "html": "Un dark pattern plus diffus que les précédents : la page d'accueil par défaut d'un navigateur/moteur de recherche, chargée de contenus, de publicités et de widgets que personne n'a explicitement demandés - et dont la personnalisation pour revenir à un écran simple est rarement mise en avant.<br><br>Pas un pattern \"nommé\" au sens strict, mais un bon rappel que la manipulation par défaut ne se limite pas aux formulaires de paiement."
+            "html": "Plus diffus que les précédents : la page d'accueil par défaut d'un navigateur, chargée de contenus/pubs/widgets que personne n'a demandés - la personnaliser pour revenir à un écran simple est rarement mis en avant.<br><br>Pas un pattern \"nommé\" au sens strict, mais un rappel que la manipulation par défaut dépasse les formulaires de paiement."
           },
           "style": {
             "fontSize": 17,
@@ -2311,14 +2311,14 @@
       "type": "bullets",
       "title": "L'AI Act européen : une régulation par le risque",
       "items": [
-        "Premier cadre juridique complet au monde spécifiquement dédié à l'IA (règlement européen, entré en vigueur en 2024)",
-        "Principe central : les obligations dépendent du <b>niveau de risque</b> du système, pas de la technologie utilisée",
+        "Premier cadre juridique complet au monde dédié à l'IA (règlement européen, en vigueur depuis 2024)",
+        "Principe central : les obligations dépendent du <b>niveau de risque</b>, pas de la technologie",
         {
           "text": "4 niveaux de risque :",
           "sub": [
-            "<b>Risque inacceptable</b> : interdit (ex. notation sociale généralisée, manipulation cognitive)",
-            "<b>Haut risque</b> : obligations strictes (ex. recrutement, crédit, dispositifs médicaux, justice)",
-            "<b>Risque limité</b> : obligations de transparence (ex. chatbots, contenus synthétiques/deepfakes)",
+            "<b>Risque inacceptable</b> : interdit (notation sociale généralisée, manipulation cognitive)",
+            "<b>Haut risque</b> : obligations strictes (recrutement, crédit, dispositifs médicaux, justice)",
+            "<b>Risque limité</b> : obligations de transparence (chatbots, deepfakes)",
             "<b>Risque minimal</b> : pas d'obligation spécifique (ex. filtre anti-spam, jeu vidéo)"
           ]
         }
@@ -2396,9 +2396,9 @@
       "type": "bullets",
       "title": "Ce que ça change concrètement pour vous",
       "items": [
-        "Si vous développez un chatbot ou un générateur de contenu : <b>informer clairement</b> l'utilisateur qu'il interagit avec de l'IA / que le contenu est généré",
+        "Chatbot ou générateur de contenu : <b>informer clairement</b> que c'est de l'IA / du contenu généré",
         {
-          "text": "Si votre système entre dans une catégorie \"haut risque\" (RH, crédit, santé, justice...) :",
+          "text": "Si le système est \"haut risque\" (RH, crédit, santé, justice...) :",
           "sub": [
             "Documentation technique et traçabilité des décisions",
             "Jeux de données d'entraînement audités pour limiter les biais",
@@ -2834,10 +2834,10 @@
         {
           "text": "Impliquer les acteurs concernés dans le processus de conception :",
           "sub": [
-            "Leur donner une voix réelle (les écouter ET les respecter, pas juste \"consulter\" pour la forme)",
-            "Faire en sorte qu'ils/elles deviennent acteurs de la conception, pas seulement testeurs en fin de parcours",
+            "Une voix réelle : les écouter ET les respecter, pas juste \"consulter\" pour la forme",
+            "Acteurs de la conception, pas seulement testeurs en fin de parcours",
             "Valider les choix importants avec eux/elles avant le déploiement",
-            "Maintenir et faire évoluer le système avec eux/elles dans la durée, pas une seule fois au lancement"
+            "Maintenir et faire évoluer le système avec eux/elles dans la durée, pas qu'au lancement"
           ]
         }
       ],

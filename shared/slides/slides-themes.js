@@ -479,6 +479,33 @@ body { background: var(--sl-bg); }
   --tone-violet-bg: rgba(167,139,250,.22); --tone-violet-text: #ddd6fe;
   --tone-indigo-bg: rgba(129,140,248,.22); --tone-indigo-border: rgba(165,180,252,.5); --tone-indigo-text: #c7d2fe;
   --tone-purple-bg: rgba(167,139,250,.22); --tone-purple-border: rgba(196,181,253,.45); --tone-purple-text: #ddd6fe;
+  /* Remapping des callouts sémantiques --widget-* (widgets.css) vers le thème slides.
+     Ces tokens ne sont normalement définis que sous [data-theme="dark"] (bascule
+     claire/sombre de l'app, sans rapport avec le thème de la slide) : dans les slides,
+     ils restaient donc figés sur leur littéral pastel d'origine quel que soit le thème
+     (ex. ICOM), pendant que le texte voisin (var(--text)/var(--muted)) suivait déjà le
+     thème — d'où des combinaisons mal contrastées. On dérive ici bg/border en teinte
+     légère du fond de la slide (comme .sl-sim-container ci-dessus) et fg = --sl-text,
+     qui reste par construction lisible sur le fond de la slide. */
+  --widget-info-bg: color-mix(in srgb, var(--sl-accent, #818cf8) 12%, var(--sl-slide-bg));
+  --widget-info-border: color-mix(in srgb, var(--sl-accent, #818cf8) 35%, var(--sl-slide-bg));
+  --widget-info-fg: var(--sl-text);
+  --widget-warn-bg: color-mix(in srgb, var(--sl-warning, #f59e0b) 15%, var(--sl-slide-bg));
+  --widget-warn-border: color-mix(in srgb, var(--sl-warning, #f59e0b) 40%, var(--sl-slide-bg));
+  --widget-warn-fg: var(--sl-text);
+  --widget-danger-bg: color-mix(in srgb, #ef4444 15%, var(--sl-slide-bg));
+  --widget-danger-border: color-mix(in srgb, #ef4444 40%, var(--sl-slide-bg));
+  --widget-danger-fg: var(--sl-text);
+  --widget-success-bg: color-mix(in srgb, var(--sl-success, #22c55e) 15%, var(--sl-slide-bg));
+  --widget-success-border: color-mix(in srgb, var(--sl-success, #22c55e) 40%, var(--sl-slide-bg));
+  --widget-success-fg: var(--sl-text);
+  --widget-surface: var(--surface);
+  --widget-surface-2: var(--surface2);
+  --widget-neutral-border: var(--sl-border);
+  --widget-fg-strong: var(--sl-heading);
+  --widget-fg-muted: var(--sl-muted);
+  --widget-heading: var(--sl-heading);
+  --widget-hover: color-mix(in srgb, var(--sl-text) 8%, transparent);
 }
 
 /* Adaptations event-widgets dans le contexte slides */
