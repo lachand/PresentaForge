@@ -256,11 +256,12 @@
     async function listPresentations() {
         const snap = await _presCol().orderBy('modified', 'desc').get();
         return snap.docs.map(d => {
-            const { title, modified, public: isPublic, course, thumb, banner, level, tags, seance } = d.data();
+            const { title, modified, public: isPublic, course, thumb, banner, level, tags, seance, author, email, institution } = d.data();
             return {
                 id: d.id, title: title || 'Sans titre', modified, public: !!isPublic, course: course || '',
                 thumb: thumb || null, banner: banner || null, level: level || '', tags: Array.isArray(tags) ? tags : [],
                 seance: Number.isFinite(seance) ? seance : null,
+                author: author || '', email: email || '', institution: institution || '',
             };
         });
     }
@@ -376,9 +377,12 @@
         const seanceIn = opts.seance ?? meta_.seance;
         const seanceNum = (seanceIn == null || String(seanceIn).trim() === '') ? NaN : Number(seanceIn);
         const seance = Number.isFinite(seanceNum) ? Math.round(seanceNum) : null;
+        const author = String(opts.author || meta_.author || '').trim();
+        const email = String(opts.email || meta_.email || '').trim();
+        const institution = String(opts.institution || meta_.institution || '').trim();
         const meta = {
             id, title, modified: new Date().toISOString(), public: isPublic, course, thumb: thumb || null,
-            banner, level, tags, seance,
+            banner, level, tags, seance, author, email, institution,
         };
 
         const bytes = (typeof TextEncoder !== 'undefined') ? new TextEncoder().encode(json).length : json.length;
@@ -427,18 +431,18 @@
     }
 
     // Mise à jour légère de métadonnées pour l'édition groupée (page d'accueil, sélection
-    // multiple) : cours/niveau/tags, sans jamais toucher au JSON (potentiellement fragmenté).
-    // `patch` ne contient que les champs à écrire — un champ absent reste inchangé côté
-    // Firestore (édition groupée partielle : un champ vide dans le formulaire ne doit pas
-    // écraser les valeurs existantes des présentations sélectionnées).
+    // multiple) : cours/niveau/tags/auteur/email/institution, sans jamais toucher au JSON
+    // (potentiellement fragmenté). `patch` ne contient que les champs à écrire — un champ
+    // absent reste inchangé côté Firestore (édition groupée partielle : un champ vide dans
+    // le formulaire ne doit pas écraser les valeurs existantes des présentations sélectionnées).
+    const _META_TRIM_FIELDS = ['course', 'level', 'author', 'email', 'institution'];
     async function updatePresentationMeta(id, patch = {}) {
         const col = _presCol();
         const update = {};
-        if (Object.prototype.hasOwnProperty.call(patch, 'course')) {
-            update.course = String(patch.course || '').trim();
-        }
-        if (Object.prototype.hasOwnProperty.call(patch, 'level')) {
-            update.level = String(patch.level || '').trim();
+        for (const field of _META_TRIM_FIELDS) {
+            if (Object.prototype.hasOwnProperty.call(patch, field)) {
+                update[field] = String(patch[field] || '').trim();
+            }
         }
         if (Object.prototype.hasOwnProperty.call(patch, 'tags') && Array.isArray(patch.tags)) {
             update.tags = [...new Set(patch.tags.map(t => String(t || '').trim()).filter(Boolean))];

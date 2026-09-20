@@ -31,22 +31,27 @@
         if (el) el.remove();
     }
 
+    // Champs à remplacement simple "seulement si renseigné" (par opposition à tags, qui
+    // s'ajoute, et à course/level déjà gérés à part pour la clarté du diff historique).
+    const _SIMPLE_REPLACE_FIELDS = ['course', 'level', 'author', 'email', 'institution'];
+
     /**
      * Construit, pour UNE présentation, le patch à envoyer à updatePresentationMeta à partir
-     * des valeurs saisies dans le formulaire groupé. Cours/niveau : remplacement SEULEMENT si
-     * le champ est renseigné (un champ vide dans le formulaire ne touche pas la présentation).
-     * Tags : AJOUT/UNION avec les tags déjà présents sur CETTE présentation (jamais un
-     * remplacement global — des présentations aux tags différents ne doivent pas perdre les
-     * leurs). Fonction pure, exposée pour test (voir __bulkActionsTestUtils en bas de fichier).
+     * des valeurs saisies dans le formulaire groupé. Cours/niveau/auteur/email/institution :
+     * remplacement SEULEMENT si le champ est renseigné (un champ vide dans le formulaire ne
+     * touche pas la présentation). Tags : AJOUT/UNION avec les tags déjà présents sur CETTE
+     * présentation (jamais un remplacement global — des présentations aux tags différents ne
+     * doivent pas perdre les leurs). Fonction pure, exposée pour test (voir
+     * __bulkActionsTestUtils en bas de fichier).
      * @param {{tags?: string[]}} deck
-     * @param {{course?: string, level?: string, tags?: string}} values
+     * @param {{course?: string, level?: string, author?: string, email?: string, institution?: string, tags?: string}} values
      */
     function buildBulkEditPatch(deck, values = {}) {
         const patch = {};
-        const course = String(values.course || '').trim();
-        if (course !== '') patch.course = course;
-        const level = String(values.level || '').trim();
-        if (level !== '') patch.level = level;
+        for (const field of _SIMPLE_REPLACE_FIELDS) {
+            const value = String(values[field] || '').trim();
+            if (value !== '') patch[field] = value;
+        }
         const tagsInput = String(values.tags || '').trim();
         if (tagsInput !== '') {
             const added = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
@@ -97,6 +102,18 @@
                         <input type="text" id="bulk-edit-tags" class="ui-input" placeholder="ex: TD, révision">
                         <p class="bulk-actions-note">Ces tags seront <strong>ajoutés</strong> aux tags existants de chaque présentation — pas de remplacement.</p>
                     </div>
+                    <div class="bulk-actions-field">
+                        <label for="bulk-edit-author">Auteur <span class="bulk-actions-hint">(remplace si renseigné)</span></label>
+                        <input type="text" id="bulk-edit-author" class="ui-input" placeholder="Laisser vide pour ne pas changer">
+                    </div>
+                    <div class="bulk-actions-field">
+                        <label for="bulk-edit-email">Email <span class="bulk-actions-hint">(remplace si renseigné)</span></label>
+                        <input type="email" id="bulk-edit-email" class="ui-input" placeholder="Laisser vide pour ne pas changer">
+                    </div>
+                    <div class="bulk-actions-field">
+                        <label for="bulk-edit-institution">Institution <span class="bulk-actions-hint">(remplace si renseigné)</span></label>
+                        <input type="text" id="bulk-edit-institution" class="ui-input" placeholder="Laisser vide pour ne pas changer">
+                    </div>
                     <div class="bulk-actions-status" id="bulk-edit-status"></div>
                 </div>
                 <div class="ui-modal-actions">
@@ -110,6 +127,9 @@
         const courseInput = overlay.querySelector('#bulk-edit-course');
         const levelInput = overlay.querySelector('#bulk-edit-level');
         const tagsInput = overlay.querySelector('#bulk-edit-tags');
+        const authorInput = overlay.querySelector('#bulk-edit-author');
+        const emailInput = overlay.querySelector('#bulk-edit-email');
+        const institutionInput = overlay.querySelector('#bulk-edit-institution');
         const statusEl = overlay.querySelector('#bulk-edit-status');
         const saveBtn = overlay.querySelector('#bulk-edit-save');
 
@@ -123,8 +143,11 @@
                 statusEl.textContent = 'Firebase indisponible.';
                 return;
             }
-            const values = { course: courseInput.value, level: levelInput.value, tags: tagsInput.value };
-            if (!values.course.trim() && !values.level.trim() && !values.tags.trim()) {
+            const values = {
+                course: courseInput.value, level: levelInput.value, tags: tagsInput.value,
+                author: authorInput.value, email: emailInput.value, institution: institutionInput.value,
+            };
+            if (Object.values(values).every(v => !v.trim())) {
                 statusEl.textContent = 'Renseignez au moins un champ.';
                 return;
             }

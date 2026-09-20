@@ -157,6 +157,10 @@ function _ensureMetadataModal() {
                         <input type="text" id="meta-author-input" placeholder="Nom de l’auteur">
                     </div>
                     <div class="field">
+                        <label for="meta-email-input">Email</label>
+                        <input type="email" id="meta-email-input" placeholder="ex: prenom.nom@univ.fr">
+                    </div>
+                    <div class="field">
                         <label for="meta-course-input">Cours</label>
                         <input type="text" id="meta-course-input" placeholder="ex: L1 Info, Algo S1, Réseaux">
                     </div>
@@ -239,6 +243,7 @@ function _populateMetadataModal(modal) {
 
     modal.querySelector('#meta-title-input').value = String(meta.title || '');
     modal.querySelector('#meta-author-input').value = String(meta.author || '');
+    modal.querySelector('#meta-email-input').value = String(meta.email || '');
     modal.querySelector('#meta-course-input').value = String(meta.course || '');
     modal.querySelector('#meta-level-input').value = String(meta.level || '');
     modal.querySelector('#meta-seance-input').value = meta.seance != null ? String(meta.seance) : '';
@@ -268,6 +273,7 @@ function _saveMetadataFromModal(modal) {
         ...prevMeta,
         title,
         author: String(modal.querySelector('#meta-author-input')?.value || '').trim(),
+        email: String(modal.querySelector('#meta-email-input')?.value || '').trim(),
         course: String(modal.querySelector('#meta-course-input')?.value || '').trim(),
         level: String(modal.querySelector('#meta-level-input')?.value || '').trim(),
         institution: String(modal.querySelector('#meta-institution-input')?.value || '').trim(),
