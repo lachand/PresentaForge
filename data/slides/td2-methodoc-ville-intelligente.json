@@ -1,0 +1,1406 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "title": "Accompagnement - TD2 - Méthodoc : la ville intelligente",
+    "author": "Valentin Lachand-Pascal",
+    "created": "2026-09-20",
+    "modified": "2026-09-20",
+    "email": "valentin.lachand-pascal@univ-lyon2.fr"
+  },
+  "theme": "icom",
+  "showSlideNumber": true,
+  "footerText": "Accompagnement - Méthodoc",
+  "autoNumberChapters": true,
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Institut de la Communication - Licence",
+      "title": "Accompagnement - TD2",
+      "subtitle": "Méthodoc : la ville intelligente - méthodologie documentaire appliquée",
+      "author": "Valentin Lachand-Pascal",
+      "date": "2026",
+      "email": "valentin.lachand-pascal@univ-lyon2.fr",
+      "notes": "Séance en présentiel qui fait suite à l'autoformation en ligne Méthodoc (plateforme Moodle, ~1h45 réparties en 6 sections). Objectif du TD : ne pas re-expliquer la théorie déjà vue en ligne, mais la faire manipuler concrètement sur un sujet fil rouge (la ville intelligente), en groupes puis individuellement. Prévoir un ordinateur/smartphone par binôme ou par personne pour les exercices de recherche en ligne."
+    },
+    {
+      "type": "chapter",
+      "number": "00",
+      "title": "Avant de commencer",
+      "subtitle": "Retour sur l'autoformation Méthodoc",
+      "notes": "Chapitre court : vérifier que tout le monde a bien fait l'autoformation en ligne avant de démarrer, rappeler l'objectif de la séance, présenter le fil rouge (la ville intelligente) qui servira de sujet à tous les exercices du TD."
+    },
+    {
+      "type": "bullets",
+      "title": "Préambule",
+      "items": [
+        "Avez-vous rencontré des problèmes techniques sur Méthodoc ?",
+        "Quel est votre ressenti général sur l'autoformation ?",
+        "Avez-vous beaucoup appris, ou connaissiez-vous déjà la plupart des contenus ?",
+        "Est-ce que c'était difficile ou facile ?"
+      ],
+      "notes": "Tour de table rapide (5 minutes max) - l'objectif n'est pas de faire un débat mais de prendre la température avant de démarrer. Si plusieurs personnes signalent un problème technique récurrent (ex. impossible de valider une activité), le noter et le remonter au SCD après la séance plutôt que de chercher à le résoudre en direct devant le groupe.",
+      "keypoints": [
+        "Cette séance fait suite à l'autoformation Méthodoc faite en ligne avant le TD - le préambule sert à vérifier que tout le monde a pu la terminer dans de bonnes conditions."
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Objectif de la séance",
+      "items": [
+        "Compléter, enrichir et manipuler ce qui a été vu en autoformation sur Méthodoc",
+        "Exercices de groupes puis individuels, sur un seul et même sujet fil rouge : la ville intelligente",
+        "Méthodoc donne la théorie et des exercices guidés - ce TD la met en pratique sur un vrai sujet, du mot-clé jusqu'à la bibliographie"
+      ],
+      "notes": "Insister sur la logique de la séance : Méthodoc (autoformation) donne les bases méthodologiques de façon guidée et modulaire ; ce TD les fait rejouer d'un bout à l'autre du processus de recherche documentaire, sur UN SEUL sujet suivi de A à Z (mots-clés -> recherche de documents -> évaluation d'un site -> bibliographie), pour que les étudiant·e·s voient le fil complet plutôt que des briques isolées.",
+      "keypoints": [
+        "Ce TD ne réexplique pas la théorie déjà vue sur Méthodoc : il la fait manipuler sur un sujet réel, suivi de bout en bout (mots-clés, recherche, évaluation, bibliographie)."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_s574u60",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Rappel : le parcours Méthodoc"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_ynyteaf",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_7vih3qw",
+          "type": "table",
+          "x": 100,
+          "y": 155,
+          "w": 1080,
+          "h": 420,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Section",
+                "Durée",
+                "Ce qui y est vu"
+              ],
+              [
+                "1. Préparez votre recherche",
+                "15 min",
+                "Reformuler le sujet, trouver des mots-clés, carte mentale, types de documents"
+              ],
+              [
+                "2. Repérez où sont les documents",
+                "15 min",
+                "Pourquoi les BU, documentation imprimée vs électronique"
+              ],
+              [
+                "3. Cherchez ? Trouvez !",
+                "40 min",
+                "Les catalogues, localiser un document papier, astuces de recherche"
+              ],
+              [
+                "4. Utiliser le Web",
+                "15 min",
+                "Internet vs Web, moteur de recherche, évaluer un site, IA à l'université"
+              ],
+              [
+                "5. Exploitez vos résultats",
+                "20 min",
+                "Évaluer l'information, éviter le plagiat, citer ses sources"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "headerBg": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "Cette slide n'existait pas dans Méthodoc - elle sert de carte mentale pour situer chaque exercice du TD par rapport à la section Méthodoc correspondante. La rappeler brièvement au début, puis y revenir juste avant chaque exercice (chaque chapitre du TD commence par un rappel de la section Méthodoc concernée).",
+      "keypoints": [
+        "Méthodoc se déroule en 5 grandes sections (hors bilan) : préparer sa recherche, repérer les documents, chercher/trouver, utiliser le Web, exploiter ses résultats - dans cet ordre, qui est aussi celui du TD."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_vyhlxym",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Sujet fil rouge : la ville intelligente"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_evmrcty",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_v0prel2",
+          "type": "text",
+          "x": 140,
+          "y": 160,
+          "w": 1000,
+          "h": 90,
+          "z": 1,
+          "data": {
+            "html": "Que pouvez-vous dire sur la ville intelligente ? Un tour de table en quelques mots, sans préparation."
+          },
+          "style": {
+            "fontSize": 24,
+            "color": "var(--sl-text)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_ahdb2qj",
+          "type": "card",
+          "x": 140,
+          "y": 260,
+          "w": 1000,
+          "h": 400,
+          "z": 1,
+          "data": {
+            "title": "Si vous manquez d'idées, 6 dimensions classiques",
+            "items": [
+              "Mobilité (transports intelligents, données de circulation)",
+              "Énergie et environnement (réseaux électriques intelligents, capteurs)",
+              "Gouvernance (open data, participation citoyenne numérique)",
+              "Économie (attractivité, innovation, start-ups urbaines)",
+              "Habitants (services numériques, inclusion numérique)",
+              "Vie quotidienne (santé, sécurité, culture connectées)"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "Laisser le groupe partir librement en premier - ne montrer les 6 dimensions QUE si la discussion s'essouffle rapidement ou si le groupe reste sur une seule idée (ex. seulement les transports). Ces 6 dimensions correspondent au modèle académique le plus cité sur la ville intelligente (Giffinger et al., 2007) - pas la peine de le nommer explicitement à ce stade, l'objectif est de débloquer le brainstorm, pas de faire un cours.",
+      "keypoints": [
+        "La ville intelligente est un sujet volontairement vaste : mobilité, énergie/environnement, gouvernance, économie, habitants, vie quotidienne - autant d'angles possibles pour la recherche documentaire qui suit."
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "01",
+      "title": "Trouver ses mots-clés",
+      "subtitle": "Et construire des équations de recherche",
+      "notes": "Reprend directement les sections 1 (Préparez votre recherche) et 3.3 (astuces de recherche) de Méthodoc, appliquées au sujet de la ville intelligente."
+    },
+    {
+      "type": "bullets",
+      "title": "Rappel Méthodoc : préparer sa recherche",
+      "items": [
+        {
+          "text": "Reformuler le sujet avec ses propres mots avant de chercher",
+          "sub": [
+            "Éviter de partir directement du premier mot qui vient à l'esprit"
+          ]
+        },
+        {
+          "text": "Trouver des mots-clés variés autour du sujet",
+          "sub": [
+            "Synonymes, termes plus larges, termes plus précis",
+            "Traduction en anglais : beaucoup de ressources scientifiques n'existent qu'en anglais"
+          ]
+        },
+        "La carte mentale : un bon outil pour organiser visuellement tous ces mots-clés autour du sujet central"
+      ],
+      "notes": "Rappel express de la section 1 de Méthodoc (déjà vue en autoformation) - ne pas repasser en détail, juste remettre en tête avant l'exercice 1.1. Le point le plus souvent oublié par les étudiant·e·s en pratique : chercher des synonymes ET des termes plus larges/plus précis, pas seulement reformuler le même mot différemment.",
+      "keypoints": [
+        "Avant de chercher, reformuler le sujet et lister des mots-clés variés : synonymes, termes plus larges, termes plus précis, traduction anglaise - la carte mentale aide à organiser tout ça visuellement."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_4s8ngx5",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 1.1"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_1xxti19",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_nx3msec",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 900,
+            "label": "15 minutes"
+          }
+        },
+        {
+          "id": "el_z1w4upw",
+          "type": "list",
+          "x": 140,
+          "y": 160,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Par groupes de deux",
+              "Cherchez des mots-clés pertinents sur la ville intelligente",
+              "Exercice sur papier"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        }
+      ],
+      "notes": "Passer dans les groupes pendant l'exercice pour repérer ceux qui ne trouvent que 2-3 mots-clés très proches les uns des autres (ex. seulement des synonymes de \"ville intelligente\") - les orienter vers les 6 dimensions vues à la slide précédente si besoin, sans donner directement les mots-clés.",
+      "keypoints": [
+        "Travail en binôme : lister un maximum de mots-clés pertinents sur la ville intelligente, sur papier."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_tlry52a",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Rappel Méthodoc : 3 astuces gagnantes"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_irx7na4",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_gswgo1d",
+          "type": "card",
+          "x": 140,
+          "y": 155,
+          "w": 330,
+          "h": 420,
+          "z": 1,
+          "data": {
+            "title": "Les guillemets",
+            "items": [
+              "Cherchent l'expression exacte, pas les mots séparément",
+              "Exemple : \"droit constitutionnel\" (avec guillemets) donne bien moins de résultats, mais bien plus pertinents"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_rnfomry",
+          "type": "card",
+          "x": 485,
+          "y": 155,
+          "w": 330,
+          "h": 420,
+          "z": 1,
+          "data": {
+            "title": "La troncature",
+            "items": [
+              "Un symbole (*) en fin de mot remplace les lettres qui suivent",
+              "Exemple : hétéronorm* trouve hétéronormé, hétéronormativité, hétéronormativity en une seule recherche"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_cb2qe61",
+          "type": "card",
+          "x": 830,
+          "y": 155,
+          "w": 330,
+          "h": 420,
+          "z": 1,
+          "data": {
+            "title": "Les opérateurs booléens",
+            "items": [
+              "ET, OU, SAUF combinent plusieurs mots-clés entre eux",
+              "ET restreint, OU élargit, SAUF exclut un terme parasite"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "Ces 3 techniques (déjà vues en détail sur Méthodoc, section 3.3) fonctionnent sur la quasi-totalité des outils : catalogues de bibliothèque, bases de données ET moteurs de recherche grand public comme Google. Bien insister sur ce dernier point : ce ne sont pas des astuces \"réservées aux bibliothécaires\", elles marchent aussi dans une simple recherche Google.",
+      "keypoints": [
+        "3 astuces qui marchent partout (catalogues, bases de données, Google) : les guillemets pour une expression exacte, la troncature (*) pour capturer plusieurs formes d'un mot, les opérateurs ET/OU/SAUF pour combiner ou exclure des mots-clés."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_h5k105q",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 1.2"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_6uekmve",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_3f6urnd",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 300,
+            "label": "5 minutes"
+          }
+        },
+        {
+          "id": "el_lzwpnol",
+          "type": "list",
+          "x": 140,
+          "y": 160,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "À partir de vos mots-clés",
+              "Générez des équations de recherche",
+              "Pour interroger les outils documentaires sur ce sujet"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        }
+      ],
+      "notes": "Vérifier que les binômes utilisent au moins une des 3 astuces vues à l'instant (guillemets, troncature ou opérateur booléen) dans leurs équations - sinon ils se contentent souvent de juxtaposer des mots-clés sans les combiner.",
+      "keypoints": [
+        "Construire de vraies équations de recherche (pas juste une liste de mots-clés) en mobilisant guillemets, troncature et/ou opérateurs booléens."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_8k9d02d",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 1.3"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_l5tddg4",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_13x2r9i",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 600,
+            "label": "10 minutes"
+          }
+        },
+        {
+          "id": "el_4gnkqxj",
+          "type": "list",
+          "x": 140,
+          "y": 160,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Un groupe volontaire présente ses mots-clés et ses équations",
+              "Enrichissement collectif avec le travail des autres groupes"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        }
+      ],
+      "notes": "Profiter de cette mise en commun pour relever à voix haute les meilleures équations de recherche produites (celles qui utilisent bien les 3 astuces) et les afficher/noter au tableau - ça sert de modèle pour les exercices individuels qui suivent."
+    },
+    {
+      "type": "chapter",
+      "number": "02",
+      "title": "Trouver des documents variés",
+      "subtitle": "Livre papier, livre numérique, presse, article spécialisé, image",
+      "notes": "Reprend les sections 2 (Repérez où sont les documents) et 3 (Cherchez ? Trouvez !) de Méthodoc. Correspond à la partie \"Analyse du sujet\" et \"Chercher efficacement\" de la grille de recherche distribuée aux étudiant·e·s."
+    },
+    {
+      "type": "bullets",
+      "title": "Rappel Méthodoc : où sont les documents ?",
+      "items": [
+        "Toute la documentation n'est pas au même endroit ni sous la même forme",
+        {
+          "text": "Deux grandes familles de sources :",
+          "sub": [
+            "Documentation imprimée : les rayonnages physiques d'une bibliothèque",
+            "Documentation électronique : catalogue en ligne, bases de données, bibliothèque numérique"
+          ]
+        },
+        "Un même sujet demande souvent de croiser plusieurs types de sources - c'est exactement ce que fait l'exercice qui suit",
+        "Pour un document absent des bibliothèques de Lyon 2 : le catalogue collectif SUDOC recense les collections de la quasi-totalité des bibliothèques universitaires françaises"
+      ],
+      "notes": "Point à faire vivre concrètement : demander qui, dans la classe, a déjà cherché un livre UNIQUEMENT sur Google avant ce cours, sans passer par un catalogue de bibliothèque - c'est très fréquent, et ça rate justement toute la documentation imprimée et les bases spécialisées. SUDOC (Système Universitaire de Documentation) est LE réflexe pour trouver un document que Lyon 2 ne possède pas, avant d'abandonner la piste.",
+      "keypoints": [
+        "Deux familles de documentation : imprimée (rayonnages) et électronique (catalogue, bases, bibliothèque numérique) - un sujet demande souvent de croiser les deux.",
+        "Pour un document absent de Lyon 2, le catalogue collectif SUDOC référence les collections de la quasi-totalité des bibliothèques universitaires françaises."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_7of6y1k",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 2 (30 minutes)"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_cnk8bt8",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_huxw21v",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 1800,
+            "label": "30 minutes"
+          }
+        },
+        {
+          "id": "el_0cjapsf",
+          "type": "text",
+          "x": 140,
+          "y": 155,
+          "w": 720,
+          "h": 40,
+          "z": 1,
+          "data": {
+            "html": "Travail individuel - conduire une recherche documentaire afin de trouver :"
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_osqxiul",
+          "type": "table",
+          "x": 140,
+          "y": 210,
+          "w": 720,
+          "h": 420,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Type de document",
+                "Où chercher"
+              ],
+              [
+                "1 livre papier à Lyon 2",
+                "Catalogue des bibliothèques Lyon 2"
+              ],
+              [
+                "1 livre papier hors Lyon 2",
+                "Catalogue collectif SUDOC"
+              ],
+              [
+                "1 livre numérique",
+                "Bibliothèque électronique Lyon 2"
+              ],
+              [
+                "1 article de presse généraliste",
+                "Bibliothèque électronique Lyon 2"
+              ],
+              [
+                "1 article spécialisé",
+                "Bibliothèque électronique Lyon 2"
+              ],
+              [
+                "1 image",
+                "Bibliothèque électronique Lyon 2"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 15,
+            "headerBg": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "Correspond exactement à la grille de recherche distribuée aux étudiant·e·s (document séparé) - chaque ligne trouvée doit y être notée avec le détail de la recherche effectuée (mots-clés utilisés, outil interrogé), pas seulement la référence finale. Insister : \"article spécialisé\" veut dire un article publié dans une revue scientifique/professionnelle, pas un article de blog ou de presse généraliste qui traite du sujet de façon experte.",
+      "keypoints": [
+        "6 types de documents à trouver sur la ville intelligente, en utilisant les bons outils pour chacun - le détail de chaque recherche (mots-clés, outil) doit être noté sur la grille de recherche."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_fdvp6a6",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 2 : corrigé (9 minutes)"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_06fsyoo",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_3s9cpfy",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 540,
+            "label": "9 minutes"
+          }
+        },
+        {
+          "id": "el_9l3s1tv",
+          "type": "card",
+          "x": 140,
+          "y": 160,
+          "w": 1000,
+          "h": 420,
+          "z": 1,
+          "data": {
+            "title": "Points de vigilance à vérifier en débriefant",
+            "items": [
+              "\"Livre numérique\" doit venir de la bibliothèque électronique Lyon 2, pas d'un site de téléchargement douteux",
+              "\"Article spécialisé\" = revue scientifique/professionnelle, pas un article de presse qui traite du sujet en profondeur",
+              "\"Article de presse\" doit être identifiable comme tel (journal, date, journaliste) - pas un simple article de blog",
+              "Le livre papier hors Lyon 2 doit être vraiment absent des collections Lyon 2 (vérifié, pas supposé)",
+              "Demander à quelques volontaires quels mots-clés et quels outils ils ont utilisés pour chaque type - comparer les stratégies entre étudiant·e·s"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "Ces points de vigilance sont des pièges fréquents observés sur ce type d'exercice, pas les réponses des étudiant·e·s (impossibles à connaître à l'avance) - à utiliser comme grille de lecture pendant le débrief plutôt que comme un corrigé figé.",
+      "keypoints": [
+        "Erreurs fréquentes à surveiller : confondre article spécialisé et article de presse approfondi, livre numérique piraté au lieu de la bibliothèque légale Lyon 2, ne pas vérifier réellement l'absence d'un document à Lyon 2 avant de le chercher ailleurs."
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "03",
+      "title": "Évaluer un site web",
+      "subtitle": "Tout ce qui est en ligne ne se vaut pas",
+      "notes": "Reprend la section 4 de Méthodoc (Utiliser le Web pour vos travaux universitaires) et présente la grille d'analyse de site web distribuée aux étudiant·e·s."
+    },
+    {
+      "type": "bullets",
+      "title": "Rappel Méthodoc : utiliser le Web",
+      "items": [
+        "Internet est le réseau, le Web n'est qu'une de ses applications - un moteur de recherche n'interroge que le Web",
+        {
+          "text": "Décrypter une URL avant de faire confiance à un site :",
+          "sub": [
+            "Le type de domaine compte plus que l'extension (.fr, .com, .org ne garantissent rien - n'importe qui peut acheter un nom de domaine)",
+            "En France, l'extension .gouv identifie un site officiel de l'État - un repère fiable",
+            "Privilégier les sites d'institutions, d'organismes de recherche ou culturels plutôt que commerciaux ou personnels"
+          ]
+        },
+        "L'IA à l'université : un outil parmi d'autres, pas une source citable en tant que telle - toujours vérifier et sourcer ce qu'elle produit"
+      ],
+      "notes": "Le réflexe \"décrypter l'URL\" est le point le plus actionnable de cette section - le faire pratiquer mentalement sur 2-3 exemples d'URL avant l'exercice si le temps le permet (ex. comparer une URL en .gouv.fr, une en .com d'un site commercial, une en .fr d'un blog personnel).",
+      "keypoints": [
+        "Internet != Web : un moteur de recherche n'interroge que le Web, pas tout Internet.",
+        "Décrypter une URL avant de faire confiance : le TYPE de domaine (institution, recherche, commercial, personnel) compte plus que l'extension - .gouv est le seul repère vraiment fiable en France.",
+        "Une IA générative n'est pas une source citable : elle peut aider à explorer un sujet, mais ses productions doivent être vérifiées et sourcées comme n'importe quelle autre information."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_d9u2bxv",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "La grille d'analyse de site web"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_nq0lwvw",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_oeip057",
+          "type": "table",
+          "x": 100,
+          "y": 155,
+          "w": 1080,
+          "h": 380,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Question",
+                "Ce qu'elle évalue"
+              ],
+              [
+                "QUI ?",
+                "L'auteur est-il identifié ? Institution officielle, organisation privée, ou site personnel ?"
+              ],
+              [
+                "POURQUOI ?",
+                "L'objectif du site : commercial, partage de connaissances, propagande/lobbying, information ?"
+              ],
+              [
+                "QUOI ?",
+                "Ergonomie, pertinence du contenu par rapport au sujet, présence de sources et de liens fiables"
+              ],
+              [
+                "QUAND ?",
+                "La date de publication et de mise à jour sont-elles récentes, ou absentes ?"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 16,
+            "headerBg": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_e9m9v33",
+          "type": "callout-box",
+          "x": 100,
+          "y": 555,
+          "w": 1080,
+          "h": 120,
+          "z": 1,
+          "data": {
+            "label": "À retenir",
+            "text": "Ces 4 questions sont celles de la grille d'analyse distribuée en exercice - les garder en tête pendant l'exercice 3, la grille papier sert à noter les réponses en détail."
+          }
+        }
+      ],
+      "notes": "Cette slide résume la structure de la grille d'analyse de site web (document séparé, distribué aux étudiant·e·s) avant l'exercice 3, pour qu'ils/elles l'aient déjà en tête et remplissent la grille papier plus vite. Ne pas lire chaque sous-question du document en détail ici - juste les 4 grandes catégories QUI/POURQUOI/QUOI/QUAND.",
+      "keypoints": [
+        "La grille d'analyse d'un site web tient en 4 questions : QUI (l'auteur), POURQUOI (l'objectif du site), QUOI (ergonomie, pertinence, sources), QUAND (fraîcheur de l'information)."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_pvldppi",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 3"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_5krl8tx",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_y80yidb",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 1200,
+            "label": "20 minutes"
+          }
+        },
+        {
+          "id": "el_y7g1oop",
+          "type": "list",
+          "x": 140,
+          "y": 160,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Travail individuel",
+              "Trouver un site ou un blog sur le sujet de la ville intelligente",
+              "Remplir la grille d'analyse distribuée"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        }
+      ],
+      "notes": "Encourager à choisir un site qui n'est PAS une institution évidente (pas seulement service-public.fr) - l'exercice est plus formateur sur un site où le \"QUI\"/\"POURQUOI\" n'est pas immédiat, ça oblige à vraiment chercher les indices (mentions légales, page \"À propos\", auteur des articles).",
+      "keypoints": [
+        "Choisir un site dont la fiabilité n'est pas évidente au premier regard rend l'exercice plus formateur qu'un site institutionnel trop \"facile\"."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_nlx0xzn",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 3 : correction (3 minutes)"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_25w3w4d",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_ayhhp9n",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 180,
+            "label": "3 minutes"
+          }
+        },
+        {
+          "id": "el_1n2mb4q",
+          "type": "card",
+          "x": 140,
+          "y": 160,
+          "w": 1000,
+          "h": 420,
+          "z": 1,
+          "data": {
+            "title": "Points de vigilance à vérifier en débriefant",
+            "items": [
+              "Un site \".org\" ou \"association\" n'est pas automatiquement neutre - vérifier qui finance/anime l'association",
+              "L'absence de date ne veut pas dire \"à éviter d'office\" mais doit rendre plus prudent sur l'actualité de l'info",
+              "Un site à l'esthétique soignée n'est pas un gage de fiabilité du contenu - bien distinguer ergonomie (QUOI) et fiabilité (QUI/POURQUOI)",
+              "Demander à 2-3 volontaires le site choisi et leur conclusion (utilisable ou non, avec quelles limites)"
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "titleColor": "var(--sl-primary)"
+          }
+        }
+      ],
+      "notes": "Comme pour l'exercice 2, ces points sont des pièges classiques à surveiller pendant le débrief, pas un corrigé figé puisque chaque étudiant·e a choisi un site différent."
+    },
+    {
+      "type": "chapter",
+      "number": "04",
+      "title": "Construire une bibliographie raisonnée",
+      "subtitle": "Citer correctement, éviter le plagiat",
+      "notes": "Reprend la section 5 de Méthodoc (Exploitez vos résultats) et clôt le parcours du sujet fil rouge : après avoir cherché et évalué des documents, il faut maintenant les citer correctement."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_kkh30wo",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Rappel Méthodoc : citer ses sources"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_mt4lgbd",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0o51lmu",
+          "type": "text",
+          "x": 140,
+          "y": 155,
+          "w": 1000,
+          "h": 60,
+          "z": 1,
+          "data": {
+            "html": "Une référence bibliographique identifie un document : elle prouve vos lectures et permet de les retrouver. 4 éléments sont toujours obligatoires : <b>auteur, titre, éditeur, date</b>."
+          },
+          "style": {
+            "fontSize": 20,
+            "color": "var(--sl-text)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-body)"
+          }
+        },
+        {
+          "id": "el_cf4avx1",
+          "type": "table",
+          "x": 140,
+          "y": 235,
+          "w": 1000,
+          "h": 300,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Type de document",
+                "Format"
+              ],
+              [
+                "Livre",
+                "Auteur, Titre (en italique), Lieu, Éditeur, Année"
+              ],
+              [
+                "Article de revue",
+                "Auteur, « Titre de l'article », Titre de la revue (italique), n°, année, pages"
+              ],
+              [
+                "Page web",
+                "Auteur, « Titre de la page », date de consultation, URL"
+              ],
+              [
+                "Image",
+                "Auteur, « Titre de l'image », date, source/URL"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 15,
+            "headerBg": "var(--sl-primary)"
+          }
+        },
+        {
+          "id": "el_igfh5na",
+          "type": "callout-box",
+          "x": 140,
+          "y": 550,
+          "w": 1000,
+          "h": 135,
+          "z": 1,
+          "data": {
+            "label": "Éviter le plagiat",
+            "text": "Citer une source, ce n'est pas seulement lister une référence en bas de page : c'est aussi indiquer clairement dans le texte ce qui vient d'une source (citation ou reformulation) plutôt que de le présenter comme sa propre analyse."
+          }
+        }
+      ],
+      "notes": "Les formats de référence viennent directement de Méthodoc (section 5.3). Mentionner l'existence de Zotero (logiciel gratuit recommandé par Méthodoc pour collecter et formater automatiquement ses références) sans nécessairement faire une démo complète si le temps manque - au moins donner le nom pour que les étudiant·e·s le retrouvent seuls.",
+      "keypoints": [
+        "4 éléments toujours obligatoires dans une référence : auteur, titre, éditeur, date - le format exact varie selon le type de document (livre, article, page web, image).",
+        "Zotero (gratuit) est l'outil recommandé par Méthodoc pour collecter et formater ses références automatiquement.",
+        "Citer ne se limite pas à lister ses sources en bibliographie : il faut aussi signaler dans le texte ce qui vient d'une source plutôt que le présenter comme sa propre analyse (plagiat)."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_3si3phl",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 4"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_7n45aqw",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_88njc7z",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 600,
+            "label": "10 minutes"
+          }
+        },
+        {
+          "id": "el_mc4zuq9",
+          "type": "list",
+          "x": 140,
+          "y": 160,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Rédiger sur la grille de recherche votre bibliographie",
+              "De façon raisonnée : pas seulement la référence, mais pourquoi chaque source est pertinente"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        }
+      ],
+      "notes": "\"De façon raisonnée\" est le mot clé de cet exercice : ce n'est pas une liste de références brutes, mais une phrase ou deux par source expliquant en quoi elle est utile au sujet - exactement ce que demande la dernière ligne de la grille de recherche (\"En quoi cette ressource est-elle pertinente ?\") pour le site web/blog, à généraliser ici à toutes les sources trouvées.",
+      "keypoints": [
+        "Une bibliographie \"raisonnée\" justifie brièvement la pertinence de chaque source, elle ne se contente pas de lister des références."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_qt6xf7c",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 4 : proposition (3 minutes)"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_8wvp5i8",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_bvj9jdw",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 180,
+            "label": "3 minutes"
+          }
+        },
+        {
+          "id": "el_38lyqyr",
+          "type": "list",
+          "x": 140,
+          "y": 160,
+          "w": 720,
+          "h": 300,
+          "z": 1,
+          "data": {
+            "items": [
+              "Quelques volontaires partagent une entrée de leur bibliographie",
+              "Vérifier ensemble : les 4 éléments obligatoires sont-ils présents ?",
+              "La justification de pertinence est-elle claire et spécifique au sujet ?"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        }
+      ],
+      "notes": "Clore ce chapitre en reliant au chapitre 2 : la bibliographie raisonnée rassemble les documents trouvés à l'exercice 2 et le site web évalué à l'exercice 3 - c'est la synthèse de tout le parcours documentaire de la séance."
+    },
+    {
+      "type": "bullets",
+      "title": "Ce qu'il faut retenir",
+      "items": [
+        "Une recherche documentaire suit un vrai processus : mots-clés -> recherche outillée -> évaluation critique -> citation",
+        "Les 3 astuces (guillemets, troncature, opérateurs booléens) marchent partout, y compris sur Google",
+        "Décrypter une URL (type de domaine, extension) avant de faire confiance à un site",
+        "Une référence bibliographique a 4 éléments obligatoires : auteur, titre, éditeur, date",
+        "Ces réflexes serviront pour tous vos travaux universitaires, pas seulement pour ce TD"
+      ],
+      "notes": "Conclure en resituant l'enjeu au-delà du TD : ces réflexes méthodologiques (mots-clés, astuces de recherche, évaluation de source, citation) sont transférables à n'importe quel travail universitaire à venir (dossiers, mémoires, exposés) - pas seulement à l'exercice sur la ville intelligente fait aujourd'hui.",
+      "keypoints": [
+        "Le processus complet vu aujourd'hui (mots-clés, recherche outillée, évaluation critique, citation) est transférable à tout travail universitaire, pas seulement à ce TD sur la ville intelligente."
+      ]
+    },
+    {
+      "type": "title",
+      "title": "Des questions ?",
+      "notes": "Slide de clôture. Rappeler que la grille de recherche et la grille d'analyse de site web remplies aujourd'hui peuvent servir de modèle pour les prochains travaux nécessitant une recherche documentaire."
+    }
+  ]
+}
