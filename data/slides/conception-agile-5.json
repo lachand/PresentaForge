@@ -4,7 +4,8 @@
     "title": "Conception agile de projets informatiques - Partie 5",
     "author": "Valentin Lachand-Pascal",
     "created": "2026-09-18",
-    "modified": "2026-09-18"
+    "modified": "2026-09-18",
+    "email": "valentin.lachand-pascal@univ-lyon2.fr"
   },
   "theme": "icom",
   "showSlideNumber": true,
@@ -18,7 +19,8 @@
       "subtitle": "Responsabilité, biais algorithmiques, dark patterns et régulation",
       "author": "Valentin Lachand-Pascal",
       "date": "2026",
-      "notes": "Séance basée sur les cours d'Aurélien Tabard (à créditer explicitement à l'oral en plus de la mention sur ce slide). Prévenir le ton de la séance : contrairement aux cours précédents (CI/CD, méthodes), il n'y a pas de \"bonne réponse\" technique unique ici - l'objectif est de développer un réflexe de vigilance, pas d'apprendre une procédure. Annoncer que la séance mêle études de cas réels (captures d'écran authentiques, exception pédagogique) et moments de discussion collective."
+      "notes": "Séance basée sur les cours d'Aurélien Tabard (à créditer explicitement à l'oral en plus de la mention sur ce slide). Prévenir le ton de la séance : contrairement aux cours précédents (CI/CD, méthodes), il n'y a pas de \"bonne réponse\" technique unique ici - l'objectif est de développer un réflexe de vigilance, pas d'apprendre une procédure. Annoncer que la séance mêle études de cas réels (captures d'écran authentiques, exception pédagogique) et moments de discussion collective.",
+      "email": "valentin.lachand-pascal@univ-lyon2.fr"
     },
     {
       "type": "bullets",

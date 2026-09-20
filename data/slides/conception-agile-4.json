@@ -4,7 +4,8 @@
     "title": "Conception agile de projets informatiques - Partie 4",
     "author": "Valentin Lachand-Pascal",
     "created": "2026-09-18",
-    "modified": "2026-09-18"
+    "modified": "2026-09-18",
+    "email": "valentin.lachand-pascal@univ-lyon2.fr"
   },
   "theme": "icom",
   "showSlideNumber": true,
@@ -18,7 +19,8 @@
       "subtitle": "CI/CD : principes, stratégies de branches, GitHub Actions, GitLab CI et sécurité de la chaîne",
       "author": "Valentin Lachand-Pascal",
       "date": "2026",
-      "notes": "Séance 4 du cours. Rappeler le fil rouge : après avoir vu la conception (cas d'utilisation, méthodes agiles, architecture), on s'attaque à la mécanique qui fait qu'un projet livré par une équipe reste livrable en continu, sans 'big bang' de fin de projet. Prévenir que la séance mêle théorie courte et beaucoup de lecture de YAML réel - avoir un ordinateur ouvert est utile pour suivre en live sur GitHub/GitLab si possible."
+      "notes": "Séance 4 du cours. Rappeler le fil rouge : après avoir vu la conception (cas d'utilisation, méthodes agiles, architecture), on s'attaque à la mécanique qui fait qu'un projet livré par une équipe reste livrable en continu, sans 'big bang' de fin de projet. Prévenir que la séance mêle théorie courte et beaucoup de lecture de YAML réel - avoir un ordinateur ouvert est utile pour suivre en live sur GitHub/GitLab si possible.",
+      "email": "valentin.lachand-pascal@univ-lyon2.fr"
     },
     {
       "type": "bullets",

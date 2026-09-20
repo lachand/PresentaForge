@@ -4,7 +4,8 @@
     "title": "Conception agile de projets informatiques - Partie 6",
     "author": "Valentin Lachand-Pascal",
     "created": "2026-09-18",
-    "modified": "2026-09-18"
+    "modified": "2026-09-18",
+    "email": "valentin.lachand-pascal@univ-lyon2.fr"
   },
   "theme": "icom",
   "showSlideNumber": true,
@@ -18,7 +19,8 @@
       "subtitle": "Agents, MCP, économie des tokens et bonnes pratiques pour développer en 2026",
       "author": "Valentin Lachand-Pascal",
       "date": "2026",
-      "notes": "Dernière séance du cours. Prévenir que ce cours a été entièrement retravaillé par rapport à l'édition précédente (datée 2024) : à l'époque, Copilot était présenté comme 'basé sur GPT-3' et OpenAI o1 comme une actualité de rupture - deux affirmations obsolètes dès 2025. Le rythme de sortie des modèles (8 modèles majeurs chez tous les fournisseurs en moins de deux mois cet été) est lui-même le premier point pédagogique de la séance : construire sa culture sur des PRINCIPES durables (comment ça marche, comment bien collaborer) plutôt que sur le nom d'un modèle précis, qui sera périmé dans six mois."
+      "notes": "Dernière séance du cours. Prévenir que ce cours a été entièrement retravaillé par rapport à l'édition précédente (datée 2024) : à l'époque, Copilot était présenté comme 'basé sur GPT-3' et OpenAI o1 comme une actualité de rupture - deux affirmations obsolètes dès 2025. Le rythme de sortie des modèles (8 modèles majeurs chez tous les fournisseurs en moins de deux mois cet été) est lui-même le premier point pédagogique de la séance : construire sa culture sur des PRINCIPES durables (comment ça marche, comment bien collaborer) plutôt que sur le nom d'un modèle précis, qui sera périmé dans six mois.",
+      "email": "valentin.lachand-pascal@univ-lyon2.fr"
     },
     {
       "type": "bullets",
