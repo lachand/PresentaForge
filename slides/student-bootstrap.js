@@ -5,7 +5,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/storage.js?v=2',
     '../shared/slides/theme-runtime.js?v=1',
     '../shared/slides/design-tokens.js?v=2',
-    '../shared/slides/realtime-contract.js?v=8',
+    '../shared/slides/realtime-contract.js?v=9',
     '../shared/slides/network-session.js?v=2',
     '../shared/slides/relay-config.js?v=1',
     '../shared/slides/background-utils.js?v=1',
@@ -13,6 +13,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     // slides-core.js (formatInlineRichText) et le rendu du deck.
     '../vendor/dompurify/3.4.14/purify.min.js',
     '../shared/slides/html-sanitizer.js?v=1',
+    '../shared/slides/markdown-lite.js?v=1',
     // Rendering stack — student renders the deck locally (Lot 20) via SlidesRenderer /
     // SlidesThemes / OEISlidesSpecialRuntime instead of receiving pre-rendered HTML.
     '../shared/slides/slides-special-math-runtime.js?v=1',
@@ -31,7 +32,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     // Student app modules (Lot 20 découpe de student-main.js)
     '../shared/slides/deck-blob-store.js?v=1',
     '../shared/slides/student-storage.js?v=5',
-    '../shared/slides/student-render.js?v=6',
+    '../shared/slides/student-render.js?v=7',
     '../shared/slides/student-revision.js?v=9',
     '../shared/slides/student-quiz.js?v=2',
     '../shared/slides/student-init-transfer.js?v=1',

@@ -17,6 +17,7 @@
         const esc = H.esc;
         const WB_W = H.WHITEBOARD_BASE_WIDTH;
         const WB_H = H.WHITEBOARD_BASE_HEIGHT;
+        const WB_TEXT_SIZES = { s: 22, m: 30, l: 42, xl: 58 };
         const studentWidgetScriptVersion = Date.now();
 
         // ── Per-slide notes ──────────────────────────────
@@ -278,6 +279,24 @@
                         endX: Math.max(0, Math.min(WB_W, endX)),
                         endY: Math.max(0, Math.min(WB_H, endY)),
                     });
+                    return;
+                }
+                if (entry.kind === 'text') {
+                    const x = Math.max(0, Math.min(WB_W, Number(entry.x)));
+                    const y = Math.max(0, Math.min(WB_H, Number(entry.y)));
+                    const w = Math.max(60, Math.min(WB_W, Number(entry.w)));
+                    const h = Math.max(40, Math.min(WB_H, Number(entry.h)));
+                    if (![x, y, w, h].every(Number.isFinite)) return;
+                    const markdown = typeof entry.markdown === 'string' ? entry.markdown.slice(0, 4000) : '';
+                    if (!markdown.trim()) return;
+                    const size = ['s', 'm', 'l', 'xl'].includes(entry.size) ? entry.size : 'm';
+                    out.push({
+                        kind: 'text',
+                        x, y, w, h,
+                        markdown,
+                        size,
+                        color: typeof entry.color === 'string' ? entry.color : '#ffffff',
+                    });
                 }
             });
             return out;
@@ -356,6 +375,56 @@
             }
         }
 
+        /**
+         * @param {string} markdown
+         * @returns {string}
+         */
+        function renderStudentMarkdownSafeHtml(markdown) {
+            try {
+                const html = window.OEIMarkdownLite?.toHtml ? window.OEIMarkdownLite.toHtml(String(markdown || '')) : '';
+                return window.OEIHtmlSanitizer?.sanitize ? window.OEIHtmlSanitizer.sanitize(html, 'course') : '';
+            } catch (_) {
+                return '';
+            }
+        }
+
+        /**
+         * @param {any} cmd
+         * @param {number} scale
+         * @returns {HTMLDivElement}
+         */
+        function buildStudentTextFieldEl(cmd, scale) {
+            const el = document.createElement('div');
+            el.className = 'wb-text-field';
+            el.style.left = (cmd.x / WB_W * 100) + '%';
+            el.style.top = (cmd.y / WB_H * 100) + '%';
+            el.style.width = (cmd.w / WB_W * 100) + '%';
+            el.style.minHeight = (cmd.h / WB_H * 100) + '%';
+            el.style.fontSize = ((WB_TEXT_SIZES[cmd.size] || WB_TEXT_SIZES.m) * scale) + 'px';
+            el.style.color = cmd.color || '#ffffff';
+            el.innerHTML = renderStudentMarkdownSafeHtml(cmd.markdown);
+            return el;
+        }
+
+        /**
+         * @param {any[]} commands
+         * @param {boolean} shouldShow
+         * @param {number} width
+         * @param {number} height
+         */
+        function renderStudentWhiteboardText(commands, shouldShow, width, height) {
+            const layer = document.getElementById('student-whiteboard-text');
+            if (!layer) return;
+            layer.classList.toggle('active', shouldShow);
+            layer.innerHTML = '';
+            if (!shouldShow) return;
+            const scale = Math.min(width / WB_W, height / WB_H);
+            commands.forEach(cmd => {
+                if (cmd.kind !== 'text') return;
+                layer.appendChild(buildStudentTextFieldEl(cmd, scale));
+            });
+        }
+
         function renderStudentWhiteboard() {
             const canvas = /** @type {HTMLCanvasElement | null} */ (document.getElementById('student-whiteboard'));
             const frame = document.getElementById('slide-frame');
@@ -377,6 +446,7 @@
                 : [];
             const shouldShow = _whiteboardActive && st.currentIndex === _whiteboardCurrentSlide;
             canvas.classList.toggle('active', shouldShow);
+            renderStudentWhiteboardText(commands, shouldShow, width, height);
             if (!shouldShow || !commands.length) return;
             const scaleX = width / WB_W;
             const scaleY = height / WB_H;

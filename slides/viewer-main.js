@@ -392,6 +392,14 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             };
             _recordWhiteboardFrame(payload);
         };
+        const _markdownToSafeHtml = markdown => {
+            try {
+                const html = window.OEIMarkdownLite?.toHtml ? window.OEIMarkdownLite.toHtml(markdown) : '';
+                return window.OEIHtmlSanitizer?.sanitize ? window.OEIHtmlSanitizer.sanitize(html, 'course') : '';
+            } catch (_) {
+                return '';
+            }
+        };
 
         /* ── Student Room (WebRTC P2P) ─────────────────────── */
         let _presentationData = null;
@@ -1865,6 +1873,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     storageGetJSON,
                     storageSetJSON,
                     getDrawRect: revealDrawRect,
+                    markdownToSafeHtml: _markdownToSafeHtml,
                     onSyncState: state => { _broadcastWhiteboardSync(state); },
                     shouldRecordFrame: () => _whiteboardRecordFrames,
                     onRecordFrame: frame => { _recordWhiteboardSnapshot(frame); },
@@ -2256,6 +2265,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     storageGetJSON,
                     storageSetJSON,
                     getDrawRect: presenterDrawRect,
+                    markdownToSafeHtml: _markdownToSafeHtml,
                     onSyncState: state => { _broadcastWhiteboardSync(state); },
                     shouldRecordFrame: () => _whiteboardRecordFrames,
                     onRecordFrame: frame => { _recordWhiteboardSnapshot(frame); },

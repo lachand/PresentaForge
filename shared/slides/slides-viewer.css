@@ -1903,6 +1903,67 @@
         .wb-btn.hidden { display: none; }
         #wb-delete { border-color: #ef4444; }
         #wb-delete:hover { background: rgba(239,68,68,0.3); }
+        #wb-edit { border-color: #00e5ff; }
+        #wb-edit:hover { background: rgba(0,229,255,0.2); }
+
+        /* ── Whiteboard: champ texte Markdown ─────────────── */
+        #wb-text-layer {
+            position: fixed; top: 0; left: 0; width: 0; height: 0;
+            z-index: 500; pointer-events: none; overflow: visible;
+        }
+        .wb-text-field {
+            font-family: system-ui, sans-serif; line-height: 1.35;
+            overflow-wrap: break-word; word-break: break-word;
+            padding: 0.15em 0.3em; pointer-events: none;
+        }
+        #wb-text-layer .wb-text-field { position: absolute; }
+        .wb-text-field h3 { font-size: 1.3em; margin: 0.2em 0; }
+        .wb-text-field h4 { font-size: 1.15em; margin: 0.2em 0; }
+        .wb-text-field h5 { font-size: 1.05em; margin: 0.2em 0; }
+        .wb-text-field p { margin: 0.2em 0; }
+        .wb-text-field ul { margin: 0.2em 0; padding-left: 1.2em; }
+        .wb-text-field blockquote {
+            margin: 0.2em 0; padding-left: 0.6em; border-left: 3px solid currentColor; opacity: 0.85;
+        }
+        .wb-text-field code { background: rgba(255,255,255,0.15); border-radius: 3px; padding: 0 0.25em; }
+        .wb-text-field pre { background: rgba(255,255,255,0.1); border-radius: 4px; padding: 0.4em 0.6em; overflow-x: auto; }
+        #wb-text-draft {
+            position: fixed; display: none; color: #ffffff;
+            background: rgba(0,229,255,0.08); outline: 2px dashed rgba(0,229,255,0.6);
+        }
+        #wb-text-draft.active { display: block; }
+
+        #wb-text-editor {
+            position: fixed; z-index: 502; display: none; width: 320px;
+            background: rgba(0,0,0,0.92); backdrop-filter: blur(10px);
+            border-radius: 12px; padding: 10px; font-family: system-ui;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15);
+        }
+        #wb-text-editor.active { display: block; }
+        #wb-text-editor-input {
+            width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;
+            background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px; padding: 6px 8px; font: 13px/1.4 ui-monospace, monospace;
+        }
+        .wb-text-editor-row {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 8px; gap: 8px;
+        }
+        .wb-text-size-chips { display: flex; gap: 4px; }
+        .wb-text-size-chip {
+            min-width: 28px; height: 26px; padding: 0 6px; border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08);
+            color: #fff; font-size: 12px; cursor: pointer;
+        }
+        .wb-text-size-chip:hover { background: rgba(255,255,255,0.18); }
+        .wb-text-size-chip.active { background: var(--sl-primary, var(--primary)); border-color: var(--sl-primary, var(--primary)); }
+        .wb-text-editor-actions { display: flex; gap: 6px; }
+        .wb-text-editor-actions button {
+            height: 26px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.08); color: #fff; font-size: 12px; cursor: pointer;
+        }
+        .wb-text-editor-actions button:hover { background: rgba(255,255,255,0.18); }
+        #wb-text-confirm { background: var(--sl-primary, var(--primary)); border-color: var(--sl-primary, var(--primary)); }
 
         /* ── Presenter tab system (Notes / Salle) ──────────── */
         .pv-tab-bar {
@@ -2540,6 +2601,7 @@
     /* Hide UI elements */
     #sl-toolbar, #sl-toolbar-hover-zone, #sl-keyboard-hint,
     #sl-audience-brand, #wb-toolbar, #wb-canvas, #wb-preview,
+    #wb-text-layer, #wb-text-draft, #wb-text-editor,
     #presenter-view, #sl-shortcuts-modal { display: none !important; }
 
     /* Reset body */
@@ -2586,6 +2648,9 @@ body.viewer-embed #sl-audience-brand,
 body.viewer-embed #wb-toolbar,
 body.viewer-embed #wb-canvas,
 body.viewer-embed #wb-preview,
+body.viewer-embed #wb-text-layer,
+body.viewer-embed #wb-text-draft,
+body.viewer-embed #wb-text-editor,
 body.viewer-embed #sl-shortcuts-modal { display: none !important; }
 body.viewer-embed .reveal { border-radius: 0; }
 body.viewer-embed html, body.viewer-embed body { overflow: hidden; }

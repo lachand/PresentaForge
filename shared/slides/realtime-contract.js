@@ -146,6 +146,12 @@
                     && isNumber(cmd.endX)
                     && isNumber(cmd.endY);
             }
+            if (cmd.kind === 'text') {
+                return isNumber(cmd.x) && isNumber(cmd.y) && isNumber(cmd.w) && isNumber(cmd.h)
+                    && isString(cmd.markdown || '', 4000)
+                    && ['s', 'm', 'l', 'xl'].includes(cmd.size)
+                    && isString(cmd.color || '', 32);
+            }
             return false;
         });
     };

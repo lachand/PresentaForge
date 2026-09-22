@@ -24,7 +24,17 @@
  *   endX: number,
  *   endY: number
  * }} WhiteboardShape
- * @typedef {WhiteboardStroke | WhiteboardShape} WhiteboardCommand
+ * @typedef {{
+ *   kind: 'text',
+ *   x: number,
+ *   y: number,
+ *   w: number,
+ *   h: number,
+ *   markdown: string,
+ *   size: 's' | 'm' | 'l' | 'xl',
+ *   color: string
+ * }} WhiteboardText
+ * @typedef {WhiteboardStroke | WhiteboardShape | WhiteboardText} WhiteboardCommand
  * @typedef {{ left: number, top: number, width: number, height: number }} WhiteboardDrawRect
  * @typedef {{
  *   active: boolean,
@@ -53,6 +63,7 @@
  *   storageGetJSON?: (key: string, fallback?: any) => any,
  *   storageSetJSON?: (key: string, value: any) => boolean,
  *   getDrawRect?: () => Partial<WhiteboardDrawRect> | DOMRect | null,
+ *   markdownToSafeHtml?: (markdown: string) => string,
  *   onSyncState?: (state: WhiteboardSyncState & { reason: string }) => void,
  *   shouldRecordFrame?: () => boolean,
  *   onRecordFrame?: (frame: WhiteboardRecordedFrame) => void,
@@ -61,10 +72,14 @@
  */
 export function createWhiteboardController(deps) {
     const WB_SHAPE_TOOLS = ['rect', 'circle', 'arrow'];
-    const WB_ALL_TOOLS = ['pen', 'highlighter', 'eraser', 'rect', 'circle', 'arrow', 'select'];
+    const WB_ALL_TOOLS = ['pen', 'highlighter', 'eraser', 'rect', 'circle', 'arrow', 'select', 'text'];
     const PERSIST_VERSION = 1;
     const BASE_WIDTH = 1280;
     const BASE_HEIGHT = 720;
+    const WB_TEXT_SIZES = { s: 22, m: 30, l: 42, xl: 58 };
+    const WB_TEXT_MIN_W = 60;
+    const WB_TEXT_MIN_H = 40;
+    const WB_TEXT_MARKDOWN_MAX = 4000;
 
     const now = typeof deps.now === 'function' ? deps.now : () => Date.now();
 
@@ -87,6 +102,10 @@ export function createWhiteboardController(deps) {
         persistTimer: null,
         drawRect: /** @type {WhiteboardDrawRect} */ ({ left: 0, top: 0, width: BASE_WIDTH, height: BASE_HEIGHT }),
         selectedCommandIdx: -1,
+        textLayer: null,
+        textSize: 'm',
+        editingTextIdx: -1,
+        pendingTextBox: /** @type {{x: number, y: number, w: number, h: number}|null} */ (null),
     };
     const canPersist = !!deps.storageKey && typeof deps.storageGetJSON === 'function' && typeof deps.storageSetJSON === 'function';
     let initialized = false;
@@ -166,6 +185,7 @@ export function createWhiteboardController(deps) {
         wb.ctx = wb.canvas.getContext('2d');
         wb.preview = /** @type {HTMLCanvasElement} */ (document.getElementById('wb-preview'));
         wb.pCtx = wb.preview.getContext('2d');
+        wb.textLayer = document.getElementById('wb-text-layer');
 
         if (!wb.canvas || !wb.ctx || !wb.preview || !wb.pCtx) return;
 
@@ -186,7 +206,9 @@ export function createWhiteboardController(deps) {
         document.getElementById('wb-circle')?.addEventListener('click', () => setTool('circle'));
         document.getElementById('wb-arrow')?.addEventListener('click', () => setTool('arrow'));
         document.getElementById('wb-select')?.addEventListener('click', () => setTool('select'));
+        document.getElementById('wb-text')?.addEventListener('click', () => setTool('text'));
         document.getElementById('wb-delete')?.addEventListener('click', deleteSelected);
+        document.getElementById('wb-edit')?.addEventListener('click', editSelected);
         document.querySelectorAll('.wb-color-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.wb-color-btn').forEach(b => b.classList.remove('active'));
@@ -203,8 +225,19 @@ export function createWhiteboardController(deps) {
         document.getElementById('wb-clear')?.addEventListener('click', clearCurrent);
         document.getElementById('wb-close')?.addEventListener('click', toggle);
         document.getElementById('btn-whiteboard')?.addEventListener('click', toggle);
+        document.querySelectorAll('.wb-text-size-chip').forEach(btn => {
+            btn.addEventListener('click', () => setTextEditorSize(/** @type {HTMLElement} */ (btn).dataset.size));
+        });
+        document.getElementById('wb-text-editor-input')?.addEventListener('input', renderTextDraftPreview);
+        document.getElementById('wb-text-confirm')?.addEventListener('click', confirmTextEditor);
+        document.getElementById('wb-text-cancel')?.addEventListener('click', closeTextEditor);
         document.addEventListener('keydown', e => {
             if (!wb.active) return;
+            const editorOpen = document.getElementById('wb-text-editor')?.classList.contains('active');
+            if (editorOpen) {
+                if (e.key === 'Escape') closeTextEditor();
+                return;
+            }
             if ((e.key === 'Delete' || e.key === 'Backspace') && wb.tool === 'select') {
                 deleteSelected();
             }
@@ -299,8 +332,13 @@ export function createWhiteboardController(deps) {
         const BASE_THRESHOLD = 10;
         for (let i = commands.length - 1; i >= 0; i--) {
             const cmd = commands[i];
-            const threshold = BASE_THRESHOLD + (cmd.size || 3);
-            if (cmd.kind === 'stroke') {
+            const threshold = BASE_THRESHOLD + (typeof cmd.size === 'number' ? cmd.size : 3);
+            if (cmd.kind === 'text') {
+                if (cx >= cmd.x - BASE_THRESHOLD && cx <= cmd.x + cmd.w + BASE_THRESHOLD
+                    && cy >= cmd.y - BASE_THRESHOLD && cy <= cmd.y + cmd.h + BASE_THRESHOLD) {
+                    return i;
+                }
+            } else if (cmd.kind === 'stroke') {
                 const pts = cmd.points;
                 for (let j = 0; j < pts.length - 1; j++) {
                     if (distToSegment(cx, cy, pts[j].x, pts[j].y, pts[j + 1].x, pts[j + 1].y) <= threshold) {
@@ -365,10 +403,17 @@ export function createWhiteboardController(deps) {
             } else if (cmd.shape === 'arrow') {
                 drawArrow(wb.pCtx, cmd.startX, cmd.startY, cmd.endX, cmd.endY, cmd.size + 8);
             }
+        } else if (cmd.kind === 'text') {
+            wb.pCtx.globalAlpha = 1;
+            wb.pCtx.lineWidth = 3;
+            wb.pCtx.setLineDash([10, 6]);
+            wb.pCtx.strokeRect(cmd.x - 6, cmd.y - 6, cmd.w + 12, cmd.h + 12);
+            wb.pCtx.setLineDash([]);
         }
         wb.pCtx.restore();
-        // Show delete button
+        // Show delete button (+ edit button for text fields)
         document.getElementById('wb-delete')?.classList.remove('hidden');
+        document.getElementById('wb-edit')?.classList.toggle('hidden', cmd.kind !== 'text');
     }
 
     function clearSelection() {
@@ -376,6 +421,7 @@ export function createWhiteboardController(deps) {
         wb.selectedCommandIdx = -1;
         if (wb.pCtx && wb.preview) wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
         document.getElementById('wb-delete')?.classList.add('hidden');
+        document.getElementById('wb-edit')?.classList.add('hidden');
     }
 
     function deleteSelected() {
@@ -386,6 +432,16 @@ export function createWhiteboardController(deps) {
         renderSlide(wb.currentSlide);
         persistSoon();
         emitSyncState('delete', true);
+    }
+
+    function editSelected() {
+        if (wb.selectedCommandIdx < 0) return;
+        const commands = storageGetCommands(wb.currentSlide);
+        const cmd = commands[wb.selectedCommandIdx];
+        if (!cmd || cmd.kind !== 'text') return;
+        const idx = wb.selectedCommandIdx;
+        clearSelection();
+        openTextEditor({ x: cmd.x, y: cmd.y, w: cmd.w, h: cmd.h }, idx);
     }
 
     function drawArrow(ctx, x1, y1, x2, y2, lineWidth) {
@@ -457,6 +513,65 @@ export function createWhiteboardController(deps) {
     function clearCanvasLayers() {
         if (wb.ctx && wb.canvas) wb.ctx.clearRect(0, 0, wb.canvas.width, wb.canvas.height);
         if (wb.pCtx && wb.preview) wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+        if (wb.textLayer) wb.textLayer.innerHTML = '';
+    }
+
+    /**
+     * @param {'s'|'m'|'l'|'xl'} size
+     * @returns {number}
+     */
+    function getTextSizePx(size) {
+        return WB_TEXT_SIZES[size] || WB_TEXT_SIZES.m;
+    }
+
+    /**
+     * @param {string} markdown
+     * @returns {string}
+     */
+    function renderMarkdownSafeHtml(markdown) {
+        if (typeof deps.markdownToSafeHtml !== 'function') return '';
+        try {
+            return deps.markdownToSafeHtml(String(markdown || ''));
+        } catch (_) {
+            return '';
+        }
+    }
+
+    /**
+     * @param {WhiteboardText} cmd
+     * @param {number} scale
+     * @returns {HTMLDivElement}
+     */
+    function buildTextFieldEl(cmd, scale) {
+        const el = document.createElement('div');
+        el.className = 'wb-text-field';
+        el.style.left = (cmd.x / BASE_WIDTH * 100) + '%';
+        el.style.top = (cmd.y / BASE_HEIGHT * 100) + '%';
+        el.style.width = (cmd.w / BASE_WIDTH * 100) + '%';
+        el.style.minHeight = (cmd.h / BASE_HEIGHT * 100) + '%';
+        el.style.fontSize = (getTextSizePx(cmd.size) * scale) + 'px';
+        el.style.color = cmd.color || '#ffffff';
+        el.innerHTML = renderMarkdownSafeHtml(cmd.markdown);
+        return el;
+    }
+
+    /**
+     * Rebuild the HTML overlay for `kind: 'text'` commands of the given slide.
+     * @param {number} idx
+     */
+    function renderTextOverlay(idx) {
+        if (!wb.textLayer) return;
+        wb.textLayer.style.left = `${wb.drawRect.left}px`;
+        wb.textLayer.style.top = `${wb.drawRect.top}px`;
+        wb.textLayer.style.width = `${wb.drawRect.width}px`;
+        wb.textLayer.style.height = `${wb.drawRect.height}px`;
+        wb.textLayer.innerHTML = '';
+        const scale = wb.drawRect.width / BASE_WIDTH;
+        const commands = storageGetCommands(idx);
+        commands.forEach((cmd, i) => {
+            if (cmd.kind !== 'text' || i === wb.editingTextIdx) return;
+            wb.textLayer.appendChild(buildTextFieldEl(cmd, scale));
+        });
     }
 
     function renderSlide(idx) {
@@ -469,6 +584,7 @@ export function createWhiteboardController(deps) {
         if (wb.selectedCommandIdx >= 0) {
             drawSelectionHighlight(wb.selectedCommandIdx);
         }
+        renderTextOverlay(idx);
     }
 
     function resize() {
@@ -563,6 +679,19 @@ export function createWhiteboardController(deps) {
                     endX: ex,
                     endY: ey,
                 });
+                return;
+            }
+            if (item.kind === 'text') {
+                const x = clamp(Number(item.x), 0, BASE_WIDTH);
+                const y = clamp(Number(item.y), 0, BASE_HEIGHT);
+                const w = clamp(Number(item.w), WB_TEXT_MIN_W, BASE_WIDTH);
+                const h = clamp(Number(item.h), WB_TEXT_MIN_H, BASE_HEIGHT);
+                if (![x, y, w, h].every(Number.isFinite)) return;
+                const markdown = typeof item.markdown === 'string' ? item.markdown.slice(0, WB_TEXT_MARKDOWN_MAX) : '';
+                if (!markdown.trim()) return;
+                const size = ['s', 'm', 'l', 'xl'].includes(item.size) ? item.size : 'm';
+                const color = typeof item.color === 'string' ? item.color : '#ffffff';
+                out.push({ kind: 'text', x, y, w, h, markdown, size, color });
             }
         });
         return out;
@@ -646,6 +775,7 @@ export function createWhiteboardController(deps) {
 
     function toggle() {
         if (!wb.canvas || !wb.preview) return;
+        closeTextEditor();
         wb.active = !wb.active;
         wb.canvas.classList.toggle('active', wb.active);
         wb.preview.classList.toggle('active', wb.active);
@@ -667,6 +797,7 @@ export function createWhiteboardController(deps) {
     }
 
     function setTool(tool) {
+        closeTextEditor();
         if (tool !== 'select') clearSelection();
         wb.tool = tool;
         document.querySelectorAll('.wb-btn').forEach(b => b.classList.remove('active'));
@@ -702,7 +833,7 @@ export function createWhiteboardController(deps) {
         wb.startX = point.x;
         wb.startY = point.y;
 
-        if (!WB_SHAPE_TOOLS.includes(wb.tool)) {
+        if (!WB_SHAPE_TOOLS.includes(wb.tool) && wb.tool !== 'text') {
             /** @type {WhiteboardStroke} */
             wb.currentPath = {
                 kind: 'stroke',
@@ -762,6 +893,11 @@ export function createWhiteboardController(deps) {
         const point = pointerToBasePoint(event, true);
         if (!point) return;
 
+        if (wb.tool === 'text') {
+            drawTextBoxPreview(point);
+            return;
+        }
+
         if (WB_SHAPE_TOOLS.includes(wb.tool)) {
             wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
             /** @type {WhiteboardShape} */
@@ -794,6 +930,16 @@ export function createWhiteboardController(deps) {
 
         const point = pointerToBasePoint(event, true)
             || /** @type {WhiteboardPoint} */ ({ x: wb.startX, y: wb.startY });
+
+        if (wb.tool === 'text') {
+            wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+            const x = clamp(Math.min(wb.startX, point.x), 0, BASE_WIDTH);
+            const y = clamp(Math.min(wb.startY, point.y), 0, BASE_HEIGHT);
+            const w = clamp(Math.max(WB_TEXT_MIN_W, Math.abs(point.x - wb.startX)), WB_TEXT_MIN_W, BASE_WIDTH - x);
+            const h = clamp(Math.max(WB_TEXT_MIN_H, Math.abs(point.y - wb.startY)), WB_TEXT_MIN_H, BASE_HEIGHT - y);
+            openTextEditor({ x, y, w, h });
+            return;
+        }
 
         if (WB_SHAPE_TOOLS.includes(wb.tool)) {
             /** @type {WhiteboardShape} */
@@ -831,6 +977,150 @@ export function createWhiteboardController(deps) {
             emitSyncState('draw', true);
         }
         wb.currentPath = null;
+    }
+
+    /**
+     * Draw a dashed preview rectangle on the preview canvas while dragging the text tool.
+     * @param {WhiteboardPoint} point
+     */
+    function drawTextBoxPreview(point) {
+        wb.pCtx.clearRect(0, 0, wb.preview.width, wb.preview.height);
+        wb.pCtx.save();
+        wb.pCtx.translate(wb.drawRect.left, wb.drawRect.top);
+        wb.pCtx.scale(wb.drawRect.width / BASE_WIDTH, wb.drawRect.height / BASE_HEIGHT);
+        wb.pCtx.strokeStyle = '#00e5ff';
+        wb.pCtx.lineWidth = 2;
+        wb.pCtx.setLineDash([8, 6]);
+        const x = Math.min(wb.startX, point.x);
+        const y = Math.min(wb.startY, point.y);
+        wb.pCtx.strokeRect(x, y, Math.abs(point.x - wb.startX), Math.abs(point.y - wb.startY));
+        wb.pCtx.setLineDash([]);
+        wb.pCtx.restore();
+    }
+
+    /**
+     * @param {'s'|'m'|'l'|'xl'} size
+     */
+    function setTextEditorSize(size) {
+        wb.textSize = WB_TEXT_SIZES[size] ? size : 'm';
+        document.querySelectorAll('.wb-text-size-chip').forEach(btn => {
+            btn.classList.toggle('active', /** @type {HTMLElement} */ (btn).dataset.size === wb.textSize);
+        });
+        renderTextDraftPreview();
+    }
+
+    function renderTextDraftPreview() {
+        const draft = document.getElementById('wb-text-draft');
+        const input = /** @type {HTMLTextAreaElement|null} */ (document.getElementById('wb-text-editor-input'));
+        if (!draft || !input || !wb.pendingTextBox) return;
+        const rect = wb.drawRect;
+        const box = wb.pendingTextBox;
+        const scale = rect.width / BASE_WIDTH;
+        draft.style.left = `${rect.left + (box.x / BASE_WIDTH) * rect.width}px`;
+        draft.style.top = `${rect.top + (box.y / BASE_HEIGHT) * rect.height}px`;
+        draft.style.width = `${(box.w / BASE_WIDTH) * rect.width}px`;
+        draft.style.fontSize = `${getTextSizePx(wb.textSize) * scale}px`;
+        draft.style.color = wb.color || '#ffffff';
+        draft.innerHTML = renderMarkdownSafeHtml(input.value);
+        draft.classList.add('active');
+    }
+
+    function hideTextDraftPreview() {
+        const draft = document.getElementById('wb-text-draft');
+        if (!draft) return;
+        draft.classList.remove('active');
+        draft.innerHTML = '';
+    }
+
+    /**
+     * Open the floating Markdown editor for a new or existing text field.
+     * @param {{x: number, y: number, w: number, h: number}} box
+     * @param {number} [existingIdx] index of the command being edited, or -1 for a new field
+     */
+    function openTextEditor(box, existingIdx = -1) {
+        const editor = document.getElementById('wb-text-editor');
+        const input = /** @type {HTMLTextAreaElement|null} */ (document.getElementById('wb-text-editor-input'));
+        if (!editor || !input) return;
+
+        wb.editingTextIdx = existingIdx;
+        wb.pendingTextBox = box;
+
+        let markdown = '';
+        let size = wb.textSize || 'm';
+        if (existingIdx >= 0) {
+            const cmd = storageGetCommands(wb.currentSlide)[existingIdx];
+            if (cmd) {
+                markdown = cmd.markdown || '';
+                size = cmd.size || 'm';
+            }
+        }
+        input.value = markdown;
+        setTextEditorSize(size);
+
+        const rect = wb.drawRect;
+        const leftPx = rect.left + (box.x / BASE_WIDTH) * rect.width;
+        const topPx = rect.top + ((box.y + box.h) / BASE_HEIGHT) * rect.height + 8;
+        editor.style.left = `${clamp(leftPx, 8, Math.max(8, window.innerWidth - 340))}px`;
+        editor.style.top = `${clamp(topPx, 8, Math.max(8, window.innerHeight - 260))}px`;
+        editor.classList.add('active');
+
+        if (existingIdx >= 0) renderSlide(wb.currentSlide);
+        renderTextDraftPreview();
+        input.focus();
+    }
+
+    function closeTextEditor() {
+        const editor = document.getElementById('wb-text-editor');
+        if (!editor || !editor.classList.contains('active')) return;
+        editor.classList.remove('active');
+        hideTextDraftPreview();
+        const wasEditing = wb.editingTextIdx;
+        wb.editingTextIdx = -1;
+        wb.pendingTextBox = null;
+        if (wasEditing >= 0) renderSlide(wb.currentSlide);
+    }
+
+    function confirmTextEditor() {
+        const input = /** @type {HTMLTextAreaElement|null} */ (document.getElementById('wb-text-editor-input'));
+        const box = wb.pendingTextBox;
+        if (!input || !box) {
+            closeTextEditor();
+            return;
+        }
+        const markdown = String(input.value || '').slice(0, WB_TEXT_MARKDOWN_MAX).trim();
+        const existingIdx = wb.editingTextIdx;
+
+        document.getElementById('wb-text-editor')?.classList.remove('active');
+        hideTextDraftPreview();
+        wb.editingTextIdx = -1;
+        wb.pendingTextBox = null;
+
+        if (!markdown) {
+            // Champ vide : on n'ajoute rien, et on laisse un champ existant inchangé.
+            renderSlide(wb.currentSlide);
+            return;
+        }
+
+        /** @type {WhiteboardText} */
+        const command = {
+            kind: 'text',
+            x: box.x,
+            y: box.y,
+            w: box.w,
+            h: box.h,
+            markdown,
+            size: wb.textSize,
+            color: wb.color,
+        };
+        const commands = storageGetCommands(wb.currentSlide);
+        if (existingIdx >= 0 && commands[existingIdx]) {
+            commands[existingIdx] = command;
+        } else {
+            commands.push(command);
+        }
+        renderSlide(wb.currentSlide);
+        persistSoon();
+        emitSyncState('draw', true);
     }
 
     function clearCurrent() {

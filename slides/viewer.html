@@ -19,7 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=8">
     <style id="sl-theme-css">/* injected by slides-core.js */</style>
-    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=16">
+    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=17">
     <link rel="stylesheet" href="../shared/components/widgets.css">
 </head>
 <body>
@@ -75,16 +75,20 @@
     <!-- Whiteboard overlay + toolbar -->
     <canvas id="wb-canvas"></canvas>
     <canvas id="wb-preview"></canvas>
+    <div id="wb-text-layer" aria-hidden="true"></div>
+    <div id="wb-text-draft" class="wb-text-field" aria-hidden="true"></div>
     <div id="wb-toolbar">
         <button class="wb-btn active" id="wb-pen" aria-label="Stylo" aria-pressed="true" title="Stylo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h6"/><path d="M14.5 3.5l6 6L9 21H3v-6z"/></svg></button>
         <button class="wb-btn" id="wb-highlighter" aria-label="Surligneur" title="Surligneur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l4 4"/><path d="M4 20l6-1 9-9-5-5-9 9z"/><path d="M3 21h7"/></svg></button>
         <button class="wb-btn" id="wb-eraser" aria-label="Gomme" title="Gomme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 21h13"/><path d="M5.2 15.2L12 8.4a2 2 0 0 1 2.8 0l4.8 4.8a2 2 0 0 1 0 2.8L14 21H8a2 2 0 0 1-1.4-.6l-1.4-1.4a2 2 0 0 1 0-2.8z"/></svg></button>
         <button class="wb-btn" id="wb-select" aria-label="Sélectionner un trait" title="Sélectionner / Supprimer un trait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-7 1-4 7z"/></svg></button>
+        <button class="wb-btn hidden" id="wb-edit" aria-label="Modifier le champ texte sélectionné" title="Modifier le champ texte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
         <button class="wb-btn hidden" id="wb-delete" aria-label="Supprimer le trait sélectionné" title="Supprimer le trait sélectionné (Suppr)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         <div class="wb-separator" role="separator"></div>
         <button class="wb-btn" id="wb-rect" aria-label="Rectangle" title="Rectangle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></button>
         <button class="wb-btn" id="wb-circle" aria-label="Cercle" title="Cercle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="7"/></svg></button>
         <button class="wb-btn" id="wb-arrow" aria-label="Flèche" title="Flèche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="13 5 19 5 19 11"/></svg></button>
+        <button class="wb-btn" id="wb-text" aria-label="Champ texte Markdown" title="Champ texte Markdown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h6"/></svg></button>
         <div class="wb-separator" role="separator"></div>
         <button class="wb-color-btn active" id="wb-c-white" data-color="#ffffff" aria-label="Couleur blanche" title="Blanc"></button>
         <button class="wb-color-btn" id="wb-c-red" data-color="#ef4444" aria-label="Couleur rouge" title="Rouge"></button>
@@ -96,6 +100,23 @@
         <div class="wb-separator" role="separator"></div>
         <button class="wb-btn" id="wb-clear" aria-label="Effacer tout" title="Effacer tout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
         <button class="wb-btn" id="wb-close" aria-label="Fermer le tableau blanc (W)" title="Fermer (W)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+
+    <!-- Éditeur flottant du champ texte Markdown du tableau blanc -->
+    <div id="wb-text-editor">
+        <textarea id="wb-text-editor-input" rows="6" placeholder="# Titre&#10;**gras**, *italique*, `code`&#10;- élément de liste"></textarea>
+        <div class="wb-text-editor-row">
+            <div class="wb-text-size-chips" role="group" aria-label="Taille du texte">
+                <button type="button" class="wb-text-size-chip" data-size="s">S</button>
+                <button type="button" class="wb-text-size-chip" data-size="m">M</button>
+                <button type="button" class="wb-text-size-chip" data-size="l">L</button>
+                <button type="button" class="wb-text-size-chip" data-size="xl">XL</button>
+            </div>
+            <div class="wb-text-editor-actions">
+                <button type="button" id="wb-text-cancel">Annuler</button>
+                <button type="button" id="wb-text-confirm">Valider</button>
+            </div>
+        </div>
     </div>
 
     <!-- Presenter Mode Layout -->
@@ -506,12 +527,13 @@
     <script src="../shared/slides/theme-runtime.js?v=1"></script>
     <script src="../shared/slides/widget-plugins.js?v=2"></script>
     <script src="../shared/slides/design-tokens.js?v=2"></script>
-    <script src="../shared/slides/realtime-contract.js?v=8"></script>
+    <script src="../shared/slides/realtime-contract.js?v=9"></script>
     <script src="../shared/slides/network-session.js?v=2"></script>
     <script src="../shared/slides/relay-config.js?v=1"></script>
     <script src="../shared/slides/background-utils.js?v=1"></script>
     <script src="../vendor/dompurify/3.4.14/purify.min.js"></script>
     <script src="../shared/slides/html-sanitizer.js?v=1"></script>
+    <script src="../shared/slides/markdown-lite.js?v=1"></script>
     <script src="../shared/slides/slides-special-math-runtime.js?v=1"></script>
     <script src="../shared/slides/slides-special-code-runtime.js?v=1"></script>
     <script src="../shared/slides/slides-special-quiz-runtime.js?v=2"></script>
@@ -527,7 +549,7 @@
     <script src="../vendor/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script src="../shared/slides/firebase-storage.js?v=7"></script>
     <script src="../shared/slides/firebase-modal.js?v=4"></script>
-    <script type="module" src="viewer-main.js?v=23"></script>
+    <script type="module" src="viewer-main.js?v=24"></script>
     <script src="viewer/presenter-supplemental.js?v=2"></script>
 
     <!-- Post-session analytics dashboard -->
