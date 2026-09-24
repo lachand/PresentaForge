@@ -4,6 +4,7 @@
  * Config hardcodée, auto-init au chargement du script.
  * Présentation courante trackée via _currentId pour la sauvegarde auto.
  * Firestore : users/{uid}/presentations/{id} → { id, title, modified, json }
+ *             users/{uid}/courseSettings/{courseSlug} → { course, banner, currentPresentationId }
  */
 (function () {
     'use strict';
@@ -506,11 +507,12 @@
         const trimmed = String(course || '').trim();
         const col = _courseSettingsCol();
         const sanitized = _sanitizeBanner(banner);
-        if (!sanitized) {
-            await col.doc(_courseSlug(trimmed)).delete();
-            return;
-        }
-        await col.doc(_courseSlug(trimmed)).set({ course: trimmed, banner: sanitized, updated: new Date().toISOString() });
+        // merge:true — ce document porte aussi le pointeur de "présentation courante" du
+        // cours (currentPresentationId, ci-dessous) : un .set() sans merge l'effacerait.
+        await col.doc(_courseSlug(trimmed)).set(
+            { course: trimmed, banner: sanitized, updated: new Date().toISOString() },
+            { merge: true }
+        );
     }
 
     // Déplace le bandeau lors d'un renommage en bloc d'un cours (renameFirebaseCourse). Si le
@@ -526,6 +528,51 @@
         const destination = await getCourseBanner(newCourse);
         if (!destination) await setCourseBanner(newCourse, banner);
         await setCourseBanner(oldCourse, null);
+    }
+
+    // ── Lien persistant de cours (pointeur "présentation courante") ────────────
+    //
+    // Un lien Moodle unique par cours (slides/course.html?u=<uid>&c=<courseSlug>) doit
+    // rester valable indéfiniment tout en redirigeant vers la présentation que
+    // l'enseignant a le plus récemment ouverte en "Présenter" pour ce cours. On stocke
+    // donc juste un pointeur { currentPresentationId } sur le même document
+    // courseSettings/{courseSlug} que le bandeau (setCourseBanner ci-dessus) — d'où le
+    // passage en merge:true plutôt qu'un remplacement complet du document.
+
+    async function getCurrentPresentationForCourse(course) {
+        const trimmed = String(course || '').trim();
+        if (!trimmed) return null;
+        const snap = await _courseSettingsCol().doc(_courseSlug(trimmed)).get();
+        if (!snap.exists) return null;
+        const data = snap.data() || {};
+        if (data.course !== trimmed) return null; // collision de hash improbable, cf. getCourseBanner
+        return data.currentPresentationId ? { id: data.currentPresentationId, updated: data.currentUpdated || null } : null;
+    }
+
+    async function setCurrentPresentationForCourse(course, id) {
+        const trimmed = String(course || '').trim();
+        if (!trimmed || !id) return;
+        await _courseSettingsCol().doc(_courseSlug(trimmed)).set(
+            { course: trimmed, currentPresentationId: id, currentUpdated: new Date().toISOString() },
+            { merge: true }
+        );
+    }
+
+    // Lecture NON authentifiée du pointeur — utilisée par slides/course.html (lien collé
+    // dans Moodle, ouvert par des étudiants non connectés). Même idiome que
+    // loadPublicPresentation : pas de vérification isReady()/_user, juste _db + l'uid
+    // fourni dans le lien. Nécessite une règle de sécurité Firestore autorisant la
+    // lecture de users/{uid}/courseSettings/{slug} (à ajouter dans la Console Firebase,
+    // ce dépôt ne versionne pas firestore.rules) — le document ne contient qu'un id de
+    // présentation et le nom du cours, rien de sensible.
+    async function getCurrentPresentationPointer(uid, courseSlug) {
+        if (!_db) throw new Error('Firebase non initialisé');
+        if (!uid || !courseSlug) return null;
+        const col = _db.collection('users').doc(uid).collection('courseSettings');
+        const doc = await col.doc(courseSlug).get();
+        if (!doc.exists) return null;
+        const data = doc.data() || {};
+        return data.currentPresentationId ? { id: data.currentPresentationId, course: data.course || '' } : null;
     }
 
     // ── Export ────────────────────────────────────────────────────────────────
@@ -557,5 +604,9 @@
         listCourseBanners,
         setCourseBanner,
         renameCourseBanner,
+        courseSlug: _courseSlug,
+        getCurrentPresentationForCourse,
+        setCurrentPresentationForCourse,
+        getCurrentPresentationPointer,
     };
 })();

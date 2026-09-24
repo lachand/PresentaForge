@@ -1,0 +1,40 @@
+/**
+ * slides-course.css — slides/course.html (redirecteur de lien persistant de cours).
+ * Page minimale, autonome (pas de design-tokens.js) : palette sombre alignée sur le
+ * reste de PresentaForge (cf. body.viewer-review dans slides-viewer.css).
+ */
+html, body {
+    height: 100%;
+    margin: 0;
+    background: #0f1117;
+    color: #e2e8f0;
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+.course-status {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 24px;
+    text-align: center;
+}
+.course-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: #e2e8f0;
+    border-radius: 50%;
+    animation: course-spin 0.8s linear infinite;
+}
+@keyframes course-spin { to { transform: rotate(360deg); } }
+.course-status-text {
+    max-width: 420px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: rgba(226,232,240,0.85);
+}
+.course-status--error .course-status-text {
+    color: #fca5a5;
+}

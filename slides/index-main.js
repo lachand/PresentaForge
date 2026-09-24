@@ -867,6 +867,34 @@
         return `${base}viewer.html?firebase=${encodeURIComponent(uid)}/${encodeURIComponent(id)}`;
     }
 
+    // Lien persistant de cours (à coller une fois en ressource Moodle) : redirige, à
+    // chaque ouverture, vers la dernière présentation du cours ouverte en "Présenter"
+    // (slides/course.html résout le pointeur courseSettings/{slug} côté Firestore).
+    function _buildCourseLink(uid, course) {
+        const slug = window.OEIFirebase?.courseSlug ? window.OEIFirebase.courseSlug(course) : '';
+        if (!slug) return '';
+        const base = location.href.replace(/\/[^/]*$/, '/');
+        return `${base}course.html?u=${encodeURIComponent(uid)}&c=${encodeURIComponent(slug)}`;
+    }
+
+    async function copyPersistentCourseLink(course, target) {
+        const uid = window.OEIFirebase?.getUser()?.uid || '';
+        if (!uid || !course) return;
+        const url = _buildCourseLink(uid, course);
+        if (!url) return;
+        try {
+            await navigator.clipboard?.writeText(url);
+        } catch (_) {
+            prompt('Lien persistant du cours :', url);
+            return;
+        }
+        if (target) {
+            const orig = target.textContent;
+            target.textContent = '✓ Copié !';
+            setTimeout(() => { target.textContent = orig; }, 2000);
+        }
+    }
+
     let _firebaseFilterQuery = '';
 
     function _filterFirebaseDecks(decks, query) {
@@ -985,6 +1013,7 @@
             <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${escAttr(key)}">renommer</button>
             <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${escAttr(key)}">bandeau</button>
             <button type="button" class="firebase-course-rename-btn" data-action="export-course-firebase" data-course="${escAttr(key)}">exporter</button>
+            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Lien persistant pour Moodle — redirige toujours vers la dernière présentation de ce cours ouverte en 'Présenter'">🔗 lien persistant</button>` : ''}
         ` : '';
 
         // Drill-down actif : en-tête « Retour » + grille à plat des seules présentations de
@@ -1058,6 +1087,12 @@
                 const storedOk = storageSetRaw(VIEWER_PRESENT_KEY, JSON.stringify(data));
                 relayPresentDeck(data, storedOk);
                 window.open('viewer.html?file=__draft__', '_blank');
+                // Lien persistant de cours (slides/course.html) : pointe toujours vers la
+                // dernière présentation ouverte en "Présenter" pour ce cours — best-effort,
+                // ne doit jamais bloquer/retarder l'ouverture de la présentation elle-même.
+                if (p.course) {
+                    window.OEIFirebase.setCurrentPresentationForCourse(p.course, p.id).catch(() => {});
+                }
             } else {
                 // Passer l'ID Firebase à l'éditeur : il rechargera le contenu depuis
                 // Firestore, mais on écrit aussi SLIDE_DRAFT comme repli hors-ligne.
@@ -1228,7 +1263,7 @@
 
     // Handle Firebase action clicks (delegated)
     document.addEventListener('click', e => {
-        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
+        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="copy-course-link-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
         if (!target) return;
         const action = target.dataset.action;
         const idx = Number(target.dataset.fbIdx);
@@ -1241,6 +1276,9 @@
         else if (action === 'export-course-firebase') {
             const course = target.dataset.course || '';
             exportFirebaseSelection(_firebaseDecks.filter(p => (p.course || '') === course));
+        }
+        else if (action === 'copy-course-link-firebase') {
+            copyPersistentCourseLink(target.dataset.course || '', target);
         }
         else if (action === 'select-all-course-firebase') {
             const course = target.dataset.course || '';
