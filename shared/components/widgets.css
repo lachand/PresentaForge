@@ -46,6 +46,7 @@
  *   rsw-    RoutingSimulatorWidget
  *   cltw-   CLTWidget            ciw-   ConfidenceIntervalWidget
  *   bayw-   ConditionalBayesWidget
+ *   sqlw-   SqlPlaygroundWidget
  *   mpw-    MemoryWidget         plw-   PipelineWidget
  *   ipw-    IpSubnetWidget       tcpw-  TcpWidget        schw-  SchedulingWidget
  *   dom-widget-         DomTreeWidget
@@ -5157,6 +5158,31 @@
 .bayw-table th, .bayw-table td { padding: 3px 6px; border: 1px solid var(--border, #ddd); text-align: center; }
 .bayw-table th { background: var(--surface2, var(--widget-surface-2, #f0f0f0)); font-weight: 700; }
 .bayw-feedback { font-size: 0.78rem; color: var(--muted, #888); min-height: 1.2em; }
+
+/* #################################################################### */
+/* #  BDD                                                          # */
+/* #################################################################### */
+
+/* -------------------------------------------------------------------
+   .sqlw-*  —  SqlPlaygroundWidget (mini-SGBD en memoire)
+   source : SqlPlaygroundPage.js (moteur partage createSqlEngine())
+   ------------------------------------------------------------------- */
+.sqlw-container { display: flex; flex-direction: column; gap: 8px; font-family: inherit; color: var(--text, #222); height: 100%; box-sizing: border-box; }
+.sqlw-editor { width: 100%; min-height: 70px; resize: vertical; font-family: var(--font-mono, monospace); font-size: 0.82rem; padding: 8px; border-radius: 6px; border: 1px solid var(--border, #ccc); background: var(--surface, var(--widget-surface, #fff)); color: var(--text, #222); box-sizing: border-box; }
+.sqlw-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.sqlw-btn { font-size: 0.8rem; font-weight: 600; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--primary, #6366f1); background: var(--primary, #6366f1); color: #fff; cursor: pointer; }
+.sqlw-btn-secondary { background: transparent; color: var(--text, #222); border-color: var(--border, #ccc); }
+.sqlw-result { font-size: 0.82rem; }
+.sqlw-result-info { color: var(--muted, #888); font-size: 0.76rem; margin-bottom: 4px; }
+.sqlw-table-wrap { overflow-x: auto; }
+.sqlw-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; background: var(--surface, var(--widget-surface, #fff)); }
+.sqlw-table th, .sqlw-table td { padding: 4px 8px; border: 1px solid var(--border, #ddd); text-align: left; }
+.sqlw-table th { background: var(--surface2, var(--widget-surface-2, #f0f0f0)); font-weight: 700; }
+.sqlw-empty { text-align: center; color: var(--muted, #888); padding: 1rem; }
+.sqlw-null { color: var(--muted, #888); font-style: italic; }
+.sqlw-message { padding: 6px 10px; border-radius: 6px; font-size: 0.82rem; }
+.sqlw-message-success { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+.sqlw-message-error { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
 
 /* #################################################################### */
 /* #  DIVERS                                                      # */

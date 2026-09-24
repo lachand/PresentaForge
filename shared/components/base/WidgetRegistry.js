@@ -476,6 +476,19 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('🌳', 'Probabilité conditionnelle & Bayes'),
     },
 
+    // ── BDD ────────────────────────────────────────────────────────────────────
+    'sql-playground': {
+        global: 'SqlPlaygroundWidget',
+        script: 'bdd/SqlPlaygroundPage.js',
+        label: 'Bac à sable SQL',
+        category: 'BDD',
+        description: 'Mini-SGBD en mémoire (SELECT/INSERT/UPDATE/DELETE, jointures, agrégats) sur un schéma employés/départements/projets',
+        level: 'L2',
+        tags: ['sql', 'bdd', 'base de données', 'requête', 'jointure'],
+        defaultConfig: { sql: 'SELECT * FROM employes;' },
+        staticFallback: _sf('🗄️', 'Bac à sable SQL'),
+    },
+
     // ── Git ───────────────────────────────────────────────────────────────────
     'git-zones': {
         global: 'GitZonesWidget',
