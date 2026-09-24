@@ -995,103 +995,103 @@ function updatePropsPanel() {
         case 'swot-grid':
             html = `<div class="props-section">
                 <div class="props-section-title">SWOT</div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Forces (1 par ligne)</label>
-                <textarea id="sp-swot-strength" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.strength || []).join('\n'))}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Faiblesses (1 par ligne)</label>
-                <textarea id="sp-swot-weakness" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.weakness || []).join('\n'))}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Opportunités (1 par ligne)</label>
-                <textarea id="sp-swot-opportunity" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.opportunity || []).join('\n'))}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Menaces (1 par ligne)</label>
-                <textarea id="sp-swot-threat" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.threat || []).join('\n'))}</textarea>
+                <label class="sp-field-label">Forces (1 par ligne)</label>
+                <textarea id="sp-swot-strength" rows="3" class="sp-textarea">${esc((d.strength || []).join('\n'))}</textarea>
+                <label class="sp-field-label sp-field-label-top">Faiblesses (1 par ligne)</label>
+                <textarea id="sp-swot-weakness" rows="3" class="sp-textarea">${esc((d.weakness || []).join('\n'))}</textarea>
+                <label class="sp-field-label sp-field-label-top">Opportunités (1 par ligne)</label>
+                <textarea id="sp-swot-opportunity" rows="3" class="sp-textarea">${esc((d.opportunity || []).join('\n'))}</textarea>
+                <label class="sp-field-label sp-field-label-top">Menaces (1 par ligne)</label>
+                <textarea id="sp-swot-threat" rows="3" class="sp-textarea">${esc((d.threat || []).join('\n'))}</textarea>
             </div>`;
             break;
 
         case 'decision-tree':
             html = `<div class="props-section">
                 <div class="props-section-title">Arbre de décision</div>
-                <div class="props-row"><label>Racine</label><input type="text" id="sp-dt-root" value="${escAttr(d.root || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Branches (format: label => outcome)</label>
-                <textarea id="sp-dt-branches" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.branches || []).map(b => `${b?.label || ''} => ${b?.outcome || ''}`).join('\n'))}</textarea>
+                <div class="props-row"><label>Racine</label><input type="text" id="sp-dt-root" value="${escAttr(d.root || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Branches (format: label => outcome)</label>
+                <textarea id="sp-dt-branches" rows="5" class="sp-textarea">${esc((d.branches || []).map(b => `${b?.label || ''} => ${b?.outcome || ''}`).join('\n'))}</textarea>
             </div>`;
             break;
 
         case 'timeline-vertical':
             html = `<div class="props-section">
                 <div class="props-section-title">Timeline verticale</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-tv-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Étapes (1 par ligne)</label>
-                <textarea id="sp-tv-steps" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.steps || []).join('\n'))}</textarea>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-tv-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Étapes (1 par ligne)</label>
+                <textarea id="sp-tv-steps" rows="5" class="sp-textarea">${esc((d.steps || []).join('\n'))}</textarea>
             </div>`;
             break;
 
         case 'code-compare':
             html = `<div class="props-section">
                 <div class="props-section-title">Comparateur de code</div>
-                <div class="props-row"><label>Lang</label><input type="text" id="sp-cc-lang" value="${escAttr(d.language || 'text')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Avant</label>
-                <textarea id="sp-cc-before" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(d.before || '')}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Après</label>
-                <textarea id="sp-cc-after" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(d.after || '')}</textarea>
+                <div class="props-row"><label>Lang</label><input type="text" id="sp-cc-lang" value="${escAttr(d.language || 'text')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Avant</label>
+                <textarea id="sp-cc-before" rows="5" class="sp-textarea sp-textarea-mono">${esc(d.before || '')}</textarea>
+                <label class="sp-field-label sp-field-label-top">Après</label>
+                <textarea id="sp-cc-after" rows="5" class="sp-textarea sp-textarea-mono">${esc(d.after || '')}</textarea>
             </div>`;
             break;
 
         case 'algo-stepper':
             html = `<div class="props-section">
                 <div class="props-section-title">Algo stepper</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-as-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Étapes JSON</label>
-                <textarea id="sp-as-steps" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.steps || [], null, 2))}</textarea>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"title":"","detail":"","code":""}]</div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-as-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Étapes JSON</label>
+                <textarea id="sp-as-steps" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(d.steps || [], null, 2))}</textarea>
+                <div class="sp-hint-text sp-hint-text-tight">Format: [{"title":"","detail":"","code":""}]</div>
             </div>`;
             break;
 
         case 'gallery-annotable':
             html = `<div class="props-section">
                 <div class="props-section-title">Gallery annotable</div>
-                <div class="props-row"><label>Image</label><input type="text" id="sp-ga-src" value="${escAttr(d.src || '')}" placeholder="../images/..." style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Texte alt</label><input type="text" id="sp-ga-alt" value="${escAttr(d.alt || '')}" placeholder="Description de l'image annotée" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Notes JSON</label>
-                <textarea id="sp-ga-notes" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.notes || [], null, 2))}</textarea>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"x":25,"y":40,"text":"..."}]</div>
+                <div class="props-row"><label>Image</label><input type="text" id="sp-ga-src" value="${escAttr(d.src || '')}" placeholder="../images/..." class="sp-elstyle-input"></div>
+                <div class="props-row"><label>Texte alt</label><input type="text" id="sp-ga-alt" value="${escAttr(d.alt || '')}" placeholder="Description de l'image annotée" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Notes JSON</label>
+                <textarea id="sp-ga-notes" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(d.notes || [], null, 2))}</textarea>
+                <div class="sp-hint-text sp-hint-text-tight">Format: [{"x":25,"y":40,"text":"..."}]</div>
             </div>`;
             break;
 
         case 'rank-order':
             html = `<div class="props-section">
                 <div class="props-section-title">Classement</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-rank-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Éléments (1 par ligne)</label>
-                <textarea id="sp-rank-items" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.items || []).join('\n'))}</textarea>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-rank-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Éléments (1 par ligne)</label>
+                <textarea id="sp-rank-items" rows="6" class="sp-textarea">${esc((d.items || []).join('\n'))}</textarea>
             </div>`;
             break;
 
         case 'kanban-mini':
             html = `<div class="props-section">
                 <div class="props-section-title">Kanban mini</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-kb-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Colonnes JSON</label>
-                <textarea id="sp-kb-columns" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.columns || [], null, 2))}</textarea>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"name":"À faire","cards":["..."]}]</div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-kb-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Colonnes JSON</label>
+                <textarea id="sp-kb-columns" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(d.columns || [], null, 2))}</textarea>
+                <div class="sp-hint-text sp-hint-text-tight">Format: [{"name":"À faire","cards":["..."]}]</div>
             </div>`;
             break;
 
         case 'myth-reality':
             html = `<div class="props-section">
                 <div class="props-section-title">Mythe / Réalité</div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Mythe</label>
-                <textarea id="sp-mr-myth" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.myth || '')}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Réalité</label>
-                <textarea id="sp-mr-reality" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.reality || '')}</textarea>
+                <label class="sp-field-label">Mythe</label>
+                <textarea id="sp-mr-myth" rows="3" class="sp-textarea">${esc(d.myth || '')}</textarea>
+                <label class="sp-field-label sp-field-label-top">Réalité</label>
+                <textarea id="sp-mr-reality" rows="3" class="sp-textarea">${esc(d.reality || '')}</textarea>
             </div>`;
             break;
 
         case 'flashcards-auto':
             html = `<div class="props-section">
                 <div class="props-section-title">Flashcards</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-fc-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Cartes JSON</label>
-                <textarea id="sp-fc-cards" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(d.cards || [], null, 2))}</textarea>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"front":"...","back":"..."}]</div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-fc-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Cartes JSON</label>
+                <textarea id="sp-fc-cards" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(d.cards || [], null, 2))}</textarea>
+                <div class="sp-hint-text sp-hint-text-tight">Format: [{"front":"...","back":"..."}]</div>
             </div>`;
             break;
 
@@ -1103,10 +1103,10 @@ function updatePropsPanel() {
     html += _renderElementStyleSection(el);
 
     // ── Common section: Label (renvoi) & Légende (caption) ──
-    html += `<div class="props-section" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+    html += `<div class="props-section sp-elstyle-section">
         <div class="props-section-title">Référencement</div>
-        <div class="props-row"><label>Légende</label><input type="text" id="sp-caption" value="${escAttr(d.caption || '')}" placeholder="Légende visible sous l'élément" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-        <div class="props-row"><label>Label</label><input type="text" id="sp-label" value="${escAttr(d.refLabel || '')}" placeholder="ex: fig:archi (pour {{ref:…}})" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+        <div class="props-row"><label>Légende</label><input type="text" id="sp-caption" value="${escAttr(d.caption || '')}" placeholder="Légende visible sous l'élément" class="sp-elstyle-input"></div>
+        <div class="props-row"><label>Label</label><input type="text" id="sp-label" value="${escAttr(d.refLabel || '')}" placeholder="ex: fig:archi (pour {{ref:…}})" class="sp-elstyle-input"></div>
         <div style="font-size:0.6rem;color:var(--muted);margin-top:4px;line-height:1.4">Renvoi : <code style="font-size:0.6rem">{{ref:label}}</code> dans un texte</div>
     </div>`;
 
