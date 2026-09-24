@@ -210,6 +210,19 @@ html, body {
 .sp-hint-text { font-size: 0.6rem; color: var(--muted); }
 .sp-hint-text-lh { margin-top: 6px; line-height: 1.4; }
 .sp-hint-text-tight { margin-top: 4px; }
+.sp-hint-text-xtight { margin-top: 2px; }
+
+/* Lot 3 — médias/données (image/code/widget/quote/card/shape/table/video/
+   mermaid/drawio/diagramme/latex/timer/iframe/highlight/qrcode/smartart).
+   .sp-elstyle-input et .sp-textarea(-mono/-tabbed) sont réutilisées telles
+   quelles (mêmes patterns que lots 1-2). */
+.props-row-tight { margin-bottom: 3px; }
+.sp-grid-btn { font-size: 0.68rem; justify-content: center; }
+.sp-block-btn { width: 100%; justify-content: center; font-size: 0.68rem; }
+.sp-block-btn-spaced { margin-top: 4px; }
+.sp-block-btn-dashed { border-style: dashed; }
+.sp-del-btn { padding: 2px 5px; color: var(--danger); font-size: 0.65rem; }
+.sp-full-width { width: 100%; }
 
 .sp-diag-grid-wrap {
     max-height: 260px;

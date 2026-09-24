@@ -551,8 +551,8 @@ function updatePropsPanel() {
         case 'image':
             html = `<div class="props-section">
                 <div class="props-section-title">Image</div>
-                <div class="props-row"><label>URL</label><input type="text" id="sp-img-src" value="${escAttr(d.src || '')}" placeholder="../images/..." style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Texte alt</label><input type="text" id="sp-img-alt" value="${escAttr(d.alt || '')}" placeholder="Description utile pour lecteur d'écran" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>URL</label><input type="text" id="sp-img-src" value="${escAttr(d.src || '')}" placeholder="../images/..." class="sp-elstyle-input"></div>
+                <div class="props-row"><label>Texte alt</label><input type="text" id="sp-img-alt" value="${escAttr(d.alt || '')}" placeholder="Description utile pour lecteur d'écran" class="sp-elstyle-input"></div>
             </div>`;
             break;
 
@@ -567,7 +567,7 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Code</div>
                 <div class="props-row"><label>Label</label><select id="sp-code-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte label</label><input type="text" id="sp-code-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-code-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-code-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Lang</label><select id="sp-code-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JS</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
             </div>`;
@@ -578,7 +578,7 @@ function updatePropsPanel() {
             const currentLabel = (window.OEI_WIDGET_REGISTRY?.[d.widget]?.label) || SlidesEditor.WIDGET_OPTIONS.find(w => w.id === d.widget)?.label || d.widget || '—';
             html = `<div class="props-section">
                 <div class="props-section-title">Widget</div>
-                <button type="button" id="sp-widget-open" class="wpm-trigger-btn" style="width:100%">
+                <button type="button" id="sp-widget-open" class="wpm-trigger-btn sp-full-width">
                     <span id="sp-widget-label">${currentLabel}</span>
                 </button>
             </div>`;
@@ -588,8 +588,8 @@ function updatePropsPanel() {
         case 'quote':
             html = `<div class="props-section">
                 <div class="props-section-title">Citation</div>
-                <div style="margin-bottom:6px"><label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Texte</label><textarea id="sp-quote-text" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.text || '')}</textarea></div>
-                <div class="props-row"><label>Par</label><input type="text" id="sp-quote-author" value="${escAttr(d.author || '')}" placeholder="Auteur" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div style="margin-bottom:6px"><label class="sp-field-label">Texte</label><textarea id="sp-quote-text" rows="4" class="sp-textarea">${esc(d.text || '')}</textarea></div>
+                <div class="props-row"><label>Par</label><input type="text" id="sp-quote-author" value="${escAttr(d.author || '')}" placeholder="Auteur" class="sp-elstyle-input"></div>
             </div>`;
             break;
 
@@ -604,18 +604,18 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Carte</div>
                 <div class="props-row"><label>Preset titre</label><select id="sp-card-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-card-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-card-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-card-tone">${toneOptions}</select></div>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Points</div>
                 <div id="sp-card-items">
-                    ${cardItems.map((item, idx) => `<div class="props-row" style="margin-bottom:3px">
-                        <input type="text" value="${escAttr(item)}" data-card-idx="${idx}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <button class="tb-btn ui-btn" data-del-card="${idx}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
+                    ${cardItems.map((item, idx) => `<div class="props-row props-row-tight">
+                        <input type="text" value="${escAttr(item)}" data-card-idx="${idx}" class="sp-elstyle-input">
+                        <button class="tb-btn ui-btn sp-del-btn" data-del-card="${idx}">✕</button>
                     </div>`).join('')}
                 </div>
-                <button class="tb-btn ui-btn" id="sp-card-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Ajouter</button>
+                <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced sp-block-btn-dashed" id="sp-card-add">+ Ajouter</button>
             </div>`;
             break;
         }
@@ -631,10 +631,10 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Structure</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
-                    <button class="tb-btn ui-btn" id="sp-table-add-row" style="font-size:0.68rem;justify-content:center">+ Ligne</button>
-                    <button class="tb-btn ui-btn" id="sp-table-add-col" style="font-size:0.68rem;justify-content:center">+ Colonne</button>
-                    <button class="tb-btn ui-btn" id="sp-table-del-row" style="font-size:0.68rem;justify-content:center">− Ligne</button>
-                    <button class="tb-btn ui-btn" id="sp-table-del-col" style="font-size:0.68rem;justify-content:center">− Colonne</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-table-add-row">+ Ligne</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-table-add-col">+ Colonne</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-table-del-row">− Ligne</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-table-del-col">− Colonne</button>
                 </div>
                 <div style="font-size:0.65rem;color:var(--muted);margin-top:6px">${d.rows?.length || 0} lignes × ${d.rows?.[0]?.length || 0} colonnes</div>
             </div>`;
@@ -643,8 +643,8 @@ function updatePropsPanel() {
         case 'video':
             html = `<div class="props-section">
                 <div class="props-section-title">Vidéo</div>
-                <div class="props-row"><label>URL</label><input type="text" id="sp-video-src" value="${escAttr(d.src || '')}" placeholder="URL YouTube ou Vimeo" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Texte alt</label><input type="text" id="sp-video-alt" value="${escAttr(d.alt || '')}" placeholder="Description du contenu vidéo" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>URL</label><input type="text" id="sp-video-src" value="${escAttr(d.src || '')}" placeholder="URL YouTube ou Vimeo" class="sp-elstyle-input"></div>
+                <div class="props-row"><label>Texte alt</label><input type="text" id="sp-video-alt" value="${escAttr(d.alt || '')}" placeholder="Description du contenu vidéo" class="sp-elstyle-input"></div>
                 ${d.embedUrl ? `<div style="font-size:0.65rem;color:var(--muted);margin-top:6px;word-break:break-all">Embed : ${esc(d.embedUrl)}</div>` : ''}
             </div>`;
             break;
@@ -652,7 +652,7 @@ function updatePropsPanel() {
         case 'mermaid':
             html = `<div class="props-section">
                 <div class="props-section-title">Diagramme Mermaid</div>
-                <textarea id="sp-mermaid-code" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
+                <textarea id="sp-mermaid-code" rows="10" class="sp-textarea sp-textarea-mono sp-textarea-tabbed">${esc(d.code || '')}</textarea>
                 <div style="font-size:0.62rem;color:var(--muted);margin-top:4px">Syntaxe <a href="https://mermaid.js.org/syntax/flowchart.html" target="_blank" style="color:var(--primary)">Mermaid</a></div>
             </div>`;
             break;
@@ -660,7 +660,7 @@ function updatePropsPanel() {
         case 'drawio':
             html = `<div class="props-section">
                 <div class="props-section-title">Diagramme UML (draw.io)</div>
-                <button type="button" id="sp-drawio-edit" class="wpm-trigger-btn" style="width:100%">${d.svg ? 'Modifier le diagramme' : 'Créer le diagramme'}</button>
+                <button type="button" id="sp-drawio-edit" class="wpm-trigger-btn sp-full-width">${d.svg ? 'Modifier le diagramme' : 'Créer le diagramme'}</button>
             </div>`;
             break;
 
@@ -718,22 +718,22 @@ function updatePropsPanel() {
             </tr>`).join('');
             html = `<div class="props-section">
                 <div class="props-section-title">Diagramme</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-diag-title" value="${escAttr(d.title || 'Diagramme')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-diag-title" value="${escAttr(d.title || 'Diagramme')}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Type</label><select id="sp-diag-type">${optionsHtml}</select></div>
                 <div class="props-row"><label>Transformation</label><select id="sp-diag-transform">${transformOptionsHtml}</select></div>
                 <div class="props-row"><label>Preset</label><select id="sp-diag-preset">${presetOptionsHtml}</select></div>
-                <button class="tb-btn ui-btn" id="sp-diag-apply-preset" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px">Appliquer preset pedagogique</button>
+                <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced" id="sp-diag-apply-preset">Appliquer preset pedagogique</button>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">
-                    <button class="tb-btn ui-btn" id="sp-diag-add-row" style="font-size:0.68rem;justify-content:center"${canAddRow ? '' : ' disabled'}>+ Ligne</button>
-                    <button class="tb-btn ui-btn" id="sp-diag-add-col" style="font-size:0.68rem;justify-content:center"${canAddCol ? '' : ' disabled'}>+ Colonne</button>
-                    <button class="tb-btn ui-btn" id="sp-diag-del-row" style="font-size:0.68rem;justify-content:center"${canDelRow ? '' : ' disabled'}>− Ligne</button>
-                    <button class="tb-btn ui-btn" id="sp-diag-del-col" style="font-size:0.68rem;justify-content:center"${canDelCol ? '' : ' disabled'}>− Colonne</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-add-row"${canAddRow ? '' : ' disabled'}>+ Ligne</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-add-col"${canAddCol ? '' : ' disabled'}>+ Colonne</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-del-row"${canDelRow ? '' : ' disabled'}>− Ligne</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-del-col"${canDelCol ? '' : ' disabled'}>− Colonne</button>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
-                    <button class="tb-btn ui-btn" id="sp-diag-import-csv" style="font-size:0.68rem;justify-content:center">Importer CSV (presse-papiers)</button>
-                    <button class="tb-btn ui-btn" id="sp-diag-export-csv" style="font-size:0.68rem;justify-content:center">Exporter CSV</button>
-                    <button class="tb-btn ui-btn" id="sp-diag-import-tsv" style="font-size:0.68rem;justify-content:center">Importer TSV (presse-papiers)</button>
-                    <button class="tb-btn ui-btn" id="sp-diag-export-tsv" style="font-size:0.68rem;justify-content:center">Exporter TSV</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-import-csv">Importer CSV (presse-papiers)</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-export-csv">Exporter CSV</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-import-tsv">Importer TSV (presse-papiers)</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-export-tsv">Exporter TSV</button>
                 </div>
                 <div style="font-size:0.64rem;color:var(--muted);margin-top:6px">${normalizedRows.length} ligne(s) × ${colCount} colonne(s)</div>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:2px">${esc(constraints)}</div>
@@ -751,8 +751,8 @@ function updatePropsPanel() {
                 </div>
                 <div class="props-row" style="margin-top:6px"><label>Serie source</label><select id="sp-diag-series-source">${sourceSeriesOptions}</select></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
-                    <button class="tb-btn ui-btn" id="sp-diag-series-dup" style="font-size:0.68rem;justify-content:center">Dupliquer serie</button>
-                    <button class="tb-btn ui-btn" id="sp-diag-series-mirror" style="font-size:0.68rem;justify-content:center">Miroir serie (negatif)</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-series-dup">Dupliquer serie</button>
+                    <button class="tb-btn ui-btn sp-grid-btn" id="sp-diag-series-mirror">Miroir serie (negatif)</button>
                 </div>
                 <label style="display:block;color:var(--muted);font-size:0.65rem;margin:8px 0 3px">Styles par serie</label>
                 <div class="sp-diag-series-wrap">${seriesStyleHtml}</div>
@@ -764,7 +764,7 @@ function updatePropsPanel() {
         case 'latex':
             html = `<div class="props-section">
                 <div class="props-section-title">Équation LaTeX</div>
-                <textarea id="sp-latex-expr" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(d.expression || '')}</textarea>
+                <textarea id="sp-latex-expr" rows="4" class="sp-textarea sp-textarea-mono">${esc(d.expression || '')}</textarea>
                 <div style="font-size:0.62rem;color:var(--muted);margin-top:4px">Syntaxe KaTeX (LaTeX)</div>
             </div>`;
             break;
@@ -772,16 +772,16 @@ function updatePropsPanel() {
         case 'timer':
             html = `<div class="props-section">
                 <div class="props-section-title">Minuteur</div>
-                <div class="props-row"><label>Durée (s)</label><input type="number" id="sp-timer-dur" value="${d.duration || 300}" min="1" max="7200" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Label</label><input type="text" id="sp-timer-label" value="${escAttr(d.label || '')}" placeholder="Timer" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Durée (s)</label><input type="number" id="sp-timer-dur" value="${d.duration || 300}" min="1" max="7200" class="sp-elstyle-input"></div>
+                <div class="props-row"><label>Label</label><input type="text" id="sp-timer-label" value="${escAttr(d.label || '')}" placeholder="Timer" class="sp-elstyle-input"></div>
             </div>`;
             break;
 
         case 'iframe':
             html = `<div class="props-section">
                 <div class="props-section-title">Contenu embarqué</div>
-                <div class="props-row"><label>URL</label><input type="text" id="sp-iframe-url" value="${escAttr(d.url || '')}" placeholder="https://..." style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-iframe-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>URL</label><input type="text" id="sp-iframe-url" value="${escAttr(d.url || '')}" placeholder="https://..." class="sp-elstyle-input"></div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-iframe-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
             </div>`;
             break;
 
@@ -797,22 +797,22 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Code</div>
                 <div class="props-row"><label>Label</label><select id="sp-hl-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte label</label><input type="text" id="sp-hl-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-hl-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-hl-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Lang</label><select id="sp-hl-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash / Terminal</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="json"${d.language === 'json' ? ' selected' : ''}>JSON</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code</label>
-                <textarea id="sp-hl-code" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
+                <label class="sp-field-label sp-field-label-top">Code</label>
+                <textarea id="sp-hl-code" rows="6" class="sp-textarea sp-textarea-mono sp-textarea-tabbed">${esc(d.code || '')}</textarea>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Zones surlignées</div>
                 <div id="sp-hl-items">
-                    ${hls.map((h, i) => `<div class="props-row" style="margin-bottom:3px">
+                    ${hls.map((h, i) => `<div class="props-row props-row-tight">
                         <input type="text" value="${escAttr(h.lines||'')}" data-hl-lines="${i}" placeholder="1-3" style="width:50px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <input type="text" value="${escAttr(h.label||'')}" data-hl-label="${i}" placeholder="Label" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <button class="tb-btn ui-btn" data-del-hl="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
+                        <input type="text" value="${escAttr(h.label||'')}" data-hl-label="${i}" placeholder="Label" class="sp-elstyle-input">
+                        <button class="tb-btn ui-btn sp-del-btn" data-del-hl="${i}">✕</button>
                     </div>`).join('')}
                 </div>
-                <button class="tb-btn ui-btn" id="sp-hl-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Zone</button>
+                <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced sp-block-btn-dashed" id="sp-hl-add">+ Zone</button>
             </div>`;
             break;
         }
@@ -820,9 +820,9 @@ function updatePropsPanel() {
         case 'qrcode':
             html = `<div class="props-section">
                 <div class="props-section-title">QR Code</div>
-                <div class="props-row"><label>Valeur</label><input type="text" id="sp-qr-value" value="${escAttr(d.value || '')}" placeholder="https://..." style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Label</label><input type="text" id="sp-qr-label" value="${escAttr(d.label || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Texte alt</label><input type="text" id="sp-qr-alt" value="${escAttr(d.alt || '')}" placeholder="Description de la destination du QR code" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Valeur</label><input type="text" id="sp-qr-value" value="${escAttr(d.value || '')}" placeholder="https://..." class="sp-elstyle-input"></div>
+                <div class="props-row"><label>Label</label><input type="text" id="sp-qr-label" value="${escAttr(d.label || '')}" class="sp-elstyle-input"></div>
+                <div class="props-row"><label>Texte alt</label><input type="text" id="sp-qr-alt" value="${escAttr(d.alt || '')}" placeholder="Description de la destination du QR code" class="sp-elstyle-input"></div>
             </div>`;
             break;
 
@@ -835,12 +835,12 @@ function updatePropsPanel() {
             <div class="props-section">
                 <div class="props-section-title">Éléments</div>
                 <div id="sp-sa-items">
-                    ${saItems.map((item, i) => `<div class="props-row" style="margin-bottom:3px">
-                        <input type="text" value="${escAttr(item)}" data-sa-idx="${i}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <button class="tb-btn ui-btn" data-del-sa="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
+                    ${saItems.map((item, i) => `<div class="props-row props-row-tight">
+                        <input type="text" value="${escAttr(item)}" data-sa-idx="${i}" class="sp-elstyle-input">
+                        <button class="tb-btn ui-btn sp-del-btn" data-del-sa="${i}">✕</button>
                     </div>`).join('')}
                 </div>
-                <button class="tb-btn ui-btn" id="sp-sa-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Ajouter</button>
+                <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced sp-block-btn-dashed" id="sp-sa-add">+ Ajouter</button>
             </div>`;
             break;
         }
