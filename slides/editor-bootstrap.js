@@ -32,7 +32,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/slides-typography.js?v=1'],
     ['../shared/slides/element-style-schema.js?v=1'],
     ['../shared/slides/slides-core.js?v=34'],
-    ['../shared/slides/slides-themes.js?v=2'],
+    ['../shared/slides/slides-themes.js?v=3'],
     ['../shared/slides/slides-diagram-renderer.js?v=1'],
     ['../shared/slides/slides-renderer-canvas.js?v=6'],
     ['../shared/slides/slides-editor.js?v=14'],
@@ -116,7 +116,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-resize.js?v=10'],
     ['../shared/slides/editor-checker.js?v=12'],
     ['../shared/slides/banner-picker.js?v=1'],
-    ['../shared/slides/editor-bindings.js?v=29'],
+    ['../shared/slides/editor-bindings.js?v=30'],
     ['../shared/slides/editor-main.js?v=4'],
 ]);
 
