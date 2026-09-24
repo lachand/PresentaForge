@@ -43,7 +43,6 @@
                     <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📄 PDF</button>
                     <span class="course-catalog-action-status" aria-live="polite"></span>
                 </div>
-                <div class="course-catalog-progress" hidden><div class="course-catalog-progress-bar"></div></div>
             </li>`;
         }).join('');
     }
@@ -58,21 +57,6 @@
     function setRowBusy(li, busy) {
         if (!li) return;
         li.querySelectorAll('.course-catalog-action').forEach(btn => { btn.disabled = busy; });
-    }
-
-    /** Affiche/masque et met à jour la barre de progression PDF (decks longs, 80-90 slides). */
-    function setRowProgress(li, current, total) {
-        const wrap = li && li.querySelector('.course-catalog-progress');
-        const bar = li && li.querySelector('.course-catalog-progress-bar');
-        if (!wrap || !bar) return;
-        if (!total) {
-            wrap.hidden = true;
-            bar.style.width = '0%';
-            return;
-        }
-        wrap.hidden = false;
-        const pct = Math.max(0, Math.min(100, Math.round((current / total) * 100)));
-        bar.style.width = pct + '%';
     }
 
     /**
@@ -112,35 +96,23 @@
     }
 
     /**
-     * Exporte ce deck en PDF via le client d'export batch partagé (iframe cachée vers
-     * editor.html?firebasePublic=<uid>/<id>&batchExport=pdf — lecture PUBLIQUE, aucune
-     * authentification requise, voir shared/slides/editor-main.js resolveInitialDeck).
+     * Ouvre un nouvel onglet qui charge ce deck (lecture publique, aucune authentification
+     * requise, voir shared/slides/editor-main.js resolveInitialDeck ?firebasePublic=) puis
+     * déclenche l'impression navigateur native (?printExport=pdf) — texte réel,
+     * sélectionnable/recherchable, aucune rastérisation html2canvas (abandonnée après
+     * plusieurs échecs successifs : blocage CSP, pages noires, slides à widget vides).
+     * window.open() reste synchrone dans ce handler de clic (aucun await avant) pour
+     * conserver l'activation utilisateur et éviter un blocage pop-up.
      */
-    async function handleExportPdf(li, uid, id) {
-        if (!window.OEIBatchExportClient) {
-            setRowStatus(li, 'Module d’export indisponible.', true);
+    function handleExportPdf(li, uid, id) {
+        const url = 'editor.html?firebasePublic=' + encodeURIComponent(uid) + '/' + encodeURIComponent(id) + '&printExport=pdf';
+        const win = window.open(url, '_blank');
+        if (!win) {
+            setRowStatus(li, 'Fenêtre bloquée — autorisez les pop-ups pour ce site.', true);
             return;
         }
-        setRowBusy(li, true);
-        setRowStatus(li, 'Génération du PDF…', false);
-        try {
-            const res = await window.OEIBatchExportClient.exportOneDeckViaIframe({
-                urlParams: { firebasePublic: uid + '/' + id },
-                format: 'pdf',
-                onProgress: (current, total) => {
-                    setRowStatus(li, `Génération du PDF… (${current}/${total})`, false);
-                    setRowProgress(li, current, total);
-                },
-            });
-            if (!res.ok) throw new Error(res.error || 'Échec de l’export');
-            window.OEIBatchExportClient.downloadBlobDirect(res.blob, res.fileName);
-            setRowStatus(li, 'Téléchargé ✓', false);
-        } catch (e) {
-            setRowStatus(li, 'Erreur : ' + (e && e.message ? e.message : String(e)), true);
-        } finally {
-            setRowBusy(li, false);
-            setRowProgress(li, 0, 0);
-        }
+        setRowStatus(li, 'Impression ouverte dans un nouvel onglet.', false);
+        setTimeout(() => setRowStatus(li, '', false), 4000);
     }
 
     if (listEl) {

@@ -9,12 +9,16 @@
  * Firebase »). Chargé uniquement sur index.html, juste après banner-picker.js (même famille de
  * petit module modal réutilisable, mêmes classes ui-modal / ui-btn de ui-primitives.css).
  *
- * L'export groupé ne réimplémente PAS le pipeline d'export (exportPDF/exportHTMLOffline/
- * exportPPTX vivent dans shared/slides/editor-export*.js et dépendent de tout le graphe de
- * dépendances d'editor.html, notamment CanvasEditor.WIDGET_REGISTRY pour le rendu des slides à
- * widgets) : chaque présentation est exportée via shared/slides/batch-export-client.js
- * (iframe cachée same-origin editor.html?firebase=<id>&batchExport=<format>, résultat par
- * postMessage — module chargé AVANT ce fichier, partagé avec course-main.js).
+ * L'export groupé ne réimplémente PAS le pipeline d'export (exportHTMLOffline/exportPPTX
+ * vivent dans shared/slides/editor-export*.js et dépendent de tout le graphe de dépendances
+ * d'editor.html, notamment CanvasEditor.WIDGET_REGISTRY pour le rendu des slides à widgets) :
+ * html-offline/pptx sont exportés via shared/slides/batch-export-client.js (iframe cachée
+ * same-origin editor.html?firebase=<id>&batchExport=<format>, résultat par postMessage —
+ * module chargé AVANT ce fichier). Le format PDF n'utilise PAS ce mécanisme (html2canvas
+ * abandonné après plusieurs échecs successifs cette session : blocage CSP, pages noires,
+ * slides à widget vides) : un onglet par deck est ouvert vers
+ * editor.html?firebase=<id>&printExport=pdf, qui déclenche l'impression navigateur native —
+ * texte réel, aucun Blob à collecter/zipper.
  */
 (function () {
     'use strict';
@@ -277,7 +281,7 @@
         overlay.querySelector('#bulk-export-close').onclick = _closeExport;
         overlay.querySelector('#bulk-export-cancel').onclick = _closeExport;
 
-        overlay.querySelector('#bulk-export-start').onclick = async () => {
+        overlay.querySelector('#bulk-export-start').onclick = () => {
             const formatInput = overlay.querySelector('input[name="bulk-export-format"]:checked');
             const format = formatInput ? formatInput.value : EXPORT_FORMATS[0].value;
             const body = overlay.querySelector('#bulk-export-body');
@@ -293,64 +297,92 @@
             `;
             const progressEl = body.querySelector('#bulk-export-progress');
             const rowsEl = body.querySelector('#bulk-export-rows');
-            let completed = 0;
 
-            const results = await runPool(items, EXPORT_CONCURRENCY, async (deck) => {
-                const rowEl = rowsEl && rowsEl.querySelector(`[data-row-id="${CSS && CSS.escape ? CSS.escape(deck.id) : deck.id}"]`);
-                const statusEl = rowEl && rowEl.querySelector('.bulk-export-row-status');
-                // Deck long (80-90 slides, PDF) : sans ce retour, la ligne reste bloquée sur
-                // '…' pendant plusieurs minutes sans distinction entre "ça avance" et "c'est
-                // planté" — le timeout d'inactivité de batch-export-client.js en dépend aussi.
-                const res = await exportOneDeckViaIframe(deck, format, {
-                    onProgress: (current, total) => { if (statusEl) statusEl.textContent = `${current}/${total}`; },
+            const finish = (succeededCount, failedCount) => {
+                if (progressEl) {
+                    progressEl.textContent = failedCount
+                        ? `${succeededCount}/${n} exportée${succeededCount > 1 ? 's' : ''}, ${failedCount} échec${failedCount > 1 ? 's' : ''}`
+                        : `${succeededCount}/${n} exportée${succeededCount > 1 ? 's' : ''}`;
+                }
+                if (actions) {
+                    actions.style.display = '';
+                    actions.innerHTML = '<button class="ui-btn ui-btn--primary" id="bulk-export-done">Fermer</button>';
+                    const doneBtn = actions.querySelector('#bulk-export-done');
+                    if (doneBtn) doneBtn.onclick = _closeExport;
+                }
+            };
+
+            if (format === 'pdf') {
+                // Impression navigateur native (texte réel, aucune rastérisation) : pas de
+                // Blob à collecter/zipper, un onglet par deck. Boucle STRICTEMENT synchrone
+                // (aucun await avant/pendant) pour conserver l'activation utilisateur sur
+                // CHAQUE window.open() — au-delà du premier appel post-await, les
+                // navigateurs traitent souvent la suite comme hors geste utilisateur et
+                // bloquent le pop-up. html2canvas abandonné après plusieurs échecs
+                // successifs cette session (blocage CSP, pages noires, slides à widget vides).
+                let opened = 0, blocked = 0;
+                items.forEach(deck => {
+                    const rowEl = rowsEl && rowsEl.querySelector(`[data-row-id="${CSS && CSS.escape ? CSS.escape(deck.id) : deck.id}"]`);
+                    const statusEl = rowEl && rowEl.querySelector('.bulk-export-row-status');
+                    const win = window.open('editor.html?firebase=' + encodeURIComponent(deck.id) + '&printExport=pdf', '_blank');
+                    if (win) {
+                        opened++;
+                        if (rowEl) rowEl.classList.add('ok');
+                        if (statusEl) statusEl.textContent = 'Ouvert ✓';
+                    } else {
+                        blocked++;
+                        if (rowEl) rowEl.classList.add('err');
+                        if (statusEl) statusEl.textContent = '✗ Bloqué (pop-up)';
+                    }
                 });
-                completed += 1;
-                if (progressEl) progressEl.textContent = `${completed} / ${n}`;
-                if (rowEl) {
-                    if (res.ok) { rowEl.classList.add('ok'); if (statusEl) statusEl.textContent = '✓'; }
-                    else { rowEl.classList.add('err'); if (statusEl) statusEl.textContent = '✗ ' + res.error; }
+                finish(opened, blocked);
+                return;
+            }
+
+            (async () => {
+                let completed = 0;
+                const results = await runPool(items, EXPORT_CONCURRENCY, async (deck) => {
+                    const rowEl = rowsEl && rowsEl.querySelector(`[data-row-id="${CSS && CSS.escape ? CSS.escape(deck.id) : deck.id}"]`);
+                    const statusEl = rowEl && rowEl.querySelector('.bulk-export-row-status');
+                    const res = await exportOneDeckViaIframe(deck, format);
+                    completed += 1;
+                    if (progressEl) progressEl.textContent = `${completed} / ${n}`;
+                    if (rowEl) {
+                        if (res.ok) { rowEl.classList.add('ok'); if (statusEl) statusEl.textContent = '✓'; }
+                        else { rowEl.classList.add('err'); if (statusEl) statusEl.textContent = '✗ ' + res.error; }
+                    }
+                    return res;
+                });
+
+                const succeeded = results.filter(r => r.ok);
+                const failed = results.filter(r => !r.ok);
+
+                if (succeeded.length === 1 && failed.length === 0) {
+                    window.OEIBatchExportClient.downloadBlobDirect(succeeded[0].blob, succeeded[0].fileName);
+                } else if (succeeded.length) {
+                    try {
+                        await _ensureJSZipLoaded();
+                        const zip = new window.JSZip();
+                        const usedNames = new Set();
+                        succeeded.forEach(r => {
+                            let name = r.fileName || `export-${r.deck.id}`;
+                            if (usedNames.has(name)) {
+                                const dot = name.lastIndexOf('.');
+                                const suffix = r.deck.id.slice(0, 6);
+                                name = dot > 0 ? `${name.slice(0, dot)}-${suffix}${name.slice(dot)}` : `${name}-${suffix}`;
+                            }
+                            usedNames.add(name);
+                            zip.file(name, r.blob);
+                        });
+                        const zipBlob = await zip.generateAsync({ type: 'blob' });
+                        window.OEIBatchExportClient.downloadBlobDirect(zipBlob, `export_presentaforge_${new Date().toISOString().slice(0, 10)}.zip`);
+                    } catch (err) {
+                        if (progressEl) progressEl.textContent = 'Erreur lors de la création du zip : ' + String((err && err.message) || err);
+                    }
                 }
-                return res;
-            });
 
-            const succeeded = results.filter(r => r.ok);
-            const failed = results.filter(r => !r.ok);
-
-            if (succeeded.length === 1 && failed.length === 0) {
-                window.OEIBatchExportClient.downloadBlobDirect(succeeded[0].blob, succeeded[0].fileName);
-            } else if (succeeded.length) {
-                try {
-                    await _ensureJSZipLoaded();
-                    const zip = new window.JSZip();
-                    const usedNames = new Set();
-                    succeeded.forEach(r => {
-                        let name = r.fileName || `export-${r.deck.id}`;
-                        if (usedNames.has(name)) {
-                            const dot = name.lastIndexOf('.');
-                            const suffix = r.deck.id.slice(0, 6);
-                            name = dot > 0 ? `${name.slice(0, dot)}-${suffix}${name.slice(dot)}` : `${name}-${suffix}`;
-                        }
-                        usedNames.add(name);
-                        zip.file(name, r.blob);
-                    });
-                    const zipBlob = await zip.generateAsync({ type: 'blob' });
-                    window.OEIBatchExportClient.downloadBlobDirect(zipBlob, `export_presentaforge_${new Date().toISOString().slice(0, 10)}.zip`);
-                } catch (err) {
-                    if (progressEl) progressEl.textContent = 'Erreur lors de la création du zip : ' + String((err && err.message) || err);
-                }
-            }
-
-            if (progressEl) {
-                progressEl.textContent = failed.length
-                    ? `${succeeded.length}/${n} exportée${succeeded.length > 1 ? 's' : ''}, ${failed.length} échec${failed.length > 1 ? 's' : ''}`
-                    : `${succeeded.length}/${n} exportée${succeeded.length > 1 ? 's' : ''}`;
-            }
-            if (actions) {
-                actions.style.display = '';
-                actions.innerHTML = '<button class="ui-btn ui-btn--primary" id="bulk-export-done">Fermer</button>';
-                const doneBtn = actions.querySelector('#bulk-export-done');
-                if (doneBtn) doneBtn.onclick = _closeExport;
-            }
+                finish(succeeded.length, failed.length);
+            })();
         };
     }
 

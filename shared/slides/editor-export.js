@@ -1186,6 +1186,20 @@ function _isCanvasLikelyBlank(canvas) {
 }
 
 async function exportPDF(opts = {}) {
+    // Impression navigateur native — devenue le chemin PRINCIPAL pour l'export interactif
+    // (bouton de l'éditeur, course.html, export groupé) après plusieurs rounds de fixes
+    // html2canvas qui n'ont jamais tenu (blocage CSP, pages noires, slides à widget
+    // vides) : texte réel, aucune rastérisation, aucun clone offscreen restreint par la
+    // CSP — voir _exportPDFPrint(). Décision utilisateur explicite : accepter l'étape
+    // manuelle du dialogue d'impression partout plutôt que continuer à rustiner un chemin
+    // de capture fragile. Le pipeline jsPDF+html2canvas (+ rendu natif Phase A) plus bas
+    // reste disponible via opts.returnBlob mais n'est plus appelé par aucun point d'entrée
+    // de ce projet — voir shared/slides/editor-main.js (?printExport=pdf), course-main.js,
+    // bulk-actions-modal.js.
+    if (!opts.returnBlob) {
+        return _exportPDFPrint(opts.printTargetWindow);
+    }
+
     const data = editor.data;
     if (!data) return;
     const dims = ASPECT_DIMS[data.metadata?.aspect] || [1280, 720];
@@ -1385,11 +1399,19 @@ async function exportPDF(opts = {}) {
 }
 
 /** Fallback: open print dialog */
-async function _exportPDFPrint() {
+/**
+ * @param {Window} [targetWindow] Fenêtre à utiliser pour le contenu imprimable — par
+ *   défaut une nouvelle fenêtre (`window.open`, bouton interactif de l'éditeur). Passer
+ *   `window` (la fenêtre COURANTE) pour le flux ?printExport=pdf (course.html/export
+ *   groupé) : cette fenêtre a déjà été ouverte par un window.open() depuis la page
+ *   appelante, donc en ouvrir une SECONDE ici risquerait un blocage pop-up — l'activation
+ *   utilisateur du clic d'origine peut avoir expiré après le chargement Firebase async.
+ */
+async function _exportPDFPrint(targetWindow) {
     const data = editor.data;
     if (!data) return;
     const dims = ASPECT_DIMS[data.metadata?.aspect] || [1280, 720];
-    const w = window.open('', '_blank');
+    const w = targetWindow || window.open('', '_blank');
     if (!w) {
         notify('Impossible d\'ouvrir la fenêtre d\'impression (bloqueur de pop-up ?)', 'error');
         return;
@@ -1443,7 +1465,11 @@ ${widgetScript}
 ${printScript}
 </body></html>`);
     w.document.close();
-    notify('Fenêtre d\'impression ouverte', 'success');
+    // targetWindow fourni (flux ?printExport=pdf) : w.document.write() ci-dessus vient de
+    // remplacer le document de LA FENÊTRE COURANTE, y compris le conteneur du toast —
+    // notify() n'aurait plus où s'afficher, et est de toute façon redondant (l'utilisateur
+    // voit déjà le contenu imprimable).
+    if (!targetWindow) notify('Fenêtre d\'impression ouverte', 'success');
 }
 
 /* ── Print Speaker Notes ───────────────────────────────── */

@@ -31,11 +31,19 @@ if (EditorRuntime?.bindLegacyGlobals) {
 // shared/slides/bulk-actions-modal.js) : editor.html?firebase=<id>&batchExport=<format>. Le
 // flag doit être posé AVANT init() (plus bas dans ce fichier) pour que
 // shared/slides/editor-bindings.js puisse désactiver l'auto-sauvegarde Firestore 60s pendant
-// un export potentiellement long — voir _runBatchExportAndNotify() plus bas.
+// un export potentiellement long — voir _runBatchExportAndNotify() plus bas. `pdf` n'utilise
+// PLUS ce flux (voir _printExportFormat ci-dessous) : html2canvas s'est montré fragile tout
+// au long de la session (CSP, pages noires, slides à widget vides, même après plusieurs
+// fixes ciblés) — l'export PDF est passé à l'impression navigateur native partout.
 const _batchExportParams = new URLSearchParams(location.search);
-const _batchExportFormat = _batchExportParams.get('batchExport'); // 'html-offline' | 'pdf' | 'pptx' | null
+const _batchExportFormat = _batchExportParams.get('batchExport'); // 'html-offline' | 'pptx' | null
 const _batchExportToken = _batchExportParams.get('batchToken') || '';
-window.__OEI_BATCH_EXPORT_MODE = !!_batchExportFormat;
+// Impression navigateur (chemin PRINCIPAL du PDF, cf. exportPDF()) : le deck se charge
+// normalement puis window.print() se déclenche DANS CETTE MÊME fenêtre (déjà ouverte via
+// window.open() par la page appelante — course.html/bulk-actions-modal.js), jamais de
+// postMessage/Blob — le navigateur gère nativement la pagination/l'impression.
+const _printExportFormat = _batchExportParams.get('printExport'); // 'pdf' | null
+window.__OEI_BATCH_EXPORT_MODE = !!_batchExportFormat || !!_printExportFormat;
 
 /**
  * Exporte le deck déjà chargé (voir resolveInitialDeck) dans `format` et renvoie le résultat
@@ -48,24 +56,32 @@ async function _runBatchExportAndNotify(format, token) {
     const post = (payload) => {
         try { window.parent.postMessage({ type: 'oei-batch-export-result', token, ...payload }, location.origin); } catch (_) {}
     };
-    // Décks longs (80-90 slides) : chaque slide PDF prend jusqu'à quelques secondes à
-    // rastériser — sans ce signal, le parent n'a aucun moyen de distinguer un export qui
-    // avance d'un export bloqué, et doit choisir entre un délai fixe trop court (échoue sur
-    // les gros decks) ou trop long (un vrai blocage reste invisible longtemps).
-    const postProgress = (current, total) => {
-        try { window.parent.postMessage({ type: 'oei-batch-export-progress', token, current, total }, location.origin); } catch (_) {}
-    };
     try {
         if (!editor.data) throw new Error('Présentation non chargée');
         let result;
-        if (format === 'pdf') result = await exportPDF({ returnBlob: true, onProgress: postProgress });
-        else if (format === 'html-offline') result = await exportHTMLOffline({ returnBlob: true });
+        if (format === 'html-offline') result = await exportHTMLOffline({ returnBlob: true });
         else if (format === 'pptx') result = await exportPPTX({ returnBlob: true });
         else throw new Error('Format export inconnu : ' + format);
         post({ ok: true, blob: result.blob, fileName: result.fileName });
     } catch (err) {
         post({ ok: false, error: String((err && err.message) || err) });
     }
+}
+
+/**
+ * Déclenche l'impression PDF de CETTE fenêtre (?printExport=pdf) une fois le deck chargé
+ * (resolveInitialDeck, y compris ?firebasePublic= pour un étudiant anonyme depuis
+ * course.html). Réutilise CETTE fenêtre plutôt qu'une nouvelle (cf. _exportPDFPrint) : la
+ * page appelante l'a déjà ouverte via window.open() sur le clic d'origine — en ouvrir une
+ * SECONDE ici risquerait un blocage pop-up une fois l'activation utilisateur expirée après
+ * le chargement Firebase async.
+ */
+async function _runPrintExport() {
+    if (!editor.data) {
+        notify('Présentation introuvable ou non accessible — impossible d’imprimer', 'error');
+        return;
+    }
+    await exportPDF({ printTargetWindow: window });
 }
 
 /* ── init() — Bootstrap the editor ─────────────────────── */
@@ -190,6 +206,8 @@ function init() {
     });
     if (_batchExportFormat) {
         _resolveDeckPromise.then(() => _runBatchExportAndNotify(_batchExportFormat, _batchExportToken));
+    } else if (_printExportFormat === 'pdf') {
+        _resolveDeckPromise.then(() => _runPrintExport());
     }
 
     buildThemeSelect();
