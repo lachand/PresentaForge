@@ -282,6 +282,13 @@ async function exportPNG() {
             backgroundColor: null,
             useCORS: true,
             logging: false,
+            // Sans ça, html2canvas clone tout le document dans un iframe caché et y
+            // RE-fetch les <link>/<img> — un iframe cloné via document.open()/write() est
+            // traité par Firefox comme n'ayant pas la même origine pour l'évaluation CSP
+            // (self ne matche plus), bloquant styles/images à l'intérieur du clone (export
+            // vide/mal stylé, voire un rendu qui n'aboutit jamais). foreignObjectRendering
+            // inline styles calculés + images en data: au clonage, aucun re-fetch requis.
+            foreignObjectRendering: true,
         });
         unmountedSlots.forEach((s, i) => { s.innerHTML = savedHtml[i]; });
         const link = document.createElement('a');
@@ -607,6 +614,10 @@ async function exportPDF(opts = {}) {
                 const canvas = await html2canvas(frame, {
                     width: dims[0], height: dims[1], scale: 2,
                     backgroundColor: null, useCORS: true, logging: false,
+                    // cf. exportPNG() : évite le clonage iframe + re-fetch CSS/images, qui se
+                    // heurte à la CSP enforce (style-src/img-src 'self' ne matche pas
+                    // l'origine du clone sous Firefox) et pouvait faire échouer le rendu.
+                    foreignObjectRendering: true,
                 });
 
                 pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, dims[0], dims[1]);
@@ -1675,6 +1686,8 @@ async function exportPNGBatch() {
             const canvas = await html2canvas(frame, {
                 width: dims[0], height: dims[1], scale: 2,
                 backgroundColor: null, useCORS: true, logging: false,
+                // cf. exportPNG()/exportPDF() : évite le clonage iframe + re-fetch CSS/images.
+                foreignObjectRendering: true,
             });
 
             // Convert to blob and add to zip
