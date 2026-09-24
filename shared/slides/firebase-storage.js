@@ -366,7 +366,29 @@
         const meta_ = presentationData.metadata || {};
         const title = meta_.title || 'Sans titre';
         const course = opts.course || meta_.course || '';
-        const isPublic = typeof opts.public === 'boolean' ? opts.public : false;
+        // `public` ne vit QUE dans les métadonnées Firestore, jamais dans le JSON du deck
+        // (tools/slides/deck-schema.json n'a pas ce champ, loadPresentation() ne renvoie que
+        // le JSON parsé) — contrairement à course/level/tags/banner/…, qui retombent tous
+        // sur presentationData.metadata en repli, `public` n'a AUCUNE source de repli côté
+        // éditeur : editor.data ne le connaît jamais. Sans la lecture ci-dessous, CHAQUE
+        // sauvegarde qui ne précise pas opts.public (Ctrl+S et auto-sauvegarde 60s de
+        // l'éditeur, editor-bindings.js _saveToFirebaseNow, qui ne passe que {course})
+        // réinitialisait silencieusement le deck en privé — .set() réécrit le document
+        // entier, `public: false` par défaut écrasait la vraie valeur — retirant le deck du
+        // catalogue de cours (listPublicPresentationsForCourse filtre sur public === true).
+        let isPublic;
+        if (typeof opts.public === 'boolean') {
+            isPublic = opts.public;
+        } else if (existingId) {
+            try {
+                const existingDoc = await col.doc(existingId).get();
+                isPublic = existingDoc.exists ? !!existingDoc.data().public : false;
+            } catch (_) {
+                isPublic = false;
+            }
+        } else {
+            isPublic = false; // nouvelle présentation : privée par défaut
+        }
         const thumb = _computeThumb(presentationData);
         const level = opts.level || meta_.level || '';
         const tagsIn = opts.tags || meta_.tags || [];
