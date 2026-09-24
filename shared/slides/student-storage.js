@@ -54,6 +54,67 @@
     }
 
     /**
+     * Retire `slide.notes` (notes orateur) de chaque slide — copie superficielle du
+     * deck et des slides concernées seulement, jamais de mutation. Même logique que
+     * `_roomBuildDeckPayload` (slides/viewer-main.js) qui nettoie le payload diffusé en
+     * salle live : contrairement à ce payload, le deck STOCKÉ côté Firebase (public ou
+     * non) n'a jamais ce retrait appliqué (`savePresentation` sérialise tel quel), donc
+     * tout code qui reconstruit un deck exportable/partageable à partir du deck stocké
+     * doit repasser par cette fonction pour ne pas republier les notes orateur.
+     * @param {any} deck
+     * @returns {any}
+     */
+    function _stripSpeakerNotes(deck) {
+        if (!deck || typeof deck !== 'object' || !Array.isArray(deck.slides)) return deck;
+        return {
+            ...deck,
+            slides: deck.slides.map((slide) => {
+                if (!slide || typeof slide !== 'object' || slide.notes == null) return slide;
+                const { notes, ...rest } = slide;
+                void notes;
+                return rest;
+            }),
+        };
+    }
+
+    /**
+     * Bundle de révision "vierge" : même format que `buildReviseExport` (compatible
+     * `importReviseFile`), mais sans progression personnelle (bookmarks/notes/revision
+     * vides) — pour qu'un étudiant puisse télécharger un point de départ avant même
+     * d'avoir ouvert ce deck en salle live (ex. depuis slides/course.html, catalogue
+     * public d'un cours). Filtre les slides masquées AVANT de calculer slideCount, pour
+     * rester cohérent avec `_roomBuildInitMessage` (viewer-main.js, même filtrage) : un
+     * décompte différent entre ce bundle et une capture de salle live ferait diverger
+     * `courseKeyFromDeck` (dérivé de `slides.length`) et forkerait silencieusement
+     * l'archive de révision du même élève pour le même cours en deux entrées distinctes.
+     * Retire aussi les notes orateur (`_stripSpeakerNotes`) — le deck source (ex. lu via
+     * `loadPublicPresentation`) ne les a jamais eu retirées côté stockage.
+     * Fonction PURE : aucun accès storage, testable directement.
+     * @param {any} deck - deck brut (ex. issu de loadPublicPresentation)
+     * @param {{title?: string, author?: string}} [courseMeta]
+     * @returns {{type:string, v:number, exportedAt:string, course:object, deck:any, bookmarks:any[], notes:object, revision:object}}
+     */
+    function buildBlankReviseBundle(deck, courseMeta = {}) {
+        const visibleSlides = Array.isArray(deck && deck.slides) ? deck.slides.filter((s) => !(s && s.hidden)) : [];
+        const filteredDeck = (deck && typeof deck === 'object') ? { ...deck, slides: visibleSlides } : { slides: visibleSlides };
+        const cleanDeck = _stripSpeakerNotes(filteredDeck);
+        return {
+            type: 'presentaforge-revision',
+            v: 1,
+            exportedAt: new Date().toISOString(),
+            course: {
+                title: (courseMeta && courseMeta.title) || deck?.metadata?.title || '',
+                author: (courseMeta && courseMeta.author) || deck?.metadata?.author || '',
+                slideCount: visibleSlides.length,
+            },
+            deck: cleanDeck,
+            bookmarks: [],
+            notes: {},
+            revision: {},
+        };
+    }
+
+    /**
      * Stable identity of a deck for revision archiving. Same title but different
      * author / slide count ⇒ different key (separate archives). An exact match
      * (title + author + slide count) collapses to one archive (best effort).
@@ -366,7 +427,13 @@
                         author: rec.meta.author,
                         slideCount: rec.meta.slideCount,
                     },
-                    deck,
+                    // Defense-in-depth : le deck archivé vient normalement déjà d'une
+                    // capture de salle live nettoyée (_roomBuildDeckPayload), mais
+                    // importReviseFile() accepte aussi un deck brut non filtré en entrée
+                    // (partage direct d'un export éditeur) — repasser par
+                    // _stripSpeakerNotes ici garantit qu'un export/partage ultérieur ne
+                    // republie jamais des notes orateur qui auraient transité par ce chemin.
+                    deck: _stripSpeakerNotes(deck),
                     bookmarks: localGetJSON(k.bookmarks, []) || [],
                     notes: localGetJSON(k.notes, {}) || {},
                     revision: localGetJSON(k.revision, {}) || {},
@@ -456,5 +523,6 @@
         courseKeyFromDeck,
         slugify,
         hashString,
+        buildBlankReviseBundle,
     });
 })(window);
