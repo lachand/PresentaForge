@@ -896,6 +896,37 @@
         }
     }
 
+    // Lien de salle étudiante par cours (à coller une fois en ressource Moodle) : même ID de
+    // salle déterministe que _applyCourseRoomIdDefault (viewer-main.js, `salle-<courseSlug>`)
+    // — quel que soit le deck que vous présentez pour ce cours, les étudiants rejoignent
+    // toujours la même salle avec ce lien. Volontairement MINIMAL : contrairement au bouton
+    // « Copier le lien stable » du panneau salle (qui fige la config réseau du moment —
+    // relayWs/peerIce/peerPing), ce lien ne porte que room+audienceMode et laisse
+    // student.html résoudre la config réseau ACTUELLE (relay-config.js) à chaque ouverture —
+    // un redéploiement du relais ne casse donc jamais les liens déjà collés dans Moodle.
+    function _buildCourseRoomLink(course) {
+        const slug = window.OEIFirebase?.courseSlug ? window.OEIFirebase.courseSlug(course) : '';
+        if (!slug) return '';
+        const base = location.href.replace(/\/[^/]*$/, '/');
+        return `${base}student.html?room=${encodeURIComponent('salle-' + slug)}&audienceMode=display`;
+    }
+
+    async function copyPersistentCourseRoomLink(course, target) {
+        const url = _buildCourseRoomLink(course);
+        if (!url) return;
+        try {
+            await navigator.clipboard?.writeText(url);
+        } catch (_) {
+            prompt('Lien de salle du cours :', url);
+            return;
+        }
+        if (target) {
+            const orig = target.textContent;
+            target.textContent = '✓ Copié !';
+            setTimeout(() => { target.textContent = orig; }, 2000);
+        }
+    }
+
     let _firebaseFilterQuery = '';
 
     function _filterFirebaseDecks(decks, query) {
@@ -1015,7 +1046,8 @@
             <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${escAttr(key)}">renommer</button>
             <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${escAttr(key)}">bandeau</button>
             <button type="button" class="firebase-course-rename-btn" data-action="export-course-firebase" data-course="${escAttr(key)}">exporter</button>
-            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Lien de catalogue pour Moodle — liste les présentations de ce cours marquées 👁 Public, l'étudiant choisit laquelle consulter">🔗 lien du cours</button>` : ''}
+            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Lien de catalogue pour Moodle — liste les présentations de ce cours marquées 👁 Public, l'étudiant choisit laquelle consulter">🔗 catalogue</button>` : ''}
+            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-room-link-firebase" data-course="${escAttr(key)}" title="Lien de salle pour Moodle — les étudiants rejoignent toujours la même salle en direct, quel que soit le deck présenté pour ce cours">🚪 salle</button>` : ''}
         ` : '';
 
         // Drill-down actif : en-tête « Retour » + grille à plat des seules présentations de
@@ -1287,7 +1319,7 @@
 
     // Handle Firebase action clicks (delegated)
     document.addEventListener('click', e => {
-        const target = e.target.closest('[data-action^="present-firebase"],[data-action="present-presenter-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="toggle-public-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="copy-course-link-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
+        const target = e.target.closest('[data-action^="present-firebase"],[data-action="present-presenter-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="toggle-public-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="copy-course-link-firebase"],[data-action="copy-course-room-link-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
         if (!target) return;
         const action = target.dataset.action;
         const idx = Number(target.dataset.fbIdx);
@@ -1305,6 +1337,9 @@
         }
         else if (action === 'copy-course-link-firebase') {
             copyPersistentCourseLink(target.dataset.course || '', target);
+        }
+        else if (action === 'copy-course-room-link-firebase') {
+            copyPersistentCourseRoomLink(target.dataset.course || '', target);
         }
         else if (action === 'select-all-course-firebase') {
             const course = target.dataset.course || '';
