@@ -224,6 +224,16 @@ html, body {
 .sp-del-btn { padding: 2px 5px; color: var(--danger); font-size: 0.65rem; }
 .sp-full-width { width: 100%; }
 
+/* Lot 4 — interactifs live (code-live/quiz-live/cloze/mcq-single/drag-drop/
+   mcq-multi/poll-likert/debate-mode/postit-wall/exit-ticket/audience-roulette/
+   room-stats/leaderboard-live). Un seul nouveau pattern : input largeur fixe
+   80px (répond numérique courte type "index"/"top N"), distinct de
+   .sp-elstyle-input (flex:1 écraserait la largeur fixe). */
+.sp-elstyle-input-fixed {
+    width: 80px; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    border-radius: 4px; padding: 3px 6px; font-size: 0.72rem;
+}
+
 .sp-diag-grid-wrap {
     max-height: 260px;
     overflow: auto;

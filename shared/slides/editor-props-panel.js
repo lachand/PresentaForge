@@ -849,10 +849,10 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Code Live</div>
                 <div class="props-row"><label>Langage</label><select id="sp-cl-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option></select></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code initial</label>
-                <textarea id="sp-cl-code" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
-                <div class="props-row" style="margin-top:6px"><label>Auto-run</label><input type="checkbox" id="sp-cl-autorun"${d.autoRun ? ' checked' : ''}></div>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:6px;line-height:1.4">Python : exécuté via <a href="https://pyodide.org" target="_blank" style="color:var(--primary)">Pyodide</a> (WASM)<br>JS : exécuté dans le navigateur</div>
+                <label class="sp-field-label sp-field-label-top">Code initial</label>
+                <textarea id="sp-cl-code" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-tabbed">${esc(d.code || '')}</textarea>
+                <div class="props-row props-row-spaced"><label>Auto-run</label><input type="checkbox" id="sp-cl-autorun"${d.autoRun ? ' checked' : ''}></div>
+                <div class="sp-hint-text sp-hint-text-lh">Python : exécuté via <a href="https://pyodide.org" target="_blank" style="color:var(--primary)">Pyodide</a> (WASM)<br>JS : exécuté dans le navigateur</div>
             </div>`;
             break;
 
@@ -866,22 +866,22 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Quiz</div>
                 <div class="props-row"><label>Label</label><select id="sp-ql-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte label</label><input type="text" id="sp-ql-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Question</label>
-                <textarea id="sp-ql-question" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.question || '')}</textarea>
-                <div class="props-row" style="margin-top:6px"><label>Durée (s)</label><input type="number" id="sp-ql-duration" value="${d.duration || 30}" min="5" max="300" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-ql-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label">Question</label>
+                <textarea id="sp-ql-question" rows="3" class="sp-textarea">${esc(d.question || '')}</textarea>
+                <div class="props-row props-row-spaced"><label>Durée (s)</label><input type="number" id="sp-ql-duration" value="${d.duration || 30}" min="5" max="300" class="sp-elstyle-input"></div>
                 <div class="props-row" style="margin-top:4px"><label>Bonne rép.</label><select id="sp-ql-answer">${qlOpts.map((_, i) => `<option value="${i}"${d.answer === i ? ' selected' : ''}>${String.fromCharCode(65 + i)}</option>`).join('')}</select></div>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Options</div>
                 <div id="sp-ql-items">
-                    ${qlOpts.map((item, i) => `<div class="props-row" style="margin-bottom:3px">
+                    ${qlOpts.map((item, i) => `<div class="props-row props-row-tight">
                         <span style="min-width:18px;font-weight:700;font-size:0.7rem;color:var(--primary)">${String.fromCharCode(65 + i)}</span>
-                        <input type="text" value="${escAttr(item)}" data-ql-idx="${i}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
-                        <button class="tb-btn ui-btn" data-del-ql="${i}" style="padding:2px 5px;color:var(--danger);font-size:0.65rem">✕</button>
+                        <input type="text" value="${escAttr(item)}" data-ql-idx="${i}" class="sp-elstyle-input">
+                        <button class="tb-btn ui-btn sp-del-btn" data-del-ql="${i}">✕</button>
                     </div>`).join('')}
                 </div>
-                <button class="tb-btn ui-btn" id="sp-ql-add" style="width:100%;justify-content:center;font-size:0.68rem;margin-top:4px;border-style:dashed">+ Option</button>
+                <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced sp-block-btn-dashed" id="sp-ql-add">+ Option</button>
             </div>
             <div style="font-size:0.6rem;color:var(--muted);padding:0 4px;line-height:1.4">Quiz interactif : les étudiants répondent via QR code (P2P, aucun serveur). La durée limite le temps de réponse.</div>`;
             break;
@@ -890,10 +890,10 @@ function updatePropsPanel() {
         case 'cloze':
             html = `<div class="props-section">
                 <div class="props-section-title">Texte à trous</div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Phrase (utiliser ____ pour chaque trou)</label>
-                <textarea id="sp-cloze-sentence" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.sentence || '')}</textarea>
-                <div class="props-row" style="margin-top:6px"><label>Réponses</label><input type="text" id="sp-cloze-blanks" value="${escAttr((d.blanks || []).join(', '))}" placeholder="TCP, UDP" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Séparer les réponses par des virgules.</div>
+                <label class="sp-field-label">Phrase (utiliser ____ pour chaque trou)</label>
+                <textarea id="sp-cloze-sentence" rows="4" class="sp-textarea">${esc(d.sentence || '')}</textarea>
+                <div class="props-row props-row-spaced"><label>Réponses</label><input type="text" id="sp-cloze-blanks" value="${escAttr((d.blanks || []).join(', '))}" placeholder="TCP, UDP" class="sp-elstyle-input"></div>
+                <div class="sp-hint-text sp-hint-text-tight">Séparer les réponses par des virgules.</div>
             </div>`;
             break;
 
@@ -906,13 +906,13 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">QCM simple</div>
                 <div class="props-row"><label>Label</label><select id="sp-mcqs-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte label</label><input type="text" id="sp-mcqs-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Question</label>
-                <textarea id="sp-mcqs-question" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.question || '')}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Options (1 par ligne)</label>
-                <textarea id="sp-mcqs-options" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.options || []).join('\n'))}</textarea>
-                <div class="props-row" style="margin-top:6px"><label>Bonne rép.</label><input type="number" id="sp-mcqs-answer" value="${Number(d.answer ?? 0)}" min="0" style="width:80px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Index de la bonne réponse (0 = première option).</div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-mcqs-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label">Question</label>
+                <textarea id="sp-mcqs-question" rows="3" class="sp-textarea">${esc(d.question || '')}</textarea>
+                <label class="sp-field-label sp-field-label-top">Options (1 par ligne)</label>
+                <textarea id="sp-mcqs-options" rows="4" class="sp-textarea">${esc((d.options || []).join('\n'))}</textarea>
+                <div class="props-row props-row-spaced"><label>Bonne rép.</label><input type="number" id="sp-mcqs-answer" value="${Number(d.answer ?? 0)}" min="0" class="sp-elstyle-input-fixed"></div>
+                <div class="sp-hint-text sp-hint-text-tight">Index de la bonne réponse (0 = première option).</div>
             </div>`;
             break;
         }
@@ -920,11 +920,11 @@ function updatePropsPanel() {
         case 'drag-drop':
             html = `<div class="props-section">
                 <div class="props-section-title">Drag & Drop</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-dnd-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Cartes (1 par ligne)</label>
-                <textarea id="sp-dnd-items" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.items || []).join('\n'))}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Zones (1 par ligne)</label>
-                <textarea id="sp-dnd-targets" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.targets || []).join('\n'))}</textarea>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-dnd-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Cartes (1 par ligne)</label>
+                <textarea id="sp-dnd-items" rows="4" class="sp-textarea">${esc((d.items || []).join('\n'))}</textarea>
+                <label class="sp-field-label sp-field-label-top">Zones (1 par ligne)</label>
+                <textarea id="sp-dnd-targets" rows="3" class="sp-textarea">${esc((d.targets || []).join('\n'))}</textarea>
             </div>`;
             break;
 
@@ -937,13 +937,13 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">QCM multi</div>
                 <div class="props-row"><label>Label</label><select id="sp-mcqm-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte label</label><input type="text" id="sp-mcqm-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Question</label>
-                <textarea id="sp-mcqm-question" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.question || '')}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Options (1 par ligne)</label>
-                <textarea id="sp-mcqm-options" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.options || []).join('\n'))}</textarea>
-                <div class="props-row" style="margin-top:6px"><label>Bonnes rép.</label><input type="text" id="sp-mcqm-answers" value="${escAttr((d.answers || []).join(', '))}" placeholder="0, 2" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Indices des réponses correctes, à partir de 0.</div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-mcqm-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label">Question</label>
+                <textarea id="sp-mcqm-question" rows="3" class="sp-textarea">${esc(d.question || '')}</textarea>
+                <label class="sp-field-label sp-field-label-top">Options (1 par ligne)</label>
+                <textarea id="sp-mcqm-options" rows="4" class="sp-textarea">${esc((d.options || []).join('\n'))}</textarea>
+                <div class="props-row props-row-spaced"><label>Bonnes rép.</label><input type="text" id="sp-mcqm-answers" value="${escAttr((d.answers || []).join(', '))}" placeholder="0, 2" class="sp-elstyle-input"></div>
+                <div class="sp-hint-text sp-hint-text-tight">Indices des réponses correctes, à partir de 0.</div>
             </div>`;
             break;
         }
@@ -953,42 +953,42 @@ function updatePropsPanel() {
         case 'postit-wall':
             html = `<div class="props-section">
                 <div class="props-section-title">Interaction live</div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Prompt</label>
-                <textarea id="sp-live-prompt" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.prompt || '')}</textarea>
+                <label class="sp-field-label">Prompt</label>
+                <textarea id="sp-live-prompt" rows="4" class="sp-textarea">${esc(d.prompt || '')}</textarea>
             </div>`;
             break;
 
         case 'exit-ticket':
             html = `<div class="props-section">
                 <div class="props-section-title">Exit ticket</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-et-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Prompts (1 par ligne)</label>
-                <textarea id="sp-et-prompts" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.prompts || []).join('\n'))}</textarea>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-et-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Prompts (1 par ligne)</label>
+                <textarea id="sp-et-prompts" rows="6" class="sp-textarea">${esc((d.prompts || []).join('\n'))}</textarea>
             </div>`;
             break;
 
         case 'audience-roulette':
             html = `<div class="props-section">
                 <div class="props-section-title">Roulette</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-roulette-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-roulette-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
             </div>`;
             break;
 
         case 'room-stats':
             html = `<div class="props-section">
                 <div class="props-section-title">Stats live</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-rs-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Métriques (1 par ligne)</label>
-                <textarea id="sp-rs-metrics" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc((d.metrics || ['students', 'hands', 'questions', 'feedback']).join('\n'))}</textarea>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Valeurs possibles: students, hands, questions, feedback, poll, wordcloud.</div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-rs-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Métriques (1 par ligne)</label>
+                <textarea id="sp-rs-metrics" rows="6" class="sp-textarea">${esc((d.metrics || ['students', 'hands', 'questions', 'feedback']).join('\n'))}</textarea>
+                <div class="sp-hint-text sp-hint-text-tight">Valeurs possibles: students, hands, questions, feedback, poll, wordcloud.</div>
             </div>`;
             break;
 
         case 'leaderboard-live':
             html = `<div class="props-section">
                 <div class="props-section-title">Leaderboard live</div>
-                <div class="props-row"><label>Titre</label><input type="text" id="sp-lb-title" value="${escAttr(d.title || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div class="props-row"><label>Top</label><input type="number" id="sp-lb-limit" value="${Math.max(1, Number(d.limit || 5))}" min="1" max="20" style="width:80px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Titre</label><input type="text" id="sp-lb-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
+                <div class="props-row"><label>Top</label><input type="number" id="sp-lb-limit" value="${Math.max(1, Number(d.limit || 5))}" min="1" max="20" class="sp-elstyle-input-fixed"></div>
             </div>`;
             break;
 
