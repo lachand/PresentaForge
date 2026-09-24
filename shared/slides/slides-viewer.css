@@ -311,6 +311,7 @@
         .wb-color-btn[data-color="#22c55e"] { background: #22c55e; }
         .wb-color-btn[data-color="#3b82f6"] { background: #3b82f6; }
         .wb-color-btn[data-color="#eab308"] { background: #eab308; }
+        .wb-color-btn[data-color="#000000"] { background: #000; }
         .pv-tab-panel-notes { display: flex; flex-direction: column; }
         .pv-tab-panel-salle { display: none; }
         .rm-title-icon { vertical-align: -2px; margin-right: 5px; }

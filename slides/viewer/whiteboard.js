@@ -106,6 +106,7 @@ export function createWhiteboardController(deps) {
         textSize: 'm',
         editingTextIdx: -1,
         pendingTextBox: /** @type {{x: number, y: number, w: number, h: number}|null} */ (null),
+        draftBroadcastTimer: /** @type {ReturnType<typeof setTimeout>|null} */ (null),
     };
     const canPersist = !!deps.storageKey && typeof deps.storageGetJSON === 'function' && typeof deps.storageSetJSON === 'function';
     let initialized = false;
@@ -711,11 +712,17 @@ export function createWhiteboardController(deps) {
     }
 
     /**
+     * @param {WhiteboardText} [draftCommand] champ texte en cours de frappe, pas encore
+     *   validé/persisté — remplace la version committée (wb.editingTextIdx) le temps de
+     *   l'aperçu temps réel envoyé aux étudiants.
      * @returns {WhiteboardSyncState}
      */
-    function getSyncState() {
+    function getSyncState(draftCommand) {
         const slideIndex = normalizeSlideIndex(wb.currentSlide);
-        const commands = sanitizeCommands(storageGetCommands(slideIndex));
+        const raw = draftCommand
+            ? storageGetCommands(slideIndex).filter((_, i) => i !== wb.editingTextIdx)
+            : storageGetCommands(slideIndex);
+        const commands = sanitizeCommands(draftCommand ? raw.concat([draftCommand]) : raw);
         return {
             active: !!wb.active,
             slideIndex,
@@ -749,9 +756,10 @@ export function createWhiteboardController(deps) {
     /**
      * @param {string} reason
      * @param {boolean} recordFrame
+     * @param {WhiteboardText} [draftCommand]
      */
-    function emitSyncState(reason = '', recordFrame = false) {
-        const state = getSyncState();
+    function emitSyncState(reason = '', recordFrame = false, draftCommand) {
+        const state = getSyncState(draftCommand);
         if (typeof deps.onSyncState === 'function') {
             deps.onSyncState({ ...state, reason: String(reason || '').slice(0, 40) });
         }
@@ -826,6 +834,19 @@ export function createWhiteboardController(deps) {
                 drawSelectionHighlight(idx);
             }
             return;
+        }
+
+        if (wb.tool === 'text') {
+            // Cliquer directement un champ texte existant l'ouvre pour modification —
+            // pas besoin de passer par l'outil sélection. Cliquer ailleurs démarre le
+            // glissé de création normal (plus bas).
+            const commands = storageGetCommands(wb.currentSlide);
+            const idx = hitTestCommands(commands, point.x, point.y);
+            if (idx >= 0 && commands[idx].kind === 'text') {
+                const cmd = commands[idx];
+                openTextEditor({ x: cmd.x, y: cmd.y, w: cmd.w, h: cmd.h }, idx);
+                return;
+            }
         }
 
         clearSelection();
@@ -1023,6 +1044,7 @@ export function createWhiteboardController(deps) {
         draft.style.color = wb.color || '#ffffff';
         draft.innerHTML = renderMarkdownSafeHtml(input.value);
         draft.classList.add('active');
+        scheduleDraftBroadcast();
     }
 
     function hideTextDraftPreview() {
@@ -1030,6 +1052,40 @@ export function createWhiteboardController(deps) {
         if (!draft) return;
         draft.classList.remove('active');
         draft.innerHTML = '';
+    }
+
+    function clearDraftBroadcastTimer() {
+        if (wb.draftBroadcastTimer) {
+            clearTimeout(wb.draftBroadcastTimer);
+            wb.draftBroadcastTimer = null;
+        }
+    }
+
+    /**
+     * Diffuse (avec un léger anti-rebond) l'état en cours de frappe de l'éditeur flottant
+     * aux étudiants — pas de persistance, juste emitSyncState avec un WhiteboardText
+     * "brouillon" qui remplace localement le champ committé (wb.editingTextIdx) le temps
+     * de l'aperçu. Rien n'est envoyé tant que le champ Markdown est vide.
+     */
+    function scheduleDraftBroadcast() {
+        clearDraftBroadcastTimer();
+        wb.draftBroadcastTimer = setTimeout(() => {
+            wb.draftBroadcastTimer = null;
+            const box = wb.pendingTextBox;
+            const input = /** @type {HTMLTextAreaElement|null} */ (document.getElementById('wb-text-editor-input'));
+            if (!box || !input) return;
+            const markdown = String(input.value || '').slice(0, WB_TEXT_MARKDOWN_MAX);
+            if (!markdown.trim()) return;
+            /** @type {WhiteboardText} */
+            const draftCommand = {
+                kind: 'text',
+                x: box.x, y: box.y, w: box.w, h: box.h,
+                markdown,
+                size: wb.textSize,
+                color: wb.color,
+            };
+            emitSyncState('text-draft', false, draftCommand);
+        }, 200);
     }
 
     /**
@@ -1070,6 +1126,7 @@ export function createWhiteboardController(deps) {
     }
 
     function closeTextEditor() {
+        clearDraftBroadcastTimer();
         const editor = document.getElementById('wb-text-editor');
         if (!editor || !editor.classList.contains('active')) return;
         editor.classList.remove('active');
@@ -1078,9 +1135,13 @@ export function createWhiteboardController(deps) {
         wb.editingTextIdx = -1;
         wb.pendingTextBox = null;
         if (wasEditing >= 0) renderSlide(wb.currentSlide);
+        // Annulation : les étudiants ont pu voir le brouillon en direct (scheduleDraftBroadcast)
+        // — renvoyer l'état réellement committé pour qu'il disparaisse chez eux aussi.
+        emitSyncState('text-draft-cancel', false);
     }
 
     function confirmTextEditor() {
+        clearDraftBroadcastTimer();
         const input = /** @type {HTMLTextAreaElement|null} */ (document.getElementById('wb-text-editor-input'));
         const box = wb.pendingTextBox;
         if (!input || !box) {
@@ -1096,8 +1157,11 @@ export function createWhiteboardController(deps) {
         wb.pendingTextBox = null;
 
         if (!markdown) {
-            // Champ vide : on n'ajoute rien, et on laisse un champ existant inchangé.
+            // Champ vide : on n'ajoute rien, et on laisse un champ existant inchangé. Le
+            // brouillon a pu être diffusé en direct (scheduleDraftBroadcast) : renvoyer
+            // l'état réellement committé pour qu'il disparaisse aussi chez les étudiants.
             renderSlide(wb.currentSlide);
+            emitSyncState('text-draft-cancel', false);
             return;
         }
 
