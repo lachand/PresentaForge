@@ -565,34 +565,68 @@ async function exportPDF(opts = {}) {
             includeNotes: false, // Vue étudiant : pas de notes présentateur
         };
 
+        // Attend un signal réel de chargement (polices + décodage image) plutôt qu'un
+        // délai fixe arbitraire — les polices web lentes/hors-cache faisaient parfois
+        // capturer html2canvas avant layout complet (mise en page dégradée dans le PDF).
+        const _waitFrameReady = async (frame) => {
+            await Promise.race([
+                (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve(),
+                new Promise(r => setTimeout(r, 300)),
+            ]);
+            await Promise.all(
+                Array.from(frame.querySelectorAll('img')).map(img => (
+                    typeof img.decode === 'function' ? img.decode().catch(() => {}) : Promise.resolve()
+                ))
+            );
+            await new Promise(r => setTimeout(r, 30));
+        };
+
+        const failedSlides = [];
+        let renderedCount = 0;
         for (let i = 0; i < data.slides.length; i++) {
             const slide = data.slides[i];
-
-            // Create a slide frame
-            const frame = document.createElement('div');
-            frame.style.width = `${dims[0]}px`;
-            frame.style.height = `${dims[1]}px`;
-            frame.style.overflow = 'hidden';
-            frame.style.position = 'relative';
-            frame.style.background = 'var(--sl-slide-bg,#1a1d27)';
-            frame.innerHTML = `<style>${themeCSS}</style>` + SlidesRenderer.renderSlide(slide, i, pdfOpts);
-            container.appendChild(frame);
-            _injectStaticFallbacks(frame);
-
-            // Wait for images/fonts
-            await new Promise(r => setTimeout(r, 100));
-
-            const canvas = await html2canvas(frame, {
-                width: dims[0], height: dims[1], scale: 2,
-                backgroundColor: null, useCORS: true, logging: false,
-            });
-
             if (i > 0) pdf.addPage();
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, dims[0], dims[1]);
-            container.removeChild(frame);
+
+            // Un slide qui échoue (widget cassé, feature CSS non supportée par
+            // html2canvas…) ne doit jamais faire échouer tout l'export : on insère une
+            // page de remplacement texte et on continue avec le reste du deck.
+            let frame = null;
+            try {
+                frame = document.createElement('div');
+                frame.style.width = `${dims[0]}px`;
+                frame.style.height = `${dims[1]}px`;
+                frame.style.overflow = 'hidden';
+                frame.style.position = 'relative';
+                frame.style.background = 'var(--sl-slide-bg,#1a1d27)';
+                frame.innerHTML = `<style>${themeCSS}</style>` + SlidesRenderer.renderSlide(slide, i, pdfOpts);
+                container.appendChild(frame);
+                _injectStaticFallbacks(frame);
+
+                await _waitFrameReady(frame);
+
+                const canvas = await html2canvas(frame, {
+                    width: dims[0], height: dims[1], scale: 2,
+                    backgroundColor: null, useCORS: true, logging: false,
+                });
+
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, dims[0], dims[1]);
+                renderedCount++;
+            } catch (slideErr) {
+                console.error(`[OEI] PDF export: échec du rendu du slide ${i + 1}`, slideErr);
+                failedSlides.push(i + 1);
+                pdf.setFontSize(16);
+                pdf.setTextColor(180, 30, 30);
+                pdf.text(`Erreur de rendu — slide ${i + 1}`, 24, 40);
+            } finally {
+                container.innerHTML = ''; // retire le frame (succès ou partiel) avant le slide suivant
+            }
         }
 
         container.remove();
+
+        if (renderedCount === 0 && data.slides.length > 0) {
+            throw new Error(`Aucun des ${data.slides.length} slide(s) n'a pu être rendu`);
+        }
 
         // Set PDF metadata
         pdf.setProperties({
@@ -603,20 +637,28 @@ async function exportPDF(opts = {}) {
         });
 
         const fileName = `${(data.metadata?.title || 'presentation').replace(/[^a-zA-Z0-9àéèùêîôâ _-]/g, '')}.pdf`;
+        const countLabel = failedSlides.length
+            ? `${renderedCount}/${data.slides.length} slides (${failedSlides.length} erreur${failedSlides.length > 1 ? 's' : ''})`
+            : `${data.slides.length} slides`;
         if (opts.returnBlob) {
-            notify(`PDF généré (${data.slides.length} slides)`, 'success');
+            notify(`PDF généré (${countLabel})`, failedSlides.length ? 'warning' : 'success');
             return { blob: pdf.output('blob'), fileName };
         }
         pdf.save(fileName);
-        notify(`PDF exporté (${data.slides.length} slides)`, 'success');
+        notify(`PDF exporté (${countLabel})`, failedSlides.length ? 'warning' : 'success');
     } catch (e) {
         console.error('[OEI] PDF export error:', e);
         // Mode export groupé (iframe cachée, sans geste utilisateur) : jamais le fallback
         // print (window.open + window.print()), on laisse l'appelant gérer l'échec proprement.
         if (opts.returnBlob) throw e;
-        notify('Erreur export PDF: ' + e.message, 'error');
+        notify('Erreur export PDF (composants requis non chargés, ou aucun slide rendu) : ' + e.message, 'error');
         // Fallback to print-based export
-        _exportPDFPrint();
+        try {
+            await _exportPDFPrint();
+        } catch (printErr) {
+            console.error('[OEI] PDF export: le repli impression a aussi échoué', printErr);
+            notify('Export PDF impossible (le repli impression a échoué aussi)', 'error');
+        }
     }
 }
 
@@ -626,6 +668,10 @@ async function _exportPDFPrint() {
     if (!data) return;
     const dims = ASPECT_DIMS[data.metadata?.aspect] || [1280, 720];
     const w = window.open('', '_blank');
+    if (!w) {
+        notify('Impossible d\'ouvrir la fenêtre d\'impression (bloqueur de pop-up ?)', 'error');
+        return;
+    }
     const themeData = _resolveExportTheme(data);
     const _s = css => css.replace(/:root\s*\{[^}]*\}/g, '').replace(/body\s*\{[^}]*\}/g, '');
     const themeCSS = _s(SlidesThemes.generateCSS(themeData));
