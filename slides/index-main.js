@@ -867,19 +867,20 @@
         return `${base}viewer.html?firebase=${encodeURIComponent(uid)}/${encodeURIComponent(id)}`;
     }
 
-    // Lien persistant de cours (à coller une fois en ressource Moodle) : redirige, à
-    // chaque ouverture, vers la dernière présentation du cours ouverte en "Présenter"
-    // (slides/course.html résout le pointeur courseSettings/{slug} côté Firestore).
+    // Lien de catalogue de cours (à coller une fois en ressource Moodle) : slides/course.html
+    // liste, sans authentification, toutes les présentations de ce cours marquées "visible
+    // des étudiants" (badge 👁 Public sur la carte) — l'étudiant choisit celle qu'il veut
+    // consulter. Le nom du cours voyage tel quel dans l'URL (pas de hash à résoudre côté
+    // Firestore) : renommer le cours change ce lien, comme pour tout identifiant lisible.
     function _buildCourseLink(uid, course) {
-        const slug = window.OEIFirebase?.courseSlug ? window.OEIFirebase.courseSlug(course) : '';
-        if (!slug) return '';
+        const trimmed = String(course || '').trim();
+        if (!uid || !trimmed) return '';
         const base = location.href.replace(/\/[^/]*$/, '/');
-        return `${base}course.html?u=${encodeURIComponent(uid)}&c=${encodeURIComponent(slug)}`;
+        return `${base}course.html?u=${encodeURIComponent(uid)}&course=${encodeURIComponent(trimmed)}`;
     }
 
     async function copyPersistentCourseLink(course, target) {
         const uid = window.OEIFirebase?.getUser()?.uid || '';
-        if (!uid || !course) return;
         const url = _buildCourseLink(uid, course);
         if (!url) return;
         try {
@@ -985,7 +986,7 @@
             <article class="pres-card"${draggableAttr}>
                 <div class="pres-cover" style="${escAttr(coverStyle)}">
                     ${selectBoxHtml}
-                    ${p.public ? '<span class="cover-kicker cover-kicker--public">Public</span>' : '<span class="cover-kicker">Firebase</span>'}
+                    <button type="button" class="cover-kicker cover-kicker--btn ${p.public ? 'cover-kicker--public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public) — cliquer pour rendre privé' : 'Privé — cliquer pour rendre visible des étudiants (lien de cours, partage public)'}">${p.public ? '👁 Public' : '🔒 Privé'}</button>
                     ${coverInner}
                 </div>
                 <div class="pres-content">
@@ -999,6 +1000,7 @@
                     </div>
                     <div class="pres-actions">
                         <button type="button" class="card-btn primary" data-action="present-firebase" data-fb-idx="${idx}">${icon('play')} Présenter</button>
+                        <button type="button" class="card-btn" data-action="present-presenter-firebase" data-fb-idx="${idx}" title="Ouvrir directement en mode présentateur (notes, salle, minuteur)">🎤 Mode présentateur</button>
                         <button type="button" class="card-btn" data-action="edit-firebase" data-fb-idx="${idx}">${icon('edit')} Éditer</button>
                         ${p.public && uid ? `<button type="button" class="card-btn" data-action="copy-link-firebase" data-fb-uid="${esc(uid)}" data-fb-id="${esc(p.id)}" title="Copier le lien de partage">🔗 Lien</button>` : ''}
                     </div>
@@ -1013,7 +1015,7 @@
             <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${escAttr(key)}">renommer</button>
             <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${escAttr(key)}">bandeau</button>
             <button type="button" class="firebase-course-rename-btn" data-action="export-course-firebase" data-course="${escAttr(key)}">exporter</button>
-            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Lien persistant pour Moodle — redirige toujours vers la dernière présentation de ce cours ouverte en 'Présenter'">🔗 lien persistant</button>` : ''}
+            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Lien de catalogue pour Moodle — liste les présentations de ce cours marquées 👁 Public, l'étudiant choisit laquelle consulter">🔗 lien du cours</button>` : ''}
         ` : '';
 
         // Drill-down actif : en-tête « Retour » + grille à plat des seules présentations de
@@ -1083,16 +1085,15 @@
         if (!p) return;
         try {
             const data = await window.OEIFirebase.loadPresentation(p.id);
-            if (mode === 'viewer') {
-                const storedOk = storageSetRaw(VIEWER_PRESENT_KEY, JSON.stringify(data));
-                relayPresentDeck(data, storedOk);
-                window.open('viewer.html?file=__draft__', '_blank');
-                // Lien persistant de cours (slides/course.html) : pointe toujours vers la
-                // dernière présentation ouverte en "Présenter" pour ce cours — best-effort,
-                // ne doit jamais bloquer/retarder l'ouverture de la présentation elle-même.
-                if (p.course) {
-                    window.OEIFirebase.setCurrentPresentationForCourse(p.course, p.id).catch(() => {});
-                }
+            if (mode === 'viewer' || mode === 'presenter') {
+                // Le cours voyage avec le deck relayé (clé dédiée, ignorée par le rendu des
+                // slides) : viewer.html s'en sert pour pré-remplir l'ID de salle étudiants
+                // avec un identifiant stable dérivé du cours (cf. _applyCourseRoomIdDefault).
+                const payload = { ...data, __oeiCourse: p.course || '' };
+                const storedOk = storageSetRaw(VIEWER_PRESENT_KEY, JSON.stringify(payload));
+                relayPresentDeck(payload, storedOk);
+                const url = mode === 'presenter' ? 'viewer.html?file=__draft__&mode=presenter' : 'viewer.html?file=__draft__';
+                window.open(url, '_blank');
             } else {
                 // Passer l'ID Firebase à l'éditeur : il rechargera le contenu depuis
                 // Firestore, mais on écrit aussi SLIDE_DRAFT comme repli hors-ligne.
@@ -1126,14 +1127,37 @@
         const p = _firebaseDecks[idx];
         if (!p) return;
         const known = [...new Set(_firebaseDecks.map(x => x.course).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
-        const hint = known.length ? `\n\nCours existants : ${known.join(', ')}` : '';
-        const next = prompt(`Cours pour « ${p.title} » (vide = sans cours) :${hint}`, p.course || '');
+        const next = await OEIDialog.selectOrCreate({
+            title: 'Changer de cours',
+            message: `Cours pour « ${p.title} » :`,
+            options: known,
+            value: p.course || '',
+            emptyLabel: '— Sans cours —',
+            newLabel: '+ Nouveau cours…',
+            newPlaceholder: 'Nom du nouveau cours',
+        });
         if (next === null) return;
         const trimmed = next.trim();
         if (trimmed === (p.course || '')) return;
         try {
             await window.OEIFirebase.updatePresentationCourse(p.id, trimmed);
             p.course = trimmed;
+            renderFirebaseDecks();
+        } catch (e) {
+            await OEIDialog.alert('Erreur : ' + e.message);
+        }
+    }
+
+    // Bascule rapide "visible des étudiants" (badge cliquable sur la carte) — gouverne le
+    // lien de partage direct (🔗 Lien) ET l'apparition dans le catalogue de cours
+    // (slides/course.html). Pas de confirmation : réversible en un clic.
+    async function togglePublicFirebase(idx) {
+        const p = _firebaseDecks[idx];
+        if (!p) return;
+        const next = !p.public;
+        try {
+            await window.OEIFirebase.updatePresentationMeta(p.id, { public: next });
+            p.public = next;
             renderFirebaseDecks();
         } catch (e) {
             await OEIDialog.alert('Erreur : ' + e.message);
@@ -1263,13 +1287,15 @@
 
     // Handle Firebase action clicks (delegated)
     document.addEventListener('click', e => {
-        const target = e.target.closest('[data-action^="present-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="copy-course-link-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
+        const target = e.target.closest('[data-action^="present-firebase"],[data-action="present-presenter-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="toggle-public-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="copy-course-link-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
         if (!target) return;
         const action = target.dataset.action;
         const idx = Number(target.dataset.fbIdx);
         if (action === 'present-firebase') openFirebaseDeck(idx, 'viewer');
+        else if (action === 'present-presenter-firebase') openFirebaseDeck(idx, 'presenter');
         else if (action === 'edit-firebase') openFirebaseDeck(idx, 'editor');
         else if (action === 'delete-firebase') deleteFirebaseDeck(idx);
+        else if (action === 'toggle-public-firebase') togglePublicFirebase(idx);
         else if (action === 'move-firebase') moveFirebaseDeck(idx);
         else if (action === 'rename-course-firebase') renameFirebaseCourse(target.dataset.course || '');
         else if (action === 'edit-course-banner-firebase') editFirebaseCourseBanner(target.dataset.course || '');

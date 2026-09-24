@@ -7,14 +7,19 @@
     <title>presentaForge — Cours</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
-    <link rel="stylesheet" href="../shared/slides/slides-course.css?v=1">
+    <link rel="stylesheet" href="../shared/slides/slides-course.css?v=3">
 </head>
 <body>
     <div id="course-status" class="course-status" role="status" aria-live="polite">
         <div class="course-spinner" aria-hidden="true"></div>
-        <p class="course-status-text">Ouverture de la présentation du cours…</p>
+        <p class="course-status-text">Chargement du catalogue du cours…</p>
     </div>
-    <script src="../shared/slides/firebase-storage.js?v=8"></script>
-    <script src="course-main.js?v=1"></script>
+    <main id="course-catalog" class="course-catalog" hidden>
+        <h1 id="course-catalog-title" class="course-catalog-title"></h1>
+        <p class="course-catalog-hint">Choisissez la présentation à consulter.</p>
+        <ul id="course-catalog-list" class="course-catalog-list"></ul>
+    </main>
+    <script src="../shared/slides/firebase-storage.js?v=9"></script>
+    <script src="course-main.js?v=2"></script>
 </body>
 </html>

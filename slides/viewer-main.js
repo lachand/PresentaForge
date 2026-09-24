@@ -1421,6 +1421,26 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             return words[Math.floor(Math.random() * words.length)] + '-' + rnd;
         }
 
+        // Salle par cours (lien Moodle stable) : dès qu'on sait pour quel cours ce deck a été
+        // ouvert (__oeiCourse, relayé par index-main.js openFirebaseDeck), on pré-remplit l'ID
+        // de salle avec un identifiant déterministe dérivé du cours — toujours le même d'une
+        // séance à l'autre, sans action de l'enseignant. Prend le pas sur le "dernier ID
+        // utilisé" par défaut (initRoomIdPreviewInput), qui n'est pas spécifique à ce cours ;
+        // l'enseignant garde la main pour éditer le champ ensuite. Appelé très tôt dans boot(),
+        // avant que le panneau "Salle étudiants" ait pu être ouvert.
+        function _applyCourseRoomIdDefault(data) {
+            try {
+                const course = typeof data?.__oeiCourse === 'string' ? data.__oeiCourse.trim() : '';
+                if (!course) return;
+                const slug = window.OEIFirebase?.courseSlug ? window.OEIFirebase.courseSlug(course) : '';
+                if (!slug) return;
+                const input = document.getElementById('rm-room-id-input');
+                if (!input) return;
+                input.value = `salle-${slug}`;
+                ViewerRuntime.runRoomPreviewUpdater();
+            } catch (_) { /* best-effort : ne doit jamais bloquer le boot */ }
+        }
+
         function _buildStudentUrl(roomId, transportMode = 'auto') {
             return buildStudentRoomUrl({
                 currentHref: location.href,
@@ -2935,6 +2955,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
         async function boot() {
             try {
                 const data = await loadData();
+                _applyCourseRoomIdDefault(data);
                 if (isPresenterMode) {
                     // Les notes orateur ne sont montrées qu'à l'enseignant : on revérifie
                     // ici (pas seulement au niveau du bouton/raccourci) car ?mode=presenter

@@ -1,5 +1,5 @@
 /**
- * slides-course.css — slides/course.html (redirecteur de lien persistant de cours).
+ * slides-course.css — slides/course.html (catalogue public d'un cours, lien Moodle stable).
  * Page minimale, autonome (pas de design-tokens.js) : palette sombre alignée sur le
  * reste de PresentaForge (cf. body.viewer-review dans slides-viewer.css).
  */
@@ -20,6 +20,10 @@ html, body {
     padding: 24px;
     text-align: center;
 }
+/* `display:flex` ci-dessus a la même spécificité que le [hidden]{display:none} du user
+   agent et gagne par ordre de cascade (feuille auteur après la feuille UA) : sans cette
+   règle plus spécifique, statusEl.hidden = true ne cache jamais visuellement le spinner. */
+.course-status[hidden] { display: none; }
 .course-spinner {
     width: 40px;
     height: 40px;
@@ -37,4 +41,63 @@ html, body {
 }
 .course-status--error .course-status-text {
     color: #fca5a5;
+}
+.course-catalog {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 20px;
+}
+.course-catalog-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 6px;
+}
+.course-catalog-hint {
+    color: rgba(226,232,240,0.7);
+    font-size: 0.9rem;
+    margin: 0 0 24px;
+}
+.course-catalog-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.course-catalog-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #e2e8f0;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+}
+.course-catalog-item:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.2);
+}
+.course-catalog-item-title {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+.course-catalog-badge {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(129,140,248,0.25);
+    color: #c7d2fe;
+}
+.course-catalog-empty {
+    color: rgba(226,232,240,0.7);
+    font-size: 0.9rem;
+    padding: 16px 0;
 }

@@ -3,8 +3,8 @@
  *
  * Config hardcodée, auto-init au chargement du script.
  * Présentation courante trackée via _currentId pour la sauvegarde auto.
- * Firestore : users/{uid}/presentations/{id} → { id, title, modified, json }
- *             users/{uid}/courseSettings/{courseSlug} → { course, banner, currentPresentationId }
+ * Firestore : users/{uid}/presentations/{id} → { id, title, modified, json, public, course }
+ *             users/{uid}/courseSettings/{courseSlug} → { course, banner }
  */
 (function () {
     'use strict';
@@ -452,6 +452,12 @@
             const n = patch.seance == null ? NaN : Number(patch.seance);
             update.seance = Number.isFinite(n) ? Math.round(n) : null;
         }
+        // `public` : bascule rapide "visible par les étudiants" depuis le tableau de bord
+        // (badge cliquable) — gouverne aussi bien loadPublicPresentation (lien de partage)
+        // que listPublicPresentationsForCourse (catalogue de cours, slides/course.html).
+        if (Object.prototype.hasOwnProperty.call(patch, 'public')) {
+            update.public = !!patch.public;
+        }
         if (!Object.keys(update).length) return;
         await col.doc(id).update(update);
     }
@@ -530,49 +536,41 @@
         await setCourseBanner(oldCourse, null);
     }
 
-    // ── Lien persistant de cours (pointeur "présentation courante") ────────────
+    // ── Catalogue public de cours (slides/course.html) ──────────────────────────
     //
-    // Un lien Moodle unique par cours (slides/course.html?u=<uid>&c=<courseSlug>) doit
-    // rester valable indéfiniment tout en redirigeant vers la présentation que
-    // l'enseignant a le plus récemment ouverte en "Présenter" pour ce cours. On stocke
-    // donc juste un pointeur { currentPresentationId } sur le même document
-    // courseSettings/{courseSlug} que le bandeau (setCourseBanner ci-dessus) — d'où le
-    // passage en merge:true plutôt qu'un remplacement complet du document.
-
-    async function getCurrentPresentationForCourse(course) {
-        const trimmed = String(course || '').trim();
-        if (!trimmed) return null;
-        const snap = await _courseSettingsCol().doc(_courseSlug(trimmed)).get();
-        if (!snap.exists) return null;
-        const data = snap.data() || {};
-        if (data.course !== trimmed) return null; // collision de hash improbable, cf. getCourseBanner
-        return data.currentPresentationId ? { id: data.currentPresentationId, updated: data.currentUpdated || null } : null;
-    }
-
-    async function setCurrentPresentationForCourse(course, id) {
-        const trimmed = String(course || '').trim();
-        if (!trimmed || !id) return;
-        await _courseSettingsCol().doc(_courseSlug(trimmed)).set(
-            { course: trimmed, currentPresentationId: id, currentUpdated: new Date().toISOString() },
-            { merge: true }
-        );
-    }
-
-    // Lecture NON authentifiée du pointeur — utilisée par slides/course.html (lien collé
-    // dans Moodle, ouvert par des étudiants non connectés). Même idiome que
-    // loadPublicPresentation : pas de vérification isReady()/_user, juste _db + l'uid
-    // fourni dans le lien. Nécessite une règle de sécurité Firestore autorisant la
-    // lecture de users/{uid}/courseSettings/{slug} (à ajouter dans la Console Firebase,
-    // ce dépôt ne versionne pas firestore.rules) — le document ne contient qu'un id de
-    // présentation et le nom du cours, rien de sensible.
-    async function getCurrentPresentationPointer(uid, courseSlug) {
+    // Lien Moodle unique par cours : slides/course.html?u=<uid>&course=<nom exact,
+    // encodé>. Liste, SANS authentification (étudiant non connecté), les présentations
+    // de ce cours marquées "public" (bascule rapide depuis le badge de carte, cf.
+    // updatePresentationMeta ci-dessus) — l'enseignant choisit ainsi quels decks sont
+    // visibles avant/pendant/après la séance, indépendamment du contenu du cours.
+    // Même idiome que loadPublicPresentation : pas de isReady()/_user, juste _db.
+    // Sûr côté règles : la requête filtre déjà public==true, donc chaque document
+    // renvoyé satisfait la même condition que la règle de sécurité (pas de champ
+    // supplémentaire à autoriser en lecture publique).
+    async function listPublicPresentationsForCourse(uid, course) {
         if (!_db) throw new Error('Firebase non initialisé');
-        if (!uid || !courseSlug) return null;
-        const col = _db.collection('users').doc(uid).collection('courseSettings');
-        const doc = await col.doc(courseSlug).get();
-        if (!doc.exists) return null;
-        const data = doc.data() || {};
-        return data.currentPresentationId ? { id: data.currentPresentationId, course: data.course || '' } : null;
+        const trimmed = String(course || '').trim();
+        if (!uid || !trimmed) return [];
+        const col = _db.collection('users').doc(uid).collection('presentations');
+        const snap = await col.where('course', '==', trimmed).where('public', '==', true).get();
+        const list = snap.docs.map(d => {
+            const data = d.data() || {};
+            return {
+                id: d.id,
+                title: data.title || 'Sans titre',
+                seance: Number.isFinite(data.seance) ? data.seance : null,
+                modified: data.modified || '',
+                thumb: data.thumb || null,
+            };
+        });
+        // Séance croissante quand connue (ordre pédagogique) ; sinon, plus récent d'abord.
+        list.sort((a, b) => {
+            if (a.seance != null && b.seance != null) return a.seance - b.seance;
+            if (a.seance != null) return -1;
+            if (b.seance != null) return 1;
+            return String(b.modified).localeCompare(String(a.modified));
+        });
+        return list;
     }
 
     // ── Export ────────────────────────────────────────────────────────────────
@@ -605,8 +603,6 @@
         setCourseBanner,
         renameCourseBanner,
         courseSlug: _courseSlug,
-        getCurrentPresentationForCourse,
-        setCurrentPresentationForCourse,
-        getCurrentPresentationPointer,
+        listPublicPresentationsForCourse,
     };
 })();

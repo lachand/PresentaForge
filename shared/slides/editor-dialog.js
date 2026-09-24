@@ -125,6 +125,84 @@ const OEIDialog = (() => {
                 focusLast: true,
             });
         },
+
+        /**
+         * Sélection dans une liste existante, avec option "nouveau" en texte libre.
+         * Remplace un prompt() texte libre (typos/doublons non détectés) par un menu
+         * déroulant des valeurs déjà connues. Retourne une Promise<string|null>
+         * (null si annulé, chaîne vide si "emptyLabel" choisi).
+         * @param {{
+         *   title?: string, message?: string, options: string[], value?: string,
+         *   emptyLabel?: string, newLabel?: string, newPlaceholder?: string,
+         * }} opts
+         */
+        selectOrCreate({
+            title = '',
+            message = '',
+            options = [],
+            value = '',
+            emptyLabel = '— Aucun —',
+            newLabel = '+ Nouveau…',
+            newPlaceholder = '',
+        } = {}) {
+            _ensureStyles();
+            const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const NEW_VALUE = '__oed_new__';
+            const hasValueInOptions = value !== '' && options.includes(value);
+            const isCustomValue = value !== '' && !hasValueInOptions;
+            return new Promise(resolve => {
+                const overlay = document.createElement('div');
+                overlay.className = 'oed-overlay ui-modal-overlay is-open';
+                overlay.setAttribute('role', 'dialog');
+                overlay.setAttribute('aria-modal', 'true');
+                overlay.innerHTML = `
+                    <div class="ui-modal ui-modal--sm">
+                        ${title ? `<div class="ui-modal-header"><h2 class="ui-modal-title">${esc(title)}</h2></div>` : ''}
+                        <div class="ui-modal-body oed-body">
+                            ${message ? `<p>${esc(message)}</p>` : ''}
+                            <select class="ui-select oed-select">
+                                <option value=""${!value ? ' selected' : ''}>${esc(emptyLabel)}</option>
+                                ${options.map(o => `<option value="${esc(o)}"${o === value ? ' selected' : ''}>${esc(o)}</option>`).join('')}
+                                <option value="${String(NEW_VALUE)}"${isCustomValue ? ' selected' : ''}>${esc(newLabel)}</option>
+                            </select>
+                            <input type="text" class="ui-input oed-new-input" placeholder="${esc(newPlaceholder)}"
+                                style="margin-top:8px;${isCustomValue ? '' : 'display:none;'}" value="${String(isCustomValue ? esc(value) : '')}">
+                        </div>
+                        <div class="ui-modal-actions">
+                            <button class="ui-btn" data-idx="0">Annuler</button>
+                            <button class="ui-btn ui-btn--primary" data-idx="1">Valider</button>
+                        </div>
+                    </div>
+                `;
+                const selectEl = /** @type {HTMLSelectElement} */ (overlay.querySelector('.oed-select'));
+                const newInput = /** @type {HTMLInputElement} */ (overlay.querySelector('.oed-new-input'));
+                selectEl.addEventListener('change', () => {
+                    const isNew = selectEl.value === NEW_VALUE;
+                    newInput.style.display = isNew ? '' : 'none';
+                    if (isNew) newInput.focus();
+                });
+
+                const readValue = () => (selectEl.value === NEW_VALUE ? newInput.value.trim() : selectEl.value);
+                const close = val => {
+                    overlay.remove();
+                    document.removeEventListener('keydown', onKey);
+                    resolve(val);
+                };
+                overlay.querySelector('.ui-modal-actions').addEventListener('click', e => {
+                    const btn = e.target.closest('[data-idx]');
+                    if (!btn) return;
+                    close(btn.dataset.idx === '1' ? readValue() : null);
+                });
+                const onKey = e => {
+                    if (e.key === 'Escape') close(null);
+                    else if (e.key === 'Enter') close(readValue());
+                };
+                document.addEventListener('keydown', onKey);
+
+                document.body.appendChild(overlay);
+                (isCustomValue ? newInput : selectEl).focus();
+            });
+        },
     };
 })();
 

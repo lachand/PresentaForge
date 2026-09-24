@@ -59,7 +59,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     // CanvasEditor class (depends on all sub-runtimes above)
     ['../shared/slides/slides-canvas.js?v=28'],
     // Editor modules (mostly sequential — each may depend on previously registered globals)
-    ['../shared/slides/editor-dialog.js?v=3'],
+    ['../shared/slides/editor-dialog.js?v=4'],
     ['../shared/slides/drawio-embed-protocol.js?v=1'],
     ['../shared/slides/editor-drawio-modal.js?v=1'],
     ['../shared/slides/ui-toast.js?v=1'],

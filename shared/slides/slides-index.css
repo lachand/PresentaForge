@@ -390,6 +390,14 @@ body {
 .pres-card-move-btn:hover { background: var(--surface-container-high); }
 .cover-icon--emoji { width: auto; height: auto; font-size: 1.75rem; line-height: 1; }
 .cover-kicker--public { color: var(--tertiary); }
+.cover-kicker--btn {
+    border: none; background: none; padding: 0; margin: 0;
+    font: inherit; letter-spacing: inherit; text-transform: inherit;
+    color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+}
+.cover-kicker--btn:hover { text-decoration: underline; }
+.cover-kicker--btn.cover-kicker--public { color: var(--tertiary); text-shadow: none; }
 .chip--course { background: var(--primary-fixed); color: var(--on-primary-fixed-variant); }
 .chip--seance { background: var(--secondary-fixed); color: var(--on-secondary-fixed-variant); }
 .firebase-loading {
