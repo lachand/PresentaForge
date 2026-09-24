@@ -18,6 +18,7 @@
     'use strict';
 
     const EXPORT_MESSAGE_TYPE = 'oei-batch-export-result';
+    const PROGRESS_MESSAGE_TYPE = 'oei-batch-export-progress';
     const DEFAULT_TIMEOUT_MS = 120000;
 
     /**
@@ -25,18 +26,25 @@
      * résout avec le résultat reçu par postMessage — jamais de téléchargement déclenché
      * ici (voir `downloadBlobDirect`). Dimensionnée (jamais display:none/0×0) car certains
      * calculs de mise à l'échelle de l'éditeur divisent par les dimensions du cadre.
-     * @param {{urlParams: Record<string,string>, format: 'pdf'|'html-offline'|'pptx', timeoutMs?: number}} opts
+     * @param {{urlParams: Record<string,string>, format: 'pdf'|'html-offline'|'pptx', timeoutMs?: number, onProgress?: (current: number, total: number) => void}} opts
      *   `urlParams` : paramètres d'identification du deck à fusionner dans l'URL de
      *   l'iframe (ex. `{firebase: id}` pour un deck propriétaire, `{firebasePublic: uid+'/'+id}`
      *   pour un deck public) — jamais `batchExport`/`batchToken`, réservés à cette fonction.
+     *   `timeoutMs` : délai d'INACTIVITÉ (pas un plafond sur la durée totale) — redémarré à
+     *   chaque message de progression reçu, pour ne jamais couper un export qui avance
+     *   toujours (deck de 80-90 slides, chaque rendu PDF prenant jusqu'à quelques secondes)
+     *   tout en détectant un vrai blocage (aucune progression pendant `timeoutMs`).
+     *   `onProgress` : appelé pour le seul format 'pdf' (seul à boucler slide par slide côté
+     *   éditeur) ; jamais appelé pour html-offline/pptx (pas de rendu par slide à signaler).
      * @returns {Promise<{ok: true, blob: Blob, fileName: string} | {ok: false, error: string}>}
      */
-    function exportOneDeckViaIframe({ urlParams = {}, format, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+    function exportOneDeckViaIframe({ urlParams = {}, format, timeoutMs = DEFAULT_TIMEOUT_MS, onProgress } = {}) {
         return new Promise(resolve => {
             const token = 'bx-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
             const iframe = document.createElement('iframe');
             iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1280px;height:800px;border:0;';
             let done = false;
+            let timer = null;
             const cleanup = () => {
                 clearTimeout(timer);
                 window.removeEventListener('message', onMessage);
@@ -48,16 +56,26 @@
                 cleanup();
                 resolve(result);
             };
-            const timer = setTimeout(() => finish({ ok: false, error: 'Délai dépassé' }), timeoutMs);
+            const armTimer = () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => finish({ ok: false, error: 'Délai dépassé (aucune progression depuis ' + Math.round(timeoutMs / 1000) + 's)' }), timeoutMs);
+            };
             function onMessage(e) {
                 if (e.origin !== location.origin) return;
                 if (e.source !== iframe.contentWindow) return;
                 const data = e.data;
-                if (!data || data.type !== EXPORT_MESSAGE_TYPE || data.token !== token) return;
+                if (!data || data.token !== token) return;
+                if (data.type === PROGRESS_MESSAGE_TYPE) {
+                    armTimer();
+                    if (typeof onProgress === 'function') onProgress(data.current, data.total);
+                    return;
+                }
+                if (data.type !== EXPORT_MESSAGE_TYPE) return;
                 if (data.ok) finish({ ok: true, blob: data.blob, fileName: data.fileName });
                 else finish({ ok: false, error: data.error || 'Erreur inconnue' });
             }
             window.addEventListener('message', onMessage);
+            armTimer();
             const qs = new URLSearchParams({ ...urlParams, batchExport: format, batchToken: token });
             iframe.src = `editor.html?${qs.toString()}`;
             document.body.appendChild(iframe);
@@ -78,6 +96,7 @@
 
     window.OEIBatchExportClient = Object.freeze({
         EXPORT_MESSAGE_TYPE,
+        PROGRESS_MESSAGE_TYPE,
         DEFAULT_TIMEOUT_MS,
         exportOneDeckViaIframe,
         downloadBlobDirect,

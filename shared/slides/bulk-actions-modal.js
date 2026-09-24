@@ -209,11 +209,12 @@
     /** Exporte un deck PROPRIÉTAIRE (?firebase=<id>, authentifié) via le client partagé,
      * en réattachant `deck` au résultat (le pool de concurrence ci-dessous et le nommage
      * du zip en ont besoin, non porté par le client générique). */
-    async function exportOneDeckViaIframe(deck, format, { timeoutMs = EXPORT_TIMEOUT_MS } = {}) {
+    async function exportOneDeckViaIframe(deck, format, { timeoutMs = EXPORT_TIMEOUT_MS, onProgress } = {}) {
         const res = await window.OEIBatchExportClient.exportOneDeckViaIframe({
             urlParams: { firebase: deck.id },
             format,
             timeoutMs,
+            onProgress,
         });
         return { ...res, deck };
     }
@@ -295,12 +296,17 @@
             let completed = 0;
 
             const results = await runPool(items, EXPORT_CONCURRENCY, async (deck) => {
-                const res = await exportOneDeckViaIframe(deck, format);
+                const rowEl = rowsEl && rowsEl.querySelector(`[data-row-id="${CSS && CSS.escape ? CSS.escape(deck.id) : deck.id}"]`);
+                const statusEl = rowEl && rowEl.querySelector('.bulk-export-row-status');
+                // Deck long (80-90 slides, PDF) : sans ce retour, la ligne reste bloquée sur
+                // '…' pendant plusieurs minutes sans distinction entre "ça avance" et "c'est
+                // planté" — le timeout d'inactivité de batch-export-client.js en dépend aussi.
+                const res = await exportOneDeckViaIframe(deck, format, {
+                    onProgress: (current, total) => { if (statusEl) statusEl.textContent = `${current}/${total}`; },
+                });
                 completed += 1;
                 if (progressEl) progressEl.textContent = `${completed} / ${n}`;
-                const rowEl = rowsEl && rowsEl.querySelector(`[data-row-id="${CSS && CSS.escape ? CSS.escape(deck.id) : deck.id}"]`);
                 if (rowEl) {
-                    const statusEl = rowEl.querySelector('.bulk-export-row-status');
                     if (res.ok) { rowEl.classList.add('ok'); if (statusEl) statusEl.textContent = '✓'; }
                     else { rowEl.classList.add('err'); if (statusEl) statusEl.textContent = '✗ ' + res.error; }
                 }

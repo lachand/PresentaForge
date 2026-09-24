@@ -117,6 +117,19 @@ html, body {
 .course-catalog-action-status--error {
     color: #fca5a5;
 }
+.course-catalog-progress {
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+}
+.course-catalog-progress[hidden] { display: none; }
+.course-catalog-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #818cf8;
+    transition: width 0.2s ease;
+}
 .course-catalog-item-title {
     font-size: 0.95rem;
     font-weight: 500;

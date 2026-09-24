@@ -48,10 +48,17 @@ async function _runBatchExportAndNotify(format, token) {
     const post = (payload) => {
         try { window.parent.postMessage({ type: 'oei-batch-export-result', token, ...payload }, location.origin); } catch (_) {}
     };
+    // Décks longs (80-90 slides) : chaque slide PDF prend jusqu'à quelques secondes à
+    // rastériser — sans ce signal, le parent n'a aucun moyen de distinguer un export qui
+    // avance d'un export bloqué, et doit choisir entre un délai fixe trop court (échoue sur
+    // les gros decks) ou trop long (un vrai blocage reste invisible longtemps).
+    const postProgress = (current, total) => {
+        try { window.parent.postMessage({ type: 'oei-batch-export-progress', token, current, total }, location.origin); } catch (_) {}
+    };
     try {
         if (!editor.data) throw new Error('Présentation non chargée');
         let result;
-        if (format === 'pdf') result = await exportPDF({ returnBlob: true });
+        if (format === 'pdf') result = await exportPDF({ returnBlob: true, onProgress: postProgress });
         else if (format === 'html-offline') result = await exportHTMLOffline({ returnBlob: true });
         else if (format === 'pptx') result = await exportPPTX({ returnBlob: true });
         else throw new Error('Format export inconnu : ' + format);

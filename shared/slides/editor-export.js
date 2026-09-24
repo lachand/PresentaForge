@@ -529,6 +529,11 @@ async function exportPDF(opts = {}) {
     const data = editor.data;
     if (!data) return;
     const dims = ASPECT_DIMS[data.metadata?.aspect] || [1280, 720];
+    // Deck de 80-90 slides : chaque rendu html2canvas prend jusqu'à quelques secondes,
+    // l'export dépasse largement un délai fixe. onProgress(current, total) permet à
+    // l'appelant (mode export batch iframe) de faire vivre un timeout d'inactivité côté
+    // fenêtre parente au lieu d'un plafond global — voir editor-main.js/batch-export-client.js.
+    const onProgress = typeof opts.onProgress === 'function' ? opts.onProgress : null;
 
     notify('Génération PDF en cours…', 'warning');
 
@@ -630,6 +635,7 @@ async function exportPDF(opts = {}) {
                 pdf.text(`Erreur de rendu — slide ${i + 1}`, 24, 40);
             } finally {
                 container.innerHTML = ''; // retire le frame (succès ou partiel) avant le slide suivant
+                if (onProgress) onProgress(i + 1, data.slides.length);
             }
         }
 

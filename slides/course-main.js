@@ -43,6 +43,7 @@
                     <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📄 PDF</button>
                     <span class="course-catalog-action-status" aria-live="polite"></span>
                 </div>
+                <div class="course-catalog-progress" hidden><div class="course-catalog-progress-bar"></div></div>
             </li>`;
         }).join('');
     }
@@ -57,6 +58,21 @@
     function setRowBusy(li, busy) {
         if (!li) return;
         li.querySelectorAll('.course-catalog-action').forEach(btn => { btn.disabled = busy; });
+    }
+
+    /** Affiche/masque et met à jour la barre de progression PDF (decks longs, 80-90 slides). */
+    function setRowProgress(li, current, total) {
+        const wrap = li && li.querySelector('.course-catalog-progress');
+        const bar = li && li.querySelector('.course-catalog-progress-bar');
+        if (!wrap || !bar) return;
+        if (!total) {
+            wrap.hidden = true;
+            bar.style.width = '0%';
+            return;
+        }
+        wrap.hidden = false;
+        const pct = Math.max(0, Math.min(100, Math.round((current / total) * 100)));
+        bar.style.width = pct + '%';
     }
 
     /**
@@ -111,6 +127,10 @@
             const res = await window.OEIBatchExportClient.exportOneDeckViaIframe({
                 urlParams: { firebasePublic: uid + '/' + id },
                 format: 'pdf',
+                onProgress: (current, total) => {
+                    setRowStatus(li, `Génération du PDF… (${current}/${total})`, false);
+                    setRowProgress(li, current, total);
+                },
             });
             if (!res.ok) throw new Error(res.error || 'Échec de l’export');
             window.OEIBatchExportClient.downloadBlobDirect(res.blob, res.fileName);
@@ -119,6 +139,7 @@
             setRowStatus(li, 'Erreur : ' + (e && e.message ? e.message : String(e)), true);
         } finally {
             setRowBusy(li, false);
+            setRowProgress(li, 0, 0);
         }
     }
 
