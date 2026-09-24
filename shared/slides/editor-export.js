@@ -1226,6 +1226,17 @@ async function exportPDF(opts = {}) {
 
         const themeData = _resolveExportTheme(data);
         const themeCSS = SlidesThemes.generateCSS(themeData);
+        // widgets.css n'est PAS inclus dans themeCSS (règles génériques de style de widget,
+        // pas de thème de présentation) et est chargé en <link> externe sur editor.html —
+        // bloqué par la CSP à l'intérieur du clone iframe de html2canvas (style-src 'self'
+        // ne matche pas l'origine du clone sous Firefox, cf. fix précédent). Concrètement,
+        // ça laissait les slides à widget (.sl-widget-static, repli statique injecté par
+        // _injectStaticFallbacks ci-dessous) sans AUCUN style — canvas vide, symptôme
+        // "Rendu vide" détecté par _isCanvasLikelyBlank(). Réutilise _fetchWidgetCss() (déjà
+        // utilisé par _exportPDFPrint() pour exactement ce même besoin) pour l'inliner
+        // directement dans le <style> du frame capturé : plus aucun fetch externe requis à
+        // l'intérieur du clone, donc plus rien à bloquer côté CSP.
+        const widgetCss = collectUsedWidgets(data.slides).size > 0 ? await _fetchWidgetCss() : '';
         const pdfOpts = {
             showSlideNumber: data.showSlideNumber || false,
             footerText: data.footerText || null,
@@ -1289,7 +1300,7 @@ async function exportPDF(opts = {}) {
                 frame.style.overflow = 'hidden';
                 frame.style.position = 'relative';
                 frame.style.background = 'var(--sl-slide-bg,#1a1d27)';
-                frame.innerHTML = `<style>${themeCSS}</style>` + SlidesRenderer.renderSlide(slide, i, pdfOpts);
+                frame.innerHTML = `<style>${themeCSS}${widgetCss}</style>` + SlidesRenderer.renderSlide(slide, i, pdfOpts);
                 container.appendChild(frame);
                 _injectStaticFallbacks(frame);
 
