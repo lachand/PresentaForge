@@ -348,11 +348,11 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Definition</div>
                 <div class="props-row"><label>Label bloc</label><select id="sp-def-label-preset">${blockOptions}<option value="__custom__"${selectedBlockPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte bloc</label><input type="text" id="sp-def-label" value="${escAttr(blockLabel)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte bloc</label><input type="text" id="sp-def-label" value="${escAttr(blockLabel)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-def-tone">${toneOptions}</select></div>
-                <div class="props-row" style="margin-top:6px"><label>Label exemple</label><select id="sp-def-example-label-preset">${exampleOptions}<option value="__custom__"${selectedExamplePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte exemple</label><input type="text" id="sp-def-example-label" value="${escAttr(exampleLabel)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:6px;line-height:1.4">Le terme, la definition et l'exemple se modifient directement sur le canvas.</div>
+                <div class="props-row props-row-spaced"><label>Label exemple</label><select id="sp-def-example-label-preset">${exampleOptions}<option value="__custom__"${selectedExamplePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Texte exemple</label><input type="text" id="sp-def-example-label" value="${escAttr(exampleLabel)}" class="sp-elstyle-input"></div>
+                <div class="sp-hint-text sp-hint-text-lh">Le terme, la definition et l'exemple se modifient directement sur le canvas.</div>
             </div>`;
             break;
         }
@@ -368,10 +368,10 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Callout box</div>
                 <div class="props-row"><label>Label</label><select id="sp-callout-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte label</label><input type="text" id="sp-callout-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-callout-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-callout-tone">${toneOptions}</select></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Message</label>
-                <textarea id="sp-callout-text" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.text || '')}</textarea>
+                <label class="sp-field-label sp-field-label-top">Message</label>
+                <textarea id="sp-callout-text" rows="5" class="sp-textarea">${esc(d.text || '')}</textarea>
             </div>`;
             break;
         }
@@ -387,22 +387,22 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Exercice</div>
                 <div class="props-row"><label>Titre</label><select id="sp-ex-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ex-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Objectif</label>
-                <textarea id="sp-ex-objective" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.objective || '')}</textarea>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ex-title" value="${escAttr(titleValue)}" class="sp-elstyle-input"></div>
+                <label class="sp-field-label sp-field-label-top">Objectif</label>
+                <textarea id="sp-ex-objective" rows="3" class="sp-textarea">${esc(d.objective || '')}</textarea>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Contenu</div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Consignes (1 par ligne)</label>
-                <textarea id="sp-ex-instructions" rows="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(instructions.join('\n'))}</textarea>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Indices (1 par ligne)</label>
-                <textarea id="sp-ex-hints" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(hints.join('\n'))}</textarea>
+                <label class="sp-field-label">Consignes (1 par ligne)</label>
+                <textarea id="sp-ex-instructions" rows="5" class="sp-textarea">${esc(instructions.join('\n'))}</textarea>
+                <label class="sp-field-label sp-field-label-top">Indices (1 par ligne)</label>
+                <textarea id="sp-ex-hints" rows="4" class="sp-textarea">${esc(hints.join('\n'))}</textarea>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Correction</div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Texte correction</label>
-                <textarea id="sp-ex-correction" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.correction || '')}</textarea>
-                <div class="props-row" style="margin-top:6px"><label>Afficher la correction</label><input type="checkbox" id="sp-ex-show-correction"${d.showCorrection ? ' checked' : ''}></div>
+                <label class="sp-field-label">Texte correction</label>
+                <textarea id="sp-ex-correction" rows="4" class="sp-textarea">${esc(d.correction || '')}</textarea>
+                <div class="props-row props-row-spaced"><label>Afficher la correction</label><input type="checkbox" id="sp-ex-show-correction"${d.showCorrection ? ' checked' : ''}></div>
             </div>`;
             break;
         }
@@ -418,18 +418,18 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Before / After</div>
                 <div class="props-row"><label>Titre</label><select id="sp-ba-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ba-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ba-title" value="${escAttr(titleValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-ba-tone">${toneOptions}</select></div>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Avant</div>
-                <div class="props-row"><label>Label</label><input type="text" id="sp-ba-before-label" value="${escAttr(d.beforeLabel || 'Avant')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <textarea id="sp-ba-before" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.before || '')}</textarea>
+                <div class="props-row"><label>Label</label><input type="text" id="sp-ba-before-label" value="${escAttr(d.beforeLabel || 'Avant')}" class="sp-elstyle-input"></div>
+                <textarea id="sp-ba-before" rows="6" class="sp-textarea">${esc(d.before || '')}</textarea>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Après</div>
-                <div class="props-row"><label>Label</label><input type="text" id="sp-ba-after-label" value="${escAttr(d.afterLabel || 'Après')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                <textarea id="sp-ba-after" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.after || '')}</textarea>
+                <div class="props-row"><label>Label</label><input type="text" id="sp-ba-after-label" value="${escAttr(d.afterLabel || 'Après')}" class="sp-elstyle-input"></div>
+                <textarea id="sp-ba-after" rows="6" class="sp-textarea">${esc(d.after || '')}</textarea>
             </div>`;
             break;
         }
@@ -445,17 +445,17 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Erreur / Correction</div>
                 <div class="props-row"><label>Titre</label><select id="sp-mf-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-mf-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-mf-title" value="${escAttr(titleValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-mf-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Langage</label><select id="sp-mf-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Erreur frequente</div>
-                <textarea id="sp-mf-mistake" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.mistake || '')}</textarea>
+                <textarea id="sp-mf-mistake" rows="6" class="sp-textarea sp-textarea-mono sp-textarea-tabbed">${esc(d.mistake || '')}</textarea>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Correction</div>
-                <textarea id="sp-mf-fix" rows="6" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.fix || '')}</textarea>
+                <textarea id="sp-mf-fix" rows="6" class="sp-textarea sp-textarea-mono sp-textarea-tabbed">${esc(d.fix || '')}</textarea>
             </div>`;
             break;
         }
@@ -474,18 +474,18 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Rubric block</div>
                 <div class="props-row"><label>Titre</label><select id="sp-rb-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-rb-title" value="${escAttr(titleValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-rb-title" value="${escAttr(titleValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-rb-tone">${toneOptions}</select></div>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Niveaux</div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Un niveau par ligne</label>
-                <textarea id="sp-rb-levels" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(levels.join('\n'))}</textarea>
+                <label class="sp-field-label">Un niveau par ligne</label>
+                <textarea id="sp-rb-levels" rows="4" class="sp-textarea">${esc(levels.join('\n'))}</textarea>
             </div>
             <div class="props-section">
                 <div class="props-section-title">Critères (JSON)</div>
-                <textarea id="sp-rb-rows" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(rows, null, 2))}</textarea>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"criterion":"…","descriptors":["…","…","…"]}]</div>
+                <textarea id="sp-rb-rows" rows="10" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(rows, null, 2))}</textarea>
+                <div class="sp-hint-text sp-hint-text-tight">Format: [{"criterion":"…","descriptors":["…","…","…"]}]</div>
             </div>`;
             break;
         }
@@ -501,11 +501,11 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Session terminal</div>
                 <div class="props-row"><label>Label</label><select id="sp-term-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte label</label><input type="text" id="sp-term-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte label</label><input type="text" id="sp-term-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-term-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Langage</label><select id="sp-term-lang"><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Session</label>
-                <textarea id="sp-term-script" rows="10" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.script || '')}</textarea>
+                <label class="sp-field-label sp-field-label-top">Session</label>
+                <textarea id="sp-term-script" rows="10" class="sp-textarea sp-textarea-mono sp-textarea-tabbed">${esc(d.script || '')}</textarea>
             </div>`;
             break;
         }
@@ -523,26 +523,26 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Exemple</div>
                 <div class="props-row"><label>Titre</label><select id="sp-ce-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
-                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ce-label" value="${escAttr(labelValue)}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
+                <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ce-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-ce-tone">${toneOptions}</select></div>
-                <label style="display:block;color:var(--muted);font-size:0.65rem;margin-bottom:3px">Texte</label>
-                <textarea id="sp-ce-text" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;resize:vertical;box-sizing:border-box">${esc(d.text || '')}</textarea>
-                <div class="props-row" style="margin-top:6px"><label>Widget</label><select id="sp-ce-mode"><option value="terminal"${mode === 'terminal' ? ' selected' : ''}>Code/Terminal</option><option value="live"${mode === 'live' ? ' selected' : ''}>Code Live</option><option value="stepper"${mode === 'stepper' ? ' selected' : ''}>Algo stepper</option></select></div>
+                <label class="sp-field-label">Texte</label>
+                <textarea id="sp-ce-text" rows="4" class="sp-textarea">${esc(d.text || '')}</textarea>
+                <div class="props-row props-row-spaced"><label>Widget</label><select id="sp-ce-mode"><option value="terminal"${mode === 'terminal' ? ' selected' : ''}>Code/Terminal</option><option value="live"${mode === 'live' ? ' selected' : ''}>Code Live</option><option value="stepper"${mode === 'stepper' ? ' selected' : ''}>Algo stepper</option></select></div>
             </div>`;
             if (mode === 'stepper') {
                 html += `<div class="props-section">
                     <div class="props-section-title">Stepper</div>
-                    <div class="props-row"><label>Titre</label><input type="text" id="sp-ce-stepper-title" value="${escAttr(d.stepperTitle || '')}" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem"></div>
-                    <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Étapes JSON</label>
-                    <textarea id="sp-ce-stepper-steps" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.7rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box">${esc(JSON.stringify(steps, null, 2))}</textarea>
-                    <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Format: [{"title":"...","detail":"...","code":"..."}]</div>
+                    <div class="props-row"><label>Titre</label><input type="text" id="sp-ce-stepper-title" value="${escAttr(d.stepperTitle || '')}" class="sp-elstyle-input"></div>
+                    <label class="sp-field-label sp-field-label-top">Étapes JSON</label>
+                    <textarea id="sp-ce-stepper-steps" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(steps, null, 2))}</textarea>
+                    <div class="sp-hint-text sp-hint-text-tight">Format: [{"title":"...","detail":"...","code":"..."}]</div>
                 </div>`;
             } else {
                 html += `<div class="props-section">
                     <div class="props-section-title">${mode === 'live' ? 'Code Live' : 'Code / Terminal'}</div>
                     <div class="props-row"><label>Langage</label><select id="sp-ce-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
-                    <label style="display:block;color:var(--muted);font-size:0.65rem;margin:6px 0 3px">Code</label>
-                    <textarea id="sp-ce-code" rows="8" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px;font-size:0.72rem;font-family:var(--font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;resize:vertical;box-sizing:border-box;tab-size:4">${esc(d.code || '')}</textarea>
+                    <label class="sp-field-label sp-field-label-top">Code</label>
+                    <textarea id="sp-ce-code" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-tabbed">${esc(d.code || '')}</textarea>
                 </div>`;
             }
             break;

@@ -191,6 +191,26 @@ html, body {
 .sp-elstyle-section-head { display: flex; justify-content: space-between; align-items: center; }
 .sp-elstyle-reset-all { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.65rem; }
 
+/* Lot 2 — blocs pédagogiques (definition/callout-box/exercise-block/before-after/
+   mistake-fix/rubric-block/terminal-session/code-example). .sp-elstyle-input est
+   réutilisée telle quelle (même pattern d'input texte que le Lot 1). */
+.props-row-spaced { margin-top: 6px; }
+.sp-textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    border-radius: 4px; padding: 6px; font-size: 0.72rem; resize: vertical; box-sizing: border-box;
+}
+.sp-textarea-mono {
+    font-family: var(--font-mono, monospace); font-variant-ligatures: none;
+    font-feature-settings: 'liga' 0, 'calt' 0, 'dlig' 0;
+}
+.sp-textarea-tabbed { tab-size: 4; }
+.sp-textarea-sm { font-size: 0.7rem; }
+.sp-field-label { display: block; color: var(--muted); font-size: 0.65rem; margin-bottom: 3px; }
+.sp-field-label-top { margin-top: 6px; }
+.sp-hint-text { font-size: 0.6rem; color: var(--muted); }
+.sp-hint-text-lh { margin-top: 6px; line-height: 1.4; }
+.sp-hint-text-tight { margin-top: 4px; }
+
 .sp-diag-grid-wrap {
     max-height: 260px;
     overflow: auto;
