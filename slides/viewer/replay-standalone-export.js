@@ -83,6 +83,9 @@ body{height:100dvh;display:flex;flex-direction:column}
 .rp-progress:focus-visible{outline:2px solid var(--rp-accent);outline-offset:2px}
 .rp-progress[disabled]{cursor:default;opacity:.5}
 .rp-progress-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:var(--rp-accent)}
+.rp-progress-marker{position:absolute;top:-3px;bottom:-3px;width:3px;border-radius:2px;pointer-events:none;transform:translateX(-50%)}
+.rp-progress-marker.reaction{background:#fea619}
+.rp-progress-marker.question{background:#38bdf8}
 .rp-slide-count{font-size:.75rem;color:var(--rp-muted);text-align:right}
 .rp-audio-note{font-size:.72rem;color:var(--rp-muted)}
 .fragment{opacity:0;visibility:hidden;transition:opacity .2s ease, transform .2s ease}
@@ -229,6 +232,28 @@ isLight = window.matchMedia('(prefers-color-scheme: light)').matches;
     }
     applyReplayUiTheme();
     metaEl.textContent = totalSlides + ' slides · durée ' + fmtClock(durationMs);
+
+    // Marqueurs timeline (PF-2b) : réactions/questions capturées pendant
+    // l'enregistrement (session-recording-runtime.js recordEvent('reaction'|'question')),
+    // positionnés sur la barre de progression au prorata t/durationMs.
+    function renderProgressMarkers() {
+        if (!progressEl || !(durationMs > 0)) return;
+        events.forEach(function(ev) {
+            if (!ev || (ev.type !== 'reaction' && ev.type !== 'question')) return;
+            var payload = ev.payload || {};
+            var ratio = clamp(Number(ev.t || 0) / durationMs, 0, 1);
+            var marker = document.createElement('span');
+            marker.className = 'rp-progress-marker ' + ev.type;
+            marker.style.left = (ratio * 100) + '%';
+            var label = ev.type === 'reaction'
+                ? ('Réaction ' + (payload.emoji || '') + (payload.pseudo ? ' — ' + payload.pseudo : ''))
+                : ('Question' + (payload.text ? ' — ' + payload.text : ''));
+            marker.title = fmtClock(Number(ev.t || 0)) + ' · ' + label;
+            marker.setAttribute('aria-hidden', 'true');
+            progressEl.appendChild(marker);
+        });
+    }
+    renderProgressMarkers();
 
     if (audioUrl) {
         audioEl.src = audioUrl;

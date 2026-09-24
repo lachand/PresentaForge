@@ -24,6 +24,8 @@ export function createViewerAppState(globalObj = window) {
         set lastQuizResponses(v) { write('lastQuizResponses', '_lastQuizResponses', v || null); },
         get lastQuizOptions() { return read('lastQuizOptions', '_lastQuizOptions', null); },
         set lastQuizOptions(v) { write('lastQuizOptions', '_lastQuizOptions', v || null); },
+        get recordEvent() { return read('recordEvent', '_recordEvent', null); },
+        set recordEvent(fn) { write('recordEvent', '_recordEvent', fn || null); },
         get studentRoom() { return read('studentRoom', '_studentRoom', null); },
         set studentRoom(v) { write('studentRoom', '_studentRoom', v || null); },
         get studentRoomBroadcast() { return read('studentRoomBroadcast', '_studentRoomBroadcast', null); },

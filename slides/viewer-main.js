@@ -1554,9 +1554,14 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 case ROOM_MSG.STUDENT_REACTION: {
                     const pseudo = toTrimmedString(msg.pseudo, 40);
                     roomShowReaction(msg.emoji, pseudo);
-                    applyStudentReactionMessage({
+                    const reactionRes = applyStudentReactionMessage({
                         msg, peerId, roomReactions: _roomReactions, toTrimmedString, now: () => Date.now(),
                         studentSlideIndex: _roomStudentSlideIndex(peerId), currentSlideIndex: _roomCurrentSlideIndex,
+                    });
+                    // Marqueur timeline replay (PF-2b) : n'enregistre rien si aucun
+                    // enregistrement n'est actif (recordEvent no-op dans ce cas).
+                    ViewerRuntime.recordEvent?.('reaction', {
+                        emoji: reactionRes.emoji, pseudo: reactionRes.pseudo, slideIndex: reactionRes.slideIndex,
                     });
                     const relay = { type: ROOM_MSG.REACTION_SHOW, emoji: msg.emoji, pseudo };
                     _room.connections.forEach(c => { if (c !== conn && c.open) { try { c.send(relay); } catch(e) {} } });
@@ -1580,6 +1585,11 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                         studentSlideIndex: _roomStudentSlideIndex(peerId), currentSlideIndex: _roomCurrentSlideIndex,
                     });
                     if (!questionRes.ok) { ack(false, questionRes.reason || 'question-invalid'); break; }
+                    // Marqueur timeline replay (PF-2b) : n'enregistre rien si aucun
+                    // enregistrement n'est actif (recordEvent no-op dans ce cas).
+                    ViewerRuntime.recordEvent?.('question', {
+                        text: questionRes.text, slideIndex: questionRes.slideIndex,
+                    });
                     roomUpdatePanel();
                     break;
                 }
@@ -2227,6 +2237,9 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             const _sessionRec = _sessionRecordingRuntime.state;
             const _setExportMessage = (message = '') => _sessionRecordingRuntime.setExportMessage(message);
             const _recordEvent = (type, payload = {}) => _sessionRecordingRuntime.recordEvent(type, payload);
+            // Exposé via ViewerRuntime pour rester joignable depuis roomHandleIncoming()
+            // (déclaré plus haut dans le fichier, dans une portée distincte).
+            ViewerRuntime.recordEvent = _recordEvent;
             const _setLiveCaption = (text = '', ts = 0) => _sessionRecordingRuntime.setLiveCaption(text, ts);
             const _updateRecordingUi = () => _sessionRecordingRuntime.updateUi();
             const _pauseSessionRecording = () => {

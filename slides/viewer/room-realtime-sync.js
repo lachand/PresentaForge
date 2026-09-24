@@ -366,7 +366,7 @@ export function applyStudentQuestionMessage(params) {
             existing.authors.push(params.peerId);
             existing.votes = (existing.votes || 1) + 1;
         }
-        return { ok: true };
+        return { ok: true, text, slideIndex };
     }
     roomQuestions.unshift({
         qid,
@@ -381,7 +381,7 @@ export function applyStudentQuestionMessage(params) {
         authors: [params.peerId],
         _norm: normalized,
     });
-    return { ok: true };
+    return { ok: true, text, slideIndex };
 }
 
 /**
