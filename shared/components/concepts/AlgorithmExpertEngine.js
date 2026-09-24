@@ -92,6 +92,44 @@ class AlgorithmExpertEngine {
         return false;
     }
 
+    /**
+     * Compare deux valeurs selon `op` (==, !=, <, <=, >, >=, in, not_in). Partagée
+     * entre une comparaison simple et chaque maillon d'une comparaison chaînée
+     * façon Python (`1 < x < 10`).
+     */
+    compareValues(op, left, right, runtime) {
+        if (op === '==') return this.pyEquals(left, right);
+        if (op === '!=') return !this.pyEquals(left, right);
+        if (['<', '<=', '>', '>='].includes(op) && runtime.strictTyping) {
+            if (typeof left !== typeof right) {
+                throw this.createExpertError(
+                    'E_STRICT_COMPARE',
+                    `Comparaison stricte invalide entre ${typeof left} et ${typeof right}.`,
+                    runtime
+                );
+            }
+        }
+        if (op === '<') return left < right;
+        if (op === '<=') return left <= right;
+        if (op === '>') return left > right;
+        if (op === '>=') return left >= right;
+
+        // P1.4: in / not in
+        if (op === 'in') {
+            if (Array.isArray(right)) return right.some((item) => item === left);
+            if (typeof right === 'string') return typeof left === 'string' && right.includes(left);
+            if (right && typeof right === 'object' && !(right instanceof Set)) return Object.prototype.hasOwnProperty.call(right, String(left));
+            throw this.createExpertError('E_IN_TYPE', 'Opérateur in: le membre droit doit être une liste, chaîne ou dictionnaire.', runtime);
+        }
+        if (op === 'not_in') {
+            if (Array.isArray(right)) return !right.some((item) => item === left);
+            if (typeof right === 'string') return !(typeof left === 'string' && right.includes(left));
+            if (right && typeof right === 'object' && !(right instanceof Set)) return !Object.prototype.hasOwnProperty.call(right, String(left));
+            throw this.createExpertError('E_IN_TYPE', 'Opérateur not in: le membre droit doit être une liste, chaîne ou dictionnaire.', runtime);
+        }
+        throw this.createExpertError('E_EXPR', `Opérateur de comparaison inconnu: ${op}.`, runtime);
+    }
+
     executeProgram(program, inputValues, contract = []) {
         const entry = program.order[0];
         if (!entry) throw new Error('Aucune fonction détectée.');
@@ -1570,25 +1608,36 @@ class AlgorithmExpertEngine {
         };
 
         const parseCmp = () => {
-            let node = parseAdd();
+            const first = parseAdd();
+            const comparisons = [];
             while (true) {
                 const t = peek();
                 if (['==', '!=', '<', '<=', '>', '>='].includes(t.value)) {
                     const op = consume().value;
-                    node = { type: 'binary', op, left: node, right: parseAdd() };
+                    comparisons.push({ op, node: parseAdd() });
                 // P1.4: not in
                 } else if (t.value === 'not' && tokens[index + 1] && tokens[index + 1].value === 'in') {
                     consume(); consume(); // 'not', 'in'
-                    node = { type: 'binary', op: 'not_in', left: node, right: parseAdd() };
+                    comparisons.push({ op: 'not_in', node: parseAdd() });
                 // P1.4: in
                 } else if (t.value === 'in') {
                     consume();
-                    node = { type: 'binary', op: 'in', left: node, right: parseAdd() };
+                    comparisons.push({ op: 'in', node: parseAdd() });
                 } else {
                     break;
                 }
             }
-            return node;
+            if (comparisons.length === 0) return first;
+            if (comparisons.length === 1) {
+                return { type: 'binary', op: comparisons[0].op, left: first, right: comparisons[0].node };
+            }
+            // Comparaison chaînée façon Python : `1 < x < 10` ≡ `(1 < x) and (x < 10)`,
+            // chaque opérande du milieu évalué une seule fois (pas de double effet de bord).
+            return {
+                type: 'chain_compare',
+                operands: [first, ...comparisons.map((c) => c.node)],
+                ops: comparisons.map((c) => c.op)
+            };
         };
 
         const parseAnd = () => {
@@ -2209,35 +2258,21 @@ class AlgorithmExpertEngine {
                 return ((leftNum % rightNum) + rightNum) % rightNum;
             }
 
-            if (node.op === '==') return this.pyEquals(left, right);
-            if (node.op === '!=') return !this.pyEquals(left, right);
-            if (['<', '<=', '>', '>='].includes(node.op) && runtime.strictTyping) {
-                if (typeof left !== typeof right) {
-                    throw this.createExpertError(
-                        'E_STRICT_COMPARE',
-                        `Comparaison stricte invalide entre ${typeof left} et ${typeof right}.`,
-                        runtime
-                    );
-                }
+            if (['==', '!=', '<', '<=', '>', '>=', 'in', 'not_in'].includes(node.op)) {
+                return this.compareValues(node.op, left, right, runtime);
             }
-            if (node.op === '<') return left < right;
-            if (node.op === '<=') return left <= right;
-            if (node.op === '>') return left > right;
-            if (node.op === '>=') return left >= right;
+        }
 
-            // P1.4: in / not in
-            if (node.op === 'in') {
-                if (Array.isArray(right)) return right.some((item) => item === left);
-                if (typeof right === 'string') return typeof left === 'string' && right.includes(left);
-                if (right && typeof right === 'object' && !(right instanceof Set)) return Object.prototype.hasOwnProperty.call(right, String(left));
-                throw this.createExpertError('E_IN_TYPE', 'Opérateur in: le membre droit doit être une liste, chaîne ou dictionnaire.', runtime);
+        if (node.type === 'chain_compare') {
+            // Python : `a < b < c` ≡ `(a<b) and (b<c)`, chaque opérande évalué une
+            // seule fois, court-circuit dès la première comparaison fausse.
+            let left = this.evaluateAst(node.operands[0], frame, runtime, depth);
+            for (let i = 0; i < node.ops.length; i += 1) {
+                const right = this.evaluateAst(node.operands[i + 1], frame, runtime, depth);
+                if (!this.compareValues(node.ops[i], left, right, runtime)) return false;
+                left = right;
             }
-            if (node.op === 'not_in') {
-                if (Array.isArray(right)) return !right.some((item) => item === left);
-                if (typeof right === 'string') return !(typeof left === 'string' && right.includes(left));
-                if (right && typeof right === 'object' && !(right instanceof Set)) return !Object.prototype.hasOwnProperty.call(right, String(left));
-                throw this.createExpertError('E_IN_TYPE', 'Opérateur not in: le membre droit doit être une liste, chaîne ou dictionnaire.', runtime);
-            }
+            return true;
         }
 
         throw this.createExpertError('E_EXPR', 'Expression non évaluée.', runtime);

@@ -43,6 +43,7 @@
  *   llw-    LinkedListWidget                     htw-    HashTableWidget
  *   stw-    StructureWidget (pile / file)
  *   dnw-    DnsWidget            cnw-   ConcurrencyWidget
+ *   rsw-    RoutingSimulatorWidget
  *   mpw-    MemoryWidget         plw-   PipelineWidget
  *   ipw-    IpSubnetWidget       tcpw-  TcpWidget        schw-  SchedulingWidget
  *   dom-widget-         DomTreeWidget
@@ -111,6 +112,26 @@
     --widget-fg-muted: #94a3b8;
     --widget-heading: #e2e8f0;
     --widget-hover: rgba(255, 255, 255, 0.06);
+    }
+}
+
+
+/* =====================================================================
+   ACCESSIBILITE — prefers-reduced-motion
+   Seule exception tolérée au principe "pas de sélecteur d'élément nu"
+   ci-dessus : garde-fou d'accessibilité global, même règle que
+   shared/style.css (chargée par les pages de cours mais PAS par
+   slides/*.html — les widgets montés dans les slides n'avaient donc
+   aucune protection). Les `transitionend`/`animationend` continuent de
+   se déclencher (durée quasi nulle), donc pas de simulation bloquée.
+   ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+        scroll-behavior: auto !important;
     }
 }
 
@@ -1240,6 +1261,54 @@
 .dnw-feedback.ok { color: #16a34a; font-weight: 600; }
 .dnw-feedback.err { color: #dc2626; font-weight: 600; }
 .dnw-section-lbl { font-size: 0.78rem; font-weight: 700; color: var(--muted, #888); }
+
+/* -------------------------------------------------------------------
+   .rsw-*  —  RoutingSimulatorWidget (routage, Dijkstra pas-a-pas)
+   source : RoutingSimulatorPage.js
+   ------------------------------------------------------------------- */
+.rsw-container { display: flex; flex-direction: column; gap: 10px; font-family: inherit; color: var(--text, #222); height: 100%; box-sizing: border-box; }
+.rsw-topo-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.rsw-topo-btn { font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 2px solid var(--border, #ccc); background: var(--surface, var(--widget-surface, #fff)); color: var(--text, #222); cursor: pointer; }
+.rsw-topo-btn.active { border-color: var(--primary, #6366f1); background: var(--primary, #6366f1); color: #fff; }
+.rsw-selection { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--text, #222); }
+.rsw-network { border: 2px solid var(--border, #ccc); border-radius: 8px; background: var(--surface, var(--widget-surface, #fff)); overflow: hidden; }
+.rsw-svg { width: 100%; height: 260px; display: block; }
+.rsw-router-circle { cursor: pointer; transition: fill 0.25s; }
+.rsw-router-circle:hover { filter: brightness(1.1); }
+.rsw-router-circle:focus-visible { outline: 2px solid var(--primary, #6366f1); outline-offset: 2px; }
+.rsw-router-label { font-size: 14px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.rsw-router-name { font-size: 11px; fill: var(--muted, #888); text-anchor: middle; font-weight: 600; pointer-events: none; }
+.rsw-edge-line { stroke: var(--border, #ccc); stroke-width: 3; stroke-linecap: round; transition: stroke 0.3s, stroke-width 0.3s; }
+.rsw-edge-line.visited { stroke: var(--primary, #6366f1); stroke-width: 4; }
+.rsw-edge-line.path { stroke: #22c55e; stroke-width: 5; }
+.rsw-edge-weight { font-size: 13px; font-weight: 700; fill: var(--text, #222); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.rsw-edge-weight-bg { fill: var(--surface, var(--widget-surface, #fff)); rx: 4; }
+.rsw-router-default { fill: var(--muted, #888); }
+.rsw-router-source { fill: var(--primary, #6366f1); }
+.rsw-router-dest { fill: #db2777; }
+.rsw-router-current { fill: var(--warning, #f59e0b); }
+.rsw-router-visited { fill: #8b5cf6; }
+.rsw-router-path { fill: #22c55e; }
+.rsw-select-ring { fill: none; stroke: var(--primary, #6366f1); stroke-width: 3; stroke-dasharray: 5 3; opacity: 0; }
+.rsw-select-ring.visible { opacity: 1; }
+.rsw-step-desc { background: var(--surface2, var(--widget-surface-2, #f5f5f5)); border-left: 4px solid var(--primary, #6366f1); border-radius: 6px; padding: 8px 10px; font-size: 0.82rem; min-height: 2em; }
+.rsw-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.rsw-btn { font-size: 0.82rem; font-weight: 600; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--primary, #6366f1); background: var(--primary, #6366f1); color: #fff; cursor: pointer; }
+.rsw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.rsw-btn-secondary { background: transparent; color: var(--text, #222); border-color: var(--border, #ccc); }
+.rsw-tables { display: flex; flex-wrap: wrap; gap: 10px; }
+.rsw-tables .rsw-table { flex: 1; min-width: 180px; }
+.rsw-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; background: var(--surface, var(--widget-surface, #fff)); color: var(--text, #222); }
+.rsw-table th, .rsw-table td { padding: 3px 6px; border: 1px solid var(--border, #ddd); text-align: center; }
+.rsw-table th { background: var(--surface2, var(--widget-surface-2, #f0f0f0)); font-weight: 700; }
+.rsw-table td.updated { background: rgba(245, 158, 11, 0.15); font-weight: 700; }
+.rsw-table td.finalized { background: rgba(34, 197, 94, 0.15); font-weight: 700; }
+.rsw-route-section { display: flex; flex-direction: column; gap: 6px; }
+.rsw-route-selector { display: flex; flex-wrap: wrap; gap: 4px; }
+.rsw-route-chip { font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 2px solid var(--border, #ccc); background: var(--surface, var(--widget-surface, #fff)); color: var(--text, #222); cursor: pointer; }
+.rsw-route-chip.active { border-color: var(--primary, #6366f1); background: var(--primary, #6366f1); color: #fff; }
+.rsw-muted { color: var(--muted, #888); }
+.rsw-mono { font-family: var(--font-mono, monospace); font-size: 0.75rem; }
 
 /* -------------------------------------------------------------------
    .ipw-*  —  IpSubnetWidget (calculateur CIDR)

@@ -385,7 +385,7 @@ class BSTWidget {
     <button class="bstw-btn bstw-btn-primary" data-role="bfs">Largeur</button>
   </div>
   <div class="bstw-feedback" data-role="feedback"></div>
-  <div class="bstw-svg-wrap"><svg class="bstw-svg" data-role="svg"></svg></div>
+  <div class="bstw-svg-wrap"><svg class="bstw-svg" data-role="svg" role="img" aria-label="Visualisation de l'arbre binaire de recherche"></svg></div>
   <div class="bstw-traversal" data-role="traversal"></div>
   <div class="bstw-info">
     Nœuds: <span class="bstw-info-chip" data-role="count">0</span>

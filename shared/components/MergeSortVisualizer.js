@@ -54,7 +54,10 @@ class MergeSortVisualizer extends SimulationPage {
 
     onPlayerState(state) {
         const btn = document.getElementById('btn-start');
-        if (btn) btn.textContent = state.playing ? 'Pause' : (state.atEnd ? 'Rejouer' : 'Démarrer');
+        if (btn) {
+            btn.textContent = state.playing ? 'Pause' : (state.atEnd ? 'Rejouer' : 'Démarrer');
+            btn.setAttribute('aria-pressed', String(!!state.playing));
+        }
     }
 
     // ── rendu DOM (adapté pour lire un pas de trace) ─────────────────────────
@@ -271,7 +274,7 @@ class MergeSortWidget {
     init() {
         this.root.innerHTML = `<div class="msw-container">
             <div class="msw-header"><span>Tri fusion (Merge Sort)</span><span class="msw-step-info"></span></div>
-            <div class="msw-bars-zone"></div>
+            <div class="msw-bars-zone" role="img" aria-label="Visualisation du tri fusion"></div>
             <div class="msw-info-bar msw-action"></div>
             <div class="msw-controls">
                 <button class="msw-btn msw-btn-play">&#9654; Lancer</button>
@@ -343,6 +346,7 @@ class MergeSortWidget {
         const btn = this.root.querySelector('.msw-btn-play');
         if (!btn) return;
         btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
+        btn.setAttribute('aria-pressed', String(!!state.playing));
     }
 
     destroy() {

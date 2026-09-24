@@ -89,6 +89,7 @@ class SortingVisualizer extends SimulationPage {
         const startBtn = document.querySelector('[data-inline-onclick="page.startSort()"]');
         if (startBtn) {
             startBtn.textContent = state.playing ? 'Pause' : (state.atEnd ? 'Rejouer' : 'Démarrer le tri');
+            startBtn.setAttribute('aria-pressed', String(!!state.playing));
         }
     }
 
@@ -380,7 +381,7 @@ class SortingWidget {
         const algo = this.algorithm.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         this.root.innerHTML = `<div class="sw-container">
             <div class="sw-header"><span>${algo}</span><span class="sw-metrics"></span></div>
-            <div class="sw-array-zone"></div>
+            <div class="sw-array-zone" role="img" aria-label="Visualisation du tri : ${algo}"></div>
             <div class="sw-info-bar"><span class="sw-action"></span></div>
             <div class="sw-controls">
                 <button class="sw-btn sw-btn-play">▶ Lancer</button>
@@ -456,6 +457,7 @@ class SortingWidget {
         const btn = this.root.querySelector('.sw-btn-play');
         if (!btn) return;
         btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
+        btn.setAttribute('aria-pressed', String(!!state.playing));
     }
 
     destroy() {

@@ -394,6 +394,17 @@ const OEI_WIDGET_REGISTRY = {
         defaultConfig: {},
         staticFallback: _sf('🌐', 'Résolution DNS'),
     },
+    'net-routing': {
+        global: 'RoutingSimulatorWidget',
+        script: 'reseau/RoutingSimulatorPage.js',
+        label: 'Simulateur de routage',
+        category: 'Réseau',
+        description: 'Algorithme de Dijkstra pas-à-pas sur 3 topologies (campus, entreprise, internet) avec table de routage finale',
+        level: 'L2',
+        tags: ['routage', 'dijkstra', 'réseau', 'plus court chemin', 'table de routage'],
+        defaultConfig: { topology: 'campus' },
+        staticFallback: _sf('🛰️', 'Simulateur de routage'),
+    },
 
     // ── Logique booléenne ─────────────────────────────────────────────────────
     'boolean-gates': {

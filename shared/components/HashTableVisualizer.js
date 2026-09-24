@@ -452,7 +452,7 @@ class HashTableWidget {
     init() {
         this.root.innerHTML = `<div class="htw-container">
             <div class="htw-header">Table de hachage (chainage)</div>
-            <div class="htw-table"></div>
+            <div class="htw-table" role="img" aria-label="Visualisation de la table de hachage (chaînage)"></div>
             <div class="htw-info-bar htw-action"></div>
             <div class="htw-controls">
                 <input type="number" class="htw-input htw-key-input" placeholder="cle" value="42">

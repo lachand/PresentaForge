@@ -376,12 +376,12 @@ class StructureWidget {
                 <input type="text" class="stw-input" placeholder="Valeur…" value="">
                 <button class="stw-btn stw-btn-add">${addLabel}</button>
                 <button class="stw-btn stw-btn-danger stw-btn-remove">${removeLabel}</button>
-                <button class="stw-btn stw-btn-secondary stw-btn-reset">↺</button>
+                <button class="stw-btn stw-btn-secondary stw-btn-reset" aria-label="Réinitialiser">↺</button>
             </div>
             <div class="stw-viz">
                 ${isQueue
-                    ? `<div><div class="stw-labels"><span>Sortie ←</span><span>→ Entrée</span></div><div class="stw-queue-zone"></div></div>`
-                    : `<div class="stw-stack-zone"></div>`}
+                    ? `<div><div class="stw-labels"><span>Sortie ←</span><span>→ Entrée</span></div><div class="stw-queue-zone" role="img" aria-label="Visualisation de la file (FIFO)"></div></div>`
+                    : `<div class="stw-stack-zone" role="img" aria-label="Visualisation de la pile (LIFO)"></div>`}
             </div>
             <div class="stw-info"><span class="stw-action"></span><span class="stw-size-label"></span></div>
         </div>`;

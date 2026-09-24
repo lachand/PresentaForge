@@ -81,7 +81,10 @@ class SearchVisualizer extends SimulationPage {
 
     onPlayerState(state) {
         const btn = document.querySelector('[data-inline-onclick="page.startSearch()"]');
-        if (btn) btn.textContent = state.playing ? 'Pause' : 'Démarrer';
+        if (btn) {
+            btn.textContent = state.playing ? 'Pause' : 'Démarrer';
+            btn.setAttribute('aria-pressed', String(!!state.playing));
+        }
     }
 
     // ── rendu DOM ────────────────────────────────────────────────────────────
@@ -407,7 +410,7 @@ class SearchWidget {
                 <label>Valeur à chercher :</label>
                 <input type="number" class="srw-target-input" value="${this.defaultTarget}">
             </div>
-            <div class="srw-array-zone"></div>
+            <div class="srw-array-zone" role="img" aria-label="Visualisation : ${label}"></div>
             <div class="srw-pointer-row"></div>
             <div class="srw-info-bar"><span class="srw-action"></span></div>
             <div class="srw-controls">
@@ -530,6 +533,7 @@ class SearchWidget {
         const btn = this.root.querySelector('.srw-btn-play');
         if (!btn) return;
         btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
+        btn.setAttribute('aria-pressed', String(!!state.playing));
     }
 
     destroy() {

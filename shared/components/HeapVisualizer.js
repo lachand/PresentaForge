@@ -538,7 +538,7 @@ class HeapWidget {
         this.root.innerHTML = `<div class="hpw-container">
             <div class="hpw-header"><span>${label}</span><span class="hpw-size"></span></div>
             <div class="hpw-array"></div>
-            <div class="hpw-tree"><svg viewBox="0 0 400 110"></svg></div>
+            <div class="hpw-tree"><svg viewBox="0 0 400 110" role="img" aria-label="Visualisation : ${label}"></svg></div>
             <div class="hpw-info-bar hpw-action"></div>
             <div class="hpw-controls">
                 <input type="number" class="hpw-input hpw-val-input" placeholder="val" value="5">

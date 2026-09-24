@@ -72,7 +72,10 @@ class QuickSortVisualizer extends SimulationPage {
 
     onPlayerState(state) {
         const btn = document.querySelector('[data-inline-onclick="page.startSort()"]');
-        if (btn) btn.textContent = state.playing ? 'Pause' : (state.atEnd ? 'Rejouer' : 'Lancer le tri rapide');
+        if (btn) {
+            btn.textContent = state.playing ? 'Pause' : (state.atEnd ? 'Rejouer' : 'Lancer le tri rapide');
+            btn.setAttribute('aria-pressed', String(!!state.playing));
+        }
     }
 
     // ── helpers DOM conservés ────────────────────────────────────────────────
@@ -230,7 +233,7 @@ class QuickSortWidget {
     init() {
         this.root.innerHTML = `<div class="sw-container">
             <div class="sw-header"><span>Tri rapide (Lomuto)</span><span class="sw-metrics"></span></div>
-            <div class="sw-array-zone"></div>
+            <div class="sw-array-zone" role="img" aria-label="Visualisation du tri rapide (Lomuto)"></div>
             <div class="sw-info-bar"><span class="sw-action"></span></div>
             <div class="sw-controls">
                 <button class="sw-btn sw-btn-play">▶ Lancer</button>
@@ -303,6 +306,7 @@ class QuickSortWidget {
         const btn = this.root.querySelector('.sw-btn-play');
         if (!btn) return;
         btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
+        btn.setAttribute('aria-pressed', String(!!state.playing));
     }
 
     destroy() {

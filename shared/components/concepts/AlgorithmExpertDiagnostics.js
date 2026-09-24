@@ -1011,6 +1011,10 @@ class AlgorithmExpertDiagnostics {
             this.extractCalledFunctionsFromAst(node.right, output);
             return;
         }
+        if (node.type === 'chain_compare') {
+            (node.operands || []).forEach((operand) => this.extractCalledFunctionsFromAst(operand, output));
+            return;
+        }
         if (node.type === 'unary') {
             this.extractCalledFunctionsFromAst(node.arg, output);
             return;
