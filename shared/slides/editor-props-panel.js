@@ -87,20 +87,19 @@ function _elementStyleControlHtml(desc, style) {
     const label = esc(desc.label || key);
     const idAttr = `sp-elstyle-${escAttr(key)}`;
     const common = `data-el-style="${escAttr(key)}" id="${idAttr}"`;
-    const inputStyle = 'flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem';
     let field;
     switch (desc.control) {
         case 'color':
             if (window.OEIColorField) { field = window.OEIColorField.renderColorField({ key, value: raw }); break; }
-            field = `<input type="color" ${common} value="${escAttr(_colorToHexSafe(raw))}" data-el-style-set="${raw ? '1' : ''}" style="width:34px;height:24px;padding:0;border:1px solid var(--border);border-radius:4px;background:none">`
-                + `<button type="button" class="sp-elstyle-clear" data-el-style-clear="${escAttr(key)}" title="Réinitialiser" style="margin-left:4px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem">↺</button>`;
+            field = `<input type="color" ${common} value="${escAttr(_colorToHexSafe(raw))}" data-el-style-set="${raw ? '1' : ''}" class="sp-elstyle-swatch">`
+                + `<button type="button" class="sp-elstyle-clear" data-el-style-clear="${escAttr(key)}" title="Réinitialiser">↺</button>`;
             break;
         case 'number':
         case 'range': {
             const min = desc.min != null ? ` min="${desc.min}"` : '';
             const max = desc.max != null ? ` max="${desc.max}"` : '';
             const step = desc.step != null ? ` step="${desc.step}"` : '';
-            field = `<input type="number" ${common}${min}${max}${step} value="${escAttr(raw)}" placeholder="${desc.default != null ? escAttr(desc.default) : 'auto'}" style="${inputStyle};max-width:80px">`;
+            field = `<input type="number" ${common}${min}${max}${step} value="${escAttr(raw)}" placeholder="${desc.default != null ? escAttr(desc.default) : 'auto'}" class="sp-elstyle-input sp-elstyle-input-narrow">`;
             break;
         }
         case 'select': {
@@ -108,17 +107,17 @@ function _elementStyleControlHtml(desc, style) {
                 const oLabel = (desc.optionLabels && desc.optionLabels[i]) || o || '(défaut)';
                 return `<option value="${escAttr(o)}"${String(raw) === String(o) ? ' selected' : ''}>${esc(oLabel)}</option>`;
             }).join('');
-            field = `<select ${common} style="${inputStyle}"><option value=""${raw === '' ? ' selected' : ''}>(défaut)</option>${opts}</select>`;
+            field = `<select ${common} class="sp-elstyle-input"><option value=""${raw === '' ? ' selected' : ''}>(défaut)</option>${opts}</select>`;
             break;
         }
         case 'align': {
             const cur = raw || '';
-            const btn = (v, sym) => `<button type="button" class="sp-elstyle-align${cur === v ? ' active' : ''}" data-el-style-align-key="${escAttr(key)}" data-el-style-align="${v}" style="flex:1;background:${cur === v ? 'var(--primary,#4a7)' : 'var(--bg)'};border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px;cursor:pointer;font-size:0.72rem">${sym}</button>`;
-            field = `<div style="display:flex;gap:3px;flex:1">${btn('left', '⟵')}${btn('center', '↔')}${btn('right', '⟶')}</div>`;
+            const btn = (v, sym) => `<button type="button" class="sp-elstyle-align${cur === v ? ' active' : ''}" data-el-style-align-key="${escAttr(key)}" data-el-style-align="${v}">${sym}</button>`;
+            field = `<div class="sp-elstyle-align-row">${btn('left', '⟵')}${btn('center', '↔')}${btn('right', '⟶')}</div>`;
             break;
         }
         case 'font-family':
-            field = `<select ${common} style="${inputStyle}">
+            field = `<select ${common} class="sp-elstyle-input">
                 <option value=""${raw === '' ? ' selected' : ''}>Thème</option>
                 ${['Inter', 'Barlow', 'Georgia', 'monospace'].map(f => `<option value="${f}"${raw === f ? ' selected' : ''}>${f === 'monospace' ? 'Mono' : f}</option>`).join('')}
             </select>`;
@@ -127,7 +126,7 @@ function _elementStyleControlHtml(desc, style) {
             field = `<input type="checkbox" ${common}${raw && raw !== 'none' ? ' checked' : ''}>`;
             break;
         default:
-            field = `<input type="text" ${common} value="${escAttr(raw)}" placeholder="${escAttr(desc.placeholder || (desc.default != null ? desc.default : ''))}" style="${inputStyle}">`;
+            field = `<input type="text" ${common} value="${escAttr(raw)}" placeholder="${escAttr(desc.placeholder || (desc.default != null ? desc.default : ''))}" class="sp-elstyle-input">`;
     }
     return `<div class="props-row"><label>${label}</label>${field}</div>`;
 }
@@ -153,13 +152,13 @@ function _renderElementStyleSection(el) {
     let rows = '';
     for (const g of order) {
         if (!groups.has(g)) continue;
-        rows += `<div class="props-subgroup-title" style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin:8px 0 3px">${esc(_ELEMENT_STYLE_GROUP_LABELS[g] || g)}</div>`;
+        rows += `<div class="sp-elstyle-subgroup-title">${esc(_ELEMENT_STYLE_GROUP_LABELS[g] || g)}</div>`;
         rows += groups.get(g).map(desc => _elementStyleControlHtml(desc, style)).join('');
     }
-    return `<div class="props-section" id="props-style-section" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
-        <div class="props-section-title" style="display:flex;justify-content:space-between;align-items:center">
+    return `<div class="props-section sp-elstyle-section" id="props-style-section">
+        <div class="props-section-title sp-elstyle-section-head">
             <span>Style</span>
-            <button type="button" id="sp-elstyle-reset-all" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.65rem">Tout réinitialiser</button>
+            <button type="button" id="sp-elstyle-reset-all" class="sp-elstyle-reset-all">Tout réinitialiser</button>
         </div>
         ${rows}
     </div>`;

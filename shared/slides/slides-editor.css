@@ -161,6 +161,36 @@ html, body {
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; color: var(--muted); z-index: 10;
 }
+/* Section "Style" (element-style-schema.js) — Lot 1 migration design system,
+   remplace les style="" inline de _elementStyleControlHtml/_renderElementStyleSection
+   dans editor-props-panel.js (valeurs copiées 1:1, rendu pixel-identique). */
+.sp-elstyle-input {
+    flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); border-radius: 4px; padding: 3px 6px; font-size: 0.72rem;
+}
+.sp-elstyle-input-narrow { max-width: 80px; }
+.sp-elstyle-swatch {
+    width: 34px; height: 24px; padding: 0; border: 1px solid var(--border);
+    border-radius: 4px; background: none;
+}
+.sp-elstyle-clear {
+    margin-left: 4px; background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 0.8rem;
+}
+.sp-elstyle-align-row { display: flex; gap: 3px; flex: 1; }
+.sp-elstyle-align {
+    flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    border-radius: 4px; padding: 3px; cursor: pointer; font-size: 0.72rem;
+}
+.sp-elstyle-align.active { background: var(--primary, #4a7); }
+.sp-elstyle-subgroup-title {
+    font-size: 0.62rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.04em; margin: 8px 0 3px;
+}
+.sp-elstyle-section { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
+.sp-elstyle-section-head { display: flex; justify-content: space-between; align-items: center; }
+.sp-elstyle-reset-all { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.65rem; }
+
 .sp-diag-grid-wrap {
     max-height: 260px;
     overflow: auto;
