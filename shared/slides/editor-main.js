@@ -98,6 +98,43 @@ async function resolveInitialDeck(params) {
         }
     }
 
+    // 1.5. ?firebasePublic=<uid>/<id> : lecture PUBLIQUE (loadPublicPresentation, sans
+    // auth), UNIQUEMENT en mode export batch (jamais en navigation normale — aucune
+    // nouvelle surface d'accès hors de ce cas précis). C'est une nouvelle VOIE de lecture
+    // du même contenu déjà accessible sans auth via viewer.html?firebase=<uid>/<id> :
+    // aucune donnée supplémentaire exposée. Utilisé par slides/course.html (catalogue
+    // public d'un cours, étudiants anonymes) pour exporter un deck en PDF sans passer par
+    // le chemin propriétaire ci-dessous (étape 2), qui exigerait une authentification que
+    // l'étudiant n'a pas.
+    const fbPublicParam = params.get('firebasePublic');
+    if (window.__OEI_BATCH_EXPORT_MODE && fbPublicParam) {
+        const sepIdx = fbPublicParam.indexOf('/');
+        if (sepIdx > 0 && !superseded()) {
+            try {
+                const uid = fbPublicParam.slice(0, sepIdx);
+                const pubId = fbPublicParam.slice(sepIdx + 1);
+                const fb = window.OEIFirebase;
+                if (!fb) throw new Error('Firebase non disponible');
+                // Lecture publique : pas de isReady() (exige un _user authentifié, non
+                // pertinent pour un étudiant anonyme) — juste ready(), même idiome que
+                // viewer-main.js pour ?firebase=<uid>/<id>.
+                await fb.ready();
+                const data = await fb.loadPublicPresentation(uid, pubId);
+                // Jamais setCurrentId/markLoaded/badge cloud : ce deck n'est chargé que
+                // pour être exporté, jamais pour être réenregistré depuis cette iframe.
+                if (!superseded()) editor.load(data);
+            } catch (err) {
+                console.error('[editor] resolveInitialDeck firebasePublic', err);
+            }
+        }
+        // Mode batch + deck public explicitement demandé : ne JAMAIS retomber sur les
+        // étapes suivantes (auth propriétaire / brouillon local / démo) — un échec ici
+        // (deck introuvable/plus public/id malformé) doit rester un échec propre
+        // (editor.data non peuplé, _runBatchExportAndNotify le détecte et le remonte au
+        // parent), pas un export silencieux d'un deck sans rapport avec la demande.
+        return;
+    }
+
     // 2. Firebase : recharger réellement le contenu (pas seulement armer le badge).
     if (!superseded() && fbId) {
         try {
