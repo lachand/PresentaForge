@@ -616,13 +616,20 @@ async function exportPDF(opts = {}) {
 
                 await _waitFrameReady(frame);
 
+                // backgroundColor NE DOIT JAMAIS être null ici : addImage() en sort en JPEG
+                // (pas d'alpha) — tout pixel transparent du canvas est alors aplati en NOIR
+                // par le navigateur au moment de l'encodage (page entière noire si le fond
+                // du thème n'a pas pu être peint de façon opaque dans le canvas). On résout
+                // la couleur RÉELLE (var(--sl-slide-bg) déjà calculée par le navigateur)
+                // plutôt que de la deviner, pour rester correct sur un thème clair.
+                const resolvedBg = getComputedStyle(frame).backgroundColor || '#1a1d27';
                 const canvas = await html2canvas(frame, {
                     // scale:1 (pas 2) : le coût dominant d'un export PDF est la rastérisation
                     // html2canvas par slide (le nombre de pixels rastérisés croît au carré de
                     // l'échelle) — décisif sur un deck de 80-90 slides. Choix explicite de
                     // l'utilisateur : vitesse d'export priorisée sur la finesse en cas de zoom.
                     width: dims[0], height: dims[1], scale: 1,
-                    backgroundColor: null, useCORS: true, logging: false,
+                    backgroundColor: resolvedBg, useCORS: true, logging: false,
                     // cf. exportPNG() : évite le clonage iframe + re-fetch CSS/images, qui se
                     // heurte à la CSP enforce (style-src/img-src 'self' ne matche pas
                     // l'origine du clone sous Firefox) et pouvait faire échouer le rendu.
