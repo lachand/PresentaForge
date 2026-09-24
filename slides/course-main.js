@@ -34,8 +34,108 @@
         return presentations.map(p => {
             const url = 'viewer.html?firebase=' + encodeURIComponent(uid) + '/' + encodeURIComponent(p.id);
             const badge = p.seance != null ? `<span class="course-catalog-badge">Séance ${esc(p.seance)}</span>` : '';
-            return `<li><a class="course-catalog-item" href="${esc(url)}">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></a></li>`;
+            // Les boutons d'action sont des frères de l'<a>, jamais imbriqués dedans (un
+            // <button> dans un <a> est invalide en HTML et casse le focus clavier).
+            return `<li class="course-catalog-row">
+                <a class="course-catalog-item" href="${esc(url)}">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></a>
+                <div class="course-catalog-actions">
+                    <button type="button" class="course-catalog-action" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📥 JSON de révision</button>
+                    <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📄 PDF</button>
+                    <span class="course-catalog-action-status" aria-live="polite"></span>
+                </div>
+            </li>`;
         }).join('');
+    }
+
+    function setRowStatus(li, message, isError) {
+        const el = li && li.querySelector('.course-catalog-action-status');
+        if (!el) return;
+        el.textContent = message || '';
+        el.classList.toggle('course-catalog-action-status--error', !!isError);
+    }
+
+    function setRowBusy(li, busy) {
+        if (!li) return;
+        li.querySelectorAll('.course-catalog-action').forEach(btn => { btn.disabled = busy; });
+    }
+
+    /**
+     * Télécharge un JSON de révision "vierge" (favoris/notes/progression vides) pour ce
+     * deck — importable tel quel via le bouton "Importer une révision" de student.html,
+     * sans que l'élève ait besoin d'avoir déjà assisté à une séance live sur ce cours.
+     */
+    async function handleDownloadJson(li, uid, id) {
+        if (!window.OEIStudentStorage || !window.OEIFirebase) {
+            setRowStatus(li, 'Module de révision indisponible.', true);
+            return;
+        }
+        setRowBusy(li, true);
+        setRowStatus(li, 'Préparation…', false);
+        try {
+            const deck = await window.OEIFirebase.loadPublicPresentation(uid, id);
+            const bundle = window.OEIStudentStorage.buildBlankReviseBundle(deck, {
+                title: deck && deck.metadata && deck.metadata.title,
+                author: deck && deck.metadata && deck.metadata.author,
+            });
+            const fileName = `revision-${window.OEIStudentStorage.slugify(bundle.course.title || 'cours') || 'cours'}.json`;
+            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+            setRowStatus(li, 'Téléchargé ✓', false);
+        } catch (e) {
+            setRowStatus(li, 'Erreur : ' + (e && e.message ? e.message : String(e)), true);
+        } finally {
+            setRowBusy(li, false);
+        }
+    }
+
+    /**
+     * Exporte ce deck en PDF via le client d'export batch partagé (iframe cachée vers
+     * editor.html?firebasePublic=<uid>/<id>&batchExport=pdf — lecture PUBLIQUE, aucune
+     * authentification requise, voir shared/slides/editor-main.js resolveInitialDeck).
+     */
+    async function handleExportPdf(li, uid, id) {
+        if (!window.OEIBatchExportClient) {
+            setRowStatus(li, 'Module d’export indisponible.', true);
+            return;
+        }
+        setRowBusy(li, true);
+        setRowStatus(li, 'Génération du PDF…', false);
+        try {
+            const res = await window.OEIBatchExportClient.exportOneDeckViaIframe({
+                urlParams: { firebasePublic: uid + '/' + id },
+                format: 'pdf',
+            });
+            if (!res.ok) throw new Error(res.error || 'Échec de l’export');
+            window.OEIBatchExportClient.downloadBlobDirect(res.blob, res.fileName);
+            setRowStatus(li, 'Téléchargé ✓', false);
+        } catch (e) {
+            setRowStatus(li, 'Erreur : ' + (e && e.message ? e.message : String(e)), true);
+        } finally {
+            setRowBusy(li, false);
+        }
+    }
+
+    if (listEl) {
+        // Délégation d'événement (jamais d'attribut onclick inline — audit sécurité
+        // tools/security/inline-expression-audit.mjs) : un seul listener, valable même
+        // après que renderCatalog() ait remplacé listEl.innerHTML.
+        listEl.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const li = btn.closest('li');
+            const uid = btn.dataset.uid;
+            const id = btn.dataset.id;
+            if (!uid || !id || !li) return;
+            if (btn.dataset.action === 'download-json') handleDownloadJson(li, uid, id);
+            else if (btn.dataset.action === 'export-pdf') handleExportPdf(li, uid, id);
+        });
     }
 
     function renderCatalog(course, presentations, uid) {

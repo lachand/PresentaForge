@@ -12,8 +12,9 @@
  * L'export groupé ne réimplémente PAS le pipeline d'export (exportPDF/exportHTMLOffline/
  * exportPPTX vivent dans shared/slides/editor-export*.js et dépendent de tout le graphe de
  * dépendances d'editor.html, notamment CanvasEditor.WIDGET_REGISTRY pour le rendu des slides à
- * widgets) : chaque présentation est exportée via une iframe cachée same-origin chargeant
- * editor.html?firebase=<id>&batchExport=<format>, qui renvoie le résultat par postMessage.
+ * widgets) : chaque présentation est exportée via shared/slides/batch-export-client.js
+ * (iframe cachée same-origin editor.html?firebase=<id>&batchExport=<format>, résultat par
+ * postMessage — module chargé AVANT ce fichier, partagé avec course-main.js).
  */
 (function () {
     'use strict';
@@ -174,7 +175,6 @@
     const EXPORT_OVERLAY_ID = 'oei-bulk-export-overlay';
     const EXPORT_CONCURRENCY = 3;
     const EXPORT_TIMEOUT_MS = 120000;
-    const EXPORT_MESSAGE_TYPE = 'oei-batch-export-result';
     const EXPORT_FORMATS = [
         { value: 'html-offline', label: 'HTML autonome (offline)' },
         { value: 'pdf', label: 'PDF' },
@@ -206,39 +206,16 @@
         return Promise.all(workers).then(() => results);
     }
 
-    /** Un job d'export = une iframe cachée pointant editor.html en mode export batch, dont le
-     * résultat revient par postMessage. Dimensionnée (jamais display:none/0×0) car certains
-     * calculs de mise à l'échelle de l'éditeur divisent par les dimensions du cadre. */
-    function exportOneDeckViaIframe(deck, format, { timeoutMs = EXPORT_TIMEOUT_MS } = {}) {
-        return new Promise(resolve => {
-            const token = 'bx-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1280px;height:800px;border:0;';
-            let done = false;
-            const cleanup = () => {
-                clearTimeout(timer);
-                window.removeEventListener('message', onMessage);
-                if (iframe.parentNode) iframe.remove();
-            };
-            const finish = (result) => {
-                if (done) return;
-                done = true;
-                cleanup();
-                resolve(result);
-            };
-            const timer = setTimeout(() => finish({ ok: false, deck, error: 'Délai dépassé' }), timeoutMs);
-            function onMessage(e) {
-                if (e.origin !== location.origin) return;
-                if (e.source !== iframe.contentWindow) return;
-                const data = e.data;
-                if (!data || data.type !== EXPORT_MESSAGE_TYPE || data.token !== token) return;
-                if (data.ok) finish({ ok: true, deck, blob: data.blob, fileName: data.fileName });
-                else finish({ ok: false, deck, error: data.error || 'Erreur inconnue' });
-            }
-            window.addEventListener('message', onMessage);
-            iframe.src = `editor.html?firebase=${encodeURIComponent(deck.id)}&batchExport=${encodeURIComponent(format)}&batchToken=${encodeURIComponent(token)}`;
-            document.body.appendChild(iframe);
+    /** Exporte un deck PROPRIÉTAIRE (?firebase=<id>, authentifié) via le client partagé,
+     * en réattachant `deck` au résultat (le pool de concurrence ci-dessous et le nommage
+     * du zip en ont besoin, non porté par le client générique). */
+    async function exportOneDeckViaIframe(deck, format, { timeoutMs = EXPORT_TIMEOUT_MS } = {}) {
+        const res = await window.OEIBatchExportClient.exportOneDeckViaIframe({
+            urlParams: { firebase: deck.id },
+            format,
+            timeoutMs,
         });
+        return { ...res, deck };
     }
 
     async function _ensureJSZipLoaded() {
@@ -250,17 +227,6 @@
             s.onerror = () => reject(new Error('Impossible de charger JSZip'));
             document.head.appendChild(s);
         });
-    }
-
-    function _downloadBlobDirect(blob, fileName) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 4000);
     }
 
     /**
@@ -345,7 +311,7 @@
             const failed = results.filter(r => !r.ok);
 
             if (succeeded.length === 1 && failed.length === 0) {
-                _downloadBlobDirect(succeeded[0].blob, succeeded[0].fileName);
+                window.OEIBatchExportClient.downloadBlobDirect(succeeded[0].blob, succeeded[0].fileName);
             } else if (succeeded.length) {
                 try {
                     await _ensureJSZipLoaded();
@@ -362,7 +328,7 @@
                         zip.file(name, r.blob);
                     });
                     const zipBlob = await zip.generateAsync({ type: 'blob' });
-                    _downloadBlobDirect(zipBlob, `export_presentaforge_${new Date().toISOString().slice(0, 10)}.zip`);
+                    window.OEIBatchExportClient.downloadBlobDirect(zipBlob, `export_presentaforge_${new Date().toISOString().slice(0, 10)}.zip`);
                 } catch (err) {
                     if (progressEl) progressEl.textContent = 'Erreur lors de la création du zip : ' + String((err && err.message) || err);
                 }
