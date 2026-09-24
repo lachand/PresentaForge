@@ -40,7 +40,6 @@
                 <a class="course-catalog-item" href="${esc(url)}">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></a>
                 <div class="course-catalog-actions">
                     <button type="button" class="course-catalog-action" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📥 JSON de révision</button>
-                    <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📄 PDF</button>
                     <span class="course-catalog-action-status" aria-live="polite"></span>
                 </div>
             </li>`;
@@ -95,25 +94,12 @@
         }
     }
 
-    /**
-     * Ouvre un nouvel onglet qui charge ce deck (lecture publique, aucune authentification
-     * requise, voir shared/slides/editor-main.js resolveInitialDeck ?firebasePublic=) puis
-     * déclenche l'impression navigateur native (?printExport=pdf) — texte réel,
-     * sélectionnable/recherchable, aucune rastérisation html2canvas (abandonnée après
-     * plusieurs échecs successifs : blocage CSP, pages noires, slides à widget vides).
-     * window.open() reste synchrone dans ce handler de clic (aucun await avant) pour
-     * conserver l'activation utilisateur et éviter un blocage pop-up.
-     */
-    function handleExportPdf(li, uid, id) {
-        const url = 'editor.html?firebasePublic=' + encodeURIComponent(uid) + '/' + encodeURIComponent(id) + '&printExport=pdf';
-        const win = window.open(url, '_blank');
-        if (!win) {
-            setRowStatus(li, 'Fenêtre bloquée — autorisez les pop-ups pour ce site.', true);
-            return;
-        }
-        setRowStatus(li, 'Impression ouverte dans un nouvel onglet.', false);
-        setTimeout(() => setRowStatus(li, '', false), 4000);
-    }
+    // Bouton PDF retiré temporairement (2026-09-24) : ?printExport=pdf pointe vers
+    // editor.html, qui doit d'abord démarrer tout l'éditeur (chargement de tout
+    // editor-bootstrap.js, UI complète visible un instant) avant de déclencher
+    // l'impression — beaucoup plus lourd/perceptible que d'ouvrir viewer.html, contraignant
+    // pour un étudiant qui veut juste un PDF depuis le catalogue public d'un cours. À
+    // réintroduire une fois qu'une cible d'impression plus légère (viewer.html ?) existe.
 
     if (listEl) {
         // Délégation d'événement (jamais d'attribut onclick inline — audit sécurité
@@ -127,7 +113,6 @@
             const id = btn.dataset.id;
             if (!uid || !id || !li) return;
             if (btn.dataset.action === 'download-json') handleDownloadJson(li, uid, id);
-            else if (btn.dataset.action === 'export-pdf') handleExportPdf(li, uid, id);
         });
     }
 
