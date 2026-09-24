@@ -441,6 +441,41 @@ const OEI_WIDGET_REGISTRY = {
         staticFallback: _sf('🔲', 'Tableau de Karnaugh'),
     },
 
+    // ── Statistiques ───────────────────────────────────────────────────────────
+    'stats-clt': {
+        global: 'CLTWidget',
+        script: 'stats/CLTPage.js',
+        label: 'Loi normale & TCL',
+        category: 'Statistiques',
+        description: 'Théorème central limite : simulation de moyennes d\'échantillon et convergence vers la loi normale',
+        level: 'L2',
+        tags: ['statistiques', 'probabilités', 'loi normale', 'tcl', 'échantillonnage'],
+        defaultConfig: { distribution: 'die', sampleSize: 10 },
+        staticFallback: _sf('📊', 'Loi normale & TCL'),
+    },
+    'stats-confidence-interval': {
+        global: 'ConfidenceIntervalWidget',
+        script: 'stats/ConfidenceIntervalPage.js',
+        label: 'Intervalle de confiance',
+        category: 'Statistiques',
+        description: 'Simulation d\'intervalles de confiance sur une moyenne et observation du taux de couverture',
+        level: 'L2',
+        tags: ['statistiques', 'estimation', 'intervalle de confiance', 'couverture'],
+        defaultConfig: { trueMean: 50, trueSigma: 12, sampleSize: 25, confidenceLevel: 95 },
+        staticFallback: _sf('📐', 'Intervalle de confiance'),
+    },
+    'stats-bayes': {
+        global: 'ConditionalBayesWidget',
+        script: 'stats/ConditionalBayesPage.js',
+        label: 'Probabilité conditionnelle & Bayes',
+        category: 'Statistiques',
+        description: 'Formule de Bayes sur un test de dépistage : prévalence, sensibilité, spécificité, posterior P(D|+)',
+        level: 'L2',
+        tags: ['statistiques', 'probabilités', 'bayes', 'probabilité conditionnelle', 'test diagnostique'],
+        defaultConfig: { prevalence: 1.0, sensitivity: 95.0, specificity: 90.0, population: 10000 },
+        staticFallback: _sf('🌳', 'Probabilité conditionnelle & Bayes'),
+    },
+
     // ── Git ───────────────────────────────────────────────────────────────────
     'git-zones': {
         global: 'GitZonesWidget',

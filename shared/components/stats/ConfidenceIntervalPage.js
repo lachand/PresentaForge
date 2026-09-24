@@ -308,3 +308,211 @@ class ConfidenceIntervalPage extends SimulationPage {
 if (typeof window !== 'undefined') {
     window.ConfidenceIntervalPage = ConfidenceIntervalPage;
 }
+
+// ── Standalone widget ──────────────────────────────────────────
+// Meme moteur que ConfidenceIntervalPage, sans controleur de vitesse partage
+// ni inspecteur de pseudocode — delai fixe local, historique plus court.
+class ConfidenceIntervalWidget {
+    static mount(container, config = {}) {
+        if (container.dataset.ciw) return;
+        container.dataset.ciw = '1';
+        const w = new ConfidenceIntervalWidget(container, config);
+        w.init();
+        return w;
+    }
+
+    constructor(container, config = {}) {
+        this.root = container;
+        this.params = {
+            trueMean: Number.isFinite(config.trueMean) ? config.trueMean : 50,
+            trueSigma: Number.isFinite(config.trueSigma) ? Math.max(1, config.trueSigma) : 12,
+            sampleSize: Number.isFinite(config.sampleSize) ? Math.max(5, Math.round(config.sampleSize)) : 25,
+            confidenceLevel: [90, 95, 99].includes(config.confidenceLevel) ? config.confidenceLevel : 95
+        };
+        this.intervals = [];
+        this.maxIntervals = 80;
+        this.running = false;
+        this._destroyed = false;
+    }
+
+    init() {
+        const p = this.params;
+        this.root.innerHTML = `<div class="ciw-container">
+            <div class="ciw-controls-row">
+                <label class="ciw-inline-label">μ <input type="range" class="ciw-range" data-true-mean min="-20" max="120" step="0.5" value="${p.trueMean}"><span data-true-mean-value>${p.trueMean.toFixed(1)}</span></label>
+                <label class="ciw-inline-label">σ <input type="range" class="ciw-range" data-true-sigma min="1" max="40" step="0.5" value="${p.trueSigma}"><span data-true-sigma-value>${p.trueSigma.toFixed(1)}</span></label>
+            </div>
+            <div class="ciw-controls-row">
+                <label class="ciw-inline-label">n <input type="range" class="ciw-range" data-sample-size min="5" max="200" step="1" value="${p.sampleSize}"><span data-sample-size-value>${p.sampleSize}</span></label>
+                <label class="ciw-inline-label">Confiance
+                    <select class="ciw-select" data-confidence>
+                        <option value="90">90%</option>
+                        <option value="95">95%</option>
+                        <option value="99">99%</option>
+                    </select>
+                </label>
+            </div>
+            <div class="ciw-controls-row">
+                <button class="ciw-btn ciw-btn-primary" data-run="1">1 échantillon</button>
+                <button class="ciw-btn ciw-btn-secondary" data-run="25">+25</button>
+                <button class="ciw-btn ciw-btn-secondary" data-run="100">+100</button>
+                <button class="ciw-btn ciw-btn-secondary" data-clear>Vider</button>
+                <button class="ciw-btn ciw-btn-secondary" data-reset>↺ Reset</button>
+            </div>
+            <svg class="ciw-svg" data-chart viewBox="0 0 400 220" role="img" aria-label="Intervalles de confiance observés"></svg>
+            <div class="ciw-metrics">
+                <div class="ciw-metric"><span class="ciw-metric-label">Simulés</span><span data-total>0</span></div>
+                <div class="ciw-metric"><span class="ciw-metric-label">Couvrants</span><span data-covered>0</span></div>
+                <div class="ciw-metric"><span class="ciw-metric-label">Couverture obs.</span><span data-rate>--</span></div>
+                <div class="ciw-metric"><span class="ciw-metric-label">Cible</span><span data-target>${p.confidenceLevel}%</span></div>
+            </div>
+            <div class="ciw-feedback" data-feedback>Lance des échantillons pour observer la couverture.</div>
+        </div>`;
+
+        this._q('[data-confidence]').value = String(p.confidenceLevel);
+        this._bind();
+        this._render();
+    }
+
+    _q(sel) { return this.root.querySelector(sel); }
+
+    _bind() {
+        this._q('[data-true-mean]').addEventListener('input', () => this._applyControls());
+        this._q('[data-true-sigma]').addEventListener('input', () => this._applyControls());
+        this._q('[data-sample-size]').addEventListener('input', () => this._applyControls());
+        this._q('[data-confidence]').addEventListener('change', () => this._applyControls());
+        this._q('[data-run="1"]').addEventListener('click', () => this._runBatch(1));
+        this._q('[data-run="25"]').addEventListener('click', () => this._runBatch(25));
+        this._q('[data-run="100"]').addEventListener('click', () => this._runBatch(100));
+        this._q('[data-clear]').addEventListener('click', () => { this.intervals = []; this._render(); this._q('[data-feedback]').textContent = 'Historique vidé.'; });
+        this._q('[data-reset]').addEventListener('click', () => { this.intervals = []; this._render(); this._q('[data-feedback]').textContent = 'Paramètres réinitialisés.'; });
+    }
+
+    _applyControls() {
+        const p = this.params;
+        const mean = Number(this._q('[data-true-mean]').value);
+        const sigma = Number(this._q('[data-true-sigma]').value);
+        const n = Number(this._q('[data-sample-size]').value);
+        const level = Number(this._q('[data-confidence]').value);
+        p.trueMean = Number.isFinite(mean) ? mean : p.trueMean;
+        p.trueSigma = Number.isFinite(sigma) ? Math.max(1, sigma) : p.trueSigma;
+        p.sampleSize = Number.isFinite(n) ? Math.max(5, Math.round(n)) : p.sampleSize;
+        p.confidenceLevel = Number.isFinite(level) ? level : p.confidenceLevel;
+        this._q('[data-true-mean-value]').textContent = p.trueMean.toFixed(1);
+        this._q('[data-true-sigma-value]').textContent = p.trueSigma.toFixed(1);
+        this._q('[data-sample-size-value]').textContent = String(p.sampleSize);
+        this._q('[data-target]').textContent = `${p.confidenceLevel}%`;
+        this._render();
+    }
+
+    _getZForConfidence(level) {
+        if (Math.abs(level - 90) < 0.01) return 1.6448536269514722;
+        if (Math.abs(level - 99) < 0.01) return 2.5758293035489004;
+        return 1.959963984540054;
+    }
+
+    _sampleStandardNormal() {
+        let u = 0; let v = 0;
+        while (u <= Number.EPSILON) u = Math.random();
+        while (v <= Number.EPSILON) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    _sampleMean() {
+        let sum = 0;
+        for (let i = 0; i < this.params.sampleSize; i += 1) {
+            sum += this.params.trueMean + (this.params.trueSigma * this._sampleStandardNormal());
+        }
+        return sum / this.params.sampleSize;
+    }
+
+    _createInterval() {
+        const z = this._getZForConfidence(this.params.confidenceLevel);
+        const mean = this._sampleMean();
+        const margin = z * this.params.trueSigma / Math.sqrt(this.params.sampleSize);
+        const lower = mean - margin;
+        const upper = mean + margin;
+        return { id: this.intervals.length + 1, mean, lower, upper, margin, covers: lower <= this.params.trueMean && this.params.trueMean <= upper };
+    }
+
+    _sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+
+    async _runBatch(count) {
+        if (this.running) return;
+        this.running = true;
+        const checkpoint = Math.max(1, Math.floor(count / 10));
+        for (let i = 0; i < count && !this._destroyed; i += 1) {
+            const interval = this._createInterval();
+            this.intervals.unshift(interval);
+            if (this.intervals.length > this.maxIntervals) this.intervals = this.intervals.slice(0, this.maxIntervals);
+            if (i % checkpoint === 0 || i === count - 1) {
+                this._render();
+                await this._sleep(20);
+            }
+        }
+        if (this._destroyed) return;
+        this.running = false;
+        const { rate } = this._computeCoverage();
+        this._q('[data-feedback]').textContent = `Terminé. Couverture observée : ${(rate * 100).toFixed(1)}%.`;
+    }
+
+    _computeCoverage() {
+        const total = this.intervals.length;
+        const covered = this.intervals.filter((it) => it.covers).length;
+        return { total, covered, rate: total > 0 ? covered / total : 0 };
+    }
+
+    _renderMetrics() {
+        const { total, covered, rate } = this._computeCoverage();
+        this._q('[data-total]').textContent = String(total);
+        this._q('[data-covered]').textContent = String(covered);
+        this._q('[data-rate]').textContent = total ? `${(rate * 100).toFixed(2)}%` : '--';
+    }
+
+    _renderChart() {
+        const svg = this._q('[data-chart]');
+        const width = 400;
+        const rows = this.intervals.slice(0, 24);
+        const height = Math.max(140, 30 + rows.length * 8);
+        const padding = { left: 38, right: 12, top: 14, bottom: 20 };
+        const plotWidth = width - padding.left - padding.right;
+        const plotHeight = height - padding.top - padding.bottom;
+
+        let minX = this.params.trueMean - (3.8 * this.params.trueSigma);
+        let maxX = this.params.trueMean + (3.8 * this.params.trueSigma);
+        rows.forEach((it) => { minX = Math.min(minX, it.lower); maxX = Math.max(maxX, it.upper); });
+        const span = Math.max(1e-6, maxX - minX);
+        const xToPx = (v) => padding.left + ((v - minX) / span) * plotWidth;
+        const rowHeight = rows.length > 0 ? plotHeight / rows.length : plotHeight;
+
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        if (!rows.length) {
+            svg.innerHTML = `<text x="${width / 2}" y="${height / 2}" text-anchor="middle" font-size="11" fill="var(--muted, #888)">Aucun intervalle simulé</text>`;
+            return;
+        }
+
+        const trueMeanX = xToPx(this.params.trueMean);
+        let html = `<line x1="${trueMeanX}" y1="${padding.top}" x2="${trueMeanX}" y2="${height - padding.bottom}" stroke="#dc2626" stroke-width="1.6"></line>`;
+        rows.forEach((it, idx) => {
+            const y = padding.top + (idx + 0.5) * rowHeight;
+            const stroke = it.covers ? '#0f766e' : '#b91c1c';
+            html += `<line x1="${xToPx(it.lower)}" y1="${y}" x2="${xToPx(it.upper)}" y2="${y}" stroke="${stroke}" stroke-width="1.8"></line>`;
+            html += `<circle cx="${xToPx(it.mean)}" cy="${y}" r="2.2" fill="${stroke}"></circle>`;
+        });
+        svg.innerHTML = html;
+    }
+
+    _render() {
+        this._renderMetrics();
+        this._renderChart();
+    }
+
+    destroy() {
+        this._destroyed = true;
+        if (this.root) this.root.innerHTML = '';
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.ConfidenceIntervalWidget = ConfidenceIntervalWidget;
+}

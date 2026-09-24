@@ -277,3 +277,213 @@ class ConditionalBayesPage extends SimulationPage {
 if (typeof window !== 'undefined') {
     window.ConditionalBayesPage = ConditionalBayesPage;
 }
+
+// ── Standalone widget ──────────────────────────────────────────
+// Meme moteur que ConditionalBayesPage (formule de Bayes + simulation de
+// population), sans inspecteur de pseudocode — delai fixe local pour l'anim.
+class ConditionalBayesWidget {
+    static mount(container, config = {}) {
+        if (container.dataset.bayw) return;
+        container.dataset.bayw = '1';
+        const w = new ConditionalBayesWidget(container, config);
+        w.init();
+        return w;
+    }
+
+    constructor(container, config = {}) {
+        this.root = container;
+        this.params = {
+            prevalence: Number.isFinite(config.prevalence) ? Math.min(50, Math.max(0.1, config.prevalence)) : 1.0,
+            sensitivity: Number.isFinite(config.sensitivity) ? Math.min(99.9, Math.max(50, config.sensitivity)) : 95.0,
+            specificity: Number.isFinite(config.specificity) ? Math.min(99.9, Math.max(50, config.specificity)) : 90.0,
+            population: Number.isFinite(config.population) ? Math.min(500000, Math.max(100, Math.round(config.population))) : 10000
+        };
+        this.metrics = null;
+        this.observed = null;
+        this.running = false;
+        this._destroyed = false;
+    }
+
+    init() {
+        const p = this.params;
+        this.root.innerHTML = `<div class="bayw-container">
+            <div class="bayw-controls-row">
+                <label class="bayw-inline-label">Prévalence P(D) <input type="range" class="bayw-range" data-prev min="0.1" max="50" step="0.1" value="${p.prevalence}"><span data-prev-value>${p.prevalence.toFixed(1)}%</span></label>
+            </div>
+            <div class="bayw-controls-row">
+                <label class="bayw-inline-label">Sensibilité P(+|D) <input type="range" class="bayw-range" data-sens min="50" max="99.9" step="0.1" value="${p.sensitivity}"><span data-sens-value>${p.sensitivity.toFixed(1)}%</span></label>
+            </div>
+            <div class="bayw-controls-row">
+                <label class="bayw-inline-label">Spécificité P(-|non D) <input type="range" class="bayw-range" data-spec min="50" max="99.9" step="0.1" value="${p.specificity}"><span data-spec-value>${p.specificity.toFixed(1)}%</span></label>
+            </div>
+            <div class="bayw-controls-row">
+                <button class="bayw-btn bayw-btn-primary" data-simulate>Simuler échantillon</button>
+                <button class="bayw-btn bayw-btn-secondary" data-reset>↺ Reset</button>
+            </div>
+            <svg class="bayw-svg" data-tree viewBox="0 0 400 190" role="img" aria-label="Arbre de probabilités"></svg>
+            <div class="bayw-metrics">
+                <div class="bayw-metric"><span class="bayw-metric-label">P(D)</span><span data-prior>--</span></div>
+                <div class="bayw-metric"><span class="bayw-metric-label">P(+)</span><span data-positive>--</span></div>
+                <div class="bayw-metric"><span class="bayw-metric-label">P(D|+)</span><span data-posterior>--</span></div>
+                <div class="bayw-metric"><span class="bayw-metric-label">P(D|-)</span><span data-neg-posterior>--</span></div>
+            </div>
+            <table class="bayw-table">
+                <thead><tr><th></th><th>Test +</th><th>Test -</th></tr></thead>
+                <tbody>
+                    <tr><td>Malade</td><td data-tp>--</td><td data-fn>--</td></tr>
+                    <tr><td>Non malade</td><td data-fp>--</td><td data-tn>--</td></tr>
+                </tbody>
+            </table>
+            <div class="bayw-feedback" data-feedback>Ajuste les paramètres puis observe le posterior P(D|+).</div>
+        </div>`;
+
+        this._bind();
+        this._recalculate();
+    }
+
+    _q(sel) { return this.root.querySelector(sel); }
+
+    _bind() {
+        this._q('[data-prev]').addEventListener('input', () => this._applyControls());
+        this._q('[data-sens]').addEventListener('input', () => this._applyControls());
+        this._q('[data-spec]').addEventListener('input', () => this._applyControls());
+        this._q('[data-simulate]').addEventListener('click', () => this._simulatePopulation());
+        this._q('[data-reset]').addEventListener('click', () => this._resetAll());
+    }
+
+    _applyControls() {
+        const p = this.params;
+        p.prevalence = Math.min(50, Math.max(0.1, Number(this._q('[data-prev]').value)));
+        p.sensitivity = Math.min(99.9, Math.max(50, Number(this._q('[data-sens]').value)));
+        p.specificity = Math.min(99.9, Math.max(50, Number(this._q('[data-spec]').value)));
+        this._q('[data-prev-value]').textContent = `${p.prevalence.toFixed(1)}%`;
+        this._q('[data-sens-value]').textContent = `${p.sensitivity.toFixed(1)}%`;
+        this._q('[data-spec-value]').textContent = `${p.specificity.toFixed(1)}%`;
+        this.observed = null;
+        this._recalculate();
+    }
+
+    _resetAll() {
+        this.observed = null;
+        this._recalculate();
+        this._q('[data-feedback]').textContent = 'Paramètres réinitialisés.';
+    }
+
+    _computeMetrics() {
+        const prevalence = this.params.prevalence / 100;
+        const sensitivity = this.params.sensitivity / 100;
+        const specificity = this.params.specificity / 100;
+        const falsePositiveRate = 1 - specificity;
+        const pPositive = (sensitivity * prevalence) + (falsePositiveRate * (1 - prevalence));
+        const pNegative = 1 - pPositive;
+        const pDiseaseGivenPositive = pPositive > 0 ? (sensitivity * prevalence) / pPositive : 0;
+        const pDiseaseGivenNegative = pNegative > 0 ? ((1 - sensitivity) * prevalence) / pNegative : 0;
+        const n = this.params.population;
+        const expected = {
+            tp: n * prevalence * sensitivity,
+            fn: n * prevalence * (1 - sensitivity),
+            fp: n * (1 - prevalence) * falsePositiveRate,
+            tn: n * (1 - prevalence) * specificity
+        };
+        return { prevalence, sensitivity, specificity, falsePositiveRate, pPositive, pNegative, pDiseaseGivenPositive, pDiseaseGivenNegative, expected };
+    }
+
+    _recalculate() {
+        this.metrics = this._computeMetrics();
+        this._render();
+    }
+
+    _formatPercent(v) { return Number.isFinite(v) ? `${(v * 100).toFixed(2)}%` : '--'; }
+    _formatCount(v) { return Number.isFinite(v) ? Math.round(v).toLocaleString('fr-FR') : '--'; }
+
+    _renderSummary() {
+        if (!this.metrics) return;
+        this._q('[data-prior]').textContent = this._formatPercent(this.metrics.prevalence);
+        this._q('[data-positive]').textContent = this._formatPercent(this.metrics.pPositive);
+        this._q('[data-posterior]').textContent = this._formatPercent(this.metrics.pDiseaseGivenPositive);
+        this._q('[data-neg-posterior]').textContent = this._formatPercent(this.metrics.pDiseaseGivenNegative);
+        this._q('[data-tp]').textContent = this._formatCount(this.metrics.expected.tp);
+        this._q('[data-fn]').textContent = this._formatCount(this.metrics.expected.fn);
+        this._q('[data-fp]').textContent = this._formatCount(this.metrics.expected.fp);
+        this._q('[data-tn]').textContent = this._formatCount(this.metrics.expected.tn);
+    }
+
+    _renderTree() {
+        const svg = this._q('[data-tree]');
+        if (!this.metrics) return;
+        const width = 400; const height = 190;
+        const rootX = 45; const diseasedX = 150; const outcomeX = 320;
+        const diseaseY = 60; const healthyY = 140;
+        const posTopY = 30; const negTopY = 75; const posBotY = 115; const negBotY = 165;
+
+        const pD = this.metrics.prevalence;
+        const pNotD = 1 - pD;
+        const pPosGivenD = this.metrics.sensitivity;
+        const pNegGivenD = 1 - pPosGivenD;
+        const pPosGivenNotD = this.metrics.falsePositiveRate;
+        const pNegGivenNotD = this.metrics.specificity;
+
+        const node = (x, y, label) => `<circle cx="${x}" cy="${y}" r="13" fill="var(--surface, var(--widget-surface, #fff))" stroke="var(--primary, #6366f1)" stroke-width="1.6"></circle><text x="${x}" y="${y + 3}" text-anchor="middle" font-size="9" fill="var(--text, #222)">${label}</text>`;
+        const edge = (x1, y1, x2, y2, label) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--border, #ccc)" stroke-width="1.4"></line><text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 5}" text-anchor="middle" font-size="8" fill="var(--muted, #888)">${label}</text>`;
+
+        svg.innerHTML = `
+            ${edge(rootX, 100, diseasedX, diseaseY, `P(D)=${this._formatPercent(pD)}`)}
+            ${edge(rootX, 100, diseasedX, healthyY, `P(non D)=${this._formatPercent(pNotD)}`)}
+            ${edge(diseasedX, diseaseY, outcomeX, posTopY, `P(+|D)=${this._formatPercent(pPosGivenD)}`)}
+            ${edge(diseasedX, diseaseY, outcomeX, negTopY, `P(-|D)=${this._formatPercent(pNegGivenD)}`)}
+            ${edge(diseasedX, healthyY, outcomeX, posBotY, `P(+|nonD)=${this._formatPercent(pPosGivenNotD)}`)}
+            ${edge(diseasedX, healthyY, outcomeX, negBotY, `P(-|nonD)=${this._formatPercent(pNegGivenNotD)}`)}
+            ${node(rootX, 100, 'Pop')}
+            ${node(diseasedX, diseaseY, 'D')}
+            ${node(diseasedX, healthyY, 'D̄')}
+            ${node(outcomeX, posTopY, '+')}
+            ${node(outcomeX, negTopY, '-')}
+            ${node(outcomeX, posBotY, '+')}
+            ${node(outcomeX, negBotY, '-')}
+            <text x="${width - 8}" y="14" text-anchor="end" font-size="10" fill="#b45309">P(D|+)=${this._formatPercent(this.metrics.pDiseaseGivenPositive)}</text>
+        `;
+    }
+
+    _sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+
+    async _simulatePopulation() {
+        if (this.running || !this.metrics) return;
+        this.running = true;
+        const n = this.params.population;
+        const pD = this.metrics.prevalence;
+        const pPosGivenD = this.metrics.sensitivity;
+        const pPosGivenNotD = this.metrics.falsePositiveRate;
+        let tp = 0; let fp = 0; let fn = 0; let tn = 0;
+        // Echantillon plafonne pour rester fluide dans un widget embarque (slide).
+        const capped = Math.min(n, 20000);
+        for (let i = 0; i < capped && !this._destroyed; i += 1) {
+            const diseased = Math.random() < pD;
+            const positive = diseased ? Math.random() < pPosGivenD : Math.random() < pPosGivenNotD;
+            if (diseased && positive) tp += 1;
+            else if (diseased && !positive) fn += 1;
+            else if (!diseased && positive) fp += 1;
+            else tn += 1;
+        }
+        if (this._destroyed) return;
+        const scale = n / capped;
+        tp *= scale; fp *= scale; fn *= scale; tn *= scale;
+        const posterior = (tp + fp) > 0 ? tp / (tp + fp) : 0;
+        this.observed = { tp, fn, fp, tn, posterior };
+        this._q('[data-feedback]').textContent = `Simulation sur ${n.toLocaleString('fr-FR')} individus : posterior observé = ${this._formatPercent(posterior)} (théorique = ${this._formatPercent(this.metrics.pDiseaseGivenPositive)}).`;
+        this.running = false;
+    }
+
+    _render() {
+        this._renderSummary();
+        this._renderTree();
+    }
+
+    destroy() {
+        this._destroyed = true;
+        if (this.root) this.root.innerHTML = '';
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.ConditionalBayesWidget = ConditionalBayesWidget;
+}

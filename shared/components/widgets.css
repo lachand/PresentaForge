@@ -44,6 +44,8 @@
  *   stw-    StructureWidget (pile / file)
  *   dnw-    DnsWidget            cnw-   ConcurrencyWidget
  *   rsw-    RoutingSimulatorWidget
+ *   cltw-   CLTWidget            ciw-   ConfidenceIntervalWidget
+ *   bayw-   ConditionalBayesWidget
  *   mpw-    MemoryWidget         plw-   PipelineWidget
  *   ipw-    IpSubnetWidget       tcpw-  TcpWidget        schw-  SchedulingWidget
  *   dom-widget-         DomTreeWidget
@@ -5091,6 +5093,70 @@
         .dep-cve-table td { padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--border, #e2e8f0); vertical-align: top; }
         .dep-cve-table td:first-child { color: var(--muted, #64748b); width: 38%; font-size: 0.77rem; }
         .dep-cve-table td:last-child { font-size: 0.8rem; }
+
+/* #################################################################### */
+/* #  STATISTIQUES                                                 # */
+/* #################################################################### */
+
+/* -------------------------------------------------------------------
+   .cltw-*  —  CLTWidget (loi normale / theoreme central limite)
+   source : CLTPage.js
+   ------------------------------------------------------------------- */
+.cltw-container { display: flex; flex-direction: column; gap: 8px; font-family: inherit; color: var(--text, #222); height: 100%; box-sizing: border-box; }
+.cltw-controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.cltw-inline-label { font-size: 0.78rem; color: var(--muted, #888); display: flex; align-items: center; gap: 4px; }
+.cltw-inline-label span { font-weight: 700; color: var(--text, #222); min-width: 2.4em; }
+.cltw-select { font-size: 0.8rem; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--border, #ccc); background: var(--surface, var(--widget-surface, #fff)); color: var(--text, #222); }
+.cltw-range { width: 100px; }
+.cltw-btn { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--primary, #6366f1); background: var(--primary, #6366f1); color: #fff; cursor: pointer; }
+.cltw-btn-secondary { background: transparent; color: var(--text, #222); border-color: var(--border, #ccc); }
+.cltw-charts { display: flex; flex-wrap: wrap; gap: 10px; }
+.cltw-chart-box { flex: 1; min-width: 200px; }
+.cltw-chart-label { font-size: 0.75rem; color: var(--muted, #888); font-weight: 600; margin-bottom: 3px; }
+.cltw-svg { width: 100%; height: auto; aspect-ratio: 400 / 140; border: 1px solid var(--border, #ccc); border-radius: 6px; background: var(--surface, var(--widget-surface, #fff)); display: block; }
+.cltw-chart-box:nth-child(2) .cltw-svg { aspect-ratio: 400 / 190; }
+.cltw-metrics { display: flex; flex-wrap: wrap; gap: 6px; }
+.cltw-metric { flex: 1; min-width: 110px; border: 1px solid var(--border, #ccc); border-radius: 6px; padding: 4px 6px; font-size: 0.78rem; background: var(--surface, var(--widget-surface, #fff)); }
+.cltw-metric-label { display: block; font-size: 0.68rem; color: var(--muted, #888); }
+.cltw-feedback { font-size: 0.78rem; color: var(--muted, #888); min-height: 1.2em; }
+
+/* -------------------------------------------------------------------
+   .ciw-*  —  ConfidenceIntervalWidget (intervalles de confiance)
+   source : ConfidenceIntervalPage.js
+   ------------------------------------------------------------------- */
+.ciw-container { display: flex; flex-direction: column; gap: 8px; font-family: inherit; color: var(--text, #222); height: 100%; box-sizing: border-box; }
+.ciw-controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ciw-inline-label { font-size: 0.78rem; color: var(--muted, #888); display: flex; align-items: center; gap: 4px; }
+.ciw-inline-label span { font-weight: 700; color: var(--text, #222); min-width: 2.4em; }
+.ciw-select { font-size: 0.8rem; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--border, #ccc); background: var(--surface, var(--widget-surface, #fff)); color: var(--text, #222); }
+.ciw-range { width: 100px; }
+.ciw-btn { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--primary, #6366f1); background: var(--primary, #6366f1); color: #fff; cursor: pointer; }
+.ciw-btn-secondary { background: transparent; color: var(--text, #222); border-color: var(--border, #ccc); }
+.ciw-svg { width: 100%; height: auto; aspect-ratio: 400 / 220; border: 1px solid var(--border, #ccc); border-radius: 6px; background: var(--surface, var(--widget-surface, #fff)); display: block; }
+.ciw-metrics { display: flex; flex-wrap: wrap; gap: 6px; }
+.ciw-metric { flex: 1; min-width: 100px; border: 1px solid var(--border, #ccc); border-radius: 6px; padding: 4px 6px; font-size: 0.78rem; background: var(--surface, var(--widget-surface, #fff)); }
+.ciw-metric-label { display: block; font-size: 0.68rem; color: var(--muted, #888); }
+.ciw-feedback { font-size: 0.78rem; color: var(--muted, #888); min-height: 1.2em; }
+
+/* -------------------------------------------------------------------
+   .bayw-*  —  ConditionalBayesWidget (probabilite conditionnelle / Bayes)
+   source : ConditionalBayesPage.js
+   ------------------------------------------------------------------- */
+.bayw-container { display: flex; flex-direction: column; gap: 8px; font-family: inherit; color: var(--text, #222); height: 100%; box-sizing: border-box; }
+.bayw-controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.bayw-inline-label { font-size: 0.78rem; color: var(--muted, #888); display: flex; align-items: center; gap: 4px; flex: 1; min-width: 180px; }
+.bayw-inline-label span { font-weight: 700; color: var(--text, #222); min-width: 3.4em; }
+.bayw-range { flex: 1; }
+.bayw-btn { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--primary, #6366f1); background: var(--primary, #6366f1); color: #fff; cursor: pointer; }
+.bayw-btn-secondary { background: transparent; color: var(--text, #222); border-color: var(--border, #ccc); }
+.bayw-svg { width: 100%; height: auto; aspect-ratio: 400 / 190; border: 1px solid var(--border, #ccc); border-radius: 6px; background: var(--surface, var(--widget-surface, #fff)); display: block; }
+.bayw-metrics { display: flex; flex-wrap: wrap; gap: 6px; }
+.bayw-metric { flex: 1; min-width: 90px; border: 1px solid var(--border, #ccc); border-radius: 6px; padding: 4px 6px; font-size: 0.78rem; background: var(--surface, var(--widget-surface, #fff)); }
+.bayw-metric-label { display: block; font-size: 0.68rem; color: var(--muted, #888); }
+.bayw-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; background: var(--surface, var(--widget-surface, #fff)); }
+.bayw-table th, .bayw-table td { padding: 3px 6px; border: 1px solid var(--border, #ddd); text-align: center; }
+.bayw-table th { background: var(--surface2, var(--widget-surface-2, #f0f0f0)); font-weight: 700; }
+.bayw-feedback { font-size: 0.78rem; color: var(--muted, #888); min-height: 1.2em; }
 
 /* #################################################################### */
 /* #  DIVERS                                                      # */
