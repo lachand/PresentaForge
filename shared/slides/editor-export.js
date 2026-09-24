@@ -525,6 +525,666 @@ function _injectStaticFallbacks(container) {
     });
 }
 
+// ============================================================
+// EXPORT PDF — RENDU NATIF (texte vectoriel jsPDF, Phase A)
+// ============================================================
+// Types déclaratifs simples (title/chapter/bullets/quote/definition/code/comparison/
+// image/quiz) : rendu directement en texte/formes jsPDF plutôt que rastérisé via
+// html2canvas — texte réellement sélectionnable/recherchable, fichiers plus légers.
+// split/canvas/simulation/blank et tout type non reconnu restent rastérisés (chemin
+// html2canvas existant, inchangé) — voir le dispatch dans exportPDF() plus bas. Plan :
+// docs/developer (session du jour) — Phase A seule, split/canvas en Phase B (non commencée).
+
+const _NATIVE_PDF_TYPES = new Set(['title', 'chapter', 'bullets', 'quote', 'definition', 'code', 'comparison', 'image', 'quiz']);
+
+function _isNativeType(type) {
+    return _NATIVE_PDF_TYPES.has(type);
+}
+
+const _TONE_HEX_FALLBACK = {
+    primary: '#818cf8', accent: '#f472b6', info: '#38bdf8',
+    success: '#22c55e', warning: '#f59e0b', danger: '#ef4444',
+};
+
+function _hexToRgb(hex) {
+    const h = String(hex || '').replace('#', '').trim();
+    const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    if (!/^[0-9a-fA-F]{6}$/.test(n)) return { r: 0, g: 0, b: 0 };
+    const num = parseInt(n, 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+function _mixHex(hexA, hexB, pctA) {
+    const a = _hexToRgb(hexA), b = _hexToRgb(hexB);
+    const t = Math.max(0, Math.min(100, pctA)) / 100;
+    return {
+        r: Math.round(a.r * t + b.r * (1 - t)),
+        g: Math.round(a.g * t + b.g * (1 - t)),
+        b: Math.round(a.b * t + b.b * (1 - t)),
+    };
+}
+
+/**
+ * Résout un ton (label/tone brut, ex. badge "Vocabulaire" → info) en couleurs RGB réelles
+ * exploitables par jsPDF — équivalent de SlidesShared.tonePalette(), qui renvoie des
+ * chaînes CSS var()/color-mix() illisibles telles quelles par jsPDF. Réutilise la
+ * résolution de ton existante (OEISlidesTypography.resolveTone — dictionnaire de labels)
+ * plutôt que de la dupliquer.
+ */
+function _resolveToneHex(themeData, rawTone, label) {
+    const T = window.OEISlidesTypography;
+    const tone = (T && typeof T.resolveTone === 'function') ? T.resolveTone(rawTone, label) : 'primary';
+    const colors = (themeData && themeData.colors) || {};
+    const accentHex = colors[tone] || _TONE_HEX_FALLBACK[tone] || _TONE_HEX_FALLBACK.primary;
+    const slideBgHex = colors.slideBg || '#1a1d27';
+    const borderHex = colors.border || '#2d3347';
+    return {
+        tone,
+        accent: _hexToRgb(accentHex),
+        strongBg: _mixHex(accentHex, slideBgHex, 10),
+        border: _mixHex(accentHex, borderHex, 40),
+    };
+}
+
+function _paintNativeBackground(pdf, dims, themeData) {
+    const bg = _hexToRgb((themeData && themeData.colors && themeData.colors.slideBg) || '#1a1d27');
+    pdf.setFillColor(bg.r, bg.g, bg.b);
+    pdf.rect(0, 0, dims[0], dims[1], 'F');
+}
+
+const _INLINE_STYLE_TAGS = { B: 'bold', STRONG: 'bold', I: 'italic', EM: 'italic', U: 'underline', CODE: 'code', SUB: 'sub', SUP: 'sup' };
+
+/**
+ * Parse un fragment HTML déjà assaini (whitelist b/strong/i/em/u/code/sub/sup/br — même
+ * frontière de confiance que SlidesShared.formatInlineRichText côté rendu DOM) en lignes
+ * de runs de texte stylés, coupées aux <br> explicites (le retour à la ligne PAR LARGEUR
+ * est fait séparément par _layoutRuns, qui fait aussi le retour à la ligne mot par mot).
+ * @returns {Array<Array<{text:string,bold?:boolean,italic?:boolean,underline?:boolean,code?:boolean,sub?:boolean,sup?:boolean}>>}
+ */
+function _parseInlineRuns(html) {
+    const div = document.createElement('div');
+    div.innerHTML = String(html ?? '');
+    const lines = [[]];
+    function walk(node, style) {
+        if (node.nodeType === 3) { // Node.TEXT_NODE
+            if (node.textContent) lines[lines.length - 1].push({ text: node.textContent, ...style });
+            return;
+        }
+        if (node.nodeType !== 1) return; // hors Node.ELEMENT_NODE : ignoré
+        if (node.tagName === 'BR') { lines.push([]); return; }
+        const key = _INLINE_STYLE_TAGS[node.tagName];
+        const nextStyle = key ? { ...style, [key]: true } : style;
+        node.childNodes.forEach(child => walk(child, nextStyle));
+    }
+    const baseStyle = { bold: false, italic: false, underline: false, code: false, sub: false, sup: false };
+    div.childNodes.forEach(child => walk(child, baseStyle));
+    return lines;
+}
+
+/** Force un style sur tous les runs (ex. citation en italique même sans balise <em> source
+ * explicite, le blockquote CSS applique font-style:italic globalement). */
+function _forceRunStyle(runLines, patch) {
+    return runLines.map(line => line.map(run => ({ ...run, ...patch })));
+}
+
+function _segStyle(seg, fontFamily, fontSize) {
+    const family = seg.code ? 'courier' : fontFamily;
+    const weight = seg.bold && seg.italic ? 'bolditalic' : seg.bold ? 'bold' : seg.italic ? 'italic' : 'normal';
+    const size = (seg.sub || seg.sup) ? Math.max(6, Math.round(fontSize * 0.7)) : fontSize;
+    return { family, weight, size };
+}
+
+/**
+ * Retour à la ligne mot par mot à travers des runs de styles mixtes (gras/italique/code
+ * peuvent alterner au sein d'une même ligne source) — pdf.splitTextToSize() ne gère qu'une
+ * seule police/taille uniforme, insuffisant ici. Bascule la police jsPDF courante pour
+ * mesurer chaque mot (pdf.getTextWidth()).
+ * @returns {{lines: Array<{segments: Array}>, lineHeight: number, totalHeight: number}}
+ */
+function _layoutRuns(pdf, runLines, maxWidth, { fontFamily = 'helvetica', fontSize = 16, lineHeightRatio = 1.45 } = {}) {
+    const lineHeight = Math.round(fontSize * lineHeightRatio);
+    pdf.setFont(fontFamily, 'normal');
+    pdf.setFontSize(fontSize);
+    const spaceWidth = pdf.getTextWidth(' ');
+
+    const outLines = [];
+    for (const runLine of runLines) {
+        let current = [];
+        let currentWidth = 0;
+        for (const run of runLine) {
+            const style = _segStyle(run, fontFamily, fontSize);
+            pdf.setFont(style.family, style.weight);
+            pdf.setFontSize(style.size);
+            const words = run.text.split(/\s+/).filter(Boolean);
+            for (const word of words) {
+                const wordWidth = pdf.getTextWidth(word);
+                const addWidth = (current.length ? spaceWidth : 0) + wordWidth;
+                if (current.length && currentWidth + addWidth > maxWidth) {
+                    outLines.push(current);
+                    current = [];
+                    currentWidth = 0;
+                }
+                current.push({ text: word, bold: run.bold, italic: run.italic, code: run.code, sub: run.sub, sup: run.sup });
+                currentWidth += (current.length > 1 ? spaceWidth : 0) + wordWidth;
+            }
+        }
+        outLines.push(current); // ligne (éventuellement vide, paragraphe séparé par <br>)
+    }
+    return { lines: outLines.map(segments => ({ segments })), lineHeight, totalHeight: Math.max(outLines.length, 1) * lineHeight };
+}
+
+/** Dessine les lignes produites par _layoutRuns() à partir de (x, y) — y = ligne de base
+ * de la PREMIÈRE ligne (convention jsPDF text() : y est la baseline, pas le haut). */
+function _drawLayoutedLines(pdf, layout, x, y, { fontFamily = 'helvetica', fontSize = 16, color = { r: 0, g: 0, b: 0 }, align = 'left' } = {}) {
+    layout.lines.forEach((line, i) => {
+        const lineY = y + i * layout.lineHeight;
+        let totalW = 0;
+        if (align !== 'left') {
+            line.segments.forEach((seg, si) => {
+                const s = _segStyle(seg, fontFamily, fontSize);
+                pdf.setFont(s.family, s.weight);
+                pdf.setFontSize(s.size);
+                totalW += pdf.getTextWidth(seg.text) + (si > 0 ? pdf.getTextWidth(' ') : 0);
+            });
+        }
+        let cursorX = align === 'center' ? x - totalW / 2 : align === 'right' ? x - totalW : x;
+        line.segments.forEach((seg, si) => {
+            const s = _segStyle(seg, fontFamily, fontSize);
+            pdf.setFont(s.family, s.weight);
+            pdf.setFontSize(s.size);
+            pdf.setTextColor(color.r, color.g, color.b);
+            if (si > 0) cursorX += pdf.getTextWidth(' ');
+            const baselineShift = seg.sub ? Math.round(fontSize * 0.15) : seg.sup ? -Math.round(fontSize * 0.25) : 0;
+            pdf.text(seg.text, cursorX, lineY + baselineShift);
+            cursorX += pdf.getTextWidth(seg.text);
+        });
+    });
+}
+
+function _loadImageDims(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
+        img.onerror = () => reject(new Error('Image illisible : ' + src));
+        img.src = src;
+    });
+}
+
+function _guessImageFormat(src) {
+    const m = /\.(png|jpe?g|webp|gif|bmp)(\?|#|$)/i.exec(String(src || ''));
+    const ext = m ? m[1].toLowerCase() : '';
+    if (ext === 'png') return 'PNG';
+    if (ext === 'webp') return 'WEBP';
+    if (ext === 'gif') return 'GIF';
+    if (ext === 'bmp') return 'BMP';
+    return 'JPEG';
+}
+
+// ── Rendeurs natifs par type de slide déclaratif ───────────────────────────────────────
+// Chacun repeint le fond entier en premier (_paintNativeBackground) donc reste sûr même en
+// repli : un rendu raster ultérieur pour ce même slide (si le natif jette une exception)
+// dessine de toute façon une image pleine page qui recouvre entièrement tout tracé natif
+// partiel — jamais de superposition visible.
+
+function _renderNativeTitle(pdf, slide, dims, themeData, typography) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const heading = _hexToRgb(colors.heading || '#f1f5f9');
+    const accent = _hexToRgb(colors.accent || '#f472b6');
+    const muted = _hexToRgb(colors.muted || '#64748b');
+    const padX = 48;
+    const contentW = dims[0] - padX * 2;
+    const headingSize = typography.heading;
+    const bodySize = typography.text;
+    const gapBlock = Math.round(bodySize * 0.8);
+
+    const blocks = [];
+    if (slide.eyebrow) blocks.push({ kind: 'eyebrow', text: String(slide.eyebrow) });
+    blocks.push({ kind: 'title', layout: _layoutRuns(pdf, _parseInlineRuns(slide.title || 'Sans titre'), contentW, { fontFamily: 'helvetica', fontSize: headingSize }) });
+    if (slide.subtitle) blocks.push({ kind: 'subtitle', layout: _layoutRuns(pdf, _parseInlineRuns(slide.subtitle), contentW, { fontFamily: 'helvetica', fontSize: Math.round(bodySize * 1.2) }) });
+    const metaParts = [slide.author, slide.date, slide.email].filter(Boolean);
+    if (metaParts.length) blocks.push({ kind: 'meta', text: metaParts.join('   •   ') });
+
+    let totalHeight = 0;
+    blocks.forEach((b, i) => {
+        if (i > 0) totalHeight += gapBlock;
+        totalHeight += b.kind === 'eyebrow' ? Math.round(bodySize * 0.9) : b.kind === 'meta' ? Math.round(bodySize * 1.1) : b.layout.totalHeight;
+    });
+
+    let y = Math.max(48, (dims[1] - totalHeight) / 2);
+    blocks.forEach((b, i) => {
+        if (i > 0) y += gapBlock;
+        if (b.kind === 'eyebrow') {
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(Math.round(bodySize * 0.7));
+            pdf.setTextColor(accent.r, accent.g, accent.b);
+            pdf.text(b.text.toUpperCase(), padX, y + Math.round(bodySize * 0.7));
+            y += Math.round(bodySize * 0.9);
+        } else if (b.kind === 'title') {
+            _drawLayoutedLines(pdf, b.layout, padX, y + headingSize, { fontFamily: 'helvetica', fontSize: headingSize, color: heading });
+            y += b.layout.totalHeight;
+        } else if (b.kind === 'subtitle') {
+            _drawLayoutedLines(pdf, b.layout, padX, y + Math.round(bodySize * 1.2), { fontFamily: 'helvetica', fontSize: Math.round(bodySize * 1.2), color: muted });
+            y += b.layout.totalHeight;
+        } else if (b.kind === 'meta') {
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(Math.round(bodySize * 0.85));
+            pdf.setTextColor(muted.r, muted.g, muted.b);
+            pdf.text(b.text, padX, y + Math.round(bodySize * 0.85));
+            y += Math.round(bodySize * 1.1);
+        }
+    });
+}
+
+function _renderNativeChapter(pdf, slide, index, dims, themeData, typography, pdfOpts) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const heading = _hexToRgb(colors.heading || '#f1f5f9');
+    const accent = _hexToRgb(colors.accent || '#f472b6');
+    const muted = _hexToRgb(colors.muted || '#64748b');
+    const padX = 48;
+    const contentW = dims[0] - padX * 2;
+    const headingSize = Math.round(typography.heading * 0.75);
+    const bodySize = typography.text;
+    const gap = Math.round(bodySize * 0.8);
+
+    const autoNum = pdfOpts && pdfOpts.chapterNumbers && typeof pdfOpts.chapterNumbers.get === 'function' ? pdfOpts.chapterNumbers.get(index) : null;
+    const numVal = autoNum || slide.number;
+
+    const titleLayout = _layoutRuns(pdf, _parseInlineRuns(SlidesRenderer.esc(slide.title || 'Chapitre')), contentW, { fontFamily: 'helvetica', fontSize: headingSize });
+    const subLayout = slide.subtitle ? _layoutRuns(pdf, _parseInlineRuns(SlidesRenderer.esc(slide.subtitle)), contentW, { fontFamily: 'helvetica', fontSize: Math.round(bodySize * 1.1) }) : null;
+
+    const numHeight = numVal ? Math.round(headingSize * 1.4) : 0;
+    const totalHeight = numHeight + (numVal ? gap : 0) + titleLayout.totalHeight + (subLayout ? gap + subLayout.totalHeight : 0);
+
+    let y = Math.max(48, (dims[1] - totalHeight) / 2);
+    if (numVal) {
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(Math.round(headingSize * 1.1));
+        pdf.setTextColor(accent.r, accent.g, accent.b);
+        pdf.text(String(numVal), padX, y + Math.round(headingSize * 1.1));
+        y += numHeight + gap;
+    }
+    _drawLayoutedLines(pdf, titleLayout, padX, y + headingSize, { fontFamily: 'helvetica', fontSize: headingSize, color: heading });
+    y += titleLayout.totalHeight;
+    if (subLayout) {
+        y += gap;
+        _drawLayoutedLines(pdf, subLayout, padX, y + Math.round(bodySize * 1.1), { fontFamily: 'helvetica', fontSize: Math.round(bodySize * 1.1), color: muted });
+    }
+}
+
+function _renderNativeBullets(pdf, slide, dims, themeData, typography) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const heading = _hexToRgb(colors.heading || '#f1f5f9');
+    const text = _hexToRgb(colors.text || '#cbd5e1');
+    const padX = 48, padY = 40;
+    const contentW = dims[0] - padX * 2;
+    const headingSize = Math.round(typography.heading * 0.6);
+    const bodySize = typography.text;
+    const bulletIndent = Math.round(bodySize * 1.2);
+    const subIndent = bulletIndent * 2;
+
+    const items = Array.isArray(slide.items) ? slide.items : [];
+    const rows = [];
+    items.forEach(item => {
+        const isObj = item && typeof item === 'object';
+        const mainText = isObj ? (item.text || '') : String(item);
+        rows.push({ sub: false, layout: _layoutRuns(pdf, _parseInlineRuns(mainText), contentW - bulletIndent, { fontFamily: 'helvetica', fontSize: bodySize }) });
+        const subs = isObj && Array.isArray(item.sub) ? item.sub : [];
+        subs.forEach(sub => {
+            rows.push({ sub: true, layout: _layoutRuns(pdf, _parseInlineRuns(sub), contentW - subIndent, { fontFamily: 'helvetica', fontSize: bodySize }) });
+        });
+    });
+
+    let y = padY;
+    if (slide.title) {
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(headingSize);
+        pdf.setTextColor(heading.r, heading.g, heading.b);
+        pdf.text(String(slide.title), padX, y + headingSize);
+        y += Math.round(headingSize * 1.6);
+    }
+
+    const itemGap = Math.round(bodySize * 0.55);
+    rows.forEach(row => {
+        const indent = row.sub ? subIndent : bulletIndent;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(bodySize);
+        pdf.setTextColor(text.r, text.g, text.b);
+        pdf.text('•', padX + (row.sub ? bulletIndent : 0), y + bodySize);
+        _drawLayoutedLines(pdf, row.layout, padX + indent, y + bodySize, { fontFamily: 'helvetica', fontSize: bodySize, color: text });
+        y += row.layout.totalHeight + itemGap;
+    });
+}
+
+function _renderNativeQuote(pdf, slide, dims, themeData, typography) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const text = _hexToRgb(colors.text || '#cbd5e1');
+    const accent = _hexToRgb(colors.accent || '#f472b6');
+    const muted = _hexToRgb(colors.muted || '#64748b');
+    const padX = 48, barGap = 24;
+    const contentW = dims[0] - padX * 2 - barGap;
+    const quoteSize = Math.round(typography.text * 26 / 22);
+
+    const runLines = _forceRunStyle(_parseInlineRuns(slide.quote || ''), { italic: true });
+    const layout = _layoutRuns(pdf, runLines, contentW, { fontFamily: 'helvetica', fontSize: quoteSize });
+    const authorGap = slide.author ? Math.round(typography.text * 0.8) : 0;
+    const authorHeight = slide.author ? Math.round(typography.text * 1.3) : 0;
+    const totalHeight = layout.totalHeight + authorGap + authorHeight;
+
+    const startY = Math.max(60, (dims[1] - totalHeight) / 2);
+    pdf.setFillColor(accent.r, accent.g, accent.b);
+    pdf.rect(padX, startY - quoteSize * 0.9, 5, totalHeight + quoteSize * 0.3, 'F');
+
+    _drawLayoutedLines(pdf, layout, padX + barGap, startY + quoteSize, { fontFamily: 'helvetica', fontSize: quoteSize, color: text });
+    if (slide.author) {
+        const authorY = startY + layout.totalHeight + authorGap;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(Math.round(typography.text * 0.9));
+        pdf.setTextColor(muted.r, muted.g, muted.b);
+        pdf.text('— ' + String(slide.author), padX + barGap, authorY + Math.round(typography.text * 0.9));
+    }
+}
+
+function _renderNativeDefinition(pdf, slide, dims, themeData, typography) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const heading = _hexToRgb(colors.heading || '#f1f5f9');
+    const text = _hexToRgb(colors.text || '#cbd5e1');
+    const padX = 48, padY = 40, boxPad = 20;
+    const contentW = dims[0] - padX * 2;
+    const headingSize = Math.round(typography.heading * 0.6);
+    const bodySize = Math.round(typography.text * 18 / 22);
+
+    const labelRaw = String(slide.label ?? slide.blockLabel ?? 'Definition').trim() || 'Definition';
+    const tone = _resolveToneHex(themeData, slide.labelTone ?? slide.tone, labelRaw);
+    const exampleLabel = String(slide.exampleLabel ?? 'Exemple').trim() || 'Exemple';
+
+    const boxContentW = contentW - boxPad * 2;
+    const termLayout = slide.term ? _layoutRuns(pdf, [[{ text: String(slide.term) }]], boxContentW, { fontFamily: 'helvetica', fontSize: Math.round(bodySize * 1.2) }) : null;
+    const bodyLayout = slide.definition ? _layoutRuns(pdf, _parseInlineRuns(slide.definition), boxContentW, { fontFamily: 'helvetica', fontSize: bodySize }) : null;
+    const exLabelWidth = (() => { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(bodySize); return pdf.getTextWidth(exampleLabel + ' : '); })();
+    const exampleLayout = slide.example ? _layoutRuns(pdf, _parseInlineRuns(slide.example), boxContentW - exLabelWidth, { fontFamily: 'helvetica', fontSize: bodySize }) : null;
+
+    let titleY = padY;
+    if (slide.title) {
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(headingSize);
+        pdf.setTextColor(heading.r, heading.g, heading.b);
+        pdf.text(String(slide.title), padX, titleY + headingSize);
+        titleY += Math.round(headingSize * 1.6);
+    }
+
+    const labelHeight = Math.round(bodySize * 1.1);
+    let boxContentHeight = labelHeight + boxPad;
+    if (termLayout) boxContentHeight += termLayout.totalHeight + 6;
+    if (bodyLayout) boxContentHeight += bodyLayout.totalHeight + 6;
+    if (exampleLayout) boxContentHeight += exampleLayout.totalHeight + 6;
+    boxContentHeight += boxPad;
+
+    const boxY = titleY;
+    pdf.setFillColor(tone.strongBg.r, tone.strongBg.g, tone.strongBg.b);
+    pdf.setDrawColor(tone.border.r, tone.border.g, tone.border.b);
+    pdf.roundedRect(padX, boxY, contentW, boxContentHeight, 8, 8, 'FD');
+    pdf.setFillColor(tone.accent.r, tone.accent.g, tone.accent.b);
+    pdf.rect(padX, boxY, 4, boxContentHeight, 'F'); // bordure gauche accentuée (border-left-color CSS)
+
+    let cy = boxY + boxPad;
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(Math.round(bodySize * 0.65));
+    pdf.setTextColor(tone.accent.r, tone.accent.g, tone.accent.b);
+    pdf.text(labelRaw.toUpperCase(), padX + boxPad, cy + Math.round(bodySize * 0.5));
+    cy += labelHeight;
+
+    if (termLayout) {
+        cy += 6;
+        _drawLayoutedLines(pdf, termLayout, padX + boxPad, cy + Math.round(bodySize * 1.2 * 0.8), { fontFamily: 'helvetica', fontSize: Math.round(bodySize * 1.2), color: tone.accent });
+        cy += termLayout.totalHeight;
+    }
+    if (bodyLayout) {
+        cy += 6;
+        _drawLayoutedLines(pdf, bodyLayout, padX + boxPad, cy + Math.round(bodySize * 0.8), { fontFamily: 'helvetica', fontSize: bodySize, color: text });
+        cy += bodyLayout.totalHeight;
+    }
+    if (exampleLayout) {
+        cy += 6;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(bodySize);
+        pdf.setTextColor(text.r, text.g, text.b);
+        pdf.text(exampleLabel + ' :', padX + boxPad, cy + Math.round(bodySize * 0.8));
+        _drawLayoutedLines(pdf, exampleLayout, padX + boxPad + exLabelWidth, cy + Math.round(bodySize * 0.8), { fontFamily: 'helvetica', fontSize: bodySize, color: text });
+        cy += exampleLayout.totalHeight;
+    }
+}
+
+function _renderNativeCode(pdf, slide, dims, themeData, typography) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const heading = _hexToRgb(colors.heading || '#f1f5f9');
+    const codeBg = _hexToRgb(colors.codeBg || '#0d1117');
+    const codeText = _hexToRgb(colors.codeText || '#e2e8f0');
+    const muted = _hexToRgb(colors.muted || '#64748b');
+    const padX = 48, padY = 40;
+    const contentW = dims[0] - padX * 2;
+    const headingSize = Math.round(typography.heading * 0.6);
+    const codeSize = Math.round(typography.text * 16 / 22);
+    const lineHeight = Math.round(codeSize * 1.5);
+
+    let y = padY;
+    if (slide.title) {
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(headingSize);
+        pdf.setTextColor(heading.r, heading.g, heading.b);
+        pdf.text(String(slide.title), padX, y + headingSize);
+        y += Math.round(headingSize * 1.6);
+    }
+
+    const codeLines = String(slide.code || '').split('\n');
+    const gutterWidth = Math.max(28, String(codeLines.length).length * codeSize * 0.7 + 12);
+    const tabBarHeight = Math.round(codeSize * 2.2);
+    const codeBoxHeight = tabBarHeight + codeLines.length * lineHeight + 16;
+
+    pdf.setFillColor(codeBg.r, codeBg.g, codeBg.b);
+    pdf.roundedRect(padX, y, contentW, codeBoxHeight, 8, 8, 'F');
+
+    const dotY = y + tabBarHeight / 2;
+    [{ r: 239, g: 68, b: 68 }, { r: 234, g: 179, b: 8 }, { r: 34, g: 197, b: 94 }].forEach((c, i) => {
+        pdf.setFillColor(c.r, c.g, c.b);
+        pdf.circle(padX + 16 + i * 16, dotY, 4, 'F');
+    });
+    pdf.setFont('courier', 'normal'); pdf.setFontSize(Math.round(codeSize * 0.75));
+    pdf.setTextColor(muted.r, muted.g, muted.b);
+    pdf.text(String(slide.language || 'text'), padX + 16 + 3 * 16 + 10, dotY + 3);
+
+    let lineY = y + tabBarHeight + 12 + codeSize * 0.8;
+    codeLines.forEach((line, i) => {
+        pdf.setFont('courier', 'normal'); pdf.setFontSize(codeSize);
+        pdf.setTextColor(muted.r, muted.g, muted.b);
+        pdf.text(String(i + 1), padX + gutterWidth - 8, lineY, { align: 'right' });
+        pdf.setTextColor(codeText.r, codeText.g, codeText.b);
+        pdf.text(line, padX + gutterWidth + 12, lineY);
+        lineY += lineHeight;
+    });
+
+    if (slide.explanation) {
+        const explLayout = _layoutRuns(pdf, _parseInlineRuns(slide.explanation), contentW, { fontFamily: 'helvetica', fontSize: Math.round(typography.text * 0.9) });
+        _drawLayoutedLines(pdf, explLayout, padX, y + codeBoxHeight + 20 + Math.round(typography.text * 0.7), { fontFamily: 'helvetica', fontSize: Math.round(typography.text * 0.9), color: muted });
+    }
+}
+
+function _renderNativeComparison(pdf, slide, dims, themeData, typography) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const heading = _hexToRgb(colors.heading || '#f1f5f9');
+    const text = _hexToRgb(colors.text || '#cbd5e1');
+    const muted = _hexToRgb(colors.muted || '#64748b');
+    const padX = 48, padY = 40, gap = 32;
+    const headingSize = Math.round(typography.heading * 0.6);
+    const bodySize = typography.text;
+    const colW = (dims[0] - padX * 2 - gap) / 2;
+
+    let y = padY;
+    if (slide.title) {
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(headingSize);
+        pdf.setTextColor(heading.r, heading.g, heading.b);
+        pdf.text(String(slide.title), padX, y + headingSize);
+        y += Math.round(headingSize * 1.6);
+    }
+
+    const leftData = slide.left || (slide.data && slide.data.left);
+    const rightData = slide.right || (slide.data && slide.data.right);
+    const renderCol = (col, x) => {
+        if (!col) return;
+        let cy = y;
+        if (col.title) {
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(Math.round(bodySize * 1.1));
+            pdf.setTextColor(heading.r, heading.g, heading.b);
+            pdf.text(String(col.title), x, cy + bodySize);
+            cy += Math.round(bodySize * 1.8);
+        }
+        (Array.isArray(col.items) ? col.items : []).forEach(item => {
+            const layout = _layoutRuns(pdf, _parseInlineRuns(item), colW - Math.round(bodySize * 1.2), { fontFamily: 'helvetica', fontSize: bodySize });
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(bodySize);
+            pdf.setTextColor(text.r, text.g, text.b);
+            pdf.text('•', x, cy + bodySize);
+            _drawLayoutedLines(pdf, layout, x + Math.round(bodySize * 1.2), cy + bodySize, { fontFamily: 'helvetica', fontSize: bodySize, color: text });
+            cy += layout.totalHeight + Math.round(bodySize * 0.55);
+        });
+    };
+    renderCol(leftData, padX);
+    renderCol(rightData, padX + colW + gap);
+
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(Math.round(bodySize * 0.85));
+    pdf.setTextColor(muted.r, muted.g, muted.b);
+    pdf.text('vs', dims[0] / 2, y + bodySize, { align: 'center' });
+}
+
+async function _renderNativeImage(pdf, slide, dims, themeData, typography) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const heading = _hexToRgb(colors.heading || '#f1f5f9');
+    const muted = _hexToRgb(colors.muted || '#64748b');
+    const padX = 48, padY = 40;
+    const contentW = dims[0] - padX * 2;
+    const headingSize = Math.round(typography.heading * 0.6);
+    const bodySize = typography.text;
+
+    let y = padY;
+    if (slide.title) {
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(headingSize);
+        pdf.setTextColor(heading.r, heading.g, heading.b);
+        pdf.text(String(slide.title), padX, y + headingSize);
+        y += Math.round(headingSize * 1.6);
+    }
+
+    if (!slide.src) {
+        pdf.setFont('helvetica', 'italic'); pdf.setFontSize(bodySize);
+        pdf.setTextColor(muted.r, muted.g, muted.b);
+        pdf.text('[image]', padX, y + bodySize);
+        return;
+    }
+
+    const captionH = slide.caption ? Math.round(bodySize * 1.6) : 0;
+    const availH = Math.max(40, dims[1] - padY - y - captionH);
+    const imgDims = await _loadImageDims(slide.src);
+    let w = contentW, h = w * (imgDims.h / imgDims.w);
+    if (h > availH) { h = availH; w = h * (imgDims.w / imgDims.h); }
+    const x = padX + (contentW - w) / 2;
+    pdf.addImage(slide.src, _guessImageFormat(slide.src), x, y, w, h);
+    if (slide.caption) {
+        pdf.setFont('helvetica', 'italic'); pdf.setFontSize(Math.round(bodySize * 0.85));
+        pdf.setTextColor(muted.r, muted.g, muted.b);
+        pdf.text(String(slide.caption), dims[0] / 2, y + h + Math.round(bodySize * 1.1), { align: 'center' });
+    }
+}
+
+function _renderNativeQuiz(pdf, slide, dims, themeData, typography) {
+    _paintNativeBackground(pdf, dims, themeData);
+    const colors = themeData.colors || {};
+    const heading = _hexToRgb(colors.heading || '#f1f5f9');
+    const text = _hexToRgb(colors.text || '#cbd5e1');
+    const accent = _hexToRgb(colors.accent || '#f472b6');
+    const muted = _hexToRgb(colors.muted || '#64748b');
+    const padX = 48, padY = 40;
+    const contentW = dims[0] - padX * 2;
+    const headingSize = Math.round(typography.heading * 0.55);
+    const bodySize = typography.text;
+
+    const qType = slide.quizType || slide.mode || 'mcq';
+    const questionText = slide.title || slide.question || 'Question';
+
+    let y = padY;
+    const qLayout = _layoutRuns(pdf, _parseInlineRuns(SlidesRenderer.esc(questionText)), contentW, { fontFamily: 'helvetica', fontSize: headingSize });
+    _drawLayoutedLines(pdf, qLayout, padX, y + headingSize, { fontFamily: 'helvetica', fontSize: headingSize, color: heading });
+    y += qLayout.totalHeight + Math.round(bodySize * 1.2);
+
+    const optionGap = Math.round(bodySize * 0.7);
+    const markerSize = Math.round(bodySize * 1.3);
+    const drawOption = (letter, label) => {
+        pdf.setDrawColor(accent.r, accent.g, accent.b);
+        pdf.setLineWidth(1);
+        pdf.roundedRect(padX, y, markerSize, markerSize, 4, 4, 'S');
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(Math.round(bodySize * 0.85));
+        pdf.setTextColor(accent.r, accent.g, accent.b);
+        pdf.text(letter, padX + markerSize / 2, y + markerSize / 2 + 3, { align: 'center' });
+        const layout = _layoutRuns(pdf, [[{ text: String(label) }]], contentW - markerSize - 16, { fontFamily: 'helvetica', fontSize: bodySize });
+        _drawLayoutedLines(pdf, layout, padX + markerSize + 16, y + markerSize / 2 + 5, { fontFamily: 'helvetica', fontSize: bodySize, color: text });
+        y += Math.max(markerSize, layout.totalHeight) + optionGap;
+    };
+
+    if (qType === 'true-false') {
+        drawOption('V', 'Vrai');
+        drawOption('F', 'Faux');
+    } else if (qType === 'open') {
+        pdf.setFont('helvetica', 'italic'); pdf.setFontSize(bodySize);
+        pdf.setTextColor(muted.r, muted.g, muted.b);
+        pdf.text('Réponse libre…', padX, y + bodySize);
+        y += Math.round(bodySize * 1.6);
+    } else {
+        (slide.options || []).forEach((opt, i) => drawOption(String.fromCharCode(65 + i), opt));
+    }
+
+    if (slide.explanation) {
+        y += Math.round(bodySize * 0.5);
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(Math.round(bodySize * 0.9));
+        pdf.setTextColor(muted.r, muted.g, muted.b);
+        pdf.text('Explication : ', padX, y + Math.round(bodySize * 0.9));
+        const explLabelW = pdf.getTextWidth('Explication : ');
+        const explLayout = _layoutRuns(pdf, [[{ text: String(slide.explanation) }]], contentW - explLabelW, { fontFamily: 'helvetica', fontSize: Math.round(bodySize * 0.9) });
+        _drawLayoutedLines(pdf, explLayout, padX + explLabelW, y + Math.round(bodySize * 0.9), { fontFamily: 'helvetica', fontSize: Math.round(bodySize * 0.9), color: muted });
+    }
+}
+
+/** Dispatch par type vers le rendeur natif correspondant — jamais appelé pour un type hors
+ * _NATIVE_PDF_TYPES (voir exportPDF()). Toujours awaité : seul _renderNativeImage est async
+ * (chargement des dimensions de l'image), les autres résolvent immédiatement. */
+async function _renderNativeSlide(pdf, slide, index, dims, themeData, typography, pdfOpts) {
+    switch (slide.type) {
+        case 'title': return _renderNativeTitle(pdf, slide, dims, themeData, typography);
+        case 'chapter': return _renderNativeChapter(pdf, slide, index, dims, themeData, typography, pdfOpts);
+        case 'bullets': return _renderNativeBullets(pdf, slide, dims, themeData, typography);
+        case 'quote': return _renderNativeQuote(pdf, slide, dims, themeData, typography);
+        case 'definition': return _renderNativeDefinition(pdf, slide, dims, themeData, typography);
+        case 'code': return _renderNativeCode(pdf, slide, dims, themeData, typography);
+        case 'comparison': return _renderNativeComparison(pdf, slide, dims, themeData, typography);
+        case 'image': return _renderNativeImage(pdf, slide, dims, themeData, typography);
+        case 'quiz': return _renderNativeQuiz(pdf, slide, dims, themeData, typography);
+        default: throw new Error('Type non natif : ' + slide.type);
+    }
+}
+
+/** Vérification défensive post-rastérisation : html2canvas s'est montré fragile cette
+ * session (CSP, foreignObjectRendering échouant silencieusement sur des mises en page
+ * complexes) — un canvas uniformément identique sur ses coins + son centre est le
+ * symptôme exact du bug "pages entièrement noires" déjà rencontré (rien peint, seul le
+ * fond de page reste). Mieux vaut un texte de repli explicite qu'une image quasi-noire
+ * silencieuse. */
+function _isCanvasLikelyBlank(canvas) {
+    try {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+        if (!w || !h) return true;
+        const points = [[1, 1], [w - 2, 1], [1, h - 2], [w - 2, h - 2], [Math.floor(w / 2), Math.floor(h / 2)]];
+        const samples = points.map(([x, y]) => ctx.getImageData(x, y, 1, 1).data.join(','));
+        return new Set(samples).size === 1;
+    } catch (_) {
+        return false; // canvas "tainted" (CORS) : ne pas bloquer un rendu par ailleurs valide
+    }
+}
+
 async function exportPDF(opts = {}) {
     const data = editor.data;
     if (!data) return;
@@ -599,6 +1259,25 @@ async function exportPDF(opts = {}) {
             const slide = data.slides[i];
             if (i > 0) pdf.addPage();
 
+            // Rendu natif jsPDF (texte vectoriel, zéro html2canvas) pour les types
+            // déclaratifs simples — sélectionnable/recherchable, fichiers plus légers.
+            // split/canvas/simulation/blank et tout type non reconnu restent rastérisés
+            // ci-dessous (Phase A). Chaque rendeur repeint tout le fond en premier ; un
+            // repli raster qui suivrait un échec natif dessine de toute façon une image
+            // pleine page qui recouvre tout tracé natif partiel — jamais de superposition
+            // visible, jamais un nouveau mode de silence.
+            if (_isNativeType(slide.type)) {
+                try {
+                    await _renderNativeSlide(pdf, slide, i, dims, themeData, pdfOpts.typography, pdfOpts);
+                    renderedCount++;
+                    if (onProgress) onProgress(i + 1, data.slides.length);
+                    continue;
+                } catch (nativeErr) {
+                    console.error(`[OEI] PDF export: rendu natif échoué, repli raster — slide ${i + 1}`, nativeErr);
+                    // tombe dans le chemin frame/html2canvas ci-dessous, inchangé
+                }
+            }
+
             // Un slide qui échoue (widget cassé, feature CSS non supportée par
             // html2canvas…) ne doit jamais faire échouer tout l'export : on insère une
             // page de remplacement texte et on continue avec le reste du deck.
@@ -635,6 +1314,10 @@ async function exportPDF(opts = {}) {
                     // l'origine du clone sous Firefox) et pouvait faire échouer le rendu.
                     foreignObjectRendering: true,
                 });
+
+                if (_isCanvasLikelyBlank(canvas)) {
+                    throw new Error('Rendu vide (html2canvas n\'a peint aucun contenu visible)');
+                }
 
                 pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, dims[0], dims[1]);
                 renderedCount++;
