@@ -16,6 +16,10 @@ export function createViewerAppState(globalObj = window) {
     return {
         get activeQuizHandler() { return read('activeQuizHandler', '_activeQuizHandler', null); },
         set activeQuizHandler(fn) { write('activeQuizHandler', '_activeQuizHandler', fn || null); },
+        get activeQuiz() { return read('activeQuiz', '_activeQuiz', null); },
+        set activeQuiz(v) { write('activeQuiz', '_activeQuiz', v || null); },
+        get activeTimers() { return read('activeTimers', '_activeTimers', null); },
+        set activeTimers(v) { write('activeTimers', '_activeTimers', v || null); },
         get lastQuizResponses() { return read('lastQuizResponses', '_lastQuizResponses', null); },
         set lastQuizResponses(v) { write('lastQuizResponses', '_lastQuizResponses', v || null); },
         get lastQuizOptions() { return read('lastQuizOptions', '_lastQuizOptions', null); },
@@ -46,6 +50,8 @@ export function createViewerAppState(globalObj = window) {
             this.activeQuizHandler = null;
             this.lastQuizResponses = null;
             this.lastQuizOptions = null;
+            this.activeQuiz = null;
+            this.activeTimers = null;
         },
     };
 }

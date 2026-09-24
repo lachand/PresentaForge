@@ -96,6 +96,8 @@ export function createStudentJoinRecord(params) {
  *   activeWordCloud: any,
  *   activeExitTicket: any,
  *   activeRankOrder: any,
+ *   activeQuiz?: any,
+ *   activeTimers?: Record<string, any> | any[],
  *   whiteboardState?: any | (() => any),
  * }} params
  */
@@ -106,6 +108,8 @@ export function sendActiveRoomActivities(params) {
     const activeWordCloud = params?.activeWordCloud;
     const activeExitTicket = params?.activeExitTicket;
     const activeRankOrder = params?.activeRankOrder;
+    const activeQuiz = params?.activeQuiz;
+    const activeTimers = params?.activeTimers;
     const wbRaw = typeof params?.whiteboardState === 'function'
         ? params.whiteboardState()
         : params?.whiteboardState;
@@ -148,6 +152,37 @@ export function sendActiveRoomActivities(params) {
         safeSend(conn, {
             type: ROOM_MSG.WHITEBOARD_SYNC,
             ...whiteboardState,
+        });
+    }
+    // startedAt n'est PAS régénéré ici : student-quiz.js recalcule le temps restant à
+    // partir de ce même horodatage (duration - (Date.now() - startedAt)), donc un
+    // rattrapage tardif reste synchronisé avec les étudiants déjà connectés.
+    if (activeQuiz && activeQuiz.quizId && ROOM_MSG.QUIZ_QUESTION) {
+        safeSend(conn, {
+            type: ROOM_MSG.QUIZ_QUESTION,
+            quizId: activeQuiz.quizId,
+            question: activeQuiz.question,
+            options: activeQuiz.options,
+            duration: activeQuiz.duration,
+            startedAt: activeQuiz.startedAt,
+        });
+    }
+    // Un deck peut avoir plusieurs minuteurs de contenu (sur des slides différentes) :
+    // on rejoue le dernier état connu de chacun, quelle que soit la slide où se trouve
+    // le retardataire — inoffensif si sa slide courante n'en a pas (le widget
+    // correspondant n'est simplement pas monté chez lui).
+    if (activeTimers && ROOM_MSG.TIMER_STATE) {
+        const entries = Array.isArray(activeTimers) ? activeTimers : Object.values(activeTimers);
+        entries.forEach(timer => {
+            if (!timer || typeof timer !== 'object') return;
+            safeSend(conn, {
+                type: ROOM_MSG.TIMER_STATE,
+                elementId: timer.elementId || '',
+                slideIndex: timer.slideIndex,
+                remaining: timer.remaining,
+                running: !!timer.running,
+                ended: !!timer.ended,
+            });
         });
     }
 }

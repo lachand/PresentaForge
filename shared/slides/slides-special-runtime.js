@@ -98,20 +98,57 @@
             return `${safeType}::${safeSlide}::${safeId}`;
         };
         const emitAudienceElementState = (host, elementType, state = {}) => {
-            if (!presenterSyncBridge?.post || !presenterSyncBridge?.SYNC_MSG?.ELEMENT_STATE) return false;
             const { slideIndex, elementId } = resolveSyncMeta(host);
             if (slideIndex === null || slideIndex < 0) return false;
             const payloadState = (state && typeof state === 'object') ? state : {};
-            return presenterSyncBridge.post({
-                type: presenterSyncBridge.SYNC_MSG.ELEMENT_STATE,
-                elementType: toTrimmed(String(elementType || ''), 80),
-                slideIndex,
-                elementId,
-                state: payloadState,
-            });
+            let posted = false;
+            // Fenêtre locale (popup présentateur ↔ popup audience second écran, même
+            // navigateur) — BroadcastChannel, inchangé.
+            if (presenterSyncBridge?.post && presenterSyncBridge?.SYNC_MSG?.ELEMENT_STATE) {
+                posted = presenterSyncBridge.post({
+                    type: presenterSyncBridge.SYNC_MSG.ELEMENT_STATE,
+                    elementType: toTrimmed(String(elementType || ''), 80),
+                    slideIndex,
+                    elementId,
+                    state: payloadState,
+                }) || posted;
+            }
+            // Salle WebRTC (étudiants distants) — uniquement pour les types dotés d'un
+            // schéma de message dédié dans realtime-contract.js (timer aujourd'hui).
+            if (elementType === 'timer' && global._studentRoom?.active && typeof global._studentRoomBroadcast === 'function') {
+                const roomMsgType = global.OEIRealtimeContract?.ROOM_MSG?.TIMER_STATE || 'timer:state';
+                const timerPayload = {
+                    type: roomMsgType,
+                    elementId,
+                    slideIndex,
+                    remaining: Number(payloadState.remaining) || 0,
+                    running: !!payloadState.running,
+                    ended: !!payloadState.ended,
+                };
+                try {
+                    global._studentRoomBroadcast(timerPayload);
+                    posted = true;
+                } catch (_) {}
+                // Snapshot lu par sendActiveRoomActivities (viewer-main.js) pour rattraper
+                // les étudiants qui rejoignent/se reconnectent après un changement d'état.
+                if (!global._activeTimers || typeof global._activeTimers !== 'object') global._activeTimers = {};
+                const key = elementId || `slide-${slideIndex}`;
+                global._activeTimers[key] = {
+                    elementId,
+                    slideIndex,
+                    remaining: timerPayload.remaining,
+                    running: timerPayload.running,
+                    ended: timerPayload.ended,
+                };
+            }
+            return posted;
         };
-        const subscribeAudienceElementState = (host, elementType, apply) => {
-            if (!isAudienceReadOnly || typeof apply !== 'function') return () => {};
+        const subscribeAudienceElementState = (host, elementType, apply, options = {}) => {
+            // `force` : bypass le gate isAudienceReadOnly (mode audience local dual-écran
+            // uniquement) pour un appelant qui a lui-même déterminé être en lecture seule
+            // par un autre moyen (ex. le minuteur sur student.html — cf. slides-special-
+            // math-runtime.js). Off par défaut : n'affecte aucun appelant existant.
+            if ((!isAudienceReadOnly && !options?.force) || typeof apply !== 'function') return () => {};
             const { slideIndex, elementId } = resolveSyncMeta(host);
             if (slideIndex === null || slideIndex < 0) return () => {};
             const safeType = toTrimmed(String(elementType || ''), 80);

@@ -22,13 +22,13 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/html-sanitizer.js?v=1'],
     // Group 2: special sub-runtimes — each registers itself independently, no cross-deps
     [
-        '../shared/slides/slides-special-math-runtime.js?v=1',
+        '../shared/slides/slides-special-math-runtime.js?v=2',
         '../shared/slides/slides-special-code-runtime.js?v=1',
-        '../shared/slides/slides-special-quiz-runtime.js?v=2',
+        '../shared/slides/slides-special-quiz-runtime.js?v=3',
         '../shared/slides/slides-special-live-runtime.js?v=1',
     ],
     // Orchestrator (depends on all 4 sub-runtimes above)
-    ['../shared/slides/slides-special-runtime.js?v=2'],
+    ['../shared/slides/slides-special-runtime.js?v=3'],
     ['../shared/slides/slides-typography.js?v=1'],
     ['../shared/slides/element-style-schema.js?v=1'],
     ['../shared/slides/slides-core.js?v=34'],

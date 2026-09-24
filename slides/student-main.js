@@ -1,3 +1,8 @@
+    // Rôle explicite pour les éléments spéciaux qui doivent se comporter en lecture
+    // seule côté élève même quand isAudienceReadOnly (mode audience local dual-écran)
+    // ne s'applique pas — cf. le minuteur de contenu dans slides-special-math-runtime.js.
+    document.documentElement.dataset.oeiSlidesRole = 'student';
+
     // ── Theme (outside IIFE so it runs immediately) ───
     (function() {
         const controller = window.OEIThemeRuntime?.createController
@@ -620,6 +625,10 @@
 
                 case ROOM_MSG.WHITEBOARD_SYNC:
                     H.render.applyWhiteboardSyncMessage(msg);
+                    break;
+
+                case ROOM_MSG.TIMER_STATE:
+                    H.render.applyTimerStateMessage(msg);
                     break;
 
                 case ROOM_MSG.LASER:

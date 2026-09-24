@@ -1496,6 +1496,8 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                         activeWordCloud: _activeWordCloud,
                         activeExitTicket: _activeExitTicket,
                         activeRankOrder: _activeRankOrder,
+                        activeQuiz: ViewerRuntime.activeQuiz,
+                        activeTimers: ViewerRuntime.activeTimers,
                         whiteboardState: () => _captureWhiteboardSyncState(),
                     });
                     roomUpdatePanel();
@@ -1652,6 +1654,8 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                         activeWordCloud: _activeWordCloud,
                         activeExitTicket: _activeExitTicket,
                         activeRankOrder: _activeRankOrder,
+                        activeQuiz: ViewerRuntime.activeQuiz,
+                        activeTimers: ViewerRuntime.activeTimers,
                         whiteboardState: () => _captureWhiteboardSyncState(),
                     });
                     break;
@@ -1667,6 +1671,8 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                         activeWordCloud: _activeWordCloud,
                         activeExitTicket: _activeExitTicket,
                         activeRankOrder: _activeRankOrder,
+                        activeQuiz: ViewerRuntime.activeQuiz,
+                        activeTimers: ViewerRuntime.activeTimers,
                         whiteboardState: () => _captureWhiteboardSyncState(),
                     })) {
                         ack(false, 'sync-unavailable');

@@ -453,6 +453,32 @@
             commands.forEach(command => drawWhiteboardCommand(ctx, command, scaleX, scaleY));
         }
 
+        /**
+         * Minuteur de contenu embarqué dans une slide (.sl-timer-content, ROOM_MSG.TIMER_STATE)
+         * — relaie l'état salle vers le même bus d'event local (oei:audience-element-state) que
+         * le widget écoute déjà côté étudiant (subscribeAudienceElementState avec `force`, cf.
+         * shared/slides/slides-special-math-runtime.js) : aucun rendu propre à ce fichier, le
+         * widget déjà monté sur la slide se met simplement à jour lui-même.
+         */
+        function applyTimerStateMessage(msg) {
+            if (!msg || typeof msg !== 'object') return;
+            const slideIndex = toSafeInt(msg.slideIndex);
+            if (slideIndex === null || slideIndex < 0) return;
+            const remaining = Number(msg.remaining);
+            window.dispatchEvent(new CustomEvent('oei:audience-element-state', {
+                detail: {
+                    elementType: 'timer',
+                    slideIndex,
+                    elementId: typeof msg.elementId === 'string' ? msg.elementId : '',
+                    state: {
+                        remaining: Number.isFinite(remaining) ? Math.max(0, Math.trunc(remaining)) : 0,
+                        running: !!msg.running,
+                        ended: !!msg.ended,
+                    },
+                },
+            }));
+        }
+
         function applyWhiteboardSyncMessage(msg) {
             if (!msg || typeof msg !== 'object') return;
             const slideIndex = toSafeInt(msg.slideIndex);
@@ -1268,6 +1294,7 @@ window.addEventListener('load', function() {
             scaleSlide,
             renderWhiteboard: renderStudentWhiteboard,
             applyWhiteboardSyncMessage,
+            applyTimerStateMessage,
             applyLaserMessage,
             applyZoomMessage,
             maxPresenterAllowedIndex,

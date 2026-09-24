@@ -228,13 +228,20 @@
                         publishQuizState();
                     };
 
-                    global._studentRoomBroadcast({
-                        type: 'quiz:question',
+                    // Snapshot exposé à viewer-main.js (sendActiveRoomActivities) pour
+                    // rattraper les étudiants qui rejoignent/se reconnectent après le
+                    // lancement — même startedAt renvoyé, donc student-quiz.js calcule
+                    // toujours le bon temps restant (voir showQuiz()).
+                    global._activeQuiz = {
                         quizId: roomId,
                         question: questionText,
                         options: optLabels,
                         duration: duration,
                         startedAt: Date.now(),
+                    };
+                    global._studentRoomBroadcast({
+                        type: 'quiz:question',
+                        ...global._activeQuiz,
                     });
 
                     resultsEl.style.display = '';
@@ -358,6 +365,7 @@
                     global._activeQuizHandler = null;
                     global._lastQuizResponses = null;
                     global._lastQuizOptions = null;
+                    global._activeQuiz = null;
                 } else {
                     connections.forEach(c => { try { c.send({ type: 'end' }); } catch(e) {} });
                 }

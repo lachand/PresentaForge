@@ -100,6 +100,10 @@
         SUBTITLE_TEXT: 'subtitle:text',
         SUBTITLE_ACTIVE: 'subtitle:active',
         ACTIVITIES_REQUEST: 'activities:request',
+        // Minuteur de contenu embarqué dans une slide (.sl-timer-content) — présentateur
+        // → étudiants, sur le modèle de WHITEBOARD_SYNC : diffusé à chaque changement
+        // d'état (start/pause/reset/tick) ET rejoué tel quel au rattrapage salle.
+        TIMER_STATE: 'timer:state',
     });
 
     const syncTypes = new Set(Object.values(SYNC_MSG));
@@ -346,6 +350,11 @@
         [ROOM_MSG.ROOM_KEYNOTE]: msg => isStringArray(msg.points || [], 20, 400),
         [ROOM_MSG.SUBTITLE_TEXT]: msg => msg.text == null || isString(msg.text, 2000),
         [ROOM_MSG.SUBTITLE_ACTIVE]: msg => isBoolean(msg.active),
+        [ROOM_MSG.TIMER_STATE]: msg => isString(msg.elementId || '', 160)
+            && isNonNegInt(msg.slideIndex)
+            && isNumber(msg.remaining)
+            && isBoolean(msg.running)
+            && isBoolean(msg.ended),
     });
 
     function validateByTypeMap(msg, typeSet, validators) {

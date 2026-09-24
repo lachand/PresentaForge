@@ -168,7 +168,13 @@
                 startVisible: !running,
                 pauseVisible: !!running,
             }, (extraState && typeof extraState === 'object') ? extraState : {}));
-            if (isAudienceReadOnly) {
+            // student.html (salle WebRTC) : isAudienceReadOnly ne détecte que le mode
+            // audience local dual-écran, pas un élève distant — on le complète ici avec
+            // un rôle explicite posé par le bootstrap étudiant (voir student-main.js),
+            // sans toucher isAudienceReadOnly lui-même (partagé par cloze/drag-drop/mcq,
+            // que les élèves DOIVENT pouvoir manipuler eux-mêmes).
+            const isStudentPage = document.documentElement?.dataset?.oeiSlidesRole === 'student';
+            if (isAudienceReadOnly || isStudentPage) {
                 btnStart.disabled = true;
                 btnStart.style.pointerEvents = 'none';
                 if (btnPause) { btnPause.disabled = true; btnPause.style.pointerEvents = 'none'; }
@@ -185,7 +191,7 @@
                     else display.classList.remove(`${P}-timer-ended`);
                     if (typeof sync.startVisible === 'boolean') btnStart.style.display = sync.startVisible ? '' : 'none';
                     if (btnPause && typeof sync.pauseVisible === 'boolean') btnPause.style.display = sync.pauseVisible ? '' : 'none';
-                });
+                }, { force: isStudentPage });
                 display.textContent = fmt(remaining);
                 return;
             }
