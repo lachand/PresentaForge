@@ -27,20 +27,38 @@
         if (spinner) spinner.remove();
     }
 
-    function buildCatalogListHtml(presentations, uid) {
+    /**
+     * URL de la salle de présentation en direct pour CE cours — un identifiant
+     * déterministe dérivé du nom du cours (salle-<slug>, même dérivation que
+     * _applyCourseRoomIdDefault dans slides/viewer-main.js), donc toujours le même d'une
+     * séance à l'autre : l'enseignant n'a rien à communiquer à part ce lien de catalogue.
+     * Ne garantit pas qu'une séance est EN COURS (la salle peut être vide) — même
+     * comportement que le pré-remplissage du champ salle côté enseignant.
+     */
+    function buildLiveRoomUrl(course) {
+        const slug = window.OEIFirebase?.courseSlug ? window.OEIFirebase.courseSlug(course) : '';
+        if (!slug) return null;
+        return 'student.html?room=' + encodeURIComponent('salle-' + slug);
+    }
+
+    function buildCatalogListHtml(presentations, uid, roomUrl) {
         if (!presentations.length) {
             return '<li class="course-catalog-empty">Aucune présentation disponible pour l’instant. Revenez plus tard, ou contactez l’enseignant.</li>';
         }
+        const liveBtn = roomUrl
+            ? `<a class="course-catalog-action course-catalog-action--live" href="${esc(roomUrl)}">Suivre la présentation en direct</a>`
+            : '';
         return presentations.map(p => {
             const url = 'viewer.html?firebase=' + encodeURIComponent(uid) + '/' + encodeURIComponent(p.id);
             const badge = p.seance != null ? `<span class="course-catalog-badge">Séance ${esc(p.seance)}</span>` : '';
             // Le titre n'est plus cliquable (retiré à la demande de l'utilisateur, le clic
-            // sur le nom du deck ouvrait le viewer de façon peu visible) — un bouton "Voir
-            // la présentation" explicite fait office de lien de navigation à sa place.
+            // sur le nom du deck ouvrait le viewer de façon peu visible) — un bouton
+            // "Accéder aux diapos" explicite fait office de lien de navigation à sa place.
             return `<li class="course-catalog-row">
                 <div class="course-catalog-item">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></div>
                 <div class="course-catalog-actions">
-                    <a class="course-catalog-action course-catalog-action--primary" href="${esc(url)}">Voir la présentation</a>
+                    <a class="course-catalog-action course-catalog-action--primary" href="${esc(url)}">Accéder aux diapos</a>
+                    ${liveBtn}
                     <button type="button" class="course-catalog-action" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}">JSON de révision</button>
                     <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">PDF</button>
                     <span class="course-catalog-action-status" aria-live="polite"></span>
@@ -142,7 +160,7 @@
     function renderCatalog(course, presentations, uid) {
         if (statusEl) statusEl.hidden = true;
         if (titleEl) titleEl.textContent = course;
-        if (listEl) listEl.innerHTML = buildCatalogListHtml(presentations, uid);
+        if (listEl) listEl.innerHTML = buildCatalogListHtml(presentations, uid, buildLiveRoomUrl(course));
         if (catalogEl) catalogEl.hidden = false;
     }
 
