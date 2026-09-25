@@ -83,10 +83,6 @@ html, body {
     gap: 12px;
     padding: 0;
     color: #0f172a;
-    text-decoration: none;
-}
-.course-catalog-item:hover .course-catalog-item-title {
-    text-decoration: underline;
 }
 .course-catalog-actions {
     display: flex;
@@ -103,6 +99,7 @@ html, body {
     background: #f1f5f9;
     color: #334155;
     cursor: pointer;
+    text-decoration: none;
     transition: background 0.15s, border-color 0.15s;
 }
 .course-catalog-action:hover:not(:disabled) {
@@ -112,6 +109,15 @@ html, body {
 .course-catalog-action:disabled {
     opacity: 0.5;
     cursor: default;
+}
+.course-catalog-action--primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+.course-catalog-action--primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
 }
 .course-catalog-action-status {
     font-size: 0.76rem;

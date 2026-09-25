@@ -34,11 +34,13 @@
         return presentations.map(p => {
             const url = 'viewer.html?firebase=' + encodeURIComponent(uid) + '/' + encodeURIComponent(p.id);
             const badge = p.seance != null ? `<span class="course-catalog-badge">Séance ${esc(p.seance)}</span>` : '';
-            // Les boutons d'action sont des frères de l'<a>, jamais imbriqués dedans (un
-            // <button> dans un <a> est invalide en HTML et casse le focus clavier).
+            // Le titre n'est plus cliquable (retiré à la demande de l'utilisateur, le clic
+            // sur le nom du deck ouvrait le viewer de façon peu visible) — un bouton "Voir
+            // la présentation" explicite fait office de lien de navigation à sa place.
             return `<li class="course-catalog-row">
-                <a class="course-catalog-item" href="${esc(url)}">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></a>
+                <div class="course-catalog-item">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></div>
                 <div class="course-catalog-actions">
+                    <a class="course-catalog-action course-catalog-action--primary" href="${esc(url)}">Voir la présentation</a>
                     <button type="button" class="course-catalog-action" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}">JSON de révision</button>
                     <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">PDF</button>
                     <span class="course-catalog-action-status" aria-live="polite"></span>
