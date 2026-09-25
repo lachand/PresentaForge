@@ -7,7 +7,7 @@
     <title>presentaForge — Cours</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
-    <link rel="stylesheet" href="../shared/slides/slides-course.css?v=5">
+    <link rel="stylesheet" href="../shared/slides/slides-course.css?v=6">
 </head>
 <body>
     <div id="course-status" class="course-status" role="status" aria-live="polite">
@@ -17,6 +17,31 @@
     <main id="course-catalog" class="course-catalog" hidden>
         <h1 id="course-catalog-title" class="course-catalog-title"></h1>
         <p class="course-catalog-hint">Choisissez la présentation à consulter.</p>
+
+        <details class="course-revision-help">
+            <summary>Comment réviser ce cours chez vous, même sans y avoir assisté ?</summary>
+            <div class="course-revision-help-body">
+                <p>Le <strong>mode révision</strong> garde, sur <em>votre</em> navigateur, vos
+                    favoris, vos notes et votre progression slide par slide (répétition
+                    espacée) — pratique pour revoir un cours à votre rythme.</p>
+                <ol>
+                    <li>Ci-dessous, cliquez sur <strong>« 📥 JSON de révision »</strong> à côté
+                        de la présentation qui vous intéresse — un fichier
+                        <code>revision-….json</code> se télécharge.</li>
+                    <li>Ouvrez <a href="student.html" target="_blank" rel="noopener">student.html</a>
+                        (le mode étudiant de presentaForge).</li>
+                    <li>Cliquez sur <strong>« Importer une révision (fichier .json) »</strong> et
+                        sélectionnez le fichier téléchargé à l’étape 1.</li>
+                    <li>Le cours apparaît désormais dans <strong>« Mes cours à réviser »</strong>
+                        à chaque réouverture de student.html sur ce navigateur — plus besoin de
+                        réimporter.</li>
+                </ol>
+                <p class="course-revision-help-note">Le fichier téléchargé est « vierge » (aucun
+                    favori/note déjà pris) : c’est un point de départ pour votre progression
+                    personnelle, pas un export de notes existantes.</p>
+            </div>
+        </details>
+
         <ul id="course-catalog-list" class="course-catalog-list"></ul>
     </main>
     <script src="../shared/slides/firebase-storage.js?v=10"></script>
