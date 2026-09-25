@@ -189,3 +189,22 @@ html, body {
     font-style: italic;
     margin-top: 4px;
 }
+.course-revision-help-img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 8px 0 4px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.12);
+}
+.course-revision-help-warning {
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.3);
+    color: rgba(226,232,240,0.9);
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+.course-revision-help-warning strong { color: #fbbf24; }
