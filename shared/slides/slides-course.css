@@ -1,13 +1,14 @@
 /**
  * slides-course.css — slides/course.html (catalogue public d'un cours, lien Moodle stable).
- * Page minimale, autonome (pas de design-tokens.js) : palette sombre alignée sur le
- * reste de PresentaForge (cf. body.viewer-review dans slides-viewer.css).
+ * Page minimale, autonome (pas de design-tokens.js) : palette claire alignée sur le thème
+ * "light" du reste de PresentaForge (cf. SlidesThemes.BUILT_IN.light dans slides-themes.js —
+ * bg #f8fafc, heading #0f172a, text #334155, primary #3b82f6, border #e2e8f0).
  */
 html, body {
     height: 100%;
     margin: 0;
-    background: #0f1117;
-    color: #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
     font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 .course-status {
@@ -27,8 +28,8 @@ html, body {
 .course-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(255,255,255,0.2);
-    border-top-color: #e2e8f0;
+    border: 3px solid rgba(15,23,42,0.12);
+    border-top-color: #334155;
     border-radius: 50%;
     animation: course-spin 0.8s linear infinite;
 }
@@ -37,10 +38,10 @@ html, body {
     max-width: 420px;
     font-size: 0.95rem;
     line-height: 1.5;
-    color: rgba(226,232,240,0.85);
+    color: #64748b;
 }
 .course-status--error .course-status-text {
-    color: #fca5a5;
+    color: #dc2626;
 }
 .course-catalog {
     max-width: 640px;
@@ -51,9 +52,10 @@ html, body {
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0 0 6px;
+    color: #0f172a;
 }
 .course-catalog-hint {
-    color: rgba(226,232,240,0.7);
+    color: #64748b;
     font-size: 0.9rem;
     margin: 0 0 24px;
 }
@@ -70,16 +72,17 @@ html, body {
     flex-direction: column;
     gap: 6px;
     border-radius: 10px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
 }
 .course-catalog-item {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 0;
-    color: #e2e8f0;
+    color: #0f172a;
     text-decoration: none;
 }
 .course-catalog-item:hover .course-catalog-item-title {
@@ -96,15 +99,15 @@ html, body {
     font-weight: 600;
     padding: 5px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.16);
-    background: rgba(255,255,255,0.04);
-    color: #e2e8f0;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+    color: #334155;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
 }
 .course-catalog-action:hover:not(:disabled) {
-    background: rgba(255,255,255,0.12);
-    border-color: rgba(255,255,255,0.28);
+    background: #e2e8f0;
+    border-color: #cbd5e1;
 }
 .course-catalog-action:disabled {
     opacity: 0.5;
@@ -112,10 +115,10 @@ html, body {
 }
 .course-catalog-action-status {
     font-size: 0.76rem;
-    color: rgba(226,232,240,0.7);
+    color: #64748b;
 }
 .course-catalog-action-status--error {
-    color: #fca5a5;
+    color: #dc2626;
 }
 .course-catalog-item-title {
     font-size: 0.95rem;
@@ -129,27 +132,28 @@ html, body {
     text-transform: uppercase;
     padding: 3px 8px;
     border-radius: 999px;
-    background: rgba(129,140,248,0.25);
-    color: #c7d2fe;
+    background: rgba(59,130,246,0.12);
+    color: #3b82f6;
 }
 .course-catalog-empty {
-    color: rgba(226,232,240,0.7);
+    color: #64748b;
     font-size: 0.9rem;
     padding: 16px 0;
 }
 .course-revision-help {
     margin: 0 0 24px;
     border-radius: 10px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     padding: 2px 16px;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
 }
 .course-revision-help summary {
     cursor: pointer;
     padding: 12px 4px 12px 22px;
     font-size: 0.88rem;
     font-weight: 600;
-    color: #e2e8f0;
+    color: #0f172a;
     list-style: none;
     position: relative;
 }
@@ -158,7 +162,7 @@ html, body {
     content: '▸';
     position: absolute;
     left: 0;
-    color: #818cf8;
+    color: #3b82f6;
     transition: transform 0.15s ease;
 }
 .course-revision-help[open] summary::before {
@@ -168,7 +172,7 @@ html, body {
     padding: 0 4px 16px;
     font-size: 0.85rem;
     line-height: 1.6;
-    color: rgba(226,232,240,0.85);
+    color: #334155;
 }
 .course-revision-help-body p { margin: 0 0 10px; }
 .course-revision-help-body ol {
@@ -177,15 +181,15 @@ html, body {
 }
 .course-revision-help-body li { margin-bottom: 6px; }
 .course-revision-help-body code {
-    background: rgba(255,255,255,0.08);
+    background: #f1f5f9;
     border-radius: 4px;
     padding: 1px 5px;
     font-size: 0.82em;
 }
-.course-revision-help-body a { color: #818cf8; }
+.course-revision-help-body a { color: #3b82f6; }
 .course-revision-help-note {
     font-size: 0.8rem;
-    color: rgba(226,232,240,0.65);
+    color: #64748b;
     font-style: italic;
     margin-top: 4px;
 }
@@ -195,16 +199,16 @@ html, body {
     height: auto;
     margin: 8px 0 4px;
     border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid #e2e8f0;
 }
 .course-revision-help-warning {
     margin: 14px 0 0;
     padding: 10px 12px;
     border-radius: 8px;
-    background: rgba(251,191,36,0.08);
-    border: 1px solid rgba(251,191,36,0.3);
-    color: rgba(226,232,240,0.9);
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #78350f;
     font-size: 0.82rem;
     line-height: 1.55;
 }
-.course-revision-help-warning strong { color: #fbbf24; }
+.course-revision-help-warning strong { color: #b45309; }

@@ -39,8 +39,8 @@
             return `<li class="course-catalog-row">
                 <a class="course-catalog-item" href="${esc(url)}">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></a>
                 <div class="course-catalog-actions">
-                    <button type="button" class="course-catalog-action" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📥 JSON de révision</button>
-                    <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📄 PDF</button>
+                    <button type="button" class="course-catalog-action" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}">JSON de révision</button>
+                    <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">PDF</button>
                     <span class="course-catalog-action-status" aria-live="polite"></span>
                 </div>
             </li>`;
