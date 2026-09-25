@@ -1190,14 +1190,27 @@ async function exportPDF(opts = {}) {
     // (bouton de l'éditeur, course.html, export groupé) après plusieurs rounds de fixes
     // html2canvas qui n'ont jamais tenu (blocage CSP, pages noires, slides à widget
     // vides) : texte réel, aucune rastérisation, aucun clone offscreen restreint par la
-    // CSP — voir _exportPDFPrint(). Décision utilisateur explicite : accepter l'étape
-    // manuelle du dialogue d'impression partout plutôt que continuer à rustiner un chemin
-    // de capture fragile. Le pipeline jsPDF+html2canvas (+ rendu natif Phase A) plus bas
-    // reste disponible via opts.returnBlob mais n'est plus appelé par aucun point d'entrée
-    // de ce projet — voir shared/slides/editor-main.js (?printExport=pdf), course-main.js,
-    // bulk-actions-modal.js.
+    // CSP. Décision utilisateur explicite : accepter l'étape manuelle du dialogue
+    // d'impression partout plutôt que continuer à rustiner un chemin de capture fragile.
+    // Le pipeline jsPDF+html2canvas (+ rendu natif Phase A) plus bas reste disponible via
+    // opts.returnBlob mais n'est plus appelé par aucun point d'entrée de ce projet — voir
+    // shared/slides/editor-main.js (?printExport=pdf), course-main.js, bulk-actions-modal.js.
     if (!opts.returnBlob) {
-        return _exportPDFPrint(opts.printTargetWindow);
+        if (opts.printTargetWindow) {
+            // Flux ?printExport=pdf (export groupé du tableau de bord, bulk-actions-modal.js)
+            // : cette fenêtre a été ouverte SPÉCIFIQUEMENT pour imprimer, aucune session
+            // d'édition à préserver — garde l'ancien mécanisme _exportPDFPrint()
+            // (document.write dans cette fenêtre dédiée).
+            return _exportPDFPrint(opts.printTargetWindow);
+        }
+        // Bouton "Export PDF" interactif de l'éditeur : impression EN PLACE
+        // (shared/slides/print-export.js), sans jamais ouvrir de fenêtre — la session
+        // d'édition en cours reste intacte pendant ET après l'impression, contrairement à
+        // _exportPDFPrint() qui écrivait dans une fenêtre séparée via window.open().
+        if (window.OEIPrintExport) {
+            return window.OEIPrintExport.printDeckInPlace(editor.data);
+        }
+        return _exportPDFPrint(); // repli si print-export.js n'a pas pu charger
     }
 
     const data = editor.data;

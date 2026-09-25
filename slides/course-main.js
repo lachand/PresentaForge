@@ -40,6 +40,7 @@
                 <a class="course-catalog-item" href="${esc(url)}">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></a>
                 <div class="course-catalog-actions">
                     <button type="button" class="course-catalog-action" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📥 JSON de révision</button>
+                    <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">📄 PDF</button>
                     <span class="course-catalog-action-status" aria-live="polite"></span>
                 </div>
             </li>`;
@@ -94,12 +95,31 @@
         }
     }
 
-    // Bouton PDF retiré temporairement (2026-09-24) : ?printExport=pdf pointe vers
-    // editor.html, qui doit d'abord démarrer tout l'éditeur (chargement de tout
-    // editor-bootstrap.js, UI complète visible un instant) avant de déclencher
-    // l'impression — beaucoup plus lourd/perceptible que d'ouvrir viewer.html, contraignant
-    // pour un étudiant qui veut juste un PDF depuis le catalogue public d'un cours. À
-    // réintroduire une fois qu'une cible d'impression plus légère (viewer.html ?) existe.
+    /**
+     * Imprime ce deck EN PLACE (shared/slides/print-export.js) — aucune fenêtre/onglet
+     * ouvert, aucun risque de blocage pop-up, et surtout : jamais editor.html (2026-09-24,
+     * la première version rouvrait tout l'éditeur avant de pouvoir imprimer, beaucoup trop
+     * lourd/perceptible pour un étudiant qui veut juste un PDF depuis ce catalogue). Charge
+     * le deck via l'API publique déjà utilisée par le bouton JSON (loadPublicPresentation,
+     * aucune authentification requise).
+     */
+    async function handleExportPdf(li, uid, id) {
+        if (!window.OEIFirebase || !window.OEIPrintExport) {
+            setRowStatus(li, 'Module d’impression indisponible.', true);
+            return;
+        }
+        setRowBusy(li, true);
+        setRowStatus(li, 'Préparation de l’impression…', false);
+        try {
+            const deck = await window.OEIFirebase.loadPublicPresentation(uid, id);
+            await window.OEIPrintExport.printDeckInPlace(deck);
+            setRowStatus(li, '', false);
+        } catch (e) {
+            setRowStatus(li, 'Erreur : ' + (e && e.message ? e.message : String(e)), true);
+        } finally {
+            setRowBusy(li, false);
+        }
+    }
 
     if (listEl) {
         // Délégation d'événement (jamais d'attribut onclick inline — audit sécurité
@@ -113,6 +133,7 @@
             const id = btn.dataset.id;
             if (!uid || !id || !li) return;
             if (btn.dataset.action === 'download-json') handleDownloadJson(li, uid, id);
+            else if (btn.dataset.action === 'export-pdf') handleExportPdf(li, uid, id);
         });
     }
 

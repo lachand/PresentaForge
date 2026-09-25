@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self'; img-src 'self'; connect-src 'self' https:; base-uri 'self'; form-action 'self'; object-src 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https:; base-uri 'self'; form-action 'self'; object-src 'none'">
     <title>presentaForge — Cours</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
@@ -21,6 +21,19 @@
     </main>
     <script src="../shared/slides/firebase-storage.js?v=10"></script>
     <script src="../shared/slides/student-storage.js?v=6"></script>
-    <script src="course-main.js?v=6"></script>
+    <!-- Chaîne de rendu MINIMALE pour l'impression PDF en place (shared/slides/print-export.js)
+         — le moteur de rendu des slides uniquement, jamais tout editor-bootstrap.js (UI
+         complète de l'éditeur, ~50 scripts) ; ordre de chargement strict, cf. commentaires
+         d'en-tête de chaque fichier. -->
+    <script src="../shared/components/base/WidgetRegistry.js"></script>
+    <script src="../vendor/dompurify/3.4.14/purify.min.js"></script>
+    <script src="../shared/slides/html-sanitizer.js?v=1"></script>
+    <script src="../shared/slides/slides-typography.js?v=1"></script>
+    <script src="../shared/slides/element-style-schema.js?v=1"></script>
+    <script src="../shared/slides/slides-core.js?v=34"></script>
+    <script src="../shared/slides/slides-themes.js?v=3"></script>
+    <script src="../shared/slides/slides-renderer-canvas.js?v=6"></script>
+    <script src="../shared/slides/print-export.js?v=1"></script>
+    <script src="course-main.js?v=7"></script>
 </body>
 </html>
