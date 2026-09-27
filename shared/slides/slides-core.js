@@ -558,6 +558,30 @@ class SlidesRenderer {
         });
     }
 
+    /**
+     * Prévient un fragment `highlight` (une zone d'un bloc de code à plusieurs zones)
+     * qu'il vient de devenir visible ou caché, pour que le plugin Reveal.js Highlight
+     * fasse défiler le code jusqu'à sa zone surlignée (scrollHighlightedLineIntoView,
+     * écouteur posé sur chaque <code> par highlightBlock() — voir viewer-main.js
+     * _processPresenterHighlights / student-render.js _processStudentHighlights).
+     *
+     * En Reveal.js normal, ce défilement automatique marche déjà pour le contenu
+     * SUIVI par le deck lui-même, mais pas ici : le plugin attend un événement DOM
+     * nommé « visible »/« hidden » sur l'élément, que ni la navigation native de
+     * Reveal (au niveau slide, pas fragment-par-fragment sur ce point précis) ni nos
+     * bascules manuelles de classe (mode présentateur, élève) ne déclenchent — d'où
+     * cet appel explicite aux 4 endroits qui togglent `.visible` sur un fragment
+     * (mode normal, présentateur, élève). Inoffensif sur un fragment sans code (pas
+     * d'écouteur dessus, l'événement est ignoré).
+     *
+     * @param {Element|null|undefined} fragmentEl
+     * @param {boolean} visible
+     */
+    static notifyFragmentVisibility(fragmentEl, visible) {
+        if (!fragmentEl || typeof fragmentEl.dispatchEvent !== 'function') return;
+        try { fragmentEl.dispatchEvent(new Event(visible ? 'visible' : 'hidden')); } catch (_) {}
+    }
+
     /** Render a single slide as HTML (for preview or Reveal.js) */
     static renderSlide(slide, index = 0, opts = {}) {
         const type = slide.type || 'blank';

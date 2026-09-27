@@ -627,10 +627,20 @@
                 const hasCaptions = zoneLabels.some(t => t);
                 const captionHtml = hasCaptions ? `<div class="${P}-hl-caption"><div class="${P}-hl-caption-inner">${esc(zoneLabels[0] || '')}</div></div>` : '';
                 const labelsAttr = hasCaptions ? ` data-hl-labels="${esc(JSON.stringify(zoneLabels))}"` : '';
+                // Bloc à plusieurs zones (surlignage pas-à-pas) : le code peut dépasser la
+                // hauteur du bloc (contrairement à un bloc simple, dont la taille de police
+                // s'ajuste normalement au moment de la rédaction). On y active le défilement
+                // + le défilement automatique du plugin Reveal.js Highlight vers la zone
+                // active à chaque pas (scrollHighlightedLineIntoView, déclenché par les
+                // événements 'visible'/'hidden' — voir syncHighlightCaptions côté JS), plutôt
+                // que sur tout bloc `highlight` (le simple `overflow:visible` existant reste
+                // inchangé pour un bloc sans étapes, pour ne rien changer à son rendu/export).
+                const stepped = highlightZones.length > 1;
+                const blockClasses = [hasCaptions && `${P}-highlight-block-annotated`, stepped && `${P}-highlight-block-stepped`].filter(Boolean).join(' ');
                 // Use Reveal.js native <pre><code> (no code-terminal wrapper)
                 // to avoid flex layout conflicts with Reveal's fragment cloning.
                 // Wrap in .{P}-highlight-block to apply terminal-like styling.
-                content = `<div class="${P}-highlight-block${hasCaptions ? ` ${P}-highlight-block-annotated` : ''}" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};"${labelsAttr}>
+                content = `<div class="${P}-highlight-block${blockClasses ? ` ${blockClasses}` : ''}" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};"${labelsAttr}>
                     <div class="${P}-code-tbar"><div class="${P}-code-dot ${P}-code-dot-r"></div><div class="${P}-code-dot ${P}-code-dot-y"></div><div class="${P}-code-dot ${P}-code-dot-g"></div><span class="${P}-code-tbar-lang">${lang}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${label}</span></div>
                     <div class="${P}-hl-body">
                         <pre><code class="language-${lang}" data-line-numbers="${highlights}">${code}</code></pre>

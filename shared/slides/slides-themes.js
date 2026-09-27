@@ -618,6 +618,31 @@ section.sl-canvas {
 .sl-highlight-block .sl-hl-caption::-webkit-scrollbar-track { background:#0b1220; }
 .sl-highlight-block .sl-hl-caption-inner { padding:0.7rem 0.85rem;font-family:var(--sl-font-body,system-ui,sans-serif);font-size:calc(var(--sl-code-font-size, 13px) * 0.92);line-height:1.5;color:#e2e8f0;white-space:pre-wrap; }
 .sl-highlight-block.sl-highlight-block-annotated pre { border-right:1px solid #334155; }
+/* Bloc à plusieurs zones (surlignage pas-à-pas) : le code défile si son contenu dépasse
+   la hauteur du bloc (un bloc simple, sans étapes, garde son overflow:visible existant,
+   inchangé ci-dessus). Ombre de défilement en haut/bas, même principe que le panneau
+   d'annotation (.sl-hl-caption) juste au-dessus : visible tant qu'il reste du code de
+   ce côté, disparaît une fois arrivé au bord. */
+.sl-highlight-block-stepped pre code {
+    display:block!important;height:100%!important;overflow-y:auto!important;box-sizing:border-box!important;scroll-behavior:smooth;
+    scrollbar-width:thin;scrollbar-color:#64748b #020617;
+    background:
+        linear-gradient(#020617 40%, rgba(2,6,23,0)) local,
+        linear-gradient(rgba(2,6,23,0), #020617 60%) 0 100% local,
+        radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.6), rgba(0,0,0,0)) 0 0,
+        radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.6), rgba(0,0,0,0)) 0 100%;
+    background-repeat:no-repeat!important;
+    background-color:#020617!important;
+    background-size:100% 24px, 100% 24px, 100% 10px, 100% 10px;
+    background-attachment:local, local, scroll, scroll;
+}
+.sl-highlight-block-stepped pre code::-webkit-scrollbar { width:7px; }
+.sl-highlight-block-stepped pre code::-webkit-scrollbar-thumb { background:#64748b;border-radius:4px; }
+.sl-highlight-block-stepped pre code::-webkit-scrollbar-track { background:#020617; }
+/* code-wrapper (posé en JS, cf. viewer-main.js/student-render.js) superpose les zones
+   en position absolute : chacune doit défiler pour SA propre hauteur, indépendamment
+   des autres zones empilées au même endroit. */
+.sl-highlight-block-stepped pre.code-wrapper > code.fragment { overflow-y:auto!important; }
 /* Caption & cross-reference */
 .sl-caption { position:absolute;top:100%;left:0;right:0;text-align:center;font-size:13px;color:var(--sl-muted,#94a3b8);font-style:italic;line-height:1.3;pointer-events:none;padding:4px 6px 0; }
 .sl-caption b { font-style:normal;color:var(--sl-primary,#818cf8); }

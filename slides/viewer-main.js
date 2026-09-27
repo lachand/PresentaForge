@@ -2,7 +2,7 @@
         import Reveal from '../vendor/revealjs/5.1.0/dist/reveal.esm.js';
         import Highlight from '../vendor/revealjs/5.1.0/plugin/highlight/highlight.esm.js';
         import { createWhiteboardController } from './viewer/whiteboard.js';
-        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=7';
+        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=8';
         import { clearNode, el, appendAll } from './viewer/dom-utils.js';
         import { resolveRealtimeContract } from './viewer/runtime-contracts.js';
         import { createViewerAppState } from './viewer/app-state.js';
@@ -1947,6 +1947,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             // Fragment sync for students
             deck.addEventListener('fragmentshown', e => {
                 SlidesRenderer.syncHighlightCaptions(deck.getCurrentSlide?.() || root);
+                SlidesRenderer.notifyFragmentVisibility(e.fragment, true);
                 if (_room.active) {
                     roomBroadcast({
                         type: ROOM_MSG.SLIDE_FRAGMENT,
@@ -1959,6 +1960,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             });
             deck.addEventListener('fragmenthidden', e => {
                 SlidesRenderer.syncHighlightCaptions(deck.getCurrentSlide?.() || root);
+                SlidesRenderer.notifyFragmentVisibility(e.fragment, false);
                 if (_room.active) {
                     roomBroadcast({
                         type: ROOM_MSG.SLIDE_FRAGMENT,
@@ -2627,6 +2629,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     currentFragmentIndex++;
                     ViewerRuntime.presenterCurrentFragment = currentFragmentIndex;
                     frags[currentFragmentIndex].classList.add('visible');
+                    SlidesRenderer.notifyFragmentVisibility(frags[currentFragmentIndex], true);
                     SlidesRenderer.syncHighlightCaptions(document.getElementById('pv-current-inner'));
                     _recordEvent('fragment', { slideIndex: currentIndex, fragmentIndex: currentFragmentIndex, hidden: false });
                     channel.postMessage({ type: SYNC_MSG.FRAGMENT_STEP, slideIndex: currentIndex, fragmentIndex: currentFragmentIndex });
@@ -2648,6 +2651,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     const frags = _getFragments(document.getElementById('pv-current-inner'));
                     const removedOrder = currentFragmentIndex;
                     frags[currentFragmentIndex].classList.remove('visible');
+                    SlidesRenderer.notifyFragmentVisibility(frags[currentFragmentIndex], false);
                     SlidesRenderer.syncHighlightCaptions(document.getElementById('pv-current-inner'));
                     channel.postMessage({ type: SYNC_MSG.FRAGMENT_STEP, slideIndex: currentIndex, fragmentIndex: currentFragmentIndex - 1 });
                     if (_room.active) {

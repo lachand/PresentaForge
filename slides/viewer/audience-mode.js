@@ -369,6 +369,7 @@ export async function initAudienceMode(ctx) {
                     frag.classList.toggle('current-fragment', i === fragmentIndex && fragmentIndex >= 0);
                 });
                 SlidesRenderer.syncHighlightCaptions(slideEl);
+                SlidesRenderer.notifyFragmentVisibility(frags[fragmentIndex], true);
                 break;
             }
             case SYNC_MSG.AUDIENCE_LOCK: {

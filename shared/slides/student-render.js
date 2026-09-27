@@ -967,6 +967,7 @@
                 frag.classList.toggle('current-fragment', i === max && max >= 0);
             });
             window.SlidesRenderer?.syncHighlightCaptions?.(inner);
+            if (max >= 0) window.SlidesRenderer?.notifyFragmentVisibility?.(frags[max], true);
             H.transport.sendTelemetry('fragment');
         }
 
@@ -1012,6 +1013,7 @@
                 if (hidden) target.classList.remove('visible', 'current-fragment');
                 else target.classList.add('visible', 'current-fragment');
                 window.SlidesRenderer?.syncHighlightCaptions?.(inner);
+                window.SlidesRenderer?.notifyFragmentVisibility?.(target, !hidden);
             }
         }
 
