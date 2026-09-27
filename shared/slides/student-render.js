@@ -654,6 +654,10 @@
             const run = () => {
                 codes.forEach(code => {
                     code.dataset.hlProcessed = '1';
+                    // Reveal.js Highlight.init() fait ça pour chaque <pre><code> au boot :
+                    // active les règles CSS qui superposent les zones (position absolute) et
+                    // cachent tout sauf la zone active, plutôt que de les accumuler visuellement.
+                    code.parentNode?.classList.add('code-wrapper');
                     try { _studentHighlightPlugin.highlightBlock(code); }
                     catch (_) { /* langue inconnue ou plugin indisponible : le code reste affiché sans coloration */ }
                 });

@@ -2022,6 +2022,13 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             if (!_presenterHighlightPlugin) _presenterHighlightPlugin = Highlight();
             codes.forEach(code => {
                 code.dataset.hlProcessed = '1';
+                // Reveal.js Highlight.init() fait ça pour CHAQUE <pre><code> du deck au
+                // boot (avant de cloner en fragments) : ça active les règles CSS qui
+                // superposent les zones (position absolute) et cachent tout sauf la zone
+                // active (#pv-current-inner pre.code-wrapper > code.fragment:not(.visible),
+                // slides-viewer.css) — sans quoi les zones s'accumulent visuellement au
+                // lieu de se remplacer l'une l'autre en avançant.
+                code.parentNode?.classList.add('code-wrapper');
                 try { _presenterHighlightPlugin.highlightBlock(code); }
                 catch (_) { /* langue inconnue ou hljs indisponible : le code reste affiché sans coloration */ }
             });

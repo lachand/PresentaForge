@@ -32,7 +32,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     // Student app modules (Lot 20 découpe de student-main.js)
     '../shared/slides/deck-blob-store.js?v=1',
     '../shared/slides/student-storage.js?v=6',
-    '../shared/slides/student-render.js?v=9',
+    '../shared/slides/student-render.js?v=10',
     '../shared/slides/student-revision.js?v=9',
     '../shared/slides/student-quiz.js?v=2',
     '../shared/slides/student-init-transfer.js?v=1',

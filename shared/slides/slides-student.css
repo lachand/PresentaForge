@@ -1580,3 +1580,16 @@ body.revise-offline #revision-bar { display: flex !important; }
 .revise-list-item-actions .ui-btn { flex: 1; min-height: 34px; font-size: 0.78rem; }
 .revise-list-empty { font-size: 0.76rem; line-height: 1.5; color: var(--muted); margin: 0 0 4px; }
 #revise-import-btn { margin-top: 12px; width: 100%; }
+
+/* #slide-inner (rendu élève) n'est jamais sous un deck Reveal.js réel (salle WebRTC,
+   pas de librairie Reveal côté élève) : les règles .reveal .fragment{...} de reveal.css
+   (masquer un fragment par défaut, le révéler via .visible) ne s'y appliquent jamais.
+   Même besoin que #pv-current-inner côté présentateur (slides-viewer.css) : masquer/
+   révéler, et pour le code annoté à plusieurs zones (pre.code-wrapper, posé par
+   student-render.js _processStudentHighlights juste avant de cloner via
+   highlightBlock), forcer l'exclusivité (une seule zone visible à la fois, superposées
+   en absolute) plutôt que l'accumulation par défaut d'un fragment générique. */
+#slide-inner .fragment { opacity: 0; visibility: hidden; transition: opacity 0.15s ease; }
+#slide-inner .fragment.visible { opacity: 1; visibility: inherit; }
+#slide-inner pre.code-wrapper > code.fragment { visibility: visible; }
+#slide-inner pre.code-wrapper > code.fragment:not(.visible) { opacity: 0 !important; }

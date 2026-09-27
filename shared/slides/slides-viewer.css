@@ -1522,10 +1522,24 @@
             word-wrap: break-word;
         }
         .pv-notes-prewrap { white-space: pre-wrap; }
-        #pv-current-inner .fragment { opacity: 0; visibility: hidden; transition: opacity 0.15s ease; }
-        #pv-current-inner .fragment.visible { opacity: 1; visibility: inherit; }
-        #pv-current-inner pre.code-wrapper > code.fragment { visibility: visible; }
-        #pv-current-inner pre.code-wrapper > code.fragment:not(.visible) { opacity: 0 !important; }
+        /* #pv-current-inner et #pv-next-inner (mode présentateur) ne sont pas sous un
+           deck Reveal.js réel : les règles .reveal .fragment{...} de reveal.css (qui
+           masquent un fragment par défaut, le révèlent via .visible) ne s'y appliquent
+           jamais (la même règle existe, adaptée à #slide-inner, dans
+           slides-student.css pour le mode élève). On reproduit ici le strict nécessaire :
+           masquer/révéler un fragment, et pour le code annoté à plusieurs zones (pre.code-wrapper,
+           posé par viewer-main.js _processPresenterHighlights / student-render.js
+           _processStudentHighlights juste avant de cloner via highlightBlock), forcer
+           l'exclusivité (une seule zone visible à la fois, superposées en absolute)
+           plutôt que l'accumulation par défaut d'un fragment générique. */
+        #pv-current-inner .fragment,
+        #pv-next-inner .fragment { opacity: 0; visibility: hidden; transition: opacity 0.15s ease; }
+        #pv-current-inner .fragment.visible,
+        #pv-next-inner .fragment.visible { opacity: 1; visibility: inherit; }
+        #pv-current-inner pre.code-wrapper > code.fragment,
+        #pv-next-inner pre.code-wrapper > code.fragment { visibility: visible; }
+        #pv-current-inner pre.code-wrapper > code.fragment:not(.visible),
+        #pv-next-inner pre.code-wrapper > code.fragment:not(.visible) { opacity: 0 !important; }
         .pv-notes-empty {
             color: rgba(255,255,255,0.2);
             font-style: italic;
