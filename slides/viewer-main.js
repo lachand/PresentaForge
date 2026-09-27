@@ -1877,6 +1877,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
 
             const mountVisible = () => {
                 SlidesRenderer.mountRuntimeElements(root, deck);
+                SlidesRenderer.syncHighlightCaptions(deck.getCurrentSlide?.() || root);
             };
             mountVisible();
             deck.addEventListener('slidechanged', mountVisible);
@@ -1945,6 +1946,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
 
             // Fragment sync for students
             deck.addEventListener('fragmentshown', e => {
+                SlidesRenderer.syncHighlightCaptions(deck.getCurrentSlide?.() || root);
                 if (_room.active) {
                     roomBroadcast({
                         type: ROOM_MSG.SLIDE_FRAGMENT,
@@ -1956,6 +1958,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 }
             });
             deck.addEventListener('fragmenthidden', e => {
+                SlidesRenderer.syncHighlightCaptions(deck.getCurrentSlide?.() || root);
                 if (_room.active) {
                     roomBroadcast({
                         type: ROOM_MSG.SLIDE_FRAGMENT,
@@ -1993,6 +1996,34 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 toIntOrNull,
                 validateSyncMessage: validateSyncMessage,
                 audiencePolicy: AUDIENCE_POLICY,
+            });
+        }
+
+        /* ── Presenter mode : surbrillance de code pas-à-pas ─
+         * Les panneaux de prévisualisation du mode présentateur (#pv-current-inner,
+         * #pv-next-inner) sont de simples clones DOM — pas de vrai deck Reveal.js —
+         * donc le plugin Highlight ne s'y applique jamais automatiquement (il ne
+         * tourne qu'à `Reveal.initialize({ plugins: [Highlight] })`, cf. initRevealMode
+         * ci-dessus). Sans lui, un bloc `highlight` à plusieurs zones (`data-line-numbers`
+         * séparé par des « | ») reste un unique <code> inerte : aucune coloration
+         * syntaxique, aucune zone surlignée, et surtout aucun `.fragment` créé — donc
+         * `_getFragments()` n'en trouve aucun et une pression sur Flèche droite saute
+         * directement à la slide suivante au lieu d'avancer d'une zone.
+         *
+         * `highlightBlock()` est la méthode du plugin qui fait ce travail sur UN
+         * élément <code> donné (coloration hljs + clonage en `.fragment` par zone,
+         * une par segment séparé par « | ») ; elle ne dépend pas d'un deck Reveal
+         * réel, donc on peut l'appeler directement ici. */
+        let _presenterHighlightPlugin = null;
+        function _processPresenterHighlights(container) {
+            if (!container) return;
+            const codes = container.querySelectorAll('.sl-highlight-block pre code[data-line-numbers]:not([data-hl-processed])');
+            if (!codes.length) return;
+            if (!_presenterHighlightPlugin) _presenterHighlightPlugin = Highlight();
+            codes.forEach(code => {
+                code.dataset.hlProcessed = '1';
+                try { _presenterHighlightPlugin.highlightBlock(code); }
+                catch (_) { /* langue inconnue ou hljs indisponible : le code reste affiché sans coloration */ }
             });
         }
 
@@ -2540,6 +2571,10 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 // Mount special elements (LaTeX, Mermaid, Timer, Quiz) in presenter frames
                 SlidesRenderer.mountRuntimeElements(currentInner);
                 SlidesRenderer.mountRuntimeElements(nextInner);
+                _processPresenterHighlights(currentInner);
+                _processPresenterHighlights(nextInner);
+                SlidesRenderer.syncHighlightCaptions(currentInner);
+                SlidesRenderer.syncHighlightCaptions(nextInner);
                 // Apply fragment visibility state (currentFragmentIndex)
                 _getFragments(currentInner).forEach((f, i) => f.classList.toggle('visible', i <= currentFragmentIndex));
                 ViewerRuntime.presenterCurrentFragment = currentFragmentIndex;
@@ -2585,6 +2620,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     currentFragmentIndex++;
                     ViewerRuntime.presenterCurrentFragment = currentFragmentIndex;
                     frags[currentFragmentIndex].classList.add('visible');
+                    SlidesRenderer.syncHighlightCaptions(document.getElementById('pv-current-inner'));
                     _recordEvent('fragment', { slideIndex: currentIndex, fragmentIndex: currentFragmentIndex, hidden: false });
                     channel.postMessage({ type: SYNC_MSG.FRAGMENT_STEP, slideIndex: currentIndex, fragmentIndex: currentFragmentIndex });
                     if (_room.active) {
@@ -2605,6 +2641,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     const frags = _getFragments(document.getElementById('pv-current-inner'));
                     const removedOrder = currentFragmentIndex;
                     frags[currentFragmentIndex].classList.remove('visible');
+                    SlidesRenderer.syncHighlightCaptions(document.getElementById('pv-current-inner'));
                     channel.postMessage({ type: SYNC_MSG.FRAGMENT_STEP, slideIndex: currentIndex, fragmentIndex: currentFragmentIndex - 1 });
                     if (_room.active) {
                         roomBroadcast({

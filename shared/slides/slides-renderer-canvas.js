@@ -616,13 +616,26 @@
                 const labelRaw = String(el.data?.label ?? 'Code').trim() || 'Code';
                 const label = esc(labelRaw);
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);
-                const highlights = (el.data?.highlights || []).map(h => h.lines).join('|');
+                const highlightZones = el.data?.highlights || [];
+                const highlights = highlightZones.map(h => h.lines).join('|');
+                // Annotation panel: shows the .label of the zone currently highlighted
+                // (stepped in sync with the code's own fragment steps — see
+                // SlidesRenderer.syncHighlightCaptions). Only rendered when at least
+                // one zone actually has a label; scrolls on its own if the text is
+                // long (data-hl-labels carries every zone's text for the runtime).
+                const zoneLabels = highlightZones.map(h => String(h?.label || '').trim());
+                const hasCaptions = zoneLabels.some(t => t);
+                const captionHtml = hasCaptions ? `<div class="${P}-hl-caption"><div class="${P}-hl-caption-inner">${esc(zoneLabels[0] || '')}</div></div>` : '';
+                const labelsAttr = hasCaptions ? ` data-hl-labels="${esc(JSON.stringify(zoneLabels))}"` : '';
                 // Use Reveal.js native <pre><code> (no code-terminal wrapper)
                 // to avoid flex layout conflicts with Reveal's fragment cloning.
                 // Wrap in .{P}-highlight-block to apply terminal-like styling.
-                content = `<div class="${P}-highlight-block" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};">
+                content = `<div class="${P}-highlight-block${hasCaptions ? ` ${P}-highlight-block-annotated` : ''}" style="--sl-code-font-size:${codeSize}px;--sl-code-gutter-size:${codeSize}px;--sl-code-lang-size:${langSize}px;--sl-code-line-height:${codeLineHeight};"${labelsAttr}>
                     <div class="${P}-code-tbar"><div class="${P}-code-dot ${P}-code-dot-r"></div><div class="${P}-code-dot ${P}-code-dot-y"></div><div class="${P}-code-dot ${P}-code-dot-g"></div><span class="${P}-code-tbar-lang">${lang}</span><span style="margin-left:auto;font-size:${Math.round(base * 0.58)}px;font-weight:700;color:${tone.accent};text-transform:uppercase;letter-spacing:0.04em;">${label}</span></div>
-                    <pre><code class="language-${lang}" data-line-numbers="${highlights}">${code}</code></pre>
+                    <div class="${P}-hl-body">
+                        <pre><code class="language-${lang}" data-line-numbers="${highlights}">${code}</code></pre>
+                        ${captionHtml}
+                    </div>
                 </div>`;
                 break;
             }

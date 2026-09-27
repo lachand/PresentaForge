@@ -582,7 +582,8 @@ section.sl-canvas {
    Unlike sl-code-terminal, this does NOT use flex layout on the code area. */
 .sl-highlight-block { width:100%;height:100%;background:#020617;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;border:1px solid #334155; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03); }
 .sl-highlight-block .sl-code-tbar { border-bottom:1px solid #334155; }
-.sl-highlight-block pre { flex:1;margin:0!important;padding:0!important;background:#020617!important;box-shadow:none!important;width:100%!important;border:none!important;position:relative;overflow:hidden; }
+.sl-highlight-block .sl-hl-body { flex:1;min-height:0;display:flex;flex-direction:row;overflow:hidden; }
+.sl-highlight-block pre { flex:1;min-width:0;margin:0!important;padding:0!important;background:#020617!important;box-shadow:none!important;width:100%!important;border:none!important;position:relative;overflow:hidden; }
 .sl-highlight-block pre code { font-family:var(--sl-font-mono,monospace)!important;font-variant-ligatures:none!important;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0!important;font-size:var(--sl-code-font-size,13px)!important;line-height:var(--sl-code-line-height,1.58)!important;color:#f8fafc!important;padding:0.65rem 1rem!important;background:#020617!important;max-height:none!important;overflow:visible!important;text-align:left!important;text-shadow:0 1px 0 rgba(0,0,0,0.35); }
 .sl-highlight-block pre.code-wrapper > code.fragment { position:absolute;top:0;left:0;width:100%;height:100%;background:#020617!important;box-sizing:border-box; }
 .sl-highlight-block .hljs-ln { width:100%;border-collapse:collapse; }
@@ -591,6 +592,15 @@ section.sl-canvas {
 .sl-highlight-block .highlight-line { background:rgba(248,250,252,0.16); }
 .sl-highlight-block .has-highlights tr:not(.highlight-line) { opacity:1; }
 .sl-highlight-block .has-highlights .highlight-line .hljs-ln-numbers { color:#e2e8f0; }
+/* Annotation panel (droite) : texte du label de la zone actuellement surlignée,
+   tenu à jour par SlidesRenderer.syncHighlightCaptions() à chaque pas. Défile
+   (scrollbar fine) si le texte est trop long pour la hauteur disponible. */
+.sl-highlight-block .sl-hl-caption { flex:0 0 32%;max-width:270px;min-width:132px;border-left:1px solid #334155;background:#0b1220;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#475569 transparent; }
+.sl-highlight-block .sl-hl-caption::-webkit-scrollbar { width:6px; }
+.sl-highlight-block .sl-hl-caption::-webkit-scrollbar-thumb { background:#475569;border-radius:3px; }
+.sl-highlight-block .sl-hl-caption::-webkit-scrollbar-track { background:transparent; }
+.sl-highlight-block .sl-hl-caption-inner { padding:0.7rem 0.85rem;font-family:var(--sl-font-body,system-ui,sans-serif);font-size:calc(var(--sl-code-font-size, 13px) * 0.92);line-height:1.5;color:#e2e8f0;white-space:pre-wrap; }
+.sl-highlight-block.sl-highlight-block-annotated pre { border-right:1px solid #334155; }
 /* Caption & cross-reference */
 .sl-caption { position:absolute;top:100%;left:0;right:0;text-align:center;font-size:13px;color:var(--sl-muted,#94a3b8);font-style:italic;line-height:1.3;pointer-events:none;padding:4px 6px 0; }
 .sl-caption b { font-style:normal;color:var(--sl-primary,#818cf8); }

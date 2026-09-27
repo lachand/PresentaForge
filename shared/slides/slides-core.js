@@ -505,6 +505,59 @@ class SlidesRenderer {
         return { style, attrs };
     }
 
+    /**
+     * Met à jour le panneau d'annotation d'un bloc `highlight` (.sl-hl-caption)
+     * avec le label de la zone actuellement surlignée.
+     *
+     * Convention (identique en mode normal Reveal.js, mode présentateur et mode
+     * élève, qui toggle tous une classe `.visible` sur les clones `.fragment`
+     * créés par le plugin Highlight ou son équivalent présentateur) : dans un
+     * bloc `[data-hl-labels]`, les `<code>` successifs (zone 0 = base, zones
+     * suivantes = clones `.fragment`, dans l'ordre du tableau `highlights`)
+     * portent chacun `data-hl-zone-index` — posé ici au premier passage — et la
+     * zone active est le dernier de ces `<code>` qui est visible (base, ou
+     * fragment avec `.visible`).
+     *
+     * Aucune dépendance à l'événement `fragmentshown` de Reveal.js ni à sa
+     * classe `.current-fragment` : fonctionne aussi pour les panneaux du mode
+     * présentateur et pour la synchronisation élève, qui ne sont pas de vrais
+     * decks Reveal.
+     *
+     * @param {Element|Document} [root=document] Racine dans laquelle chercher les blocs.
+     */
+    static syncHighlightCaptions(root) {
+        const scope = root || (typeof document !== 'undefined' ? document : null);
+        if (!scope || typeof scope.querySelectorAll !== 'function') return;
+        const blocks = scope.querySelectorAll('[data-hl-labels]');
+        blocks.forEach(block => {
+            let labels;
+            try {
+                labels = JSON.parse(block.getAttribute('data-hl-labels') || '[]');
+            } catch (_) {
+                labels = [];
+            }
+            if (!Array.isArray(labels) || !labels.length) return;
+            const codes = Array.from(block.querySelectorAll('pre code'));
+            if (!codes.length) return;
+            codes.forEach((code, i) => {
+                if (code.dataset.hlZoneIndex === undefined || code.dataset.hlZoneIndex === '') {
+                    code.dataset.hlZoneIndex = String(i);
+                }
+            });
+            let active = codes[0];
+            for (let i = codes.length - 1; i >= 0; i--) {
+                const code = codes[i];
+                if (!code.classList.contains('fragment') || code.classList.contains('visible')) {
+                    active = code;
+                    break;
+                }
+            }
+            const zoneIndex = parseInt(active?.dataset?.hlZoneIndex, 10) || 0;
+            const caption = block.querySelector('.sl-hl-caption-inner, .cel-hl-caption-inner');
+            if (caption) caption.textContent = labels[zoneIndex] || '';
+        });
+    }
+
     /** Render a single slide as HTML (for preview or Reveal.js) */
     static renderSlide(slide, index = 0, opts = {}) {
         const type = slide.type || 'blank';
