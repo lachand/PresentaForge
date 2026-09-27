@@ -71,6 +71,7 @@ export async function initAudienceMode(ctx) {
     const mountVisible = () => {
         SlidesRenderer.mountWidgets(root, deck);
         SlidesRenderer.mountSpecialElements(root);
+        SlidesRenderer.syncHighlightCaptions(deck.getCurrentSlide?.() || root);
     };
     mountVisible();
     deck.addEventListener('slidechanged', mountVisible);
@@ -367,6 +368,7 @@ export async function initAudienceMode(ctx) {
                     frag.classList.toggle('visible', visible);
                     frag.classList.toggle('current-fragment', i === fragmentIndex && fragmentIndex >= 0);
                 });
+                SlidesRenderer.syncHighlightCaptions(slideEl);
                 break;
             }
             case SYNC_MSG.AUDIENCE_LOCK: {

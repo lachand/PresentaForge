@@ -595,10 +595,27 @@ section.sl-canvas {
 /* Annotation panel (droite) : texte du label de la zone actuellement surlignée,
    tenu à jour par SlidesRenderer.syncHighlightCaptions() à chaque pas. Défile
    (scrollbar fine) si le texte est trop long pour la hauteur disponible. */
-.sl-highlight-block .sl-hl-caption { flex:0 0 32%;max-width:270px;min-width:132px;border-left:1px solid #334155;background:#0b1220;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#475569 transparent; }
-.sl-highlight-block .sl-hl-caption::-webkit-scrollbar { width:6px; }
-.sl-highlight-block .sl-hl-caption::-webkit-scrollbar-thumb { background:#475569;border-radius:3px; }
-.sl-highlight-block .sl-hl-caption::-webkit-scrollbar-track { background:transparent; }
+.sl-highlight-block .sl-hl-caption {
+    flex:0 0 32%;max-width:270px;min-width:132px;min-height:0;border-left:1px solid #334155;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:#64748b #0b1220;
+    /* Ombres de défilement (technique CSS pure, sans JS) : un dégradé visible en haut
+       et/ou en bas du panneau tant qu'il reste du contenu à faire défiler de ce côté,
+       qui s'efface tout seul une fois qu'on a atteint le bord — plus fiable qu'une
+       barre de défilement seule (fine, parfois masquée par l'OS/le navigateur tant
+       qu'on ne survole pas ou qu'on ne défile pas). */
+    background:
+        linear-gradient(#0b1220 40%, rgba(11,18,32,0)) local,
+        linear-gradient(rgba(11,18,32,0), #0b1220 60%) 0 100% local,
+        radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.55), rgba(0,0,0,0)) 0 0,
+        radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.55), rgba(0,0,0,0)) 0 100%;
+    background-repeat:no-repeat;
+    background-color:#0b1220;
+    background-size:100% 28px, 100% 28px, 100% 10px, 100% 10px;
+    background-attachment:local, local, scroll, scroll;
+}
+.sl-highlight-block .sl-hl-caption::-webkit-scrollbar { width:7px; }
+.sl-highlight-block .sl-hl-caption::-webkit-scrollbar-thumb { background:#64748b;border-radius:4px; }
+.sl-highlight-block .sl-hl-caption::-webkit-scrollbar-track { background:#0b1220; }
 .sl-highlight-block .sl-hl-caption-inner { padding:0.7rem 0.85rem;font-family:var(--sl-font-body,system-ui,sans-serif);font-size:calc(var(--sl-code-font-size, 13px) * 0.92);line-height:1.5;color:#e2e8f0;white-space:pre-wrap; }
 .sl-highlight-block.sl-highlight-block-annotated pre { border-right:1px solid #334155; }
 /* Caption & cross-reference */

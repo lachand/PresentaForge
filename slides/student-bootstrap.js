@@ -24,7 +24,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/slides-typography.js?v=1',
     '../shared/slides/element-style-schema.js?v=1',
     '../shared/slides/slides-core.js?v=35',
-    '../shared/slides/slides-themes.js?v=4',
+    '../shared/slides/slides-themes.js?v=5',
     '../shared/slides/slides-diagram-renderer.js?v=1',
     '../shared/slides/slides-renderer-canvas.js?v=7',
     '../shared/slides/ui-icons.js?v=2',
@@ -32,7 +32,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     // Student app modules (Lot 20 découpe de student-main.js)
     '../shared/slides/deck-blob-store.js?v=1',
     '../shared/slides/student-storage.js?v=6',
-    '../shared/slides/student-render.js?v=8',
+    '../shared/slides/student-render.js?v=9',
     '../shared/slides/student-revision.js?v=9',
     '../shared/slides/student-quiz.js?v=2',
     '../shared/slides/student-init-transfer.js?v=1',

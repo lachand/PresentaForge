@@ -638,16 +638,62 @@
             detectSlides();
         }
 
+        // ── Code annoté (`highlight`) : coloration + surbrillance pas-à-pas ──
+        // `.sl-highlight-block pre code[data-line-numbers]` n'est qu'un texte brut tant
+        // que le plugin Reveal.js Highlight ne l'a pas traité (coloration hljs + clonage
+        // en `.fragment` par zone, une par segment « | » — voir viewer-main.js
+        // _processPresenterHighlights pour le même besoin côté présentateur). L'élève
+        // n'a pas de deck Reveal.js réel non plus, donc ce traitement ne se produit
+        // jamais tout seul ici — sans lui, le code resterait non coloré ET sans zones
+        // surlignées ni panneau d'annotation qui avance avec le présentateur.
+        let _studentHighlightPlugin = null;
+        function _processStudentHighlights(container) {
+            if (!container) return;
+            const codes = container.querySelectorAll('.sl-highlight-block pre code[data-line-numbers]:not([data-hl-processed])');
+            if (!codes.length) return;
+            const run = () => {
+                codes.forEach(code => {
+                    code.dataset.hlProcessed = '1';
+                    try { _studentHighlightPlugin.highlightBlock(code); }
+                    catch (_) { /* langue inconnue ou plugin indisponible : le code reste affiché sans coloration */ }
+                });
+                window.SlidesRenderer?.syncHighlightCaptions?.(container);
+            };
+            if (window.RevealHighlight) {
+                if (!_studentHighlightPlugin) _studentHighlightPlugin = window.RevealHighlight();
+                run();
+                return;
+            }
+            if (!document.getElementById('student-hljs-ln-css')) {
+                const link = document.createElement('link');
+                link.id = 'student-hljs-ln-css'; link.rel = 'stylesheet';
+                link.href = '../vendor/revealjs/5.1.0/plugin/highlight/monokai.css';
+                document.head.appendChild(link);
+            }
+            const onReady = () => { _studentHighlightPlugin = window.RevealHighlight(); run(); };
+            if (!document.getElementById('student-hljs-ln-js')) {
+                const s = document.createElement('script');
+                s.id = 'student-hljs-ln-js';
+                s.src = '../vendor/revealjs/5.1.0/plugin/highlight/highlight.js';
+                s.onload = onReady;
+                document.head.appendChild(s);
+            } else {
+                const poll = setInterval(() => { if (window.RevealHighlight) { clearInterval(poll); onReady(); } }, 50);
+            }
+        }
+
         // ── Runtime mount (special elements + widgets) ───
         function mountSlideRuntime(inner) {
             if (st.deckMode && window.SlidesRenderer && typeof window.SlidesRenderer.mountRuntimeElements === 'function') {
                 // Révision hors-CM : les quiz-live deviennent auto-correctifs (pas de présentateur).
                 window.SlidesRenderer.mountRuntimeElements(inner, null, { includeSpecial: true, includeWidgets: true, soloQuiz: !!H.reviseOffline })
                     .catch(err => console.warn('mountRuntimeElements (student):', err));
+                _processStudentHighlights(inner);
                 return;
             }
             mountCodeLive(inner);
             mountStudentWidgets(inner);
+            _processStudentHighlights(inner);
             mountSpecialRender(inner);
         }
 
@@ -916,6 +962,7 @@
                 frag.classList.toggle('visible', visible);
                 frag.classList.toggle('current-fragment', i === max && max >= 0);
             });
+            window.SlidesRenderer?.syncHighlightCaptions?.(inner);
             H.transport.sendTelemetry('fragment');
         }
 
@@ -960,6 +1007,7 @@
             if (target) {
                 if (hidden) target.classList.remove('visible', 'current-fragment');
                 else target.classList.add('visible', 'current-fragment');
+                window.SlidesRenderer?.syncHighlightCaptions?.(inner);
             }
         }
 
