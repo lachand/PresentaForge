@@ -181,6 +181,8 @@
         .rm-action-btn.ui-btn--danger { border-color:var(--danger); background:color-mix(in srgb, var(--danger) 18%, transparent); color:var(--danger); }
         .rm-action-btn.danger:hover,
         .rm-action-btn.ui-btn--danger:hover { background:rgba(248,113,113,0.18); }
+        .rm-adhoc-timer-presets { display:flex; gap:5px; flex-wrap:wrap; }
+        .rm-adhoc-timer-presets .rm-action-btn { width:auto; flex:1 1 auto; }
         .rm-hand-row { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid var(--viewer-border-soft); font-size:0.78rem; }
         .rm-hand-row:last-child { border-bottom:none; }
         .rm-lower-btn { padding:2px 7px; border-radius:4px; border:1px solid var(--outline-variant); background:transparent; color:var(--on-surface-muted); cursor:pointer; font-size:0.7rem; margin-left:auto; transition:all 0.15s; }
@@ -2016,6 +2018,7 @@
 #rm-panel-tools,
 #rm-poll-live,
 #rm-cloud-live,
+#rm-adhoc-timer-live,
 #rm-lower-all,
 #rm-remote-link-wrap {
     display: none;

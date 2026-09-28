@@ -108,6 +108,27 @@ export function bindRoomPanelActions(context = {}) {
     documentRef.getElementById('rm-poll-end')?.addEventListener('click', () => {
         dispatchCommand('room.poll.end');
     });
+    [30, 60, 120, 300].forEach(seconds => {
+        documentRef.getElementById(`rm-adhoc-timer-preset-${seconds}`)?.addEventListener('click', () => {
+            if (!dispatchCommand('room.timer.start', { seconds })) {
+                setNudgeFeedback('Ouvrez la salle pour lancer un minuteur.');
+            }
+        });
+    });
+    documentRef.getElementById('rm-adhoc-timer-start')?.addEventListener('click', () => {
+        const custom = /** @type {HTMLInputElement|null} */ (documentRef.getElementById('rm-adhoc-timer-custom'))?.value;
+        const seconds = Number(custom);
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            setNudgeFeedback('Indiquez une durée en secondes.');
+            return;
+        }
+        if (!dispatchCommand('room.timer.start', { seconds })) {
+            setNudgeFeedback('Ouvrez la salle pour lancer un minuteur.');
+        }
+    });
+    documentRef.getElementById('rm-adhoc-timer-stop')?.addEventListener('click', () => {
+        dispatchCommand('room.timer.end');
+    });
     documentRef.getElementById('rm-cloud-start')?.addEventListener('click', () => {
         const prompt = /** @type {HTMLInputElement|null} */ (documentRef.getElementById('rm-cloud-prompt'))?.value?.trim?.() || '';
         if (!dispatchCommand('room.cloud.start', { prompt })) {

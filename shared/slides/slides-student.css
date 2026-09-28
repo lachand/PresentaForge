@@ -202,6 +202,17 @@ body {
     color: #fff; font-size: 0.95rem; line-height: 1.45;
     font-family: var(--font-ui);
 }
+/* Minuteur ad-hoc (présentateur → salle, indépendant de toute slide) */
+#student-adhoc-timer {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,0,0,0.78); color: #fff;
+    padding: 8px 16px; border-radius: var(--radius-md, 0.75rem);
+    font-family: var(--font-ui); font-variant-numeric: tabular-nums;
+    font-size: 1.3rem; font-weight: 700; letter-spacing: 0.01em;
+    z-index: 21; pointer-events: none; text-align: center;
+}
+#student-adhoc-timer[hidden] { display: none; }
+#student-adhoc-timer.ended { color: #fca5a5; }
 .reaction-btn.cc-btn { padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; }
 .reaction-btn.cc-btn.active { background: var(--primary); color: var(--on-primary); }
 #slide-inner { width: 1280px; height: 720px; transform-origin: top left; position: relative; }

@@ -631,6 +631,14 @@
                     H.render.applyTimerStateMessage(msg);
                     break;
 
+                case ROOM_MSG.TIMER_ADHOC_START:
+                    H.render.applyAdhocTimerStart(msg);
+                    break;
+
+                case ROOM_MSG.TIMER_ADHOC_END:
+                    H.render.applyAdhocTimerEnd(msg);
+                    break;
+
                 case ROOM_MSG.LASER:
                     H.render.applyLaserMessage(msg);
                     break;

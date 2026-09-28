@@ -98,6 +98,7 @@ export function createStudentJoinRecord(params) {
  *   activeRankOrder: any,
  *   activeQuiz?: any,
  *   activeTimers?: Record<string, any> | any[],
+ *   activeAdhocTimer?: { timerId: string, seconds: number, startedAt: number, label?: string } | null,
  *   whiteboardState?: any | (() => any),
  * }} params
  */
@@ -110,6 +111,7 @@ export function sendActiveRoomActivities(params) {
     const activeRankOrder = params?.activeRankOrder;
     const activeQuiz = params?.activeQuiz;
     const activeTimers = params?.activeTimers;
+    const activeAdhocTimer = params?.activeAdhocTimer;
     const wbRaw = typeof params?.whiteboardState === 'function'
         ? params.whiteboardState()
         : params?.whiteboardState;
@@ -183,6 +185,17 @@ export function sendActiveRoomActivities(params) {
                 running: !!timer.running,
                 ended: !!timer.ended,
             });
+        });
+    }
+    // Minuteur ad-hoc "salle" — startedAt renvoyé tel quel (comme activeQuiz ci-dessus) :
+    // un retardataire recalcule seconds - (Date.now() - startedAt) côté student-render.js.
+    if (activeAdhocTimer && ROOM_MSG.TIMER_ADHOC_START) {
+        safeSend(conn, {
+            type: ROOM_MSG.TIMER_ADHOC_START,
+            timerId: activeAdhocTimer.timerId,
+            seconds: activeAdhocTimer.seconds,
+            startedAt: activeAdhocTimer.startedAt,
+            label: activeAdhocTimer.label || '',
         });
     }
 }

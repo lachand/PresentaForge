@@ -72,6 +72,8 @@ body{height:100dvh;display:flex;flex-direction:column}
 .rp-black.active{opacity:1}
 .rp-whiteboard{position:absolute;left:0;top:0;width:1280px;height:720px;object-fit:contain;pointer-events:none;z-index:6}
 .rp-laser-dot{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(220,38,38,.9);box-shadow:0 0 8px 3px rgba(220,38,38,.5);pointer-events:none;transform:translate(-50%,-50%);z-index:8}
+.rp-adhoc-timer{position:absolute;top:16px;right:16px;padding:8px 16px;border-radius:10px;background:rgba(15,23,42,.72);color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:28px;font-weight:700;letter-spacing:.02em;pointer-events:none;z-index:9;display:none}
+.rp-adhoc-timer.ended{color:#fca5a5}
 .rp-controls{display:grid;grid-template-columns:auto auto auto auto auto minmax(140px,1fr) auto auto;gap:8px;align-items:center}
 .rp-btn,.rp-select{height:32px;border-radius:8px;border:1px solid var(--rp-border);background:var(--rp-surface);color:var(--rp-text);padding:0 10px;font-size:.76rem;cursor:pointer}
 .rp-btn:hover,.rp-select:hover{background:var(--rp-surface-hover)}
@@ -119,6 +121,7 @@ body{height:100dvh;display:flex;flex-direction:column}
     <div class="slides" id="rp-slide-root"></div>
     <img class="rp-whiteboard" id="rp-whiteboard" alt="" style="display:none">
     <div class="rp-laser-dot" id="rp-laser-dot" style="display:none"></div>
+    <div class="rp-adhoc-timer" id="rp-adhoc-timer" style="display:none"></div>
 </div>
 <div class="rp-black" id="rp-black"></div>
         </div>
@@ -176,6 +179,7 @@ body{height:100dvh;display:flex;flex-direction:column}
     var slideRoot = document.getElementById('rp-slide-root');
     var blackEl = document.getElementById('rp-black');
     var laserDotEl = document.getElementById('rp-laser-dot');
+    var adhocTimerEl = document.getElementById('rp-adhoc-timer');
     var whiteboardEl = document.getElementById('rp-whiteboard');
     var playBtn = document.getElementById('rp-play');
     var prevBtn = document.getElementById('rp-prev');
@@ -312,7 +316,10 @@ return 0;
         });
     }
     function computeStateAt(ms) {
-        var state = { index: 0, fragmentIndex: -1, black: false, laser: null, zoom: null, whiteboard: null };
+        // state.timer n'est PAS réinitialisé sur record:start/goTo (contrairement à
+        // laser/zoom/whiteboard) : le minuteur ad-hoc est volontairement indépendant de toute
+        // slide, comme en direct — il doit persister à travers la navigation pendant le replay.
+        var state = { index: 0, fragmentIndex: -1, black: false, laser: null, zoom: null, whiteboard: null, timer: null, ms: ms };
         for (var i = 0; i < events.length; i++) {
 var entry = events[i];
 var t = Math.max(0, Number(entry && entry.t || 0));
@@ -368,6 +375,15 @@ if (type === 'whiteboard:frame') {
 if (type === 'black') {
     state.black = !!payload.on;
 }
+if (type === 'timer:adhoc:start') {
+    var tSecs = Number(payload.seconds);
+    if (Number.isFinite(tSecs) && tSecs > 0) state.timer = { seconds: tSecs, startedAt: t, label: String(payload.label || '') };
+    continue;
+}
+if (type === 'timer:adhoc:end') {
+    state.timer = null;
+    continue;
+}
         }
         state.index = clamp(state.index, 0, Math.max(0, totalSlides - 1));
         return state;
@@ -388,6 +404,19 @@ if (type === 'black') {
         }
         slideRoot.style.transformOrigin = (clamp(Number(zoom.x) || 0, 0, 1) * 100).toFixed(3) + '% ' + (clamp(Number(zoom.y) || 0, 0, 1) * 100).toFixed(3) + '%';
         slideRoot.style.transform = 'scale(' + s + ')';
+    }
+    function applyTimerState(timer, ms) {
+        if (!adhocTimerEl) return;
+        if (!timer) { adhocTimerEl.style.display = 'none'; adhocTimerEl.classList.remove('ended'); return; }
+        var remaining = timer.seconds - (Number(ms || 0) - timer.startedAt) / 1000;
+        adhocTimerEl.style.display = 'block';
+        if (remaining <= 0) {
+            adhocTimerEl.textContent = 'Temps écoulé';
+            adhocTimerEl.classList.add('ended');
+        } else {
+            adhocTimerEl.classList.remove('ended');
+            adhocTimerEl.textContent = (timer.label ? timer.label + ' — ' : '') + Math.ceil(remaining) + 's';
+        }
     }
     function applyWhiteboardState(wb) {
         if (!whiteboardEl) return;
@@ -414,6 +443,7 @@ frags[i].classList.toggle('visible', i <= state.fragmentIndex);
         applyLaserState(state.laser);
         applyZoomState(state.zoom);
         applyWhiteboardState(state.whiteboard);
+        applyTimerState(state.timer || null, state.ms || 0);
         countEl.textContent = 'Slide ' + (state.index + 1) + ' / ' + totalSlides;
         prevBtn.disabled = state.index <= 0;
         nextBtn.disabled = state.index >= (totalSlides - 1);

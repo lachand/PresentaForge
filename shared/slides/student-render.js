@@ -479,6 +479,55 @@
             }));
         }
 
+        /**
+         * Minuteur ad-hoc "salle" (ROOM_MSG.TIMER_ADHOC_START/END) — indépendant de toute
+         * slide, déclenché à la volée depuis la barre présentateur. Contrairement au minuteur
+         * de contenu ci-dessus, aucun widget n'est monté côté étudiant : on affiche/anime
+         * directement l'overlay #student-adhoc-timer. Le temps restant est recalculé à chaque
+         * tick à partir de `startedAt` (horodatage absolu, pas de décrément local) pour éviter
+         * toute dérive sous throttling d'onglet et rester correct pour un retardataire qui
+         * rejoint la salle en cours de compte à rebours.
+         */
+        let _adhocTimerInterval = null;
+        let _adhocTimerId = '';
+        function applyAdhocTimerStart(msg) {
+            if (!msg || typeof msg !== 'object') return;
+            const el = document.getElementById('student-adhoc-timer');
+            if (!el) return;
+            const seconds = Number(msg.seconds);
+            const startedAt = Number(msg.startedAt);
+            if (!Number.isFinite(seconds) || seconds <= 0 || !Number.isFinite(startedAt)) return;
+            _adhocTimerId = typeof msg.timerId === 'string' ? msg.timerId : '';
+            const label = typeof msg.label === 'string' ? msg.label : '';
+            if (_adhocTimerInterval) { clearInterval(_adhocTimerInterval); _adhocTimerInterval = null; }
+            const tick = () => {
+                const remaining = seconds - (Date.now() - startedAt) / 1000;
+                if (remaining <= 0) {
+                    el.textContent = 'Temps écoulé';
+                    el.classList.add('ended');
+                    clearInterval(_adhocTimerInterval);
+                    _adhocTimerInterval = null;
+                    setTimeout(() => {
+                        el.hidden = true;
+                        el.classList.remove('ended');
+                    }, 2500);
+                    return;
+                }
+                el.textContent = (label ? label + ' — ' : '') + Math.ceil(remaining) + 's';
+            };
+            el.hidden = false;
+            el.classList.remove('ended');
+            tick();
+            _adhocTimerInterval = setInterval(tick, 250);
+        }
+
+        function applyAdhocTimerEnd(msg) {
+            if (msg && typeof msg === 'object' && msg.timerId && msg.timerId !== _adhocTimerId) return;
+            if (_adhocTimerInterval) { clearInterval(_adhocTimerInterval); _adhocTimerInterval = null; }
+            const el = document.getElementById('student-adhoc-timer');
+            if (el) { el.hidden = true; el.classList.remove('ended'); }
+        }
+
         function applyWhiteboardSyncMessage(msg) {
             if (!msg || typeof msg !== 'object') return;
             const slideIndex = toSafeInt(msg.slideIndex);
@@ -1349,6 +1398,8 @@ window.addEventListener('load', function() {
             renderWhiteboard: renderStudentWhiteboard,
             applyWhiteboardSyncMessage,
             applyTimerStateMessage,
+            applyAdhocTimerStart,
+            applyAdhocTimerEnd,
             applyLaserMessage,
             applyZoomMessage,
             maxPresenterAllowedIndex,

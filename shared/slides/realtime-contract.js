@@ -104,6 +104,13 @@
         // → étudiants, sur le modèle de WHITEBOARD_SYNC : diffusé à chaque changement
         // d'état (start/pause/reset/tick) ET rejoué tel quel au rattrapage salle.
         TIMER_STATE: 'timer:state',
+        // Minuteur ad-hoc "salle" — indépendant de toute slide, déclenché depuis la barre
+        // présentateur (PAS le widget .sl-timer-content). Modèle horodatage comme
+        // QUIZ_QUESTION : startedAt + seconds, pas de tick périodique — les étudiants
+        // calculent le restant localement (seconds - (Date.now()-startedAt)/1000), donc un
+        // rattrapage tardif reste synchronisé sans rediffusion.
+        TIMER_ADHOC_START: 'timer:adhoc:start',
+        TIMER_ADHOC_END: 'timer:adhoc:end',
     });
 
     const syncTypes = new Set(Object.values(SYNC_MSG));
@@ -355,6 +362,11 @@
             && isNumber(msg.remaining)
             && isBoolean(msg.running)
             && isBoolean(msg.ended),
+        [ROOM_MSG.TIMER_ADHOC_START]: msg => isString(msg.timerId || '', 120)
+            && isNumber(msg.seconds) && msg.seconds > 0 && msg.seconds <= 3 * 3600
+            && isNonNegInt(msg.startedAt)
+            && (msg.label == null || isString(msg.label, 120)),
+        [ROOM_MSG.TIMER_ADHOC_END]: msg => isString(msg.timerId || '', 120),
     });
 
     function validateByTypeMap(msg, typeSet, validators) {

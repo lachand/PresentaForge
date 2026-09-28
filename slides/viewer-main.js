@@ -453,6 +453,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
         let _activeWordCloud = null; // { cloudId, prompt, words: Map }
         let _activeExitTicket = null; // { ticketId, title, prompts, responses: Map(peerId -> { answers, pseudo, at }) }
         let _activeRankOrder = null; // { rankId, title, items, responses: Map(peerId -> { order, pseudo, at }) }
+        let _activeAdhocTimer = null; // { timerId, seconds, startedAt, label }
         let _wcBroadcastTimer = null;
         const _roomBridgeBus = createTopicEventBus(['poll', 'cloud', 'exitTicket', 'rankOrder', 'roulette', 'room']);
         const _viewerCommandBus = createCommandBus({
@@ -1166,6 +1167,68 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             roomUpdatePanel();
         }
 
+        // Minuteur ad-hoc "salle" — lancé à la volée depuis la barre présentateur, indépendant
+        // de toute slide (contrairement au minuteur de contenu .sl-timer-content). Pas de
+        // rediffusion périodique : startedAt + seconds seuls, sur le modèle de QUIZ_QUESTION —
+        // chaque étudiant (et un retardataire via sendActiveRoomActivities) recalcule le
+        // restant localement.
+        function roomStartAdhocTimer(seconds, label = '') {
+            if (!_room.active) return false;
+            if (_activeAdhocTimer) return false;
+            const secs = Math.max(1, Math.min(3 * 3600, Math.round(Number(seconds) || 0)));
+            if (!(secs > 0)) return false;
+            const startedAt = Date.now();
+            const timerId = `t-${startedAt}-${Math.random().toString(36).slice(2, 8)}`;
+            _activeAdhocTimer = { timerId, seconds: secs, startedAt, label: toTrimmedString(label, 120) };
+            roomBroadcast({
+                type: ROOM_MSG.TIMER_ADHOC_START,
+                timerId,
+                seconds: secs,
+                startedAt,
+                label: _activeAdhocTimer.label,
+            });
+            // Enregistrement de séance : `_recordEvent` (const local à initPresenterMode)
+            // n'est pas accessible ici — pont via ViewerRuntime.recordEvent, comme le fait déjà
+            // roomHandleIncoming pour 'reaction'/'question'.
+            ViewerRuntime.recordEvent?.('timer:adhoc:start', {
+                timerId, seconds: secs, startedAt, label: _activeAdhocTimer.label,
+            });
+            const launch = document.getElementById('rm-adhoc-timer-launch');
+            const live = document.getElementById('rm-adhoc-timer-live');
+            if (launch) launch.style.display = 'none';
+            if (live) live.style.display = 'block';
+            _roomAdhocTimerRefreshDisplay();
+            if (_roomAdhocTimerDisplayInterval) clearInterval(_roomAdhocTimerDisplayInterval);
+            _roomAdhocTimerDisplayInterval = setInterval(_roomAdhocTimerRefreshDisplay, 250);
+            roomUpdatePanel();
+            return timerId;
+        }
+
+        let _roomAdhocTimerDisplayInterval = null;
+        function _roomAdhocTimerRefreshDisplay() {
+            const display = document.getElementById('rm-adhoc-timer-display');
+            if (!display) return;
+            if (!_activeAdhocTimer) { display.textContent = ''; return; }
+            const remaining = _activeAdhocTimer.seconds - (Date.now() - _activeAdhocTimer.startedAt) / 1000;
+            display.textContent = remaining > 0
+                ? (_activeAdhocTimer.label ? _activeAdhocTimer.label + ' — ' : '') + Math.ceil(remaining) + 's'
+                : 'Temps écoulé';
+        }
+
+        function roomEndAdhocTimer() {
+            if (_activeAdhocTimer) {
+                roomBroadcast({ type: ROOM_MSG.TIMER_ADHOC_END, timerId: _activeAdhocTimer.timerId });
+                ViewerRuntime.recordEvent?.('timer:adhoc:end', { timerId: _activeAdhocTimer.timerId });
+            }
+            _activeAdhocTimer = null;
+            if (_roomAdhocTimerDisplayInterval) { clearInterval(_roomAdhocTimerDisplayInterval); _roomAdhocTimerDisplayInterval = null; }
+            const launch = document.getElementById('rm-adhoc-timer-launch');
+            const live = document.getElementById('rm-adhoc-timer-live');
+            if (launch) launch.style.display = '';
+            if (live) live.style.display = 'none';
+            roomUpdatePanel();
+        }
+
         function roomStartWordCloud(prompt = '') {
             if (!_room.active) return false;
             if (_activeWordCloud) return false;
@@ -1340,6 +1403,8 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             _viewerCommandBus.register('room.rank.start', payload => roomStartRankOrder(payload?.configOrTitle || '', payload?.items || []));
             _viewerCommandBus.register('room.rank.end', () => roomEndRankOrder());
             _viewerCommandBus.register('room.nudge.send', payload => roomSendAudienceNudge(payload?.kind || '', payload?.text || ''));
+            _viewerCommandBus.register('room.timer.start', payload => roomStartAdhocTimer(payload?.seconds, payload?.label || ''));
+            _viewerCommandBus.register('room.timer.end', () => roomEndAdhocTimer());
         };
         _registerRoomCommands();
         window.OEIViewerCommandBus = _viewerCommandBus;
@@ -1518,6 +1583,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                         activeRankOrder: _activeRankOrder,
                         activeQuiz: ViewerRuntime.activeQuiz,
                         activeTimers: ViewerRuntime.activeTimers,
+                        activeAdhocTimer: _activeAdhocTimer,
                         whiteboardState: () => _captureWhiteboardSyncState(),
                     });
                     roomUpdatePanel();
@@ -1686,6 +1752,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                         activeRankOrder: _activeRankOrder,
                         activeQuiz: ViewerRuntime.activeQuiz,
                         activeTimers: ViewerRuntime.activeTimers,
+                        activeAdhocTimer: _activeAdhocTimer,
                         whiteboardState: () => _captureWhiteboardSyncState(),
                     });
                     break;
@@ -1703,6 +1770,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                         activeRankOrder: _activeRankOrder,
                         activeQuiz: ViewerRuntime.activeQuiz,
                         activeTimers: ViewerRuntime.activeTimers,
+                        activeAdhocTimer: _activeAdhocTimer,
                         whiteboardState: () => _captureWhiteboardSyncState(),
                     })) {
                         ack(false, 'sync-unavailable');
