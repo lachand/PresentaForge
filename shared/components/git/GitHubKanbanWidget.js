@@ -66,11 +66,11 @@ class GitHubKanbanWidget {
             }).join('');
 
             container.innerHTML = `
-<div class="gkw-root">
-  <div class="gkw-toolbar">
+<div class="gkw-root widget-fit">
+  <div class="gkw-toolbar widget-fit-header">
     <button class="gkw-btn" id="gkw-reset">&#8635; Réinitialiser</button>
   </div>
-  <div class="gkw-board">${colsHtml}</div>
+  <div class="gkw-board widget-fit-body">${colsHtml}</div>
 </div>`;
 
             container.querySelector('#gkw-reset')?.addEventListener('click', () => {

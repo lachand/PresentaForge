@@ -118,17 +118,21 @@ To github.com:monorg/monrepo.git
             const noteHtml = s.note ? `<div class="gfr-note">${s.note}</div>` : '';
             const forceHtml = s.forceWarn ? `<div class="gfr-force-warn">${s.forceWarn}</div>` : '';
 
-            container.innerHTML = `<div class="gfr-widget">
-                <div class="gfr-progress">${progressItems}</div>
-                <div class="gfr-step-header">
-                    <span class="gfr-step-num">Étape ${step + 1} / ${total}</span>
-                    <span class="gfr-step-title">${s.title}</span>
+            container.innerHTML = `<div class="gfr-widget widget-fit">
+                <div class="widget-fit-header">
+                    <div class="gfr-progress">${progressItems}</div>
+                    <div class="gfr-step-header">
+                        <span class="gfr-step-num">Étape ${step + 1} / ${total}</span>
+                        <span class="gfr-step-title">${s.title}</span>
+                    </div>
                 </div>
-                ${revokeHtml}
-                ${cmdHtml}
-                ${noteHtml}
-                ${forceHtml}
-                <div class="gfr-nav">
+                <div class="widget-fit-body">
+                    ${revokeHtml}
+                    ${cmdHtml}
+                    ${noteHtml}
+                    ${forceHtml}
+                </div>
+                <div class="gfr-nav widget-fit-footer">
                     <button class="gfr-btn gfr-btn-prev" ${step === 0 ? 'disabled' : ''}>← Précédent</button>
                     <button class="gfr-btn gfr-btn-next" ${step === total - 1 ? 'disabled' : ''}>Suivant →</button>
                 </div>

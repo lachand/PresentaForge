@@ -369,25 +369,29 @@ class BSTWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="bstw-root">
-  <div class="bstw-controls">
-    <input type="number" class="bstw-input" placeholder="Valeur" data-role="input">
-    <button class="bstw-btn bstw-btn-primary" data-role="insert">Insérer</button>
-    <button class="bstw-btn" data-role="delete">Supprimer</button>
-    <button class="bstw-btn bstw-btn-primary" data-role="search">Rechercher</button>
-    <button class="bstw-btn" data-role="reset">Réinitialiser</button>
+        this.root.innerHTML = `<div class="bstw-root widget-fit">
+  <div class="widget-fit-header">
+    <div class="bstw-controls">
+      <input type="number" class="bstw-input" placeholder="Valeur" data-role="input">
+      <button class="bstw-btn bstw-btn-primary" data-role="insert">Insérer</button>
+      <button class="bstw-btn" data-role="delete">Supprimer</button>
+      <button class="bstw-btn bstw-btn-primary" data-role="search">Rechercher</button>
+      <button class="bstw-btn" data-role="reset">Réinitialiser</button>
+    </div>
+    <div class="bstw-trav-row">
+      <span class="bstw-trav-label">Parcours :</span>
+      <button class="bstw-btn bstw-btn-primary" data-role="inorder">Infixe</button>
+      <button class="bstw-btn bstw-btn-primary" data-role="preorder">Préfixe</button>
+      <button class="bstw-btn bstw-btn-primary" data-role="postorder">Suffixe</button>
+      <button class="bstw-btn bstw-btn-primary" data-role="bfs">Largeur</button>
+    </div>
+    <div class="bstw-feedback" data-role="feedback"></div>
   </div>
-  <div class="bstw-trav-row">
-    <span class="bstw-trav-label">Parcours :</span>
-    <button class="bstw-btn bstw-btn-primary" data-role="inorder">Infixe</button>
-    <button class="bstw-btn bstw-btn-primary" data-role="preorder">Préfixe</button>
-    <button class="bstw-btn bstw-btn-primary" data-role="postorder">Suffixe</button>
-    <button class="bstw-btn bstw-btn-primary" data-role="bfs">Largeur</button>
+  <div class="widget-fit-body">
+    <div class="bstw-svg-wrap"><svg class="bstw-svg" data-role="svg" role="img" aria-label="Visualisation de l'arbre binaire de recherche"></svg></div>
+    <div class="bstw-traversal" data-role="traversal"></div>
   </div>
-  <div class="bstw-feedback" data-role="feedback"></div>
-  <div class="bstw-svg-wrap"><svg class="bstw-svg" data-role="svg" role="img" aria-label="Visualisation de l'arbre binaire de recherche"></svg></div>
-  <div class="bstw-traversal" data-role="traversal"></div>
-  <div class="bstw-info">
+  <div class="bstw-info widget-fit-footer">
     Nœuds: <span class="bstw-info-chip" data-role="count">0</span>
     Hauteur: <span class="bstw-info-chip" data-role="height">0</span>
     Min: <span class="bstw-info-chip" data-role="min">—</span>

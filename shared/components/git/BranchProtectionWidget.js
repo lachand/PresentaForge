@@ -53,12 +53,12 @@ class BranchProtectionWidget {
         const render = () => {
             const allOk = isAllOk();
             container.innerHTML = `
-<div class="bpw-root">
-  <div class="bpw-pr-header">
+<div class="bpw-root widget-fit">
+  <div class="bpw-pr-header widget-fit-header">
     <span class="bpw-pr-badge">PR #47</span>
     <span class="bpw-pr-title">feat: ajout du mode sombre</span>
   </div>
-  <div class="bpw-rules">
+  <div class="bpw-rules widget-fit-body">
     ${rules.map(r => `
       <div class="bpw-rule ${r.running ? 'running' : r.status}">
         <div class="bpw-rule-icon">${r.running ? '⏳' : r.status === 'ok' ? '✅' : '❌'}</div>
@@ -73,10 +73,12 @@ class BranchProtectionWidget {
         </div>
       </div>`).join('')}
   </div>
-  <button class="bpw-merge-btn ${allOk ? 'unlocked' : 'locked'}" id="bpw-merge" ${allOk ? '' : 'disabled'}>
-    ${allOk ? '✅ Merge pull request' : '🔒 Merge bloqué — ' + rules.filter(r => r.status !== 'ok').length + ' règle(s) non satisfaite(s)'}
-  </button>
-  ${allOk ? `<div class="bpw-info"><strong>Toutes les règles sont satisfaites.</strong> Ces protections garantissent que seul du code relu, testé et synchronisé atteint la branche principale.</div>` : `<div class="bpw-info">Les <strong>branch protection rules</strong> sont configurées dans Settings → Branches de votre dépôt GitHub. Elles automatisent la qualité sans dépendre de la discipline individuelle.</div>`}
+  <div class="widget-fit-footer">
+    <button class="bpw-merge-btn ${allOk ? 'unlocked' : 'locked'}" id="bpw-merge" ${allOk ? '' : 'disabled'}>
+      ${allOk ? '✅ Merge pull request' : '🔒 Merge bloqué — ' + rules.filter(r => r.status !== 'ok').length + ' règle(s) non satisfaite(s)'}
+    </button>
+    ${allOk ? `<div class="bpw-info"><strong>Toutes les règles sont satisfaites.</strong> Ces protections garantissent que seul du code relu, testé et synchronisé atteint la branche principale.</div>` : `<div class="bpw-info">Les <strong>branch protection rules</strong> sont configurées dans Settings → Branches de votre dépôt GitHub. Elles automatisent la qualité sans dépendre de la discipline individuelle.</div>`}
+  </div>
 </div>`;
 
             container.querySelectorAll('[data-rule]').forEach(btn => {

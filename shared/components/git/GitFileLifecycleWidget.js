@@ -70,25 +70,29 @@ class GitFileLifecycleWidget {
                 ).join('')}</ul>`;
 
             container.innerHTML = `
-<div class="gflw-root">
-    <div class="gflw-diagram">
-        ${GitFileLifecycleWidget._buildDiagram(currentState)}
-    </div>
-    <div class="gflw-file-card state-${currentState}">
-        <div class="gflw-file-icon">📄</div>
-        <div class="gflw-file-info">
-            <div class="gflw-file-name">${filename}</div>
-            <span class="gflw-state-badge">${st.badge}</span>
-            <div class="gflw-state-desc">${st.desc}</div>
+<div class="gflw-root widget-fit">
+    <div class="widget-fit-header">
+        <div class="gflw-file-card state-${currentState}">
+            <div class="gflw-file-icon">📄</div>
+            <div class="gflw-file-info">
+                <div class="gflw-file-name">${filename}</div>
+                <span class="gflw-state-badge">${st.badge}</span>
+                <div class="gflw-state-desc">${st.desc}</div>
+            </div>
+        </div>
+        <div class="gflw-actions">
+            ${actionsHtml}
+            <button class="gflw-btn-reset" id="gflw-reset">Réinitialiser</button>
         </div>
     </div>
-    <div class="gflw-actions">
-        ${actionsHtml}
-        <button class="gflw-btn-reset" id="gflw-reset">Réinitialiser</button>
-    </div>
-    <div class="gflw-history">
-        <div class="gflw-history-header">Historique des commandes</div>
-        ${historyHtml}
+    <div class="widget-fit-body">
+        <div class="gflw-diagram">
+            ${GitFileLifecycleWidget._buildDiagram(currentState)}
+        </div>
+        <div class="gflw-history">
+            <div class="gflw-history-header">Historique des commandes</div>
+            ${historyHtml}
+        </div>
     </div>
 </div>`;
 

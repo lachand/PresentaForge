@@ -34,7 +34,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/slides-core.js?v=36'],
     ['../shared/slides/slides-themes.js?v=6'],
     ['../shared/slides/slides-diagram-renderer.js?v=1'],
-    ['../shared/slides/slides-renderer-canvas.js?v=8'],
+    ['../shared/slides/slides-renderer-canvas.js?v=9'],
     ['../shared/slides/slides-editor.js?v=14'],
     ['../shared/slides/import-pipeline-bundle.js?v=3'],
     ['../shared/slides/import-pipeline.js?v=8'],
@@ -57,7 +57,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
         '../shared/slides/slides-canvas-content-runtime.js?v=2',
     ],
     // CanvasEditor class (depends on all sub-runtimes above)
-    ['../shared/slides/slides-canvas.js?v=28'],
+    ['../shared/slides/slides-canvas.js?v=29'],
     // Editor modules (mostly sequential — each may depend on previously registered globals)
     ['../shared/slides/editor-dialog.js?v=4'],
     ['../shared/slides/drawio-embed-protocol.js?v=1'],

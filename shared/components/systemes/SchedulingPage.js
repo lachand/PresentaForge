@@ -561,30 +561,36 @@ class SchedulingWidget {
 
     init() {
         const LABELS = {fcfs:'FCFS',sjf:'SJF',rr:'Round Robin',priority:'Priorite'};
-        this.root.innerHTML = `<div class="schw-container">
-            <div class="schw-header"><span>Ordonnancement</span></div>
-            <div class="schw-algo-bar">
-                ${Object.entries(LABELS).map(([k,v])=>
-                    `<button class="schw-algo-btn${k===this._algo?' active':''}" data-algo="${k}">${v}</button>`
-                ).join('')}
+        this.root.innerHTML = `<div class="schw-container widget-fit">
+            <div class="widget-fit-header">
+                <div class="schw-header"><span>Ordonnancement</span></div>
+                <div class="schw-algo-bar">
+                    ${Object.entries(LABELS).map(([k,v])=>
+                        `<button class="schw-algo-btn${k===this._algo?' active':''}" data-algo="${k}">${v}</button>`
+                    ).join('')}
+                </div>
+                <div class="schw-quantum-row schw-rr-row" style="${this._algo==='rr'?'':'display:none'}">
+                    Quantum : <input type="number" class="schw-quantum-input" value="${this._quantum}" min="1" max="10">
+                </div>
             </div>
-            <div class="schw-quantum-row schw-rr-row" style="${this._algo==='rr'?'':'display:none'}">
-                Quantum : <input type="number" class="schw-quantum-input" value="${this._quantum}" min="1" max="10">
+            <div class="widget-fit-body">
+                <table class="schw-proc-table">
+                    <thead><tr><th></th><th>Proc.</th><th>Arr.</th><th>Exec.</th><th>Prio.</th></tr></thead>
+                    <tbody class="schw-proc-body">
+                    ${this._procs.map((p,i)=>{
+                        const c=SchedulingWidget._COLORS[i%8];
+                        return `<tr><td><span class="schw-dot" style="background:${c}"></span></td><td>${p.name}</td><td>${p.arrival}</td><td>${p.burst}</td><td>${p.priority??0}</td></tr>`;
+                    }).join('')}
+                    </tbody>
+                </table>
+                <div class="schw-gantt-zone"><div class="schw-gantt"></div><div class="schw-gtick"></div></div>
             </div>
-            <table class="schw-proc-table">
-                <thead><tr><th></th><th>Proc.</th><th>Arr.</th><th>Exec.</th><th>Prio.</th></tr></thead>
-                <tbody class="schw-proc-body">
-                ${this._procs.map((p,i)=>{
-                    const c=SchedulingWidget._COLORS[i%8];
-                    return `<tr><td><span class="schw-dot" style="background:${c}"></span></td><td>${p.name}</td><td>${p.arrival}</td><td>${p.burst}</td><td>${p.priority??0}</td></tr>`;
-                }).join('')}
-                </tbody>
-            </table>
-            <div class="schw-gantt-zone"><div class="schw-gantt"></div><div class="schw-gtick"></div></div>
-            <div class="schw-metrics"></div>
-            <div class="schw-controls">
-                <button class="schw-btn schw-btn-run">&#9654; Simuler</button>
-                <button class="schw-btn schw-btn-example schw-btn-secondary">Exemple</button>
+            <div class="widget-fit-footer">
+                <div class="schw-metrics"></div>
+                <div class="schw-controls">
+                    <button class="schw-btn schw-btn-run">&#9654; Simuler</button>
+                    <button class="schw-btn schw-btn-example schw-btn-secondary">Exemple</button>
+                </div>
             </div>
         </div>`;
         this._bindControls();

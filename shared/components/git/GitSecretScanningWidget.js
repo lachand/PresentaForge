@@ -79,8 +79,9 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
             }
         };
 
-        const renderInitial = () => `
-<div class="gssw-phase initial">🔄 Prêt à pousser</div>
+        const renderInitial = () => ({
+            header: `<div class="gssw-phase initial">🔄 Prêt à pousser</div>`,
+            body: `
 <div class="gssw-terminal">
     <div class="gssw-terminal-bar">
         <span class="gssw-dot gssw-dot-r"></span>
@@ -99,13 +100,15 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
         <span class="gssw-line blank"> </span>
         <span class="gssw-line prompt">~/monprojet (main) $ <span class="gssw-cursor">▌</span></span>
     </div>
-</div>
-<div style="text-align:center">
+</div>`,
+            footer: `<div style="text-align:center">
     <button class="btn btn-primary" id="gssw-push-btn">▶ git push origin main</button>
-</div>`;
+</div>`
+        });
 
-        const renderPushing = (lines) => `
-<div class="gssw-phase blocked">⛔ Push bloqué par GitHub Push Protection</div>
+        const renderPushing = (lines) => ({
+            header: `<div class="gssw-phase blocked">⛔ Push bloqué par GitHub Push Protection</div>`,
+            body: `
 <div class="gssw-terminal">
     <div class="gssw-terminal-bar">
         <span class="gssw-dot gssw-dot-r"></span>
@@ -116,10 +119,16 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
     <div class="gssw-term-body" id="gssw-term-body">
         ${lines.map(l => `<span class="gssw-line ${l.cls}">${l.text}</span>`).join('')}
     </div>
-</div>`;
+</div>`
+        });
 
-        const renderChoice = () => `
-<div class="gssw-phase blocked">⛔ Push bloqué — que faites-vous ?</div>
+        // Les choix sont de hauteur variable (3 boutons + descriptions) : ils vivent
+        // dans le body scrollable avec le terminal, pas dans un footer figé — sinon,
+        // dans une petite boîte, le footer lui-même déborderait sans pouvoir défiler
+        // (mesuré : footer seul > hauteur de boîte type slide 800×440).
+        const renderChoice = () => ({
+            header: `<div class="gssw-phase blocked">⛔ Push bloqué — que faites-vous ?</div>`,
+            body: `
 <div class="gssw-terminal">
     <div class="gssw-terminal-bar">
         <span class="gssw-dot gssw-dot-r"></span>
@@ -153,27 +162,35 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
             <div class="gssw-choice-desc">Justifier à GitHub que c'est un faux positif et forcer le push malgré la détection.</div>
         </div>
     </button>
-</div>`;
+</div>`
+        });
 
         const renderResult = (key) => {
             const r = RESULTS[key];
-            return `
-<div class="gssw-phase ${key === 'bypass' ? 'warning' : 'resolved'}">${key === 'bypass' ? '⚠️ Bypass activé' : '✅ Résolu correctement'}</div>
+            return {
+                header: `<div class="gssw-phase ${key === 'bypass' ? 'warning' : 'resolved'}">${key === 'bypass' ? '⚠️ Bypass activé' : '✅ Résolu correctement'}</div>`,
+                body: `
 <div class="gssw-result ${r.cls}">
     <div class="gssw-result-title">${r.title}</div>
     ${r.body}
-</div>
-<button class="gssw-restart-btn" id="gssw-restart">↺ Recommencer</button>`;
+</div>`,
+                footer: `<button class="gssw-restart-btn" id="gssw-restart">↺ Recommencer</button>`
+            };
         };
 
         const render = () => {
-            let html = '';
-            if (phase === 'initial') html = renderInitial();
-            else if (phase === 'pushing') html = renderPushing([]);
-            else if (phase === 'blocked') html = renderChoice();
-            else html = renderResult(phase);
+            let parts;
+            if (phase === 'initial') parts = renderInitial();
+            else if (phase === 'pushing') parts = renderPushing([]);
+            else if (phase === 'blocked') parts = renderChoice();
+            else parts = renderResult(phase);
 
-            container.innerHTML = `<div class="gssw-root">${html}</div>`;
+            const footerHtml = parts.footer ? `<div class="widget-fit-footer">${parts.footer}</div>` : '';
+            container.innerHTML = `<div class="gssw-root widget-fit">
+    <div class="widget-fit-header">${parts.header}</div>
+    <div class="widget-fit-body">${parts.body}</div>
+    ${footerHtml}
+</div>`;
             bindEvents();
         };
 

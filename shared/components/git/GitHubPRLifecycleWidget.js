@@ -141,8 +141,8 @@ class GitHubPRLifecycleWidget {
             }).join('');
 
             container.innerHTML = `
-<div class="prlw-root">
-  <div class="prlw-layout">
+<div class="prlw-root widget-fit">
+  <div class="prlw-layout widget-fit-body">
     <div class="prlw-main">
       <div class="prlw-state-card" style="background:${state.color}18; border-color:${state.color}44;">
         <div class="prlw-state-badge" style="background:${state.color}">${state.label}</div>

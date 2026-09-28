@@ -391,8 +391,8 @@ class PipelineWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="plw">
-  <div class="plw-toolbar">
+        this.root.innerHTML = `<div class="plw widget-fit">
+  <div class="plw-toolbar widget-fit-header">
     <select class="plw-select" data-ex>
       <option value="simple">Exemple simple</option>
       <option value="hazard">Aléas RAW</option>
@@ -408,17 +408,19 @@ class PipelineWidget {
       <button class="plw-btn" data-reset>↺ Reset</button>
     </div>
   </div>
-  <div class="plw-section-lbl">Diagramme pipeline</div>
-  <div class="plw-grid-wrap"><div class="plw-grid" data-grid></div></div>
-  <div class="plw-stats">
+  <div class="widget-fit-body">
+    <div class="plw-section-lbl">Diagramme pipeline</div>
+    <div class="plw-grid-wrap"><div class="plw-grid" data-grid></div></div>
+    <div class="plw-section-lbl" data-hz-title style="display:none">Journal des aléas</div>
+    <div class="plw-hazlog" data-hazlog></div>
+  </div>
+  <div class="plw-stats widget-fit-footer">
     <div class="plw-stat"><span class="plw-sv" data-sc>0</span><span class="plw-sl">Cycles</span></div>
     <div class="plw-stat"><span class="plw-sv" data-sco>0</span><span class="plw-sl">Terminées</span></div>
     <div class="plw-stat"><span class="plw-sv" data-ss>0</span><span class="plw-sl">Stalls</span></div>
     <div class="plw-stat"><span class="plw-sv" data-sf>0</span><span class="plw-sl">Forwarded</span></div>
     <div class="plw-stat"><span class="plw-sv" data-scpi>--</span><span class="plw-sl">CPI</span></div>
   </div>
-  <div class="plw-section-lbl" data-hz-title style="display:none">Journal des aléas</div>
-  <div class="plw-hazlog" data-hazlog></div>
 </div>`;
         this._bind();
         this._recompute();

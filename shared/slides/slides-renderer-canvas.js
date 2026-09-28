@@ -148,10 +148,13 @@
         }
         const cls = fragmentClass ? ` class="${fragmentClass}"` : '';
         const needsOverflow = hasCaption || el.type === 'timer' || el.type === 'latex' || el.type === 'code-live' || el.type === 'quiz-live';
+        // Widgets gèrent leur propre défilement interne (.widget-fit-body) ; le conteneur
+        // doit laisser passer ce défilement plutôt que d'écrêter silencieusement le contenu.
+        const overflow = el.type === 'widget' ? 'auto' : (needsOverflow ? 'visible' : 'hidden');
         const elStyle = el.style || {};
         const fillBg = el.type !== 'shape' && elStyle.fill ? `background-color:${elStyle.fill};` : '';
         const boxCss = SlidesShared.wrapperBoxCss(elStyle, el.type);
-        const css = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;z-index:${el.z||1};overflow:${needsOverflow ? 'visible' : 'hidden'};box-sizing:border-box;${rot}${fillBg}${boxCss}`;
+        const css = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;z-index:${el.z||1};overflow:${overflow};box-sizing:border-box;${rot}${fillBg}${boxCss}`;
         const content = _canvasElementContent(el, slideIndex, opts);
         const captionHtml = SlidesShared.renderCaptionHtml(el, 'sl');
         const elementIdAttr = el?.id ? ` data-element-id="${esc(String(el.id))}"` : '';

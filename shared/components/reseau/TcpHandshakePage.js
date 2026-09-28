@@ -386,28 +386,34 @@ class TcpWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="tcpw-container">
-            <div class="tcpw-header">Simulation TCP</div>
-            <div class="tcpw-scenario-bar">
-                <button class="tcpw-sc-btn" data-sc="normal">3-way handshake</button>
-                <button class="tcpw-sc-btn" data-sc="data">Transfert donnees</button>
-                <button class="tcpw-sc-btn" data-sc="close">Fermeture</button>
-                <button class="tcpw-sc-btn" data-sc="lost">Perte de paquet</button>
+        this.root.innerHTML = `<div class="tcpw-container widget-fit">
+            <div class="widget-fit-header">
+                <div class="tcpw-header">Simulation TCP</div>
+                <div class="tcpw-scenario-bar">
+                    <button class="tcpw-sc-btn" data-sc="normal">3-way handshake</button>
+                    <button class="tcpw-sc-btn" data-sc="data">Transfert donnees</button>
+                    <button class="tcpw-sc-btn" data-sc="close">Fermeture</button>
+                    <button class="tcpw-sc-btn" data-sc="lost">Perte de paquet</button>
+                </div>
             </div>
-            <div class="tcpw-diagram">
-                <div class="tcpw-lane"><div class="tcpw-lane-label">CLIENT</div><div class="tcpw-lane-line"></div></div>
-                <div style="flex:3;position:relative;"><div class="tcpw-messages"></div></div>
-                <div class="tcpw-lane"><div class="tcpw-lane-label">SERVEUR</div><div class="tcpw-lane-line"></div></div>
+            <div class="widget-fit-body">
+                <div class="tcpw-diagram">
+                    <div class="tcpw-lane"><div class="tcpw-lane-label">CLIENT</div><div class="tcpw-lane-line"></div></div>
+                    <div style="flex:3;position:relative;"><div class="tcpw-messages"></div></div>
+                    <div class="tcpw-lane"><div class="tcpw-lane-label">SERVEUR</div><div class="tcpw-lane-line"></div></div>
+                </div>
             </div>
-            <div class="tcpw-status">
-                <div class="tcpw-state tcpw-cstate"><span class="tcpw-state-name">CLOSED</span><div style="font-size:.62rem;color:var(--sl-muted,#94a3b8)">Client</div></div>
-                <div class="tcpw-state tcpw-sstate"><span class="tcpw-state-name">LISTEN</span><div style="font-size:.62rem;color:var(--sl-muted,#94a3b8)">Serveur</div></div>
-            </div>
-            <div class="tcpw-info tcpw-info-text"></div>
-            <div class="tcpw-controls">
-                <button class="tcpw-btn tcpw-btn-play">&#9654; Lancer</button>
-                <button class="tcpw-btn tcpw-btn-step tcpw-btn-secondary">Etape</button>
-                <button class="tcpw-btn tcpw-btn-reset tcpw-btn-secondary">&#8635; Reset</button>
+            <div class="widget-fit-footer">
+                <div class="tcpw-status">
+                    <div class="tcpw-state tcpw-cstate"><span class="tcpw-state-name">CLOSED</span><div style="font-size:.62rem;color:var(--sl-muted,#94a3b8)">Client</div></div>
+                    <div class="tcpw-state tcpw-sstate"><span class="tcpw-state-name">LISTEN</span><div style="font-size:.62rem;color:var(--sl-muted,#94a3b8)">Serveur</div></div>
+                </div>
+                <div class="tcpw-info tcpw-info-text"></div>
+                <div class="tcpw-controls">
+                    <button class="tcpw-btn tcpw-btn-play">&#9654; Lancer</button>
+                    <button class="tcpw-btn tcpw-btn-step tcpw-btn-secondary">Etape</button>
+                    <button class="tcpw-btn tcpw-btn-reset tcpw-btn-secondary">&#8635; Reset</button>
+                </div>
             </div>
         </div>`;
         this._bindControls();

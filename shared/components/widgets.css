@@ -138,6 +138,27 @@
     }
 }
 
+/* =====================================================================
+   PATRON .widget-fit — widget qui s'adapte a sa boite (slides canvas)
+   Un widget place comme element `type:"widget"` sur une slide recoit une
+   boite de taille FIXE (voir overflow:auto sur _canvasElement / .cel-inner).
+   Ce patron isole les zones a taille fixe (controles toujours visibles) de
+   la zone de contenu variable (seule a defiler si necessaire), plutot que
+   de laisser le conteneur ecreter silencieusement le widget entier.
+   Usage : envelopper la sortie de mount() avec .widget-fit, puis repartir
+   les elements existants dans les 3 zones (header/footer optionnels,
+   beaucoup de widgets n'auront qu'un header + un body) :
+     <div class="widget-fit">
+       <div class="widget-fit-header">...controles permanents...</div>
+       <div class="widget-fit-body">...contenu variable...</div>
+       <div class="widget-fit-footer">...actions permanentes...</div>
+     </div>
+   ===================================================================== */
+.widget-fit { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
+.widget-fit-header,
+.widget-fit-footer { flex: 0 0 auto; }
+.widget-fit-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
 
 /* #################################################################### */
 /* #  VISUALISEURS — tri / recherche / structures                 # */
@@ -790,6 +811,7 @@
    source : concepts/BooleanKarnaughWidget.js
    ------------------------------------------------------------------- */
             .boolean-kmap-widget { display: grid; gap: 0.85rem; }
+            .boolean-kmap-widget.widget-fit { display: flex; height: 100%; box-sizing: border-box; }
             .boolean-kmap-controls {
                 display: flex;
                 flex-wrap: wrap;
@@ -955,6 +977,10 @@
    source : concepts/BooleanSimplifierWidget.js
    ------------------------------------------------------------------- */
             .boolean-simplifier-widget { display: grid; gap: 0.9rem; }
+            /* .widget-fit impose display:flex (voir en tête de fichier) : la specificite
+               a deux classes garantit qu'il l'emporte sur le display:grid ci-dessus,
+               quel que soit l'ordre des regles dans la feuille. */
+            .boolean-simplifier-widget.widget-fit { display: flex; height: 100%; box-sizing: border-box; }
             .boolean-simplifier-toolbar {
                 display: grid;
                 gap: 0.6rem;
@@ -1525,6 +1551,7 @@
    source : web/DomTreeWidget.js
    ------------------------------------------------------------------- */
             .dom-widget { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.9rem; background: var(--card); margin: 0.9rem 0; }
+            .dom-widget.widget-fit { margin: 0; box-sizing: border-box; }
             .dom-widget h3 { margin: 0 0 0.45rem; font-size: 0.95rem; }
             .dom-widget p { margin: 0 0 0.55rem; color: var(--muted); font-size: 0.86rem; }
             .dom-widget-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 0.7rem; }
@@ -1594,10 +1621,17 @@
    source : web/EventWidgets.js  (couvre aussi le fallback .deleg-* de event-widgets/delegation-standardiste.js)
    ------------------------------------------------------------------- */
             .event-widget { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card); padding: 1rem; margin: 1rem 0; }
+            /* Widget monte plein cadre sur une slide (voir .widget-fit) : la marge
+               verticale (pensee pour l'empilement en page de cours) ferait deborder
+               la boite de la slide de facon incompressible ; box-sizing:border-box
+               explicite car les pages slides ne chargent pas le reset global de
+               shared/style.css. Specificite a deux classes = l'emporte a coup sur. */
+            .event-widget.widget-fit { margin: 0; box-sizing: border-box; }
             .event-widget h3 { margin: 0 0 0.55rem; font-size: 1rem; }
             .event-widget p { margin: 0 0 0.6rem; color: var(--muted); font-size: 0.88rem; }
             .event-widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
-            .event-widget .panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; }
+            .event-widget .panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; box-sizing: border-box; }
+            .event-widget .panel.widget-fit { box-sizing: border-box; }
             .event-widget .controls { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.55rem; align-items: center; }
             .event-widget .mini-log {
                 min-height: 110px;
@@ -4140,7 +4174,10 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    align-items: start;
+    align-items: stretch;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
 }
 @media (max-width: 700px) {
     .gaw-root { grid-template-columns: 1fr; }
@@ -4152,6 +4189,9 @@
     border-radius: var(--radius);
     overflow: hidden;
     border: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 .gaw-yaml-bar {
     background: #334155;
@@ -4162,6 +4202,7 @@
     font-size: 0.72rem;
     color: #94a3b8;
     font-family: var(--font-mono);
+    flex: 0 0 auto;
 }
 .gaw-dot {
     width: 9px; height: 9px;
@@ -4174,7 +4215,8 @@
 .gaw-yaml-body {
     padding: 0.75rem 0.5rem;
     overflow-y: auto;
-    max-height: 480px;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 .gaw-line {
     display: block;
@@ -4203,11 +4245,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    min-height: 0;
 }
 .gaw-legend {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+    flex: 0 0 auto;
 }
 .gaw-legend-item {
     display: flex;
@@ -4238,7 +4282,9 @@
     padding: 0.85rem 1rem;
     font-size: 0.82rem;
     line-height: 1.55;
-    min-height: 120px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 .gaw-explain-title {
     font-family: var(--font-mono);
@@ -4766,6 +4812,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
 }
 .gkw-col-header {
     padding: 0.65rem 0.85rem;
@@ -4774,6 +4821,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.4rem;
+    flex: 0 0 auto;
 }
 .gkw-col-name {
     font-size: 0.82rem;
@@ -4794,6 +4842,8 @@
     flex-direction: column;
     gap: 0.5rem;
     min-height: 60px;
+    flex: 1 1 auto;
+    overflow-y: auto;
 }
 .gkw-card {
     background: var(--card);
@@ -5057,6 +5107,9 @@
         .dep-sel-btn.active { border-color: var(--sel-color, #6366f1); background: color-mix(in srgb, var(--sel-color, #6366f1) 10%, white); color: var(--sel-color, #6366f1); font-weight: 700; }
         .dep-sel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .dep-card { border: 1px solid var(--border, #e2e8f0); border-radius: 10px; overflow: hidden; }
+        /* .widget-fit-body impose overflow-y:auto (defilement interne) : la specificite
+           a deux classes garantit qu'elle l'emporte sur l'overflow:hidden ci-dessus. */
+        .dep-card.widget-fit-body { overflow-y: auto; overflow-x: hidden; }
         .dep-card-header { padding: 0.9rem 1rem; background: var(--widget-surface, #f8fafc); border-bottom: 1px solid var(--border, #e2e8f0); display: flex; flex-direction: column; gap: 0.3rem; }
         .dep-severity-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; width: fit-content; }
         .dep-card-title { font-weight: 700; font-size: 0.95rem; color: var(--widget-heading, #1e293b); }

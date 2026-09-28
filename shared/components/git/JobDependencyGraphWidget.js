@@ -123,8 +123,8 @@ class JobDependencyGraphWidget {
             const connections = [];
             jobs.forEach(j => (j.needs || []).forEach(n => connections.push({ from: n, to: j.id })));
 
-            container.innerHTML = `<div class="jdg">
-                <div class="jdg-toolbar">
+            container.innerHTML = `<div class="jdg widget-fit">
+                <div class="jdg-toolbar widget-fit-header">
                     <span class="jdg-toolbar-label">Scénario :</span>
                     <select class="jdg-select">${SCENARIOS.map((s, i) =>
                         `<option value="${i}"${i === scenarioIdx ? ' selected' : ''}>${s.name}</option>`
@@ -132,17 +132,19 @@ class JobDependencyGraphWidget {
                     <button class="jdg-btn jdg-btn-play">▶ Simuler</button>
                     <button class="jdg-btn jdg-btn-reset">↺ Réinitialiser</button>
                 </div>
-                <div class="jdg-canvas">
-                    ${cols.map(colJobs => `<div class="jdg-col">${colJobs.map(j => `
-                        <div class="jdg-job state-${jobStates[j.id] || 'waiting'}${willFail.has(j.id) ? ' will-fail' : ''}" data-job="${j.id}">
-                            <div class="jdg-job-name">${j.label}</div>
-                            <div class="jdg-job-runner">${j.runner}</div>
-                            ${j.cond ? `<div class="jdg-job-cond">if: ${j.cond}</div>` : ''}
-                            <div class="jdg-job-status">${stateLabel(jobStates[j.id] || 'waiting')}</div>
-                        </div>`).join('')}</div>`).join('')}
+                <div class="widget-fit-body">
+                    <div class="jdg-canvas">
+                        ${cols.map(colJobs => `<div class="jdg-col">${colJobs.map(j => `
+                            <div class="jdg-job state-${jobStates[j.id] || 'waiting'}${willFail.has(j.id) ? ' will-fail' : ''}" data-job="${j.id}">
+                                <div class="jdg-job-name">${j.label}</div>
+                                <div class="jdg-job-runner">${j.runner}</div>
+                                ${j.cond ? `<div class="jdg-job-cond">if: ${j.cond}</div>` : ''}
+                                <div class="jdg-job-status">${stateLabel(jobStates[j.id] || 'waiting')}</div>
+                            </div>`).join('')}</div>`).join('')}
+                    </div>
+                    <div class="jdg-log"><div class="jdg-log-line">En attente — cliquez sur ▶ Simuler pour lancer le pipeline.</div></div>
                 </div>
-                <div class="jdg-log"><div class="jdg-log-line">En attente — cliquez sur ▶ Simuler pour lancer le pipeline.</div></div>
-                <p class="jdg-hint">💡 Cliquez sur un job avant de simuler pour le forcer à échouer et observer les effets en cascade.</p>
+                <p class="jdg-hint widget-fit-footer">💡 Cliquez sur un job avant de simuler pour le forcer à échouer et observer les effets en cascade.</p>
             </div>`;
 
             requestAnimationFrame(() => drawConnections(connections));

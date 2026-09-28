@@ -199,12 +199,14 @@ ${barsHtml}
             </div>`).join('');
 
             container.innerHTML = `
-<div class="grw-root">
-  <div class="grw-legend">${legendHtml}</div>
-  <div class="grw-timeline-wrap">
-    ${buildSVG()}
+<div class="grw-root widget-fit">
+  <div class="grw-legend widget-fit-header">${legendHtml}</div>
+  <div class="widget-fit-body">
+    <div class="grw-timeline-wrap">
+      ${buildSVG()}
+    </div>
+    ${buildDetail()}
   </div>
-  ${buildDetail()}
   <div class="grw-tooltip" id="grw-tooltip"></div>
 </div>`;
 

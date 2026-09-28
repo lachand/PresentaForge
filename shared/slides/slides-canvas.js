@@ -615,6 +615,9 @@ class CanvasEditor {
 .cel[data-type="timer"] .cel-inner,
 .cel[data-type="code-live"] .cel-inner,
 .cel[data-type="quiz-live"] .cel-inner { overflow: visible; }
+/* Widgets gèrent leur propre défilement interne (.widget-fit-body) ; parité avec
+   overflow:auto du wrapper needsOverflow du viewer — _canvasElement. */
+.cel[data-type="widget"] .cel-inner { overflow: auto; }
 /* Highlight délégué : le gutter de lignes est monté par slides-canvas-code-runtime
    (table .hljs-ln) — la coloration hljs a besoin de white-space:pre sur la cellule. */
 .cel-highlight-block .hljs-ln-code { white-space: pre; }

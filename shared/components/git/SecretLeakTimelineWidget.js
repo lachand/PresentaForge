@@ -38,13 +38,13 @@ class SecretLeakTimelineWidget {
     ];
 
     static mount(container, config = {}) {
-        container.innerHTML = `<div class="slt-widget">
-            <div class="slt-controls">
+        container.innerHTML = `<div class="slt-widget widget-fit">
+            <div class="slt-controls widget-fit-header">
                 <button class="slt-btn slt-btn-play">▶ Lancer la simulation</button>
                 <button class="slt-btn slt-btn-reset">↺ Recommencer</button>
                 <span class="slt-timer"></span>
             </div>
-            <div class="slt-timeline">
+            <div class="slt-timeline widget-fit-body">
                 ${SecretLeakTimelineWidget.STEPS.map((step, i) => `
                 <div class="slt-step" data-idx="${i}">
                     <span class="slt-dot" style="background:${step.color};box-shadow:0 0 0 2px ${step.color}"></span>
@@ -59,7 +59,7 @@ class SecretLeakTimelineWidget {
                     </div>
                 </div>`).join('')}
             </div>
-            <div class="slt-moral">
+            <div class="slt-moral widget-fit-footer">
                 🔑 <strong>Règle fondamentale :</strong> Si vous exposez un secret, <strong>révoquez-le immédiatement</strong> chez le fournisseur (GitHub, AWS, Stripe…) — <em>avant</em> de supprimer le commit. La suppression de l'historique ne sert à rien si le secret est déjà capturé par un bot.
             </div>
         </div>`;

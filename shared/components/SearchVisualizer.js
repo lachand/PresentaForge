@@ -404,19 +404,25 @@ class SearchWidget {
 
     init() {
         const label = this.algorithm === 'binary' ? 'Recherche dichotomique' : 'Recherche séquentielle';
-        this.root.innerHTML = `<div class="srw-container">
-            <div class="srw-header"><span>${label}</span><span class="srw-metrics"></span></div>
-            <div class="srw-input-row">
-                <label>Valeur à chercher :</label>
-                <input type="number" class="srw-target-input" value="${this.defaultTarget}">
+        this.root.innerHTML = `<div class="srw-container widget-fit">
+            <div class="widget-fit-header">
+                <div class="srw-header"><span>${label}</span><span class="srw-metrics"></span></div>
+                <div class="srw-input-row">
+                    <label>Valeur à chercher :</label>
+                    <input type="number" class="srw-target-input" value="${this.defaultTarget}">
+                </div>
             </div>
-            <div class="srw-array-zone" role="img" aria-label="Visualisation : ${label}"></div>
-            <div class="srw-pointer-row"></div>
-            <div class="srw-info-bar"><span class="srw-action"></span></div>
-            <div class="srw-controls">
-                <button class="srw-btn srw-btn-play">▶ Lancer</button>
-                <button class="srw-btn srw-btn-step srw-btn-secondary">Étape</button>
-                <button class="srw-btn srw-btn-reset srw-btn-secondary">↺ Reset</button>
+            <div class="widget-fit-body">
+                <div class="srw-array-zone" role="img" aria-label="Visualisation : ${label}"></div>
+                <div class="srw-pointer-row"></div>
+            </div>
+            <div class="widget-fit-footer">
+                <div class="srw-info-bar"><span class="srw-action"></span></div>
+                <div class="srw-controls">
+                    <button class="srw-btn srw-btn-play">▶ Lancer</button>
+                    <button class="srw-btn srw-btn-step srw-btn-secondary">Étape</button>
+                    <button class="srw-btn srw-btn-reset srw-btn-secondary">↺ Reset</button>
+                </div>
             </div>
         </div>`;
 

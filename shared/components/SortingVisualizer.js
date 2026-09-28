@@ -379,14 +379,16 @@ class SortingWidget {
 
     init() {
         const algo = this.algorithm.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        this.root.innerHTML = `<div class="sw-container">
-            <div class="sw-header"><span>${algo}</span><span class="sw-metrics"></span></div>
-            <div class="sw-array-zone" role="img" aria-label="Visualisation du tri : ${algo}"></div>
-            <div class="sw-info-bar"><span class="sw-action"></span></div>
-            <div class="sw-controls">
-                <button class="sw-btn sw-btn-play">▶ Lancer</button>
-                <button class="sw-btn sw-btn-step sw-btn-secondary">Étape</button>
-                <button class="sw-btn sw-btn-reset sw-btn-secondary">↺ Reset</button>
+        this.root.innerHTML = `<div class="sw-container widget-fit">
+            <div class="sw-header widget-fit-header"><span>${algo}</span><span class="sw-metrics"></span></div>
+            <div class="sw-array-zone widget-fit-body" role="img" aria-label="Visualisation du tri : ${algo}"></div>
+            <div class="widget-fit-footer">
+                <div class="sw-info-bar"><span class="sw-action"></span></div>
+                <div class="sw-controls">
+                    <button class="sw-btn sw-btn-play">▶ Lancer</button>
+                    <button class="sw-btn sw-btn-step sw-btn-secondary">Étape</button>
+                    <button class="sw-btn sw-btn-reset sw-btn-secondary">↺ Reset</button>
+                </div>
             </div>
         </div>`;
 

@@ -6,35 +6,39 @@ class EventCatalogWidget {
             return div.innerHTML;
         };
 
-        container.classList.add('event-widget');
+        container.classList.add('event-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${escapeHtml(config.title || 'Catalogue des evenements courants')}</h3>
-            <p>${escapeHtml(config.description || 'Selectionne une categorie, puis declenche des actions dans la zone de test.')}</p>
-            <div class="controls">
-                <select data-role="category" class="input" style="max-width:240px;">
-                    <option value="mouse">Souris</option>
-                    <option value="keyboard">Clavier</option>
-                    <option value="form">Formulaire</option>
-                    <option value="window">Document/Fenetre</option>
-                </select>
-                <button type="button" class="btn btn-secondary" data-role="clear">Effacer logs</button>
-            </div>
-            <div class="event-widget-grid" style="margin-top:0.6rem;">
-                <div>
-                    <table class="event-table">
-                        <thead><tr><th>Evenement</th><th>Description</th></tr></thead>
-                        <tbody data-role="body"></tbody>
-                    </table>
+            <div class="widget-fit-header">
+                <h3>${escapeHtml(config.title || 'Catalogue des evenements courants')}</h3>
+                <p>${escapeHtml(config.description || 'Selectionne une categorie, puis declenche des actions dans la zone de test.')}</p>
+                <div class="controls">
+                    <select data-role="category" class="input" style="max-width:240px;">
+                        <option value="mouse">Souris</option>
+                        <option value="keyboard">Clavier</option>
+                        <option value="form">Formulaire</option>
+                        <option value="window">Document/Fenetre</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary" data-role="clear">Effacer logs</button>
                 </div>
-                <div>
-                    <div class="probe-zone" data-role="zone" tabindex="0">Zone de test: clique, tape au clavier, modifie les champs ci-dessous.</div>
-                    <div class="controls" style="margin-top:0.6rem;">
-                        <input data-role="input" class="input" placeholder="Champ input (input/change/focus/blur)">
-                        <form data-role="form" style="display:inline-flex; gap:0.5rem; align-items:center;">
-                            <button class="btn btn-primary" type="submit">Submit form</button>
-                        </form>
+            </div>
+            <div class="widget-fit-body">
+                <div class="event-widget-grid" style="margin-top:0.6rem;">
+                    <div>
+                        <table class="event-table">
+                            <thead><tr><th>Evenement</th><th>Description</th></tr></thead>
+                            <tbody data-role="body"></tbody>
+                        </table>
                     </div>
-                    <div class="mini-log" data-role="log" style="margin-top:0.6rem;"></div>
+                    <div>
+                        <div class="probe-zone" data-role="zone" tabindex="0">Zone de test: clique, tape au clavier, modifie les champs ci-dessous.</div>
+                        <div class="controls" style="margin-top:0.6rem;">
+                            <input data-role="input" class="input" placeholder="Champ input (input/change/focus/blur)">
+                            <form data-role="form" style="display:inline-flex; gap:0.5rem; align-items:center;">
+                                <button class="btn btn-primary" type="submit">Submit form</button>
+                            </form>
+                        </div>
+                        <div class="mini-log" data-role="log" style="margin-top:0.6rem;"></div>
+                    </div>
                 </div>
             </div>
         `;

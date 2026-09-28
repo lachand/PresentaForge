@@ -535,16 +535,20 @@ class HeapWidget {
 
     init() {
         const label = this.mode === 'min' ? 'Tas minimum (Min-Heap)' : 'Tas maximum (Max-Heap)';
-        this.root.innerHTML = `<div class="hpw-container">
-            <div class="hpw-header"><span>${label}</span><span class="hpw-size"></span></div>
-            <div class="hpw-array"></div>
-            <div class="hpw-tree"><svg viewBox="0 0 400 110" role="img" aria-label="Visualisation : ${label}"></svg></div>
-            <div class="hpw-info-bar hpw-action"></div>
-            <div class="hpw-controls">
-                <input type="number" class="hpw-input hpw-val-input" placeholder="val" value="5">
-                <button class="hpw-btn hpw-btn-insert">+ Inserer</button>
-                <button class="hpw-btn hpw-btn-extract hpw-btn-secondary">Extraire ${this.mode === 'min' ? 'min' : 'max'}</button>
-                <button class="hpw-btn hpw-btn-reset hpw-btn-secondary">&#8635; Reset</button>
+        this.root.innerHTML = `<div class="hpw-container widget-fit">
+            <div class="hpw-header widget-fit-header"><span>${label}</span><span class="hpw-size"></span></div>
+            <div class="widget-fit-body">
+                <div class="hpw-array"></div>
+                <div class="hpw-tree"><svg viewBox="0 0 400 110" role="img" aria-label="Visualisation : ${label}"></svg></div>
+            </div>
+            <div class="widget-fit-footer">
+                <div class="hpw-info-bar hpw-action"></div>
+                <div class="hpw-controls">
+                    <input type="number" class="hpw-input hpw-val-input" placeholder="val" value="5">
+                    <button class="hpw-btn hpw-btn-insert">+ Inserer</button>
+                    <button class="hpw-btn hpw-btn-extract hpw-btn-secondary">Extraire ${this.mode === 'min' ? 'min' : 'max'}</button>
+                    <button class="hpw-btn hpw-btn-reset hpw-btn-secondary">&#8635; Reset</button>
+                </div>
             </div>
         </div>`;
         this._render();

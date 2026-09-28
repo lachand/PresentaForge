@@ -26,7 +26,7 @@ const STUDENT_BOOTSTRAP_SCRIPTS = Object.freeze([
     '../shared/slides/slides-core.js?v=36',
     '../shared/slides/slides-themes.js?v=6',
     '../shared/slides/slides-diagram-renderer.js?v=1',
-    '../shared/slides/slides-renderer-canvas.js?v=8',
+    '../shared/slides/slides-renderer-canvas.js?v=9',
     '../shared/slides/ui-icons.js?v=2',
     '../shared/slides/student-runtime-bundle.js?v=1',
     // Student app modules (Lot 20 découpe de student-main.js)

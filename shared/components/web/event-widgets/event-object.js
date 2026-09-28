@@ -6,20 +6,24 @@ class EventObjectWidget {
             return div.innerHTML;
         };
 
-        container.classList.add('event-widget');
+        container.classList.add('event-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${escapeHtml(config.title || 'Exemple 2 - Objet Event')}</h3>
-            <p>${escapeHtml(config.description || 'Observe target/currentTarget et teste preventDefault/stopPropagation.')}</p>
-            <div class="panel">
-                <div class="panel" data-role="wrap" style="margin-bottom:0.6rem;">
-                    <a href="https://example.com" target="_blank" rel="noreferrer" data-role="link">Lien de test (example.com)</a>
+            <div class="panel widget-fit">
+                <div class="widget-fit-header">
+                    <h3>${escapeHtml(config.title || 'Exemple 2 - Objet Event')}</h3>
+                    <p>${escapeHtml(config.description || 'Observe target/currentTarget et teste preventDefault/stopPropagation.')}</p>
+                    <div class="panel" data-role="wrap" style="margin-bottom:0.6rem;">
+                        <a href="https://example.com" target="_blank" rel="noreferrer" data-role="link">Lien de test (example.com)</a>
+                    </div>
+                    <div class="controls">
+                        <label><input type="checkbox" data-role="prevent"> Activer preventDefault()</label>
+                        <label><input type="checkbox" data-role="stop"> Activer stopPropagation()</label>
+                        <button type="button" class="btn btn-secondary" data-role="clear">Effacer log</button>
+                    </div>
                 </div>
-                <div class="controls">
-                    <label><input type="checkbox" data-role="prevent"> Activer preventDefault()</label>
-                    <label><input type="checkbox" data-role="stop"> Activer stopPropagation()</label>
-                    <button type="button" class="btn btn-secondary" data-role="clear">Effacer log</button>
+                <div class="widget-fit-body">
+                    <div class="mini-log" data-role="log"></div>
                 </div>
-                <div class="mini-log" data-role="log"></div>
             </div>
         `;
 

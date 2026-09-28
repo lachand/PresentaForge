@@ -99,8 +99,8 @@ package-lock.json   @monorg/devops`;
             'src/utils/helpers.py',
         ];
 
-        container.innerHTML = `<div class="codeow-widget">
-            <div class="codeow-main">
+        container.innerHTML = `<div class="codeow-widget widget-fit">
+            <div class="codeow-main widget-fit-body">
                 <div class="codeow-editor">
                     <div class="codeow-file-header">📄 .github/CODEOWNERS</div>
                     <textarea class="codeow-textarea" spellcheck="false">${DEFAULT}</textarea>
@@ -114,7 +114,7 @@ package-lock.json   @monorg/devops`;
                     <div class="codeow-result"><p class="codeow-empty">Entrez un chemin pour voir le résultat.</p></div>
                 </div>
             </div>
-            <div class="codeow-examples">
+            <div class="codeow-examples widget-fit-footer">
                 <span class="codeow-examples-label">Essayer :</span>
                 ${EXAMPLES.map(p => `<button class="codeow-example-btn" data-path="${p}">${p}</button>`).join('')}
             </div>

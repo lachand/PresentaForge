@@ -119,8 +119,8 @@ class CICDPipelineWidget {
 </div>` : '';
 
             container.innerHTML = `
-<div class="cicd-root">
-  <div class="cicd-trigger">
+<div class="cicd-root widget-fit">
+  <div class="cicd-trigger widget-fit-header">
     <label>Panne à l'étape :</label>
     <select id="cicd-fail-select">
       <option value="none">Aucune (tout réussit)</option>
@@ -133,29 +133,33 @@ class CICDPipelineWidget {
     <span id="cicd-speed-label" style="font-size:0.75rem;color:var(--muted);min-width:5rem">${SPEED_MAP[speedLevel].label}</span>
     ${running ? `<button class="btn btn-secondary" id="cicd-pause" style="min-width:7.5rem">${paused ? '▶ Reprendre' : '⏸ Pause'}</button>` : ''}
   </div>
-  <div class="cicd-pipeline">
-    ${STAGES.map((s, i) => `
-      <div class="cicd-stage ${stageStates[s.id]}" id="cicd-stage-${s.id}">
-        <div class="cicd-stage-icon">${stageStates[s.id] === 'running' ? '⏳' : stageStates[s.id] === 'success' ? '✅' : stageStates[s.id] === 'failure' ? '❌' : stageStates[s.id] === 'blocked' ? '⛔' : s.icon}</div>
-        <div class="cicd-stage-name">${s.name}</div>
-        <div class="cicd-stage-subdesc">${s.subdesc}</div>
-        <div class="cicd-stage-status">${stageStates[s.id] === 'running' ? 'En cours…' : stageStates[s.id] === 'success' ? 'Passé ✓' : stageStates[s.id] === 'failure' ? 'Échec' : stageStates[s.id] === 'blocked' ? 'Bloqué' : '—'}</div>
-      </div>
-      ${i < STAGES.length - 1 ? '<div class="cicd-arrow">→</div>' : ''}
-    `).join('')}
+  <div class="widget-fit-body">
+    <div class="cicd-pipeline">
+      ${STAGES.map((s, i) => `
+        <div class="cicd-stage ${stageStates[s.id]}" id="cicd-stage-${s.id}">
+          <div class="cicd-stage-icon">${stageStates[s.id] === 'running' ? '⏳' : stageStates[s.id] === 'success' ? '✅' : stageStates[s.id] === 'failure' ? '❌' : stageStates[s.id] === 'blocked' ? '⛔' : s.icon}</div>
+          <div class="cicd-stage-name">${s.name}</div>
+          <div class="cicd-stage-subdesc">${s.subdesc}</div>
+          <div class="cicd-stage-status">${stageStates[s.id] === 'running' ? 'En cours…' : stageStates[s.id] === 'success' ? 'Passé ✓' : stageStates[s.id] === 'failure' ? 'Échec' : stageStates[s.id] === 'blocked' ? 'Bloqué' : '—'}</div>
+        </div>
+        ${i < STAGES.length - 1 ? '<div class="cicd-arrow">→</div>' : ''}
+      `).join('')}
+    </div>
+    ${detailPanel}
   </div>
-  ${detailPanel}
-  <div class="cicd-result ${running ? 'running' : stageStates[STAGES[STAGES.length-1].id] === 'success' ? 'success' : Object.values(stageStates).includes('failure') ? 'failure' : 'idle'}" id="cicd-result">
-    ${running
-      ? (paused ? '⏸ Pipeline en pause — cliquez sur Reprendre.' : '⏳ Pipeline en cours d\'exécution…')
-      : Object.values(stageStates).includes('failure')
-        ? `❌ Pipeline échoué à l'étape <strong>${STAGES.find(s => stageStates[s.id] === 'failure')?.name}</strong>. Les étapes suivantes sont bloquées — la PR ne peut pas être mergée.`
-        : stageStates[STAGES[STAGES.length-1].id] === 'success'
-          ? '✅ Tous les checks sont passés. La PR peut être mergée.'
-          : 'Cliquez sur "Déclencher" pour simuler un push.'}
-  </div>
-  <div class="cicd-info">
-    Ce pipeline correspond à un fichier <code>.github/workflows/ci.yml</code> déclenché sur l'événement <code>pull_request</code>. Les status checks échoués bloquent le merge si la branch protection est activée.
+  <div class="widget-fit-footer">
+    <div class="cicd-result ${running ? 'running' : stageStates[STAGES[STAGES.length-1].id] === 'success' ? 'success' : Object.values(stageStates).includes('failure') ? 'failure' : 'idle'}" id="cicd-result">
+      ${running
+        ? (paused ? '⏸ Pipeline en pause — cliquez sur Reprendre.' : '⏳ Pipeline en cours d\'exécution…')
+        : Object.values(stageStates).includes('failure')
+          ? `❌ Pipeline échoué à l'étape <strong>${STAGES.find(s => stageStates[s.id] === 'failure')?.name}</strong>. Les étapes suivantes sont bloquées — la PR ne peut pas être mergée.`
+          : stageStates[STAGES[STAGES.length-1].id] === 'success'
+            ? '✅ Tous les checks sont passés. La PR peut être mergée.'
+            : 'Cliquez sur "Déclencher" pour simuler un push.'}
+    </div>
+    <div class="cicd-info">
+      Ce pipeline correspond à un fichier <code>.github/workflows/ci.yml</code> déclenché sur l'événement <code>pull_request</code>. Les status checks échoués bloquent le merge si la branch protection est activée.
+    </div>
   </div>
 </div>`;
 

@@ -1058,14 +1058,16 @@ class SqlPlaygroundWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="sqlw-container">
-            <textarea class="sqlw-editor" data-editor spellcheck="false">${this.initialSQL}</textarea>
-            <div class="sqlw-controls">
-                <button class="sqlw-btn sqlw-btn-primary" data-run>Exécuter</button>
-                <button class="sqlw-btn sqlw-btn-secondary" data-clear>Effacer</button>
-                <button class="sqlw-btn sqlw-btn-secondary" data-reset>↺ Reset BDD</button>
+        this.root.innerHTML = `<div class="sqlw-container widget-fit">
+            <div class="widget-fit-header">
+                <textarea class="sqlw-editor" data-editor spellcheck="false">${this.initialSQL}</textarea>
+                <div class="sqlw-controls">
+                    <button class="sqlw-btn sqlw-btn-primary" data-run>Exécuter</button>
+                    <button class="sqlw-btn sqlw-btn-secondary" data-clear>Effacer</button>
+                    <button class="sqlw-btn sqlw-btn-secondary" data-reset>↺ Reset BDD</button>
+                </div>
             </div>
-            <div class="sqlw-result" data-result></div>
+            <div class="sqlw-result widget-fit-body" data-result></div>
         </div>`;
 
         this._bind();

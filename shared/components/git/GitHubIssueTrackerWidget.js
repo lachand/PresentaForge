@@ -106,40 +106,44 @@ class GitHubIssueTrackerWidget {
             const pct20 = ms20.total ? Math.round(ms20.closed / ms20.total * 100) : 0;
 
             container.innerHTML = `
-<div class="gitw-root">
-  <div class="gitw-header">
-    <span class="gitw-title">Issues ouvertes (${openCount}) &nbsp;·&nbsp; <span style="color:var(--muted);font-weight:400;font-size:0.88rem">${closedCount} fermée${closedCount > 1 ? 's' : ''}</span></span>
-    <button class="gitw-btn" id="gitw-open-form">+ Créer une issue</button>
-  </div>
-  ${formHtml}
-  <div class="gitw-filters">
-    <select class="gitw-select" id="gitw-filter-label">
-      <option value="">Tous les labels</option>
-      <option value="bug" ${filterLabel === 'bug' ? 'selected' : ''}>bug</option>
-      <option value="feature" ${filterLabel === 'feature' ? 'selected' : ''}>feature</option>
-      <option value="documentation" ${filterLabel === 'documentation' ? 'selected' : ''}>documentation</option>
-      <option value="good-first-issue" ${filterLabel === 'good-first-issue' ? 'selected' : ''}>good-first-issue</option>
-    </select>
-    <select class="gitw-select" id="gitw-filter-ms">
-      <option value="">Tous les milestones</option>
-      <option value="v1.1" ${filterMilestone === 'v1.1' ? 'selected' : ''}>v1.1</option>
-      <option value="v2.0" ${filterMilestone === 'v2.0' ? 'selected' : ''}>v2.0</option>
-    </select>
-  </div>
-  ${selCount > 0 ? `<div class="gitw-bulk-bar">
-    <span>${selCount} issue${selCount > 1 ? 's' : ''} sélectionnée${selCount > 1 ? 's' : ''}</span>
-    <button class="gitw-btn gitw-btn-danger" id="gitw-close-sel" style="font-size:0.78rem;padding:0.3rem 0.75rem">Fermer les issues sélectionnées</button>
-  </div>` : ''}
-  <div class="gitw-issue-list">${issueRows}</div>
-  <div class="gitw-milestones">
-    <div class="gitw-ms-title">Progression des milestones</div>
-    <div class="gitw-ms-row">
-      <div class="gitw-ms-header"><span class="gitw-ms-name">v1.1</span><span class="gitw-ms-count">${ms11.closed}/${ms11.total} fermées — ${pct11}%</span></div>
-      <div class="gitw-ms-bar-bg"><div class="gitw-ms-bar-fill" style="width:${pct11}%"></div></div>
+<div class="gitw-root widget-fit">
+  <div class="widget-fit-header">
+    <div class="gitw-header">
+      <span class="gitw-title">Issues ouvertes (${openCount}) &nbsp;·&nbsp; <span style="color:var(--muted);font-weight:400;font-size:0.88rem">${closedCount} fermée${closedCount > 1 ? 's' : ''}</span></span>
+      <button class="gitw-btn" id="gitw-open-form">+ Créer une issue</button>
     </div>
-    <div class="gitw-ms-row">
-      <div class="gitw-ms-header"><span class="gitw-ms-name">v2.0</span><span class="gitw-ms-count">${ms20.closed}/${ms20.total} fermées — ${pct20}%</span></div>
-      <div class="gitw-ms-bar-bg"><div class="gitw-ms-bar-fill" style="width:${pct20}%;background:var(--primary,#4f46e5)"></div></div>
+    ${formHtml}
+    <div class="gitw-filters">
+      <select class="gitw-select" id="gitw-filter-label">
+        <option value="">Tous les labels</option>
+        <option value="bug" ${filterLabel === 'bug' ? 'selected' : ''}>bug</option>
+        <option value="feature" ${filterLabel === 'feature' ? 'selected' : ''}>feature</option>
+        <option value="documentation" ${filterLabel === 'documentation' ? 'selected' : ''}>documentation</option>
+        <option value="good-first-issue" ${filterLabel === 'good-first-issue' ? 'selected' : ''}>good-first-issue</option>
+      </select>
+      <select class="gitw-select" id="gitw-filter-ms">
+        <option value="">Tous les milestones</option>
+        <option value="v1.1" ${filterMilestone === 'v1.1' ? 'selected' : ''}>v1.1</option>
+        <option value="v2.0" ${filterMilestone === 'v2.0' ? 'selected' : ''}>v2.0</option>
+      </select>
+    </div>
+    ${selCount > 0 ? `<div class="gitw-bulk-bar">
+      <span>${selCount} issue${selCount > 1 ? 's' : ''} sélectionnée${selCount > 1 ? 's' : ''}</span>
+      <button class="gitw-btn gitw-btn-danger" id="gitw-close-sel" style="font-size:0.78rem;padding:0.3rem 0.75rem">Fermer les issues sélectionnées</button>
+    </div>` : ''}
+  </div>
+  <div class="widget-fit-body">
+    <div class="gitw-issue-list">${issueRows}</div>
+    <div class="gitw-milestones">
+      <div class="gitw-ms-title">Progression des milestones</div>
+      <div class="gitw-ms-row">
+        <div class="gitw-ms-header"><span class="gitw-ms-name">v1.1</span><span class="gitw-ms-count">${ms11.closed}/${ms11.total} fermées — ${pct11}%</span></div>
+        <div class="gitw-ms-bar-bg"><div class="gitw-ms-bar-fill" style="width:${pct11}%"></div></div>
+      </div>
+      <div class="gitw-ms-row">
+        <div class="gitw-ms-header"><span class="gitw-ms-name">v2.0</span><span class="gitw-ms-count">${ms20.closed}/${ms20.total} fermées — ${pct20}%</span></div>
+        <div class="gitw-ms-bar-bg"><div class="gitw-ms-bar-fill" style="width:${pct20}%;background:var(--primary,#4f46e5)"></div></div>
+      </div>
     </div>
   </div>
 </div>`;

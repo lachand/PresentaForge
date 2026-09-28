@@ -6,11 +6,13 @@ class EventMultiListenersWidget {
             return div.innerHTML;
         };
 
-        container.classList.add('event-widget');
+        container.classList.add('event-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${escapeHtml(config.title || 'Exemple 1 - Plusieurs listeners')}</h3>
-            <p>${escapeHtml(config.description || 'Un clic déclenche plusieurs handlers distincts.')}</p>
-            <div class="panel">
+            <div class="widget-fit-header">
+                <h3>${escapeHtml(config.title || 'Exemple 1 - Plusieurs listeners')}</h3>
+                <p>${escapeHtml(config.description || 'Un clic déclenche plusieurs handlers distincts.')}</p>
+            </div>
+            <div class="panel widget-fit-body">
                 <div class="controls">
                     <button type="button" class="btn btn-primary" data-role="click">Cliquer</button>
                     <button type="button" class="btn btn-secondary" data-role="reset">Réinitialiser</button>

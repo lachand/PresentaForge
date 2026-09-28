@@ -81,8 +81,8 @@ class MatrixBuilderWidget {
         }
 
         function render() {
-            container.innerHTML = `<div class="mbw">
-                <div class="mbw-layout">
+            container.innerHTML = `<div class="mbw widget-fit">
+                <div class="mbw-layout widget-fit-body">
                     <div class="mbw-panel">
                         <p class="mbw-panel-title">Dimensions de la matrix</p>
                         <div class="mbw-dims"></div>

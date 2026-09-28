@@ -45,51 +45,55 @@ class GitRebaseInteractiveWidget {
 
         const render = () => {
             container.innerHTML = `
-<div class="grbi-root">
-  <div class="grbi-info">
-    <code>git rebase -i HEAD~6</code> — Modifiez les actions ci-dessous, puis cliquez sur "Appliquer".
-    <strong>Règle d'or : uniquement sur des commits locaux non encore poussés.</strong>
+<div class="grbi-root widget-fit">
+  <div class="widget-fit-header">
+    <div class="grbi-info">
+      <code>git rebase -i HEAD~6</code> — Modifiez les actions ci-dessous, puis cliquez sur "Appliquer".
+      <strong>Règle d'or : uniquement sur des commits locaux non encore poussés.</strong>
+    </div>
+    <div class="grbi-legend">
+      ${Object.entries(ACTION_LABELS).map(([k, v]) => `<span><strong>${k}</strong> : ${v}</span>`).join(' · ')}
+    </div>
   </div>
-  <div class="grbi-list" id="grbi-list">
-    ${commits.map((c, i) => `
-      <div class="grbi-row action-${c.action}" data-idx="${i}">
-        <div class="grbi-move">
-          <button data-move-up="${i}" title="Monter">▲</button>
-          <button data-move-down="${i}" title="Descendre">▼</button>
-        </div>
-        <div class="grbi-commit-info">
-          <span class="grbi-hash">${c.hash}</span>
-          ${c.action === 'reword'
-            ? `<input class="grbi-msg-input" data-reword="${i}" value="${c.newMsg || c.msg}" placeholder="${c.msg}">`
-            : `<span class="grbi-msg">${c.msg}</span>`}
-        </div>
-        <select class="grbi-action-select" data-action-idx="${i}">
-          ${ACTIONS.map(a => `<option value="${a}" ${c.action === a ? 'selected' : ''}>${a}</option>`).join('')}
-        </select>
-      </div>`).join('')}
+  <div class="widget-fit-body">
+    <div class="grbi-list" id="grbi-list">
+      ${commits.map((c, i) => `
+        <div class="grbi-row action-${c.action}" data-idx="${i}">
+          <div class="grbi-move">
+            <button data-move-up="${i}" title="Monter">▲</button>
+            <button data-move-down="${i}" title="Descendre">▼</button>
+          </div>
+          <div class="grbi-commit-info">
+            <span class="grbi-hash">${c.hash}</span>
+            ${c.action === 'reword'
+              ? `<input class="grbi-msg-input" data-reword="${i}" value="${c.newMsg || c.msg}" placeholder="${c.msg}">`
+              : `<span class="grbi-msg">${c.msg}</span>`}
+          </div>
+          <select class="grbi-action-select" data-action-idx="${i}">
+            ${ACTIONS.map(a => `<option value="${a}" ${c.action === a ? 'selected' : ''}>${a}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+    </div>
+    ${applied && result ? `
+    <div class="grbi-result">
+      <div class="grbi-result-col">
+        <h4>Avant (6 commits)</h4>
+        ${initial.map(c => `<div class="grbi-commit-item kept"><span style="font-family:var(--font-mono);font-size:0.7rem">${c.hash}</span> ${c.msg}</div>`).join('')}
+      </div>
+      <div class="grbi-result-col">
+        <h4>Après (${result.length} commit${result.length > 1 ? 's' : ''})</h4>
+        ${commits.filter(c => c.action === 'drop').map(c => `<div class="grbi-commit-item dropped"><span style="font-family:var(--font-mono);font-size:0.7rem">${c.hash}</span> ${c.msg}</div>`).join('')}
+        ${result.map(c => `<div class="grbi-commit-item ${c.squashedFrom.length > 0 ? 'squashed' : 'kept'}">
+          <span style="font-family:var(--font-mono);font-size:0.7rem">${c.hash.substring(0,6)}</span>
+          <span>${c.msg}${c.squashedFrom.length > 0 ? ` <span style="font-size:0.68rem;color:var(--muted)">(+ ${c.squashedFrom.length} squashé${c.squashedFrom.length > 1 ? 's' : ''})</span>` : ''}</span>
+        </div>`).join('')}
+      </div>
+    </div>` : ''}
   </div>
-  <div class="grbi-legend">
-    ${Object.entries(ACTION_LABELS).map(([k, v]) => `<span><strong>${k}</strong> : ${v}</span>`).join(' · ')}
-  </div>
-  <div class="grbi-controls">
+  <div class="grbi-controls widget-fit-footer">
     <button class="btn btn-primary" id="grbi-apply">Appliquer le rebase</button>
     <button class="btn btn-secondary" id="grbi-reset">Réinitialiser</button>
   </div>
-  ${applied && result ? `
-  <div class="grbi-result">
-    <div class="grbi-result-col">
-      <h4>Avant (6 commits)</h4>
-      ${initial.map(c => `<div class="grbi-commit-item kept"><span style="font-family:var(--font-mono);font-size:0.7rem">${c.hash}</span> ${c.msg}</div>`).join('')}
-    </div>
-    <div class="grbi-result-col">
-      <h4>Après (${result.length} commit${result.length > 1 ? 's' : ''})</h4>
-      ${commits.filter(c => c.action === 'drop').map(c => `<div class="grbi-commit-item dropped"><span style="font-family:var(--font-mono);font-size:0.7rem">${c.hash}</span> ${c.msg}</div>`).join('')}
-      ${result.map(c => `<div class="grbi-commit-item ${c.squashedFrom.length > 0 ? 'squashed' : 'kept'}">
-        <span style="font-family:var(--font-mono);font-size:0.7rem">${c.hash.substring(0,6)}</span>
-        <span>${c.msg}${c.squashedFrom.length > 0 ? ` <span style="font-size:0.68rem;color:var(--muted)">(+ ${c.squashedFrom.length} squashé${c.squashedFrom.length > 1 ? 's' : ''})</span>` : ''}</span>
-      </div>`).join('')}
-    </div>
-  </div>` : ''}
 </div>`;
 
             // Bind select changes

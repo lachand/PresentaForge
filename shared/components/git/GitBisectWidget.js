@@ -102,35 +102,41 @@ class GitBisectWidget {
 
         const render = () => {
             container.innerHTML = `
-<div class="gbw-root">
-  <div class="gbw-scenario">
+<div class="gbw-root widget-fit">
+  <div class="gbw-scenario widget-fit-header">
     🐛 <strong>Scénario :</strong> La fonction <code>calculate_sum([1, 2, 3])</code> retourne <code>7</code> au lieu de <code>6</code>.
     Le bug n'existait pas dans la version <strong>#1 (v1.0)</strong> mais est présent dans <strong>#${N} (HEAD)</strong>.
     Utilisez <code>git bisect</code> pour trouver le commit coupable en testant la fonction à chaque étape.
   </div>
-  <div class="gbw-info ${found ? 'found' : 'neutral'}">
-    ${found
-      ? `🎯 <strong>Commit coupable : #${CULPRIT} — "refactor: optimisation de la boucle principale"</strong> par Bob. Trouvé en <strong>${steps} étape(s)</strong> au lieu de ${N-1} tests manuels. <code>git bisect reset</code> restaure HEAD.`
-      : current !== null
-        ? `Commit <strong>#${current}</strong> en cours de test. Exécutez la fonction, observez le résultat ci-dessous et marquez le commit. Espace de recherche : #${goodBound}–#${badBound} (~${stepsLeft()} étape(s) restante(s)).`
-        : `Cliquez sur <strong>Démarrer git bisect</strong>. Git va checkout automatiquement le commit du milieu pour que vous le testiez.`}
+  <div class="widget-fit-body">
+    <div class="gbw-info ${found ? 'found' : 'neutral'}">
+      ${found
+        ? `🎯 <strong>Commit coupable : #${CULPRIT} — "refactor: optimisation de la boucle principale"</strong> par Bob. Trouvé en <strong>${steps} étape(s)</strong> au lieu de ${N-1} tests manuels. <code>git bisect reset</code> restaure HEAD.`
+        : current !== null
+          ? `Commit <strong>#${current}</strong> en cours de test. Exécutez la fonction, observez le résultat ci-dessous et marquez le commit. Espace de recherche : #${goodBound}–#${badBound} (~${stepsLeft()} étape(s) restante(s)).`
+          : `Cliquez sur <strong>Démarrer git bisect</strong>. Git va checkout automatiquement le commit du milieu pour que vous le testiez.`}
+    </div>
+    ${current !== null && !found ? mockTestOutput(current) : ''}
+    <div class="gbw-timeline">
+      ${Array.from({length: N}, (_, i) => {
+          const n = i + 1;
+          const state = commitStates[n] || '';
+          const isActive = n > goodBound && n < badBound && !found;
+          const lbl = COMMIT_LABELS[n] || '#'+n;
+          return `
+          ${n > 1 ? `<div class="gbw-connector ${isActive ? 'active' : ''}"></div>` : ''}
+          <div class="gbw-commit ${state}">
+            <div class="gbw-circle">${state === 'culprit' ? '🎯' : state === 'good' ? '✓' : state === 'bad' ? '✗' : state === 'current' ? '?' : n}</div>
+            <div class="gbw-label">${state === 'culprit' ? 'coupable' : state === 'good' ? 'bon' : state === 'bad' ? 'mauvais' : state === 'current' ? 'test?' : lbl}</div>
+          </div>`;
+      }).join('')}
+    </div>
+    <div class="gbw-log">${log.map(l => `<div class="${l.startsWith('$ git bisect good') ? 'good-line' : l.startsWith('$ git bisect bad') ? 'bad-line' : l.includes('🎯') ? 'found-line' : ''}">${l}</div>`).join('')}</div>
+    <div class="gbw-caption">
+      git bisect utilise une recherche dichotomique : pour ${N} commits, ⌈log₂(${N})⌉ = <strong>4 étapes maximum</strong> au lieu de ${N-1} tests manuels.
+    </div>
   </div>
-  ${current !== null && !found ? mockTestOutput(current) : ''}
-  <div class="gbw-timeline">
-    ${Array.from({length: N}, (_, i) => {
-        const n = i + 1;
-        const state = commitStates[n] || '';
-        const isActive = n > goodBound && n < badBound && !found;
-        const lbl = COMMIT_LABELS[n] || '#'+n;
-        return `
-        ${n > 1 ? `<div class="gbw-connector ${isActive ? 'active' : ''}"></div>` : ''}
-        <div class="gbw-commit ${state}">
-          <div class="gbw-circle">${state === 'culprit' ? '🎯' : state === 'good' ? '✓' : state === 'bad' ? '✗' : state === 'current' ? '?' : n}</div>
-          <div class="gbw-label">${state === 'culprit' ? 'coupable' : state === 'good' ? 'bon' : state === 'bad' ? 'mauvais' : state === 'current' ? 'test?' : lbl}</div>
-        </div>`;
-    }).join('')}
-  </div>
-  <div class="gbw-actions">
+  <div class="gbw-actions widget-fit-footer">
     ${!found && current === null
       ? `<button class="btn btn-primary" id="gbw-start">Démarrer git bisect</button>`
       : found
@@ -138,10 +144,6 @@ class GitBisectWidget {
         : `<button class="btn btn-secondary" id="gbw-good" style="border-color:#10b981;color:#065f46">✅ Bon — good</button>
            <button class="btn btn-secondary" id="gbw-bad" style="border-color:#ef4444;color:#991b1b">❌ Mauvais — bad</button>
            <span class="gbw-step-info">Étape ${steps + 1} — ~${stepsLeft()} restante(s)</span>`}
-  </div>
-  <div class="gbw-log">${log.map(l => `<div class="${l.startsWith('$ git bisect good') ? 'good-line' : l.startsWith('$ git bisect bad') ? 'bad-line' : l.includes('🎯') ? 'found-line' : ''}">${l}</div>`).join('')}</div>
-  <div class="gbw-caption">
-    git bisect utilise une recherche dichotomique : pour ${N} commits, ⌈log₂(${N})⌉ = <strong>4 étapes maximum</strong> au lieu de ${N-1} tests manuels.
   </div>
 </div>`;
 

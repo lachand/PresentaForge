@@ -27,9 +27,9 @@ class BooleanSimplifierWidget {
 
         const defaultExpression = this.config.defaultExpression || 'A OR (A AND B)';
 
-        this.container.classList.add('boolean-simplifier-widget');
+        this.container.classList.add('boolean-simplifier-widget', 'widget-fit');
         this.container.innerHTML = `
-            <div class="boolean-simplifier-toolbar">
+            <div class="boolean-simplifier-toolbar widget-fit-header">
                 <div class="boolean-simplifier-input-row">
                     <input type="text" class="input" data-role="input" placeholder="Ex: NOT (A AND B) OR (A AND B)" value="${this.escapeHtml(defaultExpression)}">
                 </div>
@@ -45,38 +45,40 @@ class BooleanSimplifierWidget {
                 <div data-role="error"></div>
             </div>
 
-            <div class="boolean-simplifier-grid">
-                <div class="boolean-simplifier-panel">
-                    <h4>Etat de simplification</h4>
-                    <div class="boolean-simplifier-line">
-                        <label>Expression originale</label>
-                        <div class="boolean-simplifier-code" data-role="original">--</div>
+            <div class="widget-fit-body">
+                <div class="boolean-simplifier-grid">
+                    <div class="boolean-simplifier-panel">
+                        <h4>Etat de simplification</h4>
+                        <div class="boolean-simplifier-line">
+                            <label>Expression originale</label>
+                            <div class="boolean-simplifier-code" data-role="original">--</div>
+                        </div>
+                        <div class="boolean-simplifier-line">
+                            <label>Expression courante</label>
+                            <div class="boolean-simplifier-code" data-role="current">--</div>
+                        </div>
+                        <div class="boolean-simplifier-line">
+                            <label>Expression finale</label>
+                            <div class="boolean-simplifier-code" data-role="final">--</div>
+                        </div>
+                        <div class="boolean-simplifier-line">
+                            <label>Transformation courante</label>
+                            <div class="boolean-simplifier-diff" data-role="diff">Aucune etape appliquee.</div>
+                        </div>
+                        <div class="boolean-simplifier-meta" data-role="meta">0/0 etape appliquee</div>
+                        <div class="boolean-simplifier-verdict" data-role="verdict">Lance une simplification puis valide l'equivalence.</div>
                     </div>
-                    <div class="boolean-simplifier-line">
-                        <label>Expression courante</label>
-                        <div class="boolean-simplifier-code" data-role="current">--</div>
+
+                    <div class="boolean-simplifier-panel">
+                        <h4>Journal des transformations</h4>
+                        <ol class="boolean-simplifier-steps" data-role="steps"></ol>
                     </div>
-                    <div class="boolean-simplifier-line">
-                        <label>Expression finale</label>
-                        <div class="boolean-simplifier-code" data-role="final">--</div>
-                    </div>
-                    <div class="boolean-simplifier-line">
-                        <label>Transformation courante</label>
-                        <div class="boolean-simplifier-diff" data-role="diff">Aucune etape appliquee.</div>
-                    </div>
-                    <div class="boolean-simplifier-meta" data-role="meta">0/0 etape appliquee</div>
-                    <div class="boolean-simplifier-verdict" data-role="verdict">Lance une simplification puis valide l'equivalence.</div>
                 </div>
 
                 <div class="boolean-simplifier-panel">
-                    <h4>Journal des transformations</h4>
-                    <ol class="boolean-simplifier-steps" data-role="steps"></ol>
+                    <h4>Verification par table de verite</h4>
+                    <div class="boolean-simplifier-table-wrap" data-role="table"></div>
                 </div>
-            </div>
-
-            <div class="boolean-simplifier-panel">
-                <h4>Verification par table de verite</h4>
-                <div class="boolean-simplifier-table-wrap" data-role="table"></div>
             </div>
         `;
 

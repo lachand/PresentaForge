@@ -482,8 +482,8 @@ class MemoryWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="mpw">
-  <div class="mpw-toolbar">
+        this.root.innerHTML = `<div class="mpw widget-fit">
+  <div class="mpw-toolbar widget-fit-header">
     <span class="mpw-lbl">Séquence :</span>
     <input class="mpw-input" style="width:200px" data-seq value="${this.DEFAULT_SEQ}">
     <span class="mpw-lbl">Cadres :</span>
@@ -499,17 +499,21 @@ class MemoryWidget {
       <button class="mpw-btn" data-reset>↺ Reset</button>
     </div>
   </div>
-  <div class="mpw-lbl">Chaîne de référence</div>
-  <div class="mpw-ref" data-ref-row></div>
-  <div class="mpw-lbl">Cadres mémoire</div>
-  <div data-frames-area></div>
-  <div class="mpw-stats">
-    <div class="mpw-stat"><span class="mpw-sv" data-sp>--</span><span class="mpw-sl">Page courante</span></div>
-    <div class="mpw-stat"><span class="mpw-sv" data-sh>0</span><span class="mpw-sl">Hits</span></div>
-    <div class="mpw-stat"><span class="mpw-sv" data-sf>0</span><span class="mpw-sl">Faults</span></div>
-    <div class="mpw-stat"><span class="mpw-sv" data-sr>--</span><span class="mpw-sl">Taux de hit</span></div>
+  <div class="widget-fit-body">
+    <div class="mpw-lbl">Chaîne de référence</div>
+    <div class="mpw-ref" data-ref-row></div>
+    <div class="mpw-lbl">Cadres mémoire</div>
+    <div data-frames-area></div>
   </div>
-  <div class="mpw-info" data-info>Prêt. Cliquez sur Étape ou Simuler.</div>
+  <div class="widget-fit-footer">
+    <div class="mpw-stats">
+      <div class="mpw-stat"><span class="mpw-sv" data-sp>--</span><span class="mpw-sl">Page courante</span></div>
+      <div class="mpw-stat"><span class="mpw-sv" data-sh>0</span><span class="mpw-sl">Hits</span></div>
+      <div class="mpw-stat"><span class="mpw-sv" data-sf>0</span><span class="mpw-sl">Faults</span></div>
+      <div class="mpw-stat"><span class="mpw-sv" data-sr>--</span><span class="mpw-sl">Taux de hit</span></div>
+    </div>
+    <div class="mpw-info" data-info>Prêt. Cliquez sur Étape ou Simuler.</div>
+  </div>
 </div>`;
         this._bind();
         this._reset();

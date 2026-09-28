@@ -6,35 +6,39 @@ class EventDelegationStandardisteWidget {
             return div.innerHTML;
         };
 
-        container.classList.add('event-widget');
+        container.classList.add('event-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${escapeHtml(config.title || 'La métaphore du standardiste')}</h3>
-            <p>${escapeHtml(config.description || 'Comparer 50 listeners individuels vs 1 listener délégué au parent.')}</p>
-            <div class="controls">
-                <button type="button" class="btn btn-secondary" data-role="mode-direct">Sans délégation</button>
-                <button type="button" class="btn btn-primary" data-role="mode-deleg">Avec délégation</button>
-                <button type="button" class="btn btn-secondary" data-role="add-window">Ajouter fenêtre dynamique</button>
-                <button type="button" class="btn btn-secondary" data-role="reset">Réinitialiser</button>
-            </div>
-            <div class="deleg-grid">
-                <div class="deleg-building" data-role="building">
-                    <svg class="deleg-svg" data-role="svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <path class="deleg-path" data-role="path"></path>
-                    </svg>
-                    <div class="deleg-windows" data-role="windows"></div>
-                    <div class="deleg-guards" data-role="guards"></div>
-                    <div class="deleg-entrance">
-                        <div class="deleg-main-guard" data-role="main-guard">🧑‍💼 Standardiste (entrée)</div>
-                        <div class="deleg-bubble" data-role="bubble">D'où vient ce signal ?</div>
-                    </div>
+            <div class="widget-fit-header">
+                <h3>${escapeHtml(config.title || 'La métaphore du standardiste')}</h3>
+                <p>${escapeHtml(config.description || 'Comparer 50 listeners individuels vs 1 listener délégué au parent.')}</p>
+                <div class="controls">
+                    <button type="button" class="btn btn-secondary" data-role="mode-direct">Sans délégation</button>
+                    <button type="button" class="btn btn-primary" data-role="mode-deleg">Avec délégation</button>
+                    <button type="button" class="btn btn-secondary" data-role="add-window">Ajouter fenêtre dynamique</button>
+                    <button type="button" class="btn btn-secondary" data-role="reset">Réinitialiser</button>
                 </div>
-                <div>
-                    <div class="mini-log" data-role="log"></div>
-                    <div class="deleg-stats">
-                        <div><strong>Mode:</strong> <span data-role="stat-mode">Avec délégation</span></div>
-                        <div><strong>Listeners actifs:</strong> <span data-role="stat-listeners">1</span></div>
-                        <div><strong>currentTarget:</strong> <span data-role="stat-current">ul#building</span></div>
-                        <div><strong>target:</strong> <span data-role="stat-target">-</span></div>
+            </div>
+            <div class="widget-fit-body">
+                <div class="deleg-grid">
+                    <div class="deleg-building" data-role="building">
+                        <svg class="deleg-svg" data-role="svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <path class="deleg-path" data-role="path"></path>
+                        </svg>
+                        <div class="deleg-windows" data-role="windows"></div>
+                        <div class="deleg-guards" data-role="guards"></div>
+                        <div class="deleg-entrance">
+                            <div class="deleg-main-guard" data-role="main-guard">🧑‍💼 Standardiste (entrée)</div>
+                            <div class="deleg-bubble" data-role="bubble">D'où vient ce signal ?</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mini-log" data-role="log"></div>
+                        <div class="deleg-stats">
+                            <div><strong>Mode:</strong> <span data-role="stat-mode">Avec délégation</span></div>
+                            <div><strong>Listeners actifs:</strong> <span data-role="stat-listeners">1</span></div>
+                            <div><strong>currentTarget:</strong> <span data-role="stat-current">ul#building</span></div>
+                            <div><strong>target:</strong> <span data-role="stat-target">-</span></div>
+                        </div>
                     </div>
                 </div>
             </div>

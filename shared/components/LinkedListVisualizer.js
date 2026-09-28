@@ -331,17 +331,19 @@ class LinkedListWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="llw-container">
-            <div class="llw-header">Liste chainee</div>
-            <div class="llw-list-zone" role="img" aria-label="Visualisation de la liste chaînée"></div>
-            <div class="llw-info-bar llw-action"></div>
-            <div class="llw-controls">
-                <input type="number" class="llw-input llw-val-input" placeholder="val" value="5">
-                <button class="llw-btn llw-btn-head" aria-label="Ajouter en tête">+Tete</button>
-                <button class="llw-btn llw-btn-tail llw-btn-secondary" aria-label="Ajouter en queue">+Queue</button>
-                <button class="llw-btn llw-btn-remove llw-btn-secondary" aria-label="Supprimer une valeur">-Valeur</button>
-                <button class="llw-btn llw-btn-search llw-btn-secondary">Chercher</button>
-                <button class="llw-btn llw-btn-reset llw-btn-secondary" aria-label="Réinitialiser">&#8635;</button>
+        this.root.innerHTML = `<div class="llw-container widget-fit">
+            <div class="llw-header widget-fit-header">Liste chainee</div>
+            <div class="llw-list-zone widget-fit-body" role="img" aria-label="Visualisation de la liste chaînée"></div>
+            <div class="widget-fit-footer">
+                <div class="llw-info-bar llw-action"></div>
+                <div class="llw-controls">
+                    <input type="number" class="llw-input llw-val-input" placeholder="val" value="5">
+                    <button class="llw-btn llw-btn-head" aria-label="Ajouter en tête">+Tete</button>
+                    <button class="llw-btn llw-btn-tail llw-btn-secondary" aria-label="Ajouter en queue">+Queue</button>
+                    <button class="llw-btn llw-btn-remove llw-btn-secondary" aria-label="Supprimer une valeur">-Valeur</button>
+                    <button class="llw-btn llw-btn-search llw-btn-secondary">Chercher</button>
+                    <button class="llw-btn llw-btn-reset llw-btn-secondary" aria-label="Réinitialiser">&#8635;</button>
+                </div>
             </div>
         </div>`;
         this._render();

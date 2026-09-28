@@ -8,11 +8,13 @@ class DomTreeWidget {
         const readOnly = config.readOnly === true;
         const showDiff = config.showDiff !== false;
 
-        container.classList.add('dom-widget');
+        container.classList.add('dom-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${DomTreeWidget.escape(title)}</h3>
-            <p>${DomTreeWidget.escape(description)}</p>
-            <div class="dom-widget-grid">
+            <div class="widget-fit-header">
+                <h3>${DomTreeWidget.escape(title)}</h3>
+                <p>${DomTreeWidget.escape(description)}</p>
+            </div>
+            <div class="dom-widget-grid widget-fit-body">
                 <div>
                     <textarea class="dom-widget-editor" data-role="editor"></textarea>
                 </div>

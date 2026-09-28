@@ -10,53 +10,57 @@ class EventLoopRestaurantWidget {
         const speedSliderId = `${uid}_slider`;
         const speedLabelId = `${uid}_label`;
 
-        container.classList.add('event-widget');
+        container.classList.add('event-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${escapeHtml(config.title || 'La métaphore du serveur de restaurant')}</h3>
-            <p>${escapeHtml(config.description || 'Le serveur (thread) ne fait qu\'une chose à la fois. Il ne prend un plat au passe-plat (Callback Queue) que si la salle (Call Stack) est vide.')}</p>
-            <div class="controls">
-                <button type="button" class="btn btn-secondary" data-role="scenario-sync">Scénario 1: Synchrone</button>
-                <button type="button" class="btn btn-secondary" data-role="scenario-block">Incident: while(true)</button>
-                <button type="button" class="btn btn-primary" data-role="scenario-async">Scénario 2: setTimeout(5000)</button>
-                <button type="button" class="btn btn-secondary" data-role="scenario-timeout0">Scénario 3: setTimeout(fn, 0)</button>
-                <button type="button" class="btn btn-secondary" data-role="reset">Réinitialiser</button>
+            <div class="widget-fit-header">
+                <h3>${escapeHtml(config.title || 'La métaphore du serveur de restaurant')}</h3>
+                <p>${escapeHtml(config.description || 'Le serveur (thread) ne fait qu\'une chose à la fois. Il ne prend un plat au passe-plat (Callback Queue) que si la salle (Call Stack) est vide.')}</p>
+                <div class="controls">
+                    <button type="button" class="btn btn-secondary" data-role="scenario-sync">Scénario 1: Synchrone</button>
+                    <button type="button" class="btn btn-secondary" data-role="scenario-block">Incident: while(true)</button>
+                    <button type="button" class="btn btn-primary" data-role="scenario-async">Scénario 2: setTimeout(5000)</button>
+                    <button type="button" class="btn btn-secondary" data-role="scenario-timeout0">Scénario 3: setTimeout(fn, 0)</button>
+                    <button type="button" class="btn btn-secondary" data-role="reset">Réinitialiser</button>
+                </div>
+                <div class="controls">
+                    <label for="${speedSliderId}">Vitesse de simulation :</label>
+                    <input type="range" id="${speedSliderId}" class="speed-slider" min="1" max="5" step="1" value="3">
+                    <span class="speed-label" id="${speedLabelId}">Normal</span>
+                </div>
             </div>
-            <div class="controls">
-                <label for="${speedSliderId}">Vitesse de simulation :</label>
-                <input type="range" id="${speedSliderId}" class="speed-slider" min="1" max="5" step="1" value="3">
-                <span class="speed-label" id="${speedLabelId}">Normal</span>
-            </div>
-            <div class="loop-grid">
-                <div class="restaurant" data-role="restaurant">
-                    <div class="restaurant-layout">
-                        <div class="zone salle">
-                            <h4>Salle (Code / Call Stack)</h4>
-                            <div class="chips" data-role="salle"></div>
-                        </div>
-                        <div class="zone server">
-                            <h4>Serveur (Main Thread)</h4>
-                            <div class="waiter-area">
-                                <div class="waiter at-center" data-role="waiter">🧑‍🍳</div>
+            <div class="widget-fit-body">
+                <div class="loop-grid">
+                    <div class="restaurant" data-role="restaurant">
+                        <div class="restaurant-layout">
+                            <div class="zone salle">
+                                <h4>Salle (Code / Call Stack)</h4>
+                                <div class="chips" data-role="salle"></div>
+                            </div>
+                            <div class="zone server">
+                                <h4>Serveur (Main Thread)</h4>
+                                <div class="waiter-area">
+                                    <div class="waiter at-center" data-role="waiter">🧑‍🍳</div>
+                                </div>
+                            </div>
+                            <div class="zone kitchen">
+                                <h4>Cuisine (Web APIs)</h4>
+                                <div class="chips" data-role="kitchen"></div>
+                                <div style="margin-top:.35rem;" class="kitchen-bell" data-role="bell">🔔 Cloche</div>
+                            </div>
+                            <div class="zone pass">
+                                <h4>Passe-plat (Callback Queue)</h4>
+                                <div class="chips" data-role="queue"></div>
                             </div>
                         </div>
-                        <div class="zone kitchen">
-                            <h4>Cuisine (Web APIs)</h4>
-                            <div class="chips" data-role="kitchen"></div>
-                            <div style="margin-top:.35rem;" class="kitchen-bell" data-role="bell">🔔 Cloche</div>
-                        </div>
-                        <div class="zone pass">
-                            <h4>Passe-plat (Callback Queue)</h4>
-                            <div class="chips" data-role="queue"></div>
-                        </div>
                     </div>
-                </div>
-                <div>
-                    <div class="mini-log" data-role="log"></div>
-                    <div class="loop-stats">
-                        <div class="loop-stat" data-role="stat-ui">UI: fluide</div>
-                        <div class="loop-stat" data-role="stat-server">Serveur: libre</div>
-                        <div class="loop-stat" data-role="stat-rule">Règle d'or: Queue lue uniquement si Stack vide.</div>
-                        <div class="loop-stat" data-role="stat-barrier">Barrière: inactive</div>
+                    <div>
+                        <div class="mini-log" data-role="log"></div>
+                        <div class="loop-stats">
+                            <div class="loop-stat" data-role="stat-ui">UI: fluide</div>
+                            <div class="loop-stat" data-role="stat-server">Serveur: libre</div>
+                            <div class="loop-stat" data-role="stat-rule">Règle d'or: Queue lue uniquement si Stack vide.</div>
+                            <div class="loop-stat" data-role="stat-barrier">Barrière: inactive</div>
+                        </div>
                     </div>
                 </div>
             </div>

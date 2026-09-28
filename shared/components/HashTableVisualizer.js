@@ -450,15 +450,17 @@ class HashTableWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="htw-container">
-            <div class="htw-header">Table de hachage (chainage)</div>
-            <div class="htw-table" role="img" aria-label="Visualisation de la table de hachage (chaînage)"></div>
-            <div class="htw-info-bar htw-action"></div>
-            <div class="htw-controls">
-                <input type="number" class="htw-input htw-key-input" placeholder="cle" value="42">
-                <button class="htw-btn htw-btn-insert">+ Inserer</button>
-                <button class="htw-btn htw-btn-search htw-btn-secondary">Chercher</button>
-                <button class="htw-btn htw-btn-reset htw-btn-secondary">&#8635; Reset</button>
+        this.root.innerHTML = `<div class="htw-container widget-fit">
+            <div class="htw-header widget-fit-header">Table de hachage (chainage)</div>
+            <div class="htw-table widget-fit-body" role="img" aria-label="Visualisation de la table de hachage (chaînage)"></div>
+            <div class="widget-fit-footer">
+                <div class="htw-info-bar htw-action"></div>
+                <div class="htw-controls">
+                    <input type="number" class="htw-input htw-key-input" placeholder="cle" value="42">
+                    <button class="htw-btn htw-btn-insert">+ Inserer</button>
+                    <button class="htw-btn htw-btn-search htw-btn-secondary">Chercher</button>
+                    <button class="htw-btn htw-btn-reset htw-btn-secondary">&#8635; Reset</button>
+                </div>
             </div>
         </div>`;
         this._render();

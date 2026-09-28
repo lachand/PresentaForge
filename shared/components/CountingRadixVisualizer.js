@@ -325,16 +325,20 @@ class CountingRadixWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="crw-container">
-            <div class="crw-header"><span>Tri par comptage (Counting Sort)</span><span class="crw-step-info"></span></div>
-            <div class="crw-section"><div class="crw-label">Entree</div><div class="crw-cells crw-input-cells" role="img" aria-label="Cellules d'entrée"></div></div>
-            <div class="crw-section"><div class="crw-label">Comptage</div><div class="crw-cells crw-count-cells" role="img" aria-label="Cellules de comptage"></div></div>
-            <div class="crw-section"><div class="crw-label">Sortie</div><div class="crw-cells crw-output-cells" role="img" aria-label="Cellules de sortie"></div></div>
-            <div class="crw-info-bar crw-action"></div>
-            <div class="crw-controls">
-                <button class="crw-btn crw-btn-play">&#9654; Lancer</button>
-                <button class="crw-btn crw-btn-step crw-btn-secondary">Etape</button>
-                <button class="crw-btn crw-btn-reset crw-btn-secondary">&#8635; Reset</button>
+        this.root.innerHTML = `<div class="crw-container widget-fit">
+            <div class="crw-header widget-fit-header"><span>Tri par comptage (Counting Sort)</span><span class="crw-step-info"></span></div>
+            <div class="widget-fit-body">
+                <div class="crw-section"><div class="crw-label">Entree</div><div class="crw-cells crw-input-cells" role="img" aria-label="Cellules d'entrée"></div></div>
+                <div class="crw-section"><div class="crw-label">Comptage</div><div class="crw-cells crw-count-cells" role="img" aria-label="Cellules de comptage"></div></div>
+                <div class="crw-section"><div class="crw-label">Sortie</div><div class="crw-cells crw-output-cells" role="img" aria-label="Cellules de sortie"></div></div>
+            </div>
+            <div class="widget-fit-footer">
+                <div class="crw-info-bar crw-action"></div>
+                <div class="crw-controls">
+                    <button class="crw-btn crw-btn-play">&#9654; Lancer</button>
+                    <button class="crw-btn crw-btn-step crw-btn-secondary">Etape</button>
+                    <button class="crw-btn crw-btn-reset crw-btn-secondary">&#8635; Reset</button>
+                </div>
             </div>
         </div>`;
 

@@ -370,20 +370,22 @@ class StructureWidget {
         const title = isQueue ? 'File (Queue) — FIFO' : 'Pile (Stack) — LIFO';
         const addLabel = isQueue ? 'Enfiler' : 'Empiler';
         const removeLabel = isQueue ? 'Défiler' : 'Dépiler';
-        this.root.innerHTML = `<div class="stw-container">
-            <div class="stw-header"><span>${title}</span><span class="stw-size-info"></span></div>
-            <div class="stw-input-row">
-                <input type="text" class="stw-input" placeholder="Valeur…" value="">
-                <button class="stw-btn stw-btn-add">${addLabel}</button>
-                <button class="stw-btn stw-btn-danger stw-btn-remove">${removeLabel}</button>
-                <button class="stw-btn stw-btn-secondary stw-btn-reset" aria-label="Réinitialiser">↺</button>
+        this.root.innerHTML = `<div class="stw-container widget-fit">
+            <div class="widget-fit-header">
+                <div class="stw-header"><span>${title}</span><span class="stw-size-info"></span></div>
+                <div class="stw-input-row">
+                    <input type="text" class="stw-input" placeholder="Valeur…" value="">
+                    <button class="stw-btn stw-btn-add">${addLabel}</button>
+                    <button class="stw-btn stw-btn-danger stw-btn-remove">${removeLabel}</button>
+                    <button class="stw-btn stw-btn-secondary stw-btn-reset" aria-label="Réinitialiser">↺</button>
+                </div>
             </div>
-            <div class="stw-viz">
+            <div class="stw-viz widget-fit-body">
                 ${isQueue
                     ? `<div><div class="stw-labels"><span>Sortie ←</span><span>→ Entrée</span></div><div class="stw-queue-zone" role="img" aria-label="Visualisation de la file (FIFO)"></div></div>`
                     : `<div class="stw-stack-zone" role="img" aria-label="Visualisation de la pile (LIFO)"></div>`}
             </div>
-            <div class="stw-info"><span class="stw-action"></span><span class="stw-size-label"></span></div>
+            <div class="stw-info widget-fit-footer"><span class="stw-action"></span><span class="stw-size-label"></span></div>
         </div>`;
         this._render();
         this._bindControls();

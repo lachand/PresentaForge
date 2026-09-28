@@ -44,8 +44,8 @@ class GitZonesWidget {
             const canPull     = state.remote.some(r => !state.commits.find(c => c.hash === r.hash));
 
             container.innerHTML = `
-<div class="gzw-root">
-  <div class="gzw-controls">
+<div class="gzw-root widget-fit">
+  <div class="gzw-controls widget-fit-header">
     <button class="gzw-cmd" id="gzw-add-all"    ${canAdd      ? '' : 'disabled'}>git add .</button>
     <button class="gzw-cmd" id="gzw-add-one"    ${canAdd      ? '' : 'disabled'}>git add index.js</button>
     <button class="gzw-cmd" id="gzw-commit"     ${canCommit   ? '' : 'disabled'}>git commit</button>
@@ -55,7 +55,7 @@ class GitZonesWidget {
     <button class="gzw-cmd danger" id="gzw-checkout" ${canCheckout ? '' : 'disabled'}>git checkout -- .</button>
     <button class="gzw-cmd" id="gzw-reset-all">Réinitialiser</button>
   </div>
-  <div class="gzw-zones">
+  <div class="gzw-zones widget-fit-body">
     <div class="gzw-zone" id="gzw-zone-wd">
       <div class="gzw-zone-title">📁 Répertoire de travail <span class="gzw-zone-subtitle">(working directory)</span></div>
       <div class="gzw-files" id="gzw-wd">${state.wd.map(f => mkFile(f, 'wd')).join('')}</div>
@@ -73,7 +73,7 @@ class GitZonesWidget {
       <div class="gzw-commits" id="gzw-remote">${state.remote.map(mkCommit).join('')}</div>
     </div>
   </div>
-  <div class="gzw-feedback info" id="gzw-fb">Utilisez les commandes ci-dessus pour observer les transitions.</div>
+  <div class="gzw-feedback info widget-fit-footer" id="gzw-fb">Utilisez les commandes ci-dessus pour observer les transitions.</div>
 </div>`;
             bindEvents();
         };

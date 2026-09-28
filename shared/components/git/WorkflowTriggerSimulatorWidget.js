@@ -98,8 +98,8 @@ class WorkflowTriggerSimulatorWidget {
             }).join('');
         }
 
-        container.innerHTML = `<div class="wts">
-            <div class="wts-grid">
+        container.innerHTML = `<div class="wts widget-fit">
+            <div class="wts-grid widget-fit-body">
                 <div class="wts-panel">
                     <p class="wts-panel-title">Événement git</p>
                     <div class="wts-event-btns">${EVENTS.map(e =>

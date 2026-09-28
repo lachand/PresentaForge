@@ -272,14 +272,16 @@ class MergeSortWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="msw-container">
-            <div class="msw-header"><span>Tri fusion (Merge Sort)</span><span class="msw-step-info"></span></div>
-            <div class="msw-bars-zone" role="img" aria-label="Visualisation du tri fusion"></div>
-            <div class="msw-info-bar msw-action"></div>
-            <div class="msw-controls">
-                <button class="msw-btn msw-btn-play">&#9654; Lancer</button>
-                <button class="msw-btn msw-btn-step msw-btn-secondary">Etape</button>
-                <button class="msw-btn msw-btn-reset msw-btn-secondary">&#8635; Reset</button>
+        this.root.innerHTML = `<div class="msw-container widget-fit">
+            <div class="msw-header widget-fit-header"><span>Tri fusion (Merge Sort)</span><span class="msw-step-info"></span></div>
+            <div class="msw-bars-zone widget-fit-body" role="img" aria-label="Visualisation du tri fusion"></div>
+            <div class="widget-fit-footer">
+                <div class="msw-info-bar msw-action"></div>
+                <div class="msw-controls">
+                    <button class="msw-btn msw-btn-play">&#9654; Lancer</button>
+                    <button class="msw-btn msw-btn-step msw-btn-secondary">Etape</button>
+                    <button class="msw-btn msw-btn-reset msw-btn-secondary">&#8635; Reset</button>
+                </div>
             </div>
         </div>`;
 

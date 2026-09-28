@@ -589,31 +589,35 @@ class DnsWidget {
 
     init() {
         const domains = Object.keys(DnsWidget._DNS_DB);
-        this.root.innerHTML = `<div class="dnw">
-  <div class="dnw-toolbar">
-    <input class="dnw-input" data-domain placeholder="www.example.com">
-    <div class="dnw-types">
-      ${['A','AAAA','CNAME','MX','NS'].map(t => `<button class="dnw-type${t==='A'?' active':''}" data-type="${t}">${t}</button>`).join('')}
+        this.root.innerHTML = `<div class="dnw widget-fit">
+  <div class="widget-fit-header">
+    <div class="dnw-toolbar">
+      <input class="dnw-input" data-domain placeholder="www.example.com">
+      <div class="dnw-types">
+        ${['A','AAAA','CNAME','MX','NS'].map(t => `<button class="dnw-type${t==='A'?' active':''}" data-type="${t}">${t}</button>`).join('')}
+      </div>
+      <button class="dnw-btn" data-resolve>Résoudre</button>
+      <button class="dnw-btn sec" data-reset-btn>↺</button>
     </div>
-    <button class="dnw-btn" data-resolve>Résoudre</button>
-    <button class="dnw-btn sec" data-reset-btn>↺</button>
+    <div class="dnw-chips">
+      ${domains.map(d => `<button class="dnw-chip" data-chip="${d}">${d}</button>`).join('')}
+    </div>
   </div>
-  <div class="dnw-chips">
-    ${domains.map(d => `<button class="dnw-chip" data-chip="${d}">${d}</button>`).join('')}
+  <div class="widget-fit-body">
+    <div class="dnw-section-lbl">Serveurs</div>
+    <div class="dnw-diagram">
+      <div class="dnw-srv" data-srv="client"><div class="dnw-srv-icon">💻</div>CLIENT<div class="dnw-srv-name">Votre machine</div></div>
+      <div class="dnw-srv" data-srv="resolver"><div class="dnw-srv-icon">🔄</div>RÉSOLVEUR<div class="dnw-srv-name">FAI / local</div></div>
+      <div class="dnw-srv" data-srv="root"><div class="dnw-srv-icon">🌍</div>RACINE<div class="dnw-srv-name">Root (.)</div></div>
+      <div class="dnw-srv" data-srv="tld"><div class="dnw-srv-icon">🏷️</div>TLD<div class="dnw-srv-name" data-tld-lbl>.com/.org…</div></div>
+      <div class="dnw-srv" data-srv="auth"><div class="dnw-srv-icon">📋</div>AUTORITAIRE<div class="dnw-srv-name" data-auth-lbl>domaine</div></div>
+    </div>
+    <div class="dnw-feedback" data-fb></div>
+    <div class="dnw-section-lbl">Étapes de résolution</div>
+    <div class="dnw-steps" data-steps><div class="dnw-empty">Entrez un domaine et cliquez sur Résoudre.</div></div>
+    <div class="dnw-section-lbl">Cache du résolveur (<span data-cache-count>0</span> entrée<span data-cache-s></span>)</div>
+    <div class="dnw-cache"><table><thead><tr><th>Domaine</th><th>Type</th><th>Valeur</th><th>TTL</th></tr></thead><tbody data-cache-body><tr><td colspan="4" class="dnw-empty">Cache vide</td></tr></tbody></table></div>
   </div>
-  <div class="dnw-section-lbl">Serveurs</div>
-  <div class="dnw-diagram">
-    <div class="dnw-srv" data-srv="client"><div class="dnw-srv-icon">💻</div>CLIENT<div class="dnw-srv-name">Votre machine</div></div>
-    <div class="dnw-srv" data-srv="resolver"><div class="dnw-srv-icon">🔄</div>RÉSOLVEUR<div class="dnw-srv-name">FAI / local</div></div>
-    <div class="dnw-srv" data-srv="root"><div class="dnw-srv-icon">🌍</div>RACINE<div class="dnw-srv-name">Root (.)</div></div>
-    <div class="dnw-srv" data-srv="tld"><div class="dnw-srv-icon">🏷️</div>TLD<div class="dnw-srv-name" data-tld-lbl>.com/.org…</div></div>
-    <div class="dnw-srv" data-srv="auth"><div class="dnw-srv-icon">📋</div>AUTORITAIRE<div class="dnw-srv-name" data-auth-lbl>domaine</div></div>
-  </div>
-  <div class="dnw-feedback" data-fb></div>
-  <div class="dnw-section-lbl">Étapes de résolution</div>
-  <div class="dnw-steps" data-steps><div class="dnw-empty">Entrez un domaine et cliquez sur Résoudre.</div></div>
-  <div class="dnw-section-lbl">Cache du résolveur (<span data-cache-count>0</span> entrée<span data-cache-s></span>)</div>
-  <div class="dnw-cache"><table><thead><tr><th>Domaine</th><th>Type</th><th>Valeur</th><th>TTL</th></tr></thead><tbody data-cache-body><tr><td colspan="4" class="dnw-empty">Cache vide</td></tr></tbody></table></div>
 </div>`;
         this._bind();
     }

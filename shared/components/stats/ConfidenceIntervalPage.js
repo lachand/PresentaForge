@@ -337,36 +337,40 @@ class ConfidenceIntervalWidget {
 
     init() {
         const p = this.params;
-        this.root.innerHTML = `<div class="ciw-container">
-            <div class="ciw-controls-row">
-                <label class="ciw-inline-label">μ <input type="range" class="ciw-range" data-true-mean min="-20" max="120" step="0.5" value="${p.trueMean}"><span data-true-mean-value>${p.trueMean.toFixed(1)}</span></label>
-                <label class="ciw-inline-label">σ <input type="range" class="ciw-range" data-true-sigma min="1" max="40" step="0.5" value="${p.trueSigma}"><span data-true-sigma-value>${p.trueSigma.toFixed(1)}</span></label>
+        this.root.innerHTML = `<div class="ciw-container widget-fit">
+            <div class="widget-fit-header">
+                <div class="ciw-controls-row">
+                    <label class="ciw-inline-label">μ <input type="range" class="ciw-range" data-true-mean min="-20" max="120" step="0.5" value="${p.trueMean}"><span data-true-mean-value>${p.trueMean.toFixed(1)}</span></label>
+                    <label class="ciw-inline-label">σ <input type="range" class="ciw-range" data-true-sigma min="1" max="40" step="0.5" value="${p.trueSigma}"><span data-true-sigma-value>${p.trueSigma.toFixed(1)}</span></label>
+                </div>
+                <div class="ciw-controls-row">
+                    <label class="ciw-inline-label">n <input type="range" class="ciw-range" data-sample-size min="5" max="200" step="1" value="${p.sampleSize}"><span data-sample-size-value>${p.sampleSize}</span></label>
+                    <label class="ciw-inline-label">Confiance
+                        <select class="ciw-select" data-confidence>
+                            <option value="90">90%</option>
+                            <option value="95">95%</option>
+                            <option value="99">99%</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="ciw-controls-row">
+                    <button class="ciw-btn ciw-btn-primary" data-run="1">1 échantillon</button>
+                    <button class="ciw-btn ciw-btn-secondary" data-run="25">+25</button>
+                    <button class="ciw-btn ciw-btn-secondary" data-run="100">+100</button>
+                    <button class="ciw-btn ciw-btn-secondary" data-clear>Vider</button>
+                    <button class="ciw-btn ciw-btn-secondary" data-reset>↺ Reset</button>
+                </div>
             </div>
-            <div class="ciw-controls-row">
-                <label class="ciw-inline-label">n <input type="range" class="ciw-range" data-sample-size min="5" max="200" step="1" value="${p.sampleSize}"><span data-sample-size-value>${p.sampleSize}</span></label>
-                <label class="ciw-inline-label">Confiance
-                    <select class="ciw-select" data-confidence>
-                        <option value="90">90%</option>
-                        <option value="95">95%</option>
-                        <option value="99">99%</option>
-                    </select>
-                </label>
+            <div class="widget-fit-body">
+                <svg class="ciw-svg" data-chart viewBox="0 0 400 220" role="img" aria-label="Intervalles de confiance observés"></svg>
+                <div class="ciw-metrics">
+                    <div class="ciw-metric"><span class="ciw-metric-label">Simulés</span><span data-total>0</span></div>
+                    <div class="ciw-metric"><span class="ciw-metric-label">Couvrants</span><span data-covered>0</span></div>
+                    <div class="ciw-metric"><span class="ciw-metric-label">Couverture obs.</span><span data-rate>--</span></div>
+                    <div class="ciw-metric"><span class="ciw-metric-label">Cible</span><span data-target>${p.confidenceLevel}%</span></div>
+                </div>
+                <div class="ciw-feedback" data-feedback>Lance des échantillons pour observer la couverture.</div>
             </div>
-            <div class="ciw-controls-row">
-                <button class="ciw-btn ciw-btn-primary" data-run="1">1 échantillon</button>
-                <button class="ciw-btn ciw-btn-secondary" data-run="25">+25</button>
-                <button class="ciw-btn ciw-btn-secondary" data-run="100">+100</button>
-                <button class="ciw-btn ciw-btn-secondary" data-clear>Vider</button>
-                <button class="ciw-btn ciw-btn-secondary" data-reset>↺ Reset</button>
-            </div>
-            <svg class="ciw-svg" data-chart viewBox="0 0 400 220" role="img" aria-label="Intervalles de confiance observés"></svg>
-            <div class="ciw-metrics">
-                <div class="ciw-metric"><span class="ciw-metric-label">Simulés</span><span data-total>0</span></div>
-                <div class="ciw-metric"><span class="ciw-metric-label">Couvrants</span><span data-covered>0</span></div>
-                <div class="ciw-metric"><span class="ciw-metric-label">Couverture obs.</span><span data-rate>--</span></div>
-                <div class="ciw-metric"><span class="ciw-metric-label">Cible</span><span data-target>${p.confidenceLevel}%</span></div>
-            </div>
-            <div class="ciw-feedback" data-feedback>Lance des échantillons pour observer la couverture.</div>
         </div>`;
 
         this._q('[data-confidence]').value = String(p.confidenceLevel);

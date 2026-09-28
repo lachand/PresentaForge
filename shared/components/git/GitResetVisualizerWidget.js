@@ -111,43 +111,45 @@ ${i < commits.length - 1 ? '<div class="grv-arrow"></div>' : ''}`;
             };
 
             container.innerHTML = `
-<div class="grv-root">
-    <div class="grv-timeline">${timelineHtml}</div>
-    <div class="grv-zones">
-        <div class="grv-zone ${zoneClass('wd')}">
-            <div class="grv-zone-header">
-                <span class="grv-zone-icon">📁</span>
-                <span class="grv-zone-title">Working Directory</span>
+<div class="grv-root widget-fit">
+    <div class="grv-timeline widget-fit-header">${timelineHtml}</div>
+    <div class="widget-fit-body">
+        <div class="grv-zones">
+            <div class="grv-zone ${zoneClass('wd')}">
+                <div class="grv-zone-header">
+                    <span class="grv-zone-icon">📁</span>
+                    <span class="grv-zone-title">Working Directory</span>
+                </div>
+                <div class="grv-zone-items">${chipHtml(workingFiles, 'modified')}</div>
             </div>
-            <div class="grv-zone-items">${chipHtml(workingFiles, 'modified')}</div>
+            <div class="grv-zone ${zoneClass('stage')}">
+                <div class="grv-zone-header">
+                    <span class="grv-zone-icon">📋</span>
+                    <span class="grv-zone-title">Staging Area (Index)</span>
+                </div>
+                <div class="grv-zone-items">${chipHtml(stagingFiles, 'staged')}</div>
+            </div>
+            <div class="grv-zone ${zoneClass('head')}">
+                <div class="grv-zone-header">
+                    <span class="grv-zone-icon">💾</span>
+                    <span class="grv-zone-title">HEAD (Repository)</span>
+                </div>
+                <div class="grv-zone-items">
+                    <span class="grv-file-chip committed grv-pop">🔖 ${headHash} — ${commits[headIdx].msg}</span>
+                </div>
+            </div>
         </div>
-        <div class="grv-zone ${zoneClass('stage')}">
-            <div class="grv-zone-header">
-                <span class="grv-zone-icon">📋</span>
-                <span class="grv-zone-title">Staging Area (Index)</span>
-            </div>
-            <div class="grv-zone-items">${chipHtml(stagingFiles, 'staged')}</div>
-        </div>
-        <div class="grv-zone ${zoneClass('head')}">
-            <div class="grv-zone-header">
-                <span class="grv-zone-icon">💾</span>
-                <span class="grv-zone-title">HEAD (Repository)</span>
-            </div>
-            <div class="grv-zone-items">
-                <span class="grv-file-chip committed grv-pop">🔖 ${headHash} — ${commits[headIdx].msg}</span>
-            </div>
+        <div class="grv-explain ${exp.cls}">
+            <div class="grv-explain-title">${exp.title}</div>
+            ${exp.text}
         </div>
     </div>
-    <div class="grv-actions">
+    <div class="grv-actions widget-fit-footer">
         <button class="grv-btn grv-btn-soft"  id="grv-soft">reset --soft HEAD~1</button>
         <button class="grv-btn grv-btn-mixed" id="grv-mixed">reset --mixed HEAD~1</button>
         <button class="grv-btn grv-btn-hard"  id="grv-hard">reset --hard HEAD~1</button>
         <button class="grv-btn grv-btn-revert" id="grv-revert">revert ${BASE_COMMITS[3].hash.slice(0,6)}</button>
         <button class="grv-btn grv-btn-reset-ui" id="grv-init">↺ Reset</button>
-    </div>
-    <div class="grv-explain ${exp.cls}">
-        <div class="grv-explain-title">${exp.title}</div>
-        ${exp.text}
     </div>
 </div>`;
 

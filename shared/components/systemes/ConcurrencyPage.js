@@ -350,15 +350,16 @@ class ConcurrencyWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="cnw">
-  <div class="cnw-tabs">
+        this.root.innerHTML = `<div class="cnw widget-fit">
+  <div class="cnw-tabs widget-fit-header">
     <button class="cnw-tab active" data-tab="mutex">🔒 Mutex</button>
     <button class="cnw-tab" data-tab="deadlock">⛔ Deadlock</button>
   </div>
+  <div class="widget-fit-body">
 
   <!-- MUTEX PANEL -->
-  <div class="cnw-panel active" data-panel="mutex">
-    <div class="cnw-toolbar">
+  <div class="cnw-panel active widget-fit" data-panel="mutex">
+    <div class="cnw-toolbar widget-fit-header">
       <label class="cnw-opt"><input type="checkbox" data-mx-lock checked> Avec mutex</label>
       <div class="cnw-btns">
         <button class="cnw-btn" data-mx-step>Étape</button>
@@ -366,35 +367,37 @@ class ConcurrencyWidget {
         <button class="cnw-btn" data-mx-reset>↺ Reset</button>
       </div>
     </div>
-    <div class="cnw-counter-big" data-mx-counter>0</div>
-    <div class="cnw-expected">Résultat attendu : 6 (T1 et T2 incrémentent 3× chacun)</div>
-    <div class="cnw-grid">
-      <div class="cnw-card">
-        <div class="cnw-card-title">Fil T1</div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t1-phase>—</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t1-local>—</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Écritures</span><span class="cnw-kv-val" data-mx-t1-writes>0/3</span></div>
+    <div class="widget-fit-body">
+      <div class="cnw-counter-big" data-mx-counter>0</div>
+      <div class="cnw-expected">Résultat attendu : 6 (T1 et T2 incrémentent 3× chacun)</div>
+      <div class="cnw-grid">
+        <div class="cnw-card">
+          <div class="cnw-card-title">Fil T1</div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t1-phase>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t1-local>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Écritures</span><span class="cnw-kv-val" data-mx-t1-writes>0/3</span></div>
+        </div>
+        <div class="cnw-card">
+          <div class="cnw-card-title">Fil T2</div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t2-phase>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t2-local>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Écritures</span><span class="cnw-kv-val" data-mx-t2-writes>0/3</span></div>
+        </div>
       </div>
-      <div class="cnw-card">
-        <div class="cnw-card-title">Fil T2</div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t2-phase>—</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t2-local>—</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Écritures</span><span class="cnw-kv-val" data-mx-t2-writes>0/3</span></div>
+      <div class="cnw-grid">
+        <div class="cnw-card">
+          <div class="cnw-kv"><span class="cnw-kv-key">Tour actuel</span><span class="cnw-kv-val" data-mx-turn>T1</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Détenteur mutex</span><span class="cnw-kv-val" data-mx-owner>libre</span></div>
+        </div>
       </div>
+      <div class="cnw-section-lbl">Journal</div>
+      <ul class="cnw-log" data-mx-log></ul>
     </div>
-    <div class="cnw-grid">
-      <div class="cnw-card">
-        <div class="cnw-kv"><span class="cnw-kv-key">Tour actuel</span><span class="cnw-kv-val" data-mx-turn>T1</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Détenteur mutex</span><span class="cnw-kv-val" data-mx-owner>libre</span></div>
-      </div>
-    </div>
-    <div class="cnw-section-lbl">Journal</div>
-    <ul class="cnw-log" data-mx-log></ul>
   </div>
 
   <!-- DEADLOCK PANEL -->
-  <div class="cnw-panel" data-panel="deadlock">
-    <div class="cnw-toolbar">
+  <div class="cnw-panel widget-fit" data-panel="deadlock">
+    <div class="cnw-toolbar widget-fit-header">
       <label class="cnw-opt"><input type="checkbox" data-dl-order> Ordre global (T1 et T2 acquièrent R1 avant R2)</label>
       <div class="cnw-btns">
         <button class="cnw-btn" data-dl-step>Étape</button>
@@ -402,27 +405,30 @@ class ConcurrencyWidget {
         <button class="cnw-btn" data-dl-reset>↺ Reset</button>
       </div>
     </div>
-    <div class="cnw-status pending" data-dl-status>En exécution</div>
-    <div class="cnw-res-grid">
-      <div class="cnw-res-box" data-dl-r1-box><div class="res-name">R1</div><div class="res-owner" data-dl-r1>libre</div></div>
-      <div class="cnw-res-box" data-dl-r2-box><div class="res-name">R2</div><div class="res-owner" data-dl-r2>libre</div></div>
-    </div>
-    <div class="cnw-grid">
-      <div class="cnw-card">
-        <div class="cnw-card-title">Fil T1</div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t1-phase>—</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t1-wait>—</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t1-order>—</span></div>
+    <div class="widget-fit-body">
+      <div class="cnw-status pending" data-dl-status>En exécution</div>
+      <div class="cnw-res-grid">
+        <div class="cnw-res-box" data-dl-r1-box><div class="res-name">R1</div><div class="res-owner" data-dl-r1>libre</div></div>
+        <div class="cnw-res-box" data-dl-r2-box><div class="res-name">R2</div><div class="res-owner" data-dl-r2>libre</div></div>
       </div>
-      <div class="cnw-card">
-        <div class="cnw-card-title">Fil T2</div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t2-phase>—</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t2-wait>—</span></div>
-        <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t2-order>—</span></div>
+      <div class="cnw-grid">
+        <div class="cnw-card">
+          <div class="cnw-card-title">Fil T1</div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t1-phase>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t1-wait>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t1-order>—</span></div>
+        </div>
+        <div class="cnw-card">
+          <div class="cnw-card-title">Fil T2</div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t2-phase>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t2-wait>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t2-order>—</span></div>
+        </div>
       </div>
+      <div class="cnw-section-lbl">Journal</div>
+      <ul class="cnw-log" data-dl-log></ul>
     </div>
-    <div class="cnw-section-lbl">Journal</div>
-    <ul class="cnw-log" data-dl-log></ul>
+  </div>
   </div>
 </div>`;
         this._bindTabs();

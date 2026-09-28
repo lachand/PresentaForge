@@ -156,24 +156,26 @@ class GitflowSimulatorWidget {
         const render = () => {
             const step = STEPS[currentStep];
             container.innerHTML = `
-<div class="gflow-root">
-  <div class="gflow-step-card">
+<div class="gflow-root widget-fit">
+  <div class="gflow-step-card widget-fit-header">
     <div class="gflow-step-num">Étape ${currentStep + 1} / ${STEPS.length}</div>
     <div class="gflow-step-desc">${step.desc}</div>
     <div class="gflow-step-detail">${step.detail}</div>
   </div>
-  <div class="gflow-svg-wrap">${buildSVG(currentStep)}</div>
-  <div class="gflow-nav">
-    <button class="btn btn-secondary" id="gflow-prev" ${currentStep === 0 ? 'disabled' : ''}>← Précédent</button>
-    <span class="gflow-nav-center">Étape ${currentStep + 1} / ${STEPS.length}</span>
-    <button class="btn btn-primary" id="gflow-next" ${currentStep === STEPS.length - 1 ? 'disabled' : ''}>Suivant →</button>
-  </div>
-  <div class="gflow-legend">
-    ${Object.values(BRANCHES).map(b => `
-      <div class="gflow-legend-item">
-        <div class="gflow-legend-dot" style="background:${b.color}"></div>
-        <span>${b.label}</span>
-      </div>`).join('')}
+  <div class="gflow-svg-wrap widget-fit-body">${buildSVG(currentStep)}</div>
+  <div class="widget-fit-footer">
+    <div class="gflow-nav">
+      <button class="btn btn-secondary" id="gflow-prev" ${currentStep === 0 ? 'disabled' : ''}>← Précédent</button>
+      <span class="gflow-nav-center">Étape ${currentStep + 1} / ${STEPS.length}</span>
+      <button class="btn btn-primary" id="gflow-next" ${currentStep === STEPS.length - 1 ? 'disabled' : ''}>Suivant →</button>
+    </div>
+    <div class="gflow-legend">
+      ${Object.values(BRANCHES).map(b => `
+        <div class="gflow-legend-item">
+          <div class="gflow-legend-dot" style="background:${b.color}"></div>
+          <span>${b.label}</span>
+        </div>`).join('')}
+    </div>
   </div>
 </div>`;
             container.querySelector('#gflow-prev')?.addEventListener('click', () => { if (currentStep > 0) { currentStep--; render(); } });

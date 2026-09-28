@@ -50,7 +50,8 @@ class GitCommitSigningWidget {
             }).join('');
 
             container.innerHTML = `
-<div class="gcsw-root">
+<div class="gcsw-root widget-fit">
+  <div class="widget-fit-body">
     <div class="gcsw-compare">
         <div class="gcsw-commit-card unsigned">
             <div class="gcsw-card-header">❌ Sans signature</div>
@@ -100,6 +101,7 @@ class GitCommitSigningWidget {
         <br>
         <button class="gcsw-restart-btn" id="gcsw-restart">↺ Recommencer</button>
     </div>
+  </div>
 </div>`;
 
             container.querySelectorAll('[data-step]').forEach(btn => {

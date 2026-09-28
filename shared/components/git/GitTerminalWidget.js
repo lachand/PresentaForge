@@ -183,13 +183,13 @@ ${outLines}`;
             ).join('');
 
             container.innerHTML = `
-<div class="gtw-root">
-    <div class="gtw-top-bar">
+<div class="gtw-root widget-fit">
+    <div class="gtw-top-bar widget-fit-header">
         <span class="gtw-scenario-label">Scénario :</span>
         <select class="gtw-scenario-select" id="gtw-scenario">${scenarioOptions}</select>
         <span class="gtw-counter">${currentStep > 0 ? `Étape ${currentStep}/${totalSteps}` : `${totalSteps} étapes`}</span>
     </div>
-    <div class="gtw-terminal">
+    <div class="gtw-terminal widget-fit-body">
         <div class="gtw-terminal-bar">
             <span class="gtw-dot gtw-dot-red"></span>
             <span class="gtw-dot gtw-dot-amber"></span>
@@ -202,16 +202,18 @@ ${outLines}`;
                 : terminalLines}
         </div>
     </div>
-    <div class="gtw-desc-box">
-        <div class="gtw-desc-label">Explication</div>
-        ${escHtml(currentDesc)}
-    </div>
-    <div class="gtw-controls">
-        <button class="gtw-btn" id="gtw-prev" ${hasPrev ? '' : 'disabled'}>Précédente</button>
-        <button class="gtw-btn gtw-btn-primary" id="gtw-next" ${hasNext ? '' : 'disabled'}>
-            ${currentStep === 0 ? 'Commencer' : currentStep >= totalSteps ? 'Terminé' : 'Étape suivante'}
-        </button>
-        <button class="gtw-btn" id="gtw-restart">Recommencer</button>
+    <div class="widget-fit-footer">
+        <div class="gtw-desc-box">
+            <div class="gtw-desc-label">Explication</div>
+            ${escHtml(currentDesc)}
+        </div>
+        <div class="gtw-controls">
+            <button class="gtw-btn" id="gtw-prev" ${hasPrev ? '' : 'disabled'}>Précédente</button>
+            <button class="gtw-btn gtw-btn-primary" id="gtw-next" ${hasNext ? '' : 'disabled'}>
+                ${currentStep === 0 ? 'Commencer' : currentStep >= totalSteps ? 'Terminé' : 'Étape suivante'}
+            </button>
+            <button class="gtw-btn" id="gtw-restart">Recommencer</button>
+        </div>
     </div>
 </div>`;
 

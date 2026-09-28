@@ -796,41 +796,47 @@ class RoutingSimulatorWidget {
     }
 
     init() {
-        this.root.innerHTML = `<div class="rsw-container">
-            <div class="rsw-topo-row">
-                ${Object.keys(RoutingSimulatorWidget._TOPOLOGIES).map((t) => (
-                    `<button class="rsw-topo-btn${t === this.topo ? ' active' : ''}" data-topo="${t}">${t.charAt(0).toUpperCase()}${t.slice(1)}</button>`
-                )).join('')}
+        this.root.innerHTML = `<div class="rsw-container widget-fit">
+            <div class="widget-fit-header">
+                <div class="rsw-topo-row">
+                    ${Object.keys(RoutingSimulatorWidget._TOPOLOGIES).map((t) => (
+                        `<button class="rsw-topo-btn${t === this.topo ? ' active' : ''}" data-topo="${t}">${t.charAt(0).toUpperCase()}${t.slice(1)}</button>`
+                    )).join('')}
+                </div>
+                <div class="rsw-selection">
+                    <span>Source : <strong data-sel-source>Cliquer sur un routeur</strong></span>
+                    <span>Destination : <strong data-sel-dest>Cliquer sur un routeur</strong></span>
+                </div>
             </div>
-            <div class="rsw-selection">
-                <span>Source : <strong data-sel-source>Cliquer sur un routeur</strong></span>
-                <span>Destination : <strong data-sel-dest>Cliquer sur un routeur</strong></span>
+            <div class="widget-fit-body">
+                <div class="rsw-network">
+                    <svg class="rsw-svg" viewBox="0 0 800 460" role="img" aria-label="Visualisation du réseau — parcours de Dijkstra"></svg>
+                </div>
+                <div class="rsw-tables">
+                    <table class="rsw-table" aria-label="File de priorité">
+                        <thead><tr><th>Routeur</th><th>Distance</th></tr></thead>
+                        <tbody data-pq-body><tr><td colspan="2" class="rsw-muted">En attente…</td></tr></tbody>
+                    </table>
+                    <table class="rsw-table" aria-label="Table des distances">
+                        <thead><tr><th>Routeur</th><th>Dist.</th><th>Préd.</th><th>Fin.</th></tr></thead>
+                        <tbody data-dist-body><tr><td colspan="4" class="rsw-muted">En attente…</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="rsw-route-section">
+                    <div class="rsw-route-selector" data-route-selector></div>
+                    <table class="rsw-table" aria-label="Table de routage">
+                        <thead><tr><th>Destination</th><th>Prochain saut</th><th>Coût</th><th>Interface</th></tr></thead>
+                        <tbody data-route-body><tr><td colspan="4" class="rsw-muted">Terminez l'algorithme pour voir la table de routage.</td></tr></tbody>
+                    </table>
+                </div>
             </div>
-            <div class="rsw-network">
-                <svg class="rsw-svg" viewBox="0 0 800 460" role="img" aria-label="Visualisation du réseau — parcours de Dijkstra"></svg>
-            </div>
-            <div class="rsw-step-desc" data-step-desc>Sélectionnez un routeur source puis un routeur destination.</div>
-            <div class="rsw-controls">
-                <button class="rsw-btn rsw-btn-primary" data-btn-step disabled>Étape suivante</button>
-                <button class="rsw-btn rsw-btn-secondary" data-btn-auto disabled>Auto</button>
-                <button class="rsw-btn rsw-btn-secondary" data-btn-reset>↺ Réinitialiser</button>
-            </div>
-            <div class="rsw-tables">
-                <table class="rsw-table" aria-label="File de priorité">
-                    <thead><tr><th>Routeur</th><th>Distance</th></tr></thead>
-                    <tbody data-pq-body><tr><td colspan="2" class="rsw-muted">En attente…</td></tr></tbody>
-                </table>
-                <table class="rsw-table" aria-label="Table des distances">
-                    <thead><tr><th>Routeur</th><th>Dist.</th><th>Préd.</th><th>Fin.</th></tr></thead>
-                    <tbody data-dist-body><tr><td colspan="4" class="rsw-muted">En attente…</td></tr></tbody>
-                </table>
-            </div>
-            <div class="rsw-route-section">
-                <div class="rsw-route-selector" data-route-selector></div>
-                <table class="rsw-table" aria-label="Table de routage">
-                    <thead><tr><th>Destination</th><th>Prochain saut</th><th>Coût</th><th>Interface</th></tr></thead>
-                    <tbody data-route-body><tr><td colspan="4" class="rsw-muted">Terminez l'algorithme pour voir la table de routage.</td></tr></tbody>
-                </table>
+            <div class="widget-fit-footer">
+                <div class="rsw-step-desc" data-step-desc>Sélectionnez un routeur source puis un routeur destination.</div>
+                <div class="rsw-controls">
+                    <button class="rsw-btn rsw-btn-primary" data-btn-step disabled>Étape suivante</button>
+                    <button class="rsw-btn rsw-btn-secondary" data-btn-auto disabled>Auto</button>
+                    <button class="rsw-btn rsw-btn-secondary" data-btn-reset>↺ Réinitialiser</button>
+                </div>
             </div>
         </div>`;
 

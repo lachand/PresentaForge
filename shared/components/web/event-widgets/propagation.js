@@ -6,18 +6,22 @@ class EventPropagationWidget {
             return div.innerHTML;
         };
 
-        container.classList.add('event-widget');
+        container.classList.add('event-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${escapeHtml(config.title || 'Exemple 3 - Propagation capture/bulles')}</h3>
-            <p>${escapeHtml(config.description || 'Clique la boite interne et observe l\'ordre d\'execution.')}</p>
-            <div class="panel">
-                <div class="controls">
-                    <label><input type="checkbox" data-role="capture"> Activer listeners en capture</label>
-                    <button type="button" class="btn btn-secondary" data-role="rebind">Rebind listeners</button>
-                    <button type="button" class="btn btn-secondary" data-role="clear">Effacer log</button>
+            <div class="panel widget-fit">
+                <div class="widget-fit-header">
+                    <h3>${escapeHtml(config.title || 'Exemple 3 - Propagation capture/bulles')}</h3>
+                    <p>${escapeHtml(config.description || 'Clique la boite interne et observe l\'ordre d\'execution.')}</p>
+                    <div class="controls">
+                        <label><input type="checkbox" data-role="capture"> Activer listeners en capture</label>
+                        <button type="button" class="btn btn-secondary" data-role="rebind">Rebind listeners</button>
+                        <button type="button" class="btn btn-secondary" data-role="clear">Effacer log</button>
+                    </div>
                 </div>
-                <div class="nested" data-role="host"></div>
-                <div class="mini-log" data-role="log" style="margin-top:0.6rem;"></div>
+                <div class="widget-fit-body">
+                    <div class="nested" data-role="host"></div>
+                    <div class="mini-log" data-role="log" style="margin-top:0.6rem;"></div>
+                </div>
             </div>
         `;
 

@@ -162,39 +162,43 @@ class GitConflictEditorWidget {
             const theirsHtml = sc.conflicts.map(c => esc(c.theirs)).join('\n---\n');
 
             container.innerHTML = `
-<div class="gcew-root">
-    <div class="gcew-top-bar">
-        <span class="gcew-top-label">Scénario :</span>
-        <select class="gcew-select" id="gcew-scenario">${scenarioOptions}</select>
-        <span class="gcew-filename">${sc.filename}</span>
-    </div>
-    ${sc.contextNote ? `<div style="background:#fefce8;border:1.5px solid #fbbf24;border-radius:var(--radius-sm);padding:0.55rem 0.85rem;margin-bottom:0.75rem;font-size:0.8rem;color:#92400e;line-height:1.4">${sc.contextNote}</div>` : ''}
-
-    <div class="gcew-columns">
-        <div class="gcew-col ours">
-            <div class="gcew-col-header">Notre version (HEAD)</div>
-            <div class="gcew-col-body">${oursHtml}</div>
+<div class="gcew-root widget-fit">
+    <div class="widget-fit-header">
+        <div class="gcew-top-bar">
+            <span class="gcew-top-label">Scénario :</span>
+            <select class="gcew-select" id="gcew-scenario">${scenarioOptions}</select>
+            <span class="gcew-filename">${sc.filename}</span>
         </div>
-        <div class="gcew-col base">
-            <div class="gcew-col-header">Base commune</div>
-            <div class="gcew-col-body">${baseHtml}</div>
+        ${sc.contextNote ? `<div style="background:#fefce8;border:1.5px solid #fbbf24;border-radius:var(--radius-sm);padding:0.55rem 0.85rem;margin-bottom:0.75rem;font-size:0.8rem;color:#92400e;line-height:1.4">${sc.contextNote}</div>` : ''}
+    </div>
+
+    <div class="widget-fit-body">
+        <div class="gcew-columns">
+            <div class="gcew-col ours">
+                <div class="gcew-col-header">Notre version (HEAD)</div>
+                <div class="gcew-col-body">${oursHtml}</div>
+            </div>
+            <div class="gcew-col base">
+                <div class="gcew-col-header">Base commune</div>
+                <div class="gcew-col-body">${baseHtml}</div>
+            </div>
+            <div class="gcew-col theirs">
+                <div class="gcew-col-header">Leur version (incoming)</div>
+                <div class="gcew-col-body">${theirsHtml}</div>
+            </div>
         </div>
-        <div class="gcew-col theirs">
-            <div class="gcew-col-header">Leur version (incoming)</div>
-            <div class="gcew-col-body">${theirsHtml}</div>
+
+        <div id="gcew-conflicts">
+            ${sc.conflicts.map((c, i) => renderRawConflict(c, i)).join('')}
+        </div>
+
+        <div class="gcew-result-section">
+            <div class="gcew-result-header">Résultat (fichier résolu)</div>
+            <div class="gcew-result-body" id="gcew-result">${esc(buildResultText(sc))}</div>
         </div>
     </div>
 
-    <div id="gcew-conflicts">
-        ${sc.conflicts.map((c, i) => renderRawConflict(c, i)).join('')}
-    </div>
-
-    <div class="gcew-result-section">
-        <div class="gcew-result-header">Résultat (fichier résolu)</div>
-        <div class="gcew-result-body" id="gcew-result">${esc(buildResultText(sc))}</div>
-    </div>
-
-    <div class="gcew-validate-row">
+    <div class="gcew-validate-row widget-fit-footer">
         <button class="gcew-btn-validate" id="gcew-validate">Valider la résolution</button>
         <div class="gcew-feedback" id="gcew-feedback" style="display:none"></div>
     </div>

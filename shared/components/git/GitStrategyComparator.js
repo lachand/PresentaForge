@@ -69,22 +69,24 @@ class GitStrategyComparator {
             ).join('');
 
             container.innerHTML = `
-<div class="gsc-root">
-    <div class="gsc-tabs">${tabsHtml}</div>
-    <div class="gsc-diagram-wrap">${svgHtml}</div>
-    <div class="gsc-info-card">
-        <div class="gsc-info-header">${active.desc}</div>
-        <div class="gsc-info-cols">
-            <div class="gsc-pros">
-                <div class="gsc-col-title">Avantages</div>
-                <ul class="gsc-list">${active.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+<div class="gsc-root widget-fit">
+    <div class="gsc-tabs widget-fit-header">${tabsHtml}</div>
+    <div class="widget-fit-body">
+        <div class="gsc-diagram-wrap">${svgHtml}</div>
+        <div class="gsc-info-card">
+            <div class="gsc-info-header">${active.desc}</div>
+            <div class="gsc-info-cols">
+                <div class="gsc-pros">
+                    <div class="gsc-col-title">Avantages</div>
+                    <ul class="gsc-list">${active.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+                </div>
+                <div class="gsc-cons">
+                    <div class="gsc-col-title">Inconvénients</div>
+                    <ul class="gsc-list">${active.cons.map(c => `<li>${c}</li>`).join('')}</ul>
+                </div>
             </div>
-            <div class="gsc-cons">
-                <div class="gsc-col-title">Inconvénients</div>
-                <ul class="gsc-list">${active.cons.map(c => `<li>${c}</li>`).join('')}</ul>
-            </div>
+            <div class="gsc-legend">${legendHtml}</div>
         </div>
-        <div class="gsc-legend">${legendHtml}</div>
     </div>
 </div>`;
 

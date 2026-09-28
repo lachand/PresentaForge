@@ -6,53 +6,59 @@ class EventFlowLabWidget {
             return div.innerHTML;
         };
 
-        container.classList.add('event-widget');
+        container.classList.add('event-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${escapeHtml(config.title || 'Event Flow Lab 3D')}</h3>
-            <p>${escapeHtml(config.description || 'Le DOM est représenté en calques 3D: le rayon descend (capture), touche la cible, puis l\'impulsion remonte (bubble).')}</p>
-            <div class="panel">
-                <div class="controls">
-                    <label><input type="checkbox" data-role="enable-capture" checked> Capture</label>
-                    <label><input type="checkbox" data-role="enable-bubble" checked> Bubble</label>
-                    <label><input type="checkbox" data-role="prevent-default"> preventDefault()</label>
-                    <label><input type="checkbox" data-role="passive"> passive=true</label>
-                    <label>stopPropagation sur
-                        <select data-role="stop-layer" class="input" style="min-width:150px;">
-                            <option value="none">aucun</option>
-                            <option value="card">div.card (milieu)</option>
-                            <option value="section">section#app</option>
-                            <option value="document">document</option>
-                            <option value="target">button.target</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="controls">
-                    <button type="button" class="btn btn-primary" data-role="trigger">Simuler un clic</button>
-                    <button type="button" class="btn btn-secondary" data-role="clear">Réinitialiser</button>
-                    <span class="badge-counter" data-role="listener-count">0</span>
-                    <span class="flow3d-badge" data-role="state-default">defaultPrevented: non</span>
-                    <span class="flow3d-badge" data-role="state-stop">propagation stoppée: non</span>
-                </div>
-                <div class="flow-lab-grid">
-                    <div>
-                        <div class="flow3d-scene">
-                            <div class="flow3d-world">
-                                <div class="flow3d-layer" data-node="document"><strong>document</strong><span>racine</span></div>
-                                <div class="flow3d-layer" data-node="section"><strong>section#app</strong><span>parent</span></div>
-                                <div class="flow3d-layer" data-node="card"><strong>div.card</strong><span>milieu</span></div>
-                                <div class="flow3d-layer" data-node="target"><strong>button.target</strong><span>cible</span></div>
-                            </div>
-                            <div class="flow3d-beam" data-role="beam"></div>
-                            <div class="flow3d-pulse" data-role="pulse"></div>
-                        </div>
-                        <div class="flow3d-legend">
-                            <span class="flow3d-badge"><span class="dot" style="background:var(--tone-cyan-text);"></span>capture</span>
-                            <span class="flow3d-badge"><span class="dot" style="background:var(--tone-success-text);"></span>cible</span>
-                            <span class="flow3d-badge"><span class="dot" style="background:var(--tone-warning-text);"></span>bubble</span>
-                            <span class="flow3d-badge warn"><span class="dot" style="background:var(--tone-danger-text);"></span>stopPropagation</span>
-                        </div>
+            <div class="widget-fit-header">
+                <h3>${escapeHtml(config.title || 'Event Flow Lab 3D')}</h3>
+                <p>${escapeHtml(config.description || 'Le DOM est représenté en calques 3D: le rayon descend (capture), touche la cible, puis l\'impulsion remonte (bubble).')}</p>
+            </div>
+            <div class="panel widget-fit">
+                <div class="widget-fit-header">
+                    <div class="controls">
+                        <label><input type="checkbox" data-role="enable-capture" checked> Capture</label>
+                        <label><input type="checkbox" data-role="enable-bubble" checked> Bubble</label>
+                        <label><input type="checkbox" data-role="prevent-default"> preventDefault()</label>
+                        <label><input type="checkbox" data-role="passive"> passive=true</label>
+                        <label>stopPropagation sur
+                            <select data-role="stop-layer" class="input" style="min-width:150px;">
+                                <option value="none">aucun</option>
+                                <option value="card">div.card (milieu)</option>
+                                <option value="section">section#app</option>
+                                <option value="document">document</option>
+                                <option value="target">button.target</option>
+                            </select>
+                        </label>
                     </div>
-                    <div class="mini-log" data-role="timeline"></div>
+                    <div class="controls">
+                        <button type="button" class="btn btn-primary" data-role="trigger">Simuler un clic</button>
+                        <button type="button" class="btn btn-secondary" data-role="clear">Réinitialiser</button>
+                        <span class="badge-counter" data-role="listener-count">0</span>
+                        <span class="flow3d-badge" data-role="state-default">defaultPrevented: non</span>
+                        <span class="flow3d-badge" data-role="state-stop">propagation stoppée: non</span>
+                    </div>
+                </div>
+                <div class="widget-fit-body">
+                    <div class="flow-lab-grid">
+                        <div>
+                            <div class="flow3d-scene">
+                                <div class="flow3d-world">
+                                    <div class="flow3d-layer" data-node="document"><strong>document</strong><span>racine</span></div>
+                                    <div class="flow3d-layer" data-node="section"><strong>section#app</strong><span>parent</span></div>
+                                    <div class="flow3d-layer" data-node="card"><strong>div.card</strong><span>milieu</span></div>
+                                    <div class="flow3d-layer" data-node="target"><strong>button.target</strong><span>cible</span></div>
+                                </div>
+                                <div class="flow3d-beam" data-role="beam"></div>
+                                <div class="flow3d-pulse" data-role="pulse"></div>
+                            </div>
+                            <div class="flow3d-legend">
+                                <span class="flow3d-badge"><span class="dot" style="background:var(--tone-cyan-text);"></span>capture</span>
+                                <span class="flow3d-badge"><span class="dot" style="background:var(--tone-success-text);"></span>cible</span>
+                                <span class="flow3d-badge"><span class="dot" style="background:var(--tone-warning-text);"></span>bubble</span>
+                                <span class="flow3d-badge warn"><span class="dot" style="background:var(--tone-danger-text);"></span>stopPropagation</span>
+                            </div>
+                        </div>
+                        <div class="mini-log" data-role="timeline"></div>
+                    </div>
                 </div>
             </div>
         `;

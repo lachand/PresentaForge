@@ -44,15 +44,15 @@ class DependabotAlertWidget {
 
         const render = () => {
             const a = DependabotAlertWidget.ALERTS[currentAlert];
-            container.innerHTML = `<div class="dep-widget">
-                <div class="dep-selector">
+            container.innerHTML = `<div class="dep-widget widget-fit">
+                <div class="dep-selector widget-fit-header">
                     ${DependabotAlertWidget.ALERTS.map((al, i) => `
                     <button class="dep-sel-btn ${i === currentAlert ? 'active' : ''}" data-idx="${i}" style="--sel-color:${al.severityColor}">
                         <span class="dep-sel-dot" style="background:${al.severityColor}"></span>
                         ${al.severityLabel} · ${al.package}
                     </button>`).join('')}
                 </div>
-                <div class="dep-card">
+                <div class="dep-card widget-fit-body">
                     <div class="dep-card-header">
                         <div class="dep-severity-badge" style="background:${a.severityColor}18;color:${a.severityColor};border:1px solid ${a.severityColor}50">
                             ⚠ Sévérité ${a.severityLabel}

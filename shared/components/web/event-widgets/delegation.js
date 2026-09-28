@@ -6,17 +6,21 @@ class EventDelegationWidget {
             return div.innerHTML;
         };
 
-        container.classList.add('event-widget');
+        container.classList.add('event-widget', 'widget-fit');
         container.innerHTML = `
-            <h3>${escapeHtml(config.title || 'Exemple 4 - Delegation d\'evenements')}</h3>
-            <p>${escapeHtml(config.description || 'Un listener unique sur le parent gere aussi les elements ajoutes dynamiquement.')}</p>
-            <div class="panel">
-                <div class="controls">
-                    <button type="button" class="btn btn-secondary" data-role="add">Ajouter un element</button>
-                    <button type="button" class="btn btn-secondary" data-role="reset">Reinitialiser</button>
+            <div class="panel widget-fit">
+                <div class="widget-fit-header">
+                    <h3>${escapeHtml(config.title || 'Exemple 4 - Delegation d\'evenements')}</h3>
+                    <p>${escapeHtml(config.description || 'Un listener unique sur le parent gere aussi les elements ajoutes dynamiquement.')}</p>
+                    <div class="controls">
+                        <button type="button" class="btn btn-secondary" data-role="add">Ajouter un element</button>
+                        <button type="button" class="btn btn-secondary" data-role="reset">Reinitialiser</button>
+                    </div>
                 </div>
-                <ul data-role="list" class="card" style="list-style:none; padding:0.5rem; margin:0;"></ul>
-                <div class="mini-log" data-role="log" style="margin-top:0.6rem;"></div>
+                <div class="widget-fit-body">
+                    <ul data-role="list" class="card" style="list-style:none; padding:0.5rem; margin:0;"></ul>
+                    <div class="mini-log" data-role="log" style="margin-top:0.6rem;"></div>
+                </div>
             </div>
         `;
 

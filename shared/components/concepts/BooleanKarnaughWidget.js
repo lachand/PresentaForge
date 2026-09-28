@@ -33,49 +33,53 @@ class BooleanKarnaughWidget {
 
         const defaultExpr = this.config.defaultExpression || '(A AND B) OR (NOT C AND D)';
 
-        this.container.classList.add('boolean-kmap-widget');
+        this.container.classList.add('boolean-kmap-widget', 'widget-fit');
         this.container.innerHTML = `
-            <div class="boolean-kmap-controls">
-                <label for="kmap-vars">Variables</label>
-                <select id="kmap-vars" class="input" data-role="vars">
-                    <option value="2">2 (A,B)</option>
-                    <option value="3">3 (A,B,C)</option>
-                    <option value="4">4 (A,B,C,D)</option>
-                </select>
-                <input type="text" class="input" data-role="expr" placeholder="Ex: (A AND B) OR (NOT C)" value="${this.escapeHtml(defaultExpr)}">
-                <button type="button" class="btn btn-primary" data-role="apply">Appliquer expression</button>
-                <button type="button" class="btn btn-secondary" data-role="reset">Reinitialiser</button>
+            <div class="widget-fit-header">
+                <div class="boolean-kmap-controls">
+                    <label for="kmap-vars">Variables</label>
+                    <select id="kmap-vars" class="input" data-role="vars">
+                        <option value="2">2 (A,B)</option>
+                        <option value="3">3 (A,B,C)</option>
+                        <option value="4">4 (A,B,C,D)</option>
+                    </select>
+                    <input type="text" class="input" data-role="expr" placeholder="Ex: (A AND B) OR (NOT C)" value="${this.escapeHtml(defaultExpr)}">
+                    <button type="button" class="btn btn-primary" data-role="apply">Appliquer expression</button>
+                    <button type="button" class="btn btn-secondary" data-role="reset">Reinitialiser</button>
+                </div>
+                <p class="boolean-kmap-hint">
+                    Clique (ou touche Entree/Espace) sur une cellule pour changer son etat: 0 -> 1 -> X (don't care) -> 0.
+                </p>
+                <div class="boolean-kmap-help">
+                    <button type="button" class="btn btn-secondary" data-role="help">Indice progressif</button>
+                    <p class="boolean-kmap-help-text" data-role="help-text">Clique sur "Indice progressif" si tu bloques sur les groupements.</p>
+                </div>
             </div>
-            <p class="boolean-kmap-hint">
-                Clique (ou touche Entree/Espace) sur une cellule pour changer son etat: 0 -> 1 -> X (don't care) -> 0.
-            </p>
-            <div class="boolean-kmap-help">
-                <button type="button" class="btn btn-secondary" data-role="help">Indice progressif</button>
-                <p class="boolean-kmap-help-text" data-role="help-text">Clique sur "Indice progressif" si tu bloques sur les groupements.</p>
-            </div>
-            <div class="boolean-kmap-status" data-role="status">Pret. Charge une expression ou modifie la carte manuellement.</div>
-            <div class="boolean-kmap-grid-wrap" data-role="grid"></div>
-            <div class="boolean-kmap-output">
-                <div class="boolean-kmap-output-row">
-                    <label>Minterms (1)</label>
-                    <div class="boolean-kmap-code" data-role="minterms">--</div>
-                </div>
-                <div class="boolean-kmap-output-row">
-                    <label>Don't care (X)</label>
-                    <div class="boolean-kmap-code" data-role="dontcares">--</div>
-                </div>
-                <div class="boolean-kmap-output-row">
-                    <label>Forme canonique SOP</label>
-                    <div class="boolean-kmap-code" data-role="canonical">--</div>
-                </div>
-                <div class="boolean-kmap-output-row">
-                    <label>Forme simplifiee SOP</label>
-                    <div class="boolean-kmap-code" data-role="minimized">--</div>
-                </div>
-                <div class="boolean-kmap-output-row">
-                    <label>Groupes (implicants)</label>
-                    <p class="boolean-kmap-imp-summary" data-role="imp-summary">Clique un groupe pour le surligner dans la carte.</p>
-                    <ol class="boolean-kmap-implicants" data-role="implicants"></ol>
+            <div class="widget-fit-body">
+                <div class="boolean-kmap-status" data-role="status">Pret. Charge une expression ou modifie la carte manuellement.</div>
+                <div class="boolean-kmap-grid-wrap" data-role="grid"></div>
+                <div class="boolean-kmap-output">
+                    <div class="boolean-kmap-output-row">
+                        <label>Minterms (1)</label>
+                        <div class="boolean-kmap-code" data-role="minterms">--</div>
+                    </div>
+                    <div class="boolean-kmap-output-row">
+                        <label>Don't care (X)</label>
+                        <div class="boolean-kmap-code" data-role="dontcares">--</div>
+                    </div>
+                    <div class="boolean-kmap-output-row">
+                        <label>Forme canonique SOP</label>
+                        <div class="boolean-kmap-code" data-role="canonical">--</div>
+                    </div>
+                    <div class="boolean-kmap-output-row">
+                        <label>Forme simplifiee SOP</label>
+                        <div class="boolean-kmap-code" data-role="minimized">--</div>
+                    </div>
+                    <div class="boolean-kmap-output-row">
+                        <label>Groupes (implicants)</label>
+                        <p class="boolean-kmap-imp-summary" data-role="imp-summary">Clique un groupe pour le surligner dans la carte.</p>
+                        <ol class="boolean-kmap-implicants" data-role="implicants"></ol>
+                    </div>
                 </div>
             </div>
         `;
