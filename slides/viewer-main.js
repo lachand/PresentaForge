@@ -2192,16 +2192,20 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             // diffusé via `channel`/`roomBroadcast`), réinitialisé à chaque
             // changement de slide par goTo(). Presets mutuellement exclusifs :
             // cliquer le preset actif l'annule, cliquer l'autre le remplace.
-            let _contrastPreset = null; // null | 1 | 2
+            // Preset 3 = dernier recours (noir sur fond blanc, sans coloration) si
+            // même le noir pur reste illisible.
+            let _contrastPreset = null; // null | 1 | 2 | 3
             const _contrastBtns = {
                 1: document.getElementById('pv-btn-contrast-1'),
                 2: document.getElementById('pv-btn-contrast-2'),
+                3: document.getElementById('pv-btn-contrast-3'),
             };
             function setContrastPreset(n) {
                 _contrastPreset = n;
                 const pvCurrentPanel = document.getElementById('pv-current-panel');
                 pvCurrentPanel?.classList.toggle('pv-contrast-1', n === 1);
                 pvCurrentPanel?.classList.toggle('pv-contrast-2', n === 2);
+                pvCurrentPanel?.classList.toggle('pv-contrast-3', n === 3);
                 Object.entries(_contrastBtns).forEach(([key, btn]) => {
                     if (!btn) return;
                     const isActive = n === Number(key);
@@ -2211,6 +2215,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             }
             _contrastBtns[1]?.addEventListener('click', () => setContrastPreset(_contrastPreset === 1 ? null : 1));
             _contrastBtns[2]?.addEventListener('click', () => setContrastPreset(_contrastPreset === 2 ? null : 2));
+            _contrastBtns[3]?.addEventListener('click', () => setContrastPreset(_contrastPreset === 3 ? null : 3));
 
             // Apply theme + scoped CSS for presenter frames
             const themeData = window.OEIDesignTokens?.resolvePresentationTheme

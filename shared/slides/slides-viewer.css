@@ -1128,6 +1128,33 @@
             font-size: calc(var(--sl-code-font-size, 13px) * 1.2) !important;
             line-height: calc(var(--sl-code-line-height, 1.58) * 1.05) !important;
         }
+        /* Preset 3 — dernier recours si même le noir pur reste illisible : noir sur fond
+           blanc, entièrement monochrome (pas de coloration syntaxique, les teintes vives
+           des presets 1/2 ne porteraient pas sur fond clair). [class*="hljs-"] attrape
+           tous les tokens hljs (mots-clés, chaînes, commentaires, numéros de ligne…). */
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block,
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block pre,
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block pre code {
+            background: #ffffff !important;
+            border-color: #000000 !important;
+        }
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block pre code {
+            color: #000000 !important;
+            text-shadow: none;
+            font-weight: 600;
+        }
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block [class*="hljs-"] {
+            color: #000000 !important;
+        }
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block .sl-code-tbar,
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block .sl-hl-caption {
+            background: #ffffff !important;
+            border-color: #000000 !important;
+        }
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block .sl-code-tbar-lang,
+        #pv-current-panel.pv-contrast-3 .sl-highlight-block .sl-hl-caption-inner {
+            color: #000000 !important;
+        }
         /* Coloration syntaxique (hljs/monokai.css, vendor/revealjs/.../highlight/monokai.css)
            — gardée et intensifiée en mode contraste, pas aplatie en blanc. Les couleurs
            Monokai d'origine sont pensées pour un fond #020617 ; sur fond noir pur, on les
