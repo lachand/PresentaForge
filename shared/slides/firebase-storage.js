@@ -323,11 +323,28 @@
         throw new Error('Présentation vide ou corrompue sur Firebase');
     }
 
+    // Champs qui ne vivent QUE côté Firestore (modifiables sans re-télécharger le JSON via
+    // updatePresentationCourse/updatePresentationMeta, cf. plus bas) — à resynchroniser dans
+    // presentationData.metadata à CHAQUE chargement, sinon le JSON local reste périmé et la
+    // prochaine sauvegarde (Ctrl+S, auto-save) écrase la vraie valeur Firestore avec l'ancienne
+    // (même mécanisme que l'ancien bug `public`, cf. savePresentation ci-dessous — mais ici le
+    // problème est côté LECTURE : le JSON a une valeur, elle est juste fausse).
+    const _FIRESTORE_ONLY_META_FIELDS = ['course', 'level', 'tags', 'banner', 'seance', 'author', 'email', 'institution'];
+    function _mergeFirestoreMeta(data, docData) {
+        if (!data || typeof data !== 'object') return data;
+        if (!data.metadata || typeof data.metadata !== 'object') data.metadata = {};
+        for (const field of _FIRESTORE_ONLY_META_FIELDS) {
+            if (Object.prototype.hasOwnProperty.call(docData, field)) data.metadata[field] = docData[field];
+        }
+        return data;
+    }
+
     async function loadPresentation(id) {
         const col = _presCol();
         const doc = await col.doc(id).get();
         if (!doc.exists) throw new Error('Présentation introuvable');
-        return _loadChunked(col, id, doc.data());
+        const docData = doc.data();
+        return _mergeFirestoreMeta(await _loadChunked(col, id, docData), docData);
     }
 
     // Load a public presentation without requiring auth (uid must be provided in the share link)
@@ -338,7 +355,7 @@
         if (!doc.exists) throw new Error('Présentation introuvable');
         const data = doc.data();
         if (!data.public) throw new Error('Cette présentation n\'est pas publique');
-        return _loadChunked(col, id, data);
+        return _mergeFirestoreMeta(await _loadChunked(col, id, data), data);
     }
 
     /**
@@ -367,9 +384,9 @@
         const title = meta_.title || 'Sans titre';
         const course = opts.course || meta_.course || '';
         // `public` ne vit QUE dans les métadonnées Firestore, jamais dans le JSON du deck
-        // (tools/slides/deck-schema.json n'a pas ce champ, loadPresentation() ne renvoie que
-        // le JSON parsé) — contrairement à course/level/tags/banner/…, qui retombent tous
-        // sur presentationData.metadata en repli, `public` n'a AUCUNE source de repli côté
+        // (tools/slides/deck-schema.json n'a pas ce champ) et n'est PAS resynchronisé par
+        // _mergeFirestoreMeta() au chargement (contrairement à course/level/tags/banner/…,
+        // cf. loadPresentation ci-dessus) — `public` n'a AUCUNE source de repli côté
         // éditeur : editor.data ne le connaît jamais. Sans la lecture ci-dessous, CHAQUE
         // sauvegarde qui ne précise pas opts.public (Ctrl+S et auto-sauvegarde 60s de
         // l'éditeur, editor-bindings.js _saveToFirebaseNow, qui ne passe que {course})
