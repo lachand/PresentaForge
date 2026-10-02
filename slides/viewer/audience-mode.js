@@ -372,6 +372,22 @@ export async function initAudienceMode(ctx) {
                 SlidesRenderer.notifyFragmentVisibility(frags[fragmentIndex], true);
                 break;
             }
+            case SYNC_MSG.CODE_SCROLL: {
+                // Défilement molette d'un bloc de code trop long, diffusé par le
+                // présentateur (cf. slides/viewer-main.js) — voir le ratio comme
+                // scrollTop / (scrollHeight - clientHeight), indépendant de la taille
+                // de police locale.
+                const slideIndex = toIntOrNull(msg.slideIndex);
+                const blockIndex = toIntOrNull(msg.blockIndex);
+                const ratio = Number(msg.ratio);
+                if (slideIndex === null || blockIndex === null || !Number.isFinite(ratio)) return;
+                const state = deck.getState();
+                if ((state?.indexh ?? -1) !== slideIndex) return;
+                const slideEl = deck.getCurrentSlide();
+                const codeEl = slideEl?.querySelectorAll('.sl-highlight-block pre code')[blockIndex];
+                if (codeEl) codeEl.scrollTop = ratio * Math.max(0, codeEl.scrollHeight - codeEl.clientHeight);
+                break;
+            }
             case SYNC_MSG.AUDIENCE_LOCK: {
                 applyAudienceLockState(msg.locked, msg.index);
                 if (audienceLockActive && audienceLockIndex !== null) {

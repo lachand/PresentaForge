@@ -584,7 +584,11 @@ section.sl-canvas {
 .sl-highlight-block .sl-code-tbar { border-bottom:1px solid #334155; }
 .sl-highlight-block .sl-hl-body { flex:1;min-height:0;display:flex;flex-direction:row;overflow:hidden; }
 .sl-highlight-block pre { flex:1;min-width:0;margin:0!important;padding:0!important;background:#020617!important;box-shadow:none!important;width:100%!important;border:none!important;position:relative;overflow:hidden; }
-.sl-highlight-block pre code { font-family:var(--sl-font-mono,monospace)!important;font-variant-ligatures:none!important;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0!important;font-size:var(--sl-code-font-size,13px)!important;line-height:var(--sl-code-line-height,1.58)!important;color:#f8fafc!important;padding:0.65rem 1rem!important;background:#020617!important;max-height:none!important;overflow:visible!important;text-align:left!important;text-shadow:0 1px 0 rgba(0,0,0,0.35); }
+.sl-highlight-block pre code { font-family:var(--sl-font-mono,monospace)!important;font-variant-ligatures:none!important;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0!important;font-size:var(--sl-code-font-size,13px)!important;line-height:var(--sl-code-line-height,1.58)!important;color:#f8fafc!important;padding:0.65rem 1rem!important;background:#020617!important;text-align:left!important;text-shadow:0 1px 0 rgba(0,0,0,0.35); }
+/* height/overflow-y/background ci-dessus sont redéfinis (et toujours gagnants, même
+   spécificité + règle plus loin dans le fichier) par la règle de défilement
+   universel .sl-highlight-block pre code juste en dessous — anciennement limitée
+   aux blocs "stepped", désormais appliquée à tous les blocs de code. */
 .sl-highlight-block pre.code-wrapper > code.fragment { position:absolute;top:0;left:0;width:100%;height:100%;background:#020617!important;box-sizing:border-box; }
 .sl-highlight-block .hljs-ln { width:100%;border-collapse:collapse; }
 .sl-highlight-block .hljs-ln td { padding:0 4px;vertical-align:top;line-height:var(--sl-code-line-height,1.58); }
@@ -618,12 +622,18 @@ section.sl-canvas {
 .sl-highlight-block .sl-hl-caption::-webkit-scrollbar-track { background:#0b1220; }
 .sl-highlight-block .sl-hl-caption-inner { padding:0.7rem 0.85rem;font-family:var(--sl-font-body,system-ui,sans-serif);font-size:calc(var(--sl-code-font-size, 13px) * 0.92);line-height:1.5;color:#e2e8f0;white-space:pre-wrap; }
 .sl-highlight-block.sl-highlight-block-annotated pre { border-right:1px solid #334155; }
-/* Bloc à plusieurs zones (surlignage pas-à-pas) : le code défile si son contenu dépasse
-   la hauteur du bloc (un bloc simple, sans étapes, garde son overflow:visible existant,
-   inchangé ci-dessus). Ombre de défilement en haut/bas, même principe que le panneau
-   d'annotation (.sl-hl-caption) juste au-dessus : visible tant qu'il reste du code de
-   ce côté, disparaît une fois arrivé au bord. */
-.sl-highlight-block-stepped pre code {
+/* Tout bloc de code défile si son contenu dépasse la hauteur du bloc (généralisé —
+   avant, seul un bloc à plusieurs zones "stepped" l'était ; un bloc simple restait
+   purement coupé, sans aucun moyen d'atteindre les dernières lignes, ni pour le
+   présentateur ni pour la salle). Ombre de défilement en haut/bas, même principe que
+   le panneau d'annotation (.sl-hl-caption) juste au-dessus : visible tant qu'il reste
+   du code de ce côté, disparaît une fois arrivé au bord. Pour un bloc "stepped", ce
+   même défilement est aussi déclenché automatiquement à chaque pas via
+   SlidesRenderer.notifyFragmentVisibility() → scrollHighlightedLineIntoView ; pour un
+   bloc simple (pas de zones), il n'y a pas de déclencheur automatique — le
+   défilement à la molette, synchronisé à la salle, est géré en JS (cf.
+   slides/viewer-main.js, slides/viewer/audience-mode.js, shared/slides/student-render.js). */
+.sl-highlight-block pre code {
     display:block!important;height:100%!important;overflow-y:auto!important;box-sizing:border-box!important;scroll-behavior:smooth;
     scrollbar-width:thin;scrollbar-color:#64748b #020617;
     background:
@@ -636,13 +646,15 @@ section.sl-canvas {
     background-size:100% 24px, 100% 24px, 100% 10px, 100% 10px;
     background-attachment:local, local, scroll, scroll;
 }
-.sl-highlight-block-stepped pre code::-webkit-scrollbar { width:7px; }
-.sl-highlight-block-stepped pre code::-webkit-scrollbar-thumb { background:#64748b;border-radius:4px; }
-.sl-highlight-block-stepped pre code::-webkit-scrollbar-track { background:#020617; }
+.sl-highlight-block pre code::-webkit-scrollbar { width:7px; }
+.sl-highlight-block pre code::-webkit-scrollbar-thumb { background:#64748b;border-radius:4px; }
+.sl-highlight-block pre code::-webkit-scrollbar-track { background:#020617; }
 /* code-wrapper (posé en JS, cf. viewer-main.js/student-render.js) superpose les zones
    en position absolute : chacune doit défiler pour SA propre hauteur, indépendamment
-   des autres zones empilées au même endroit. */
-.sl-highlight-block-stepped pre.code-wrapper > code.fragment { overflow-y:auto!important; }
+   des autres zones empilées au même endroit. Ne s'applique qu'aux blocs "stepped"
+   (seuls à avoir des fragments), mais sans incidence à restreindre vu l'absence de
+   .code-wrapper > code.fragment sur un bloc simple. */
+.sl-highlight-block pre.code-wrapper > code.fragment { overflow-y:auto!important; }
 /* Caption & cross-reference */
 .sl-caption { position:absolute;top:100%;left:0;right:0;text-align:center;font-size:13px;color:var(--sl-muted,#94a3b8);font-style:italic;line-height:1.3;pointer-events:none;padding:4px 6px 0; }
 .sl-caption b { font-style:normal;color:var(--sl-primary,#818cf8); }

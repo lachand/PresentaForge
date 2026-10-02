@@ -19,7 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=8">
     <style id="sl-theme-css">/* injected by slides-core.js */</style>
-    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=19">
+    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=20">
     <link rel="stylesheet" href="../shared/components/widgets.css">
 </head>
 <body>
@@ -144,6 +144,14 @@
                     <button class="pv-toolbar-btn" id="pv-btn-focus" title="Mode focus — slide + notes seulement" aria-label="Mode focus" aria-pressed="false">
                         <span class="pv-ms">center_focus_strong</span>
                         Focus
+                    </button>
+                    <button class="pv-toolbar-btn" id="pv-btn-contrast-1" title="Contraste renforcé — code en noir/blanc pur, local à votre écran, réinitialisé au changement de slide" aria-label="Contraste renforcé" aria-pressed="false">
+                        <span class="pv-ms">contrast</span>
+                        Contraste+
+                    </button>
+                    <button class="pv-toolbar-btn" id="pv-btn-contrast-2" title="Contraste maximal + police agrandie — code en noir/blanc pur, local à votre écran, réinitialisé au changement de slide" aria-label="Contraste maximal" aria-pressed="false">
+                        <span class="pv-ms">contrast</span>
+                        Contraste++
                     </button>
                 </div>
                 <div class="pv-toolbar-group" aria-label="Salle">
@@ -545,7 +553,7 @@
     <script src="../shared/slides/theme-runtime.js?v=1"></script>
     <script src="../shared/slides/widget-plugins.js?v=2"></script>
     <script src="../shared/slides/design-tokens.js?v=2"></script>
-    <script src="../shared/slides/realtime-contract.js?v=11"></script>
+    <script src="../shared/slides/realtime-contract.js?v=12"></script>
     <script src="../shared/slides/network-session.js?v=2"></script>
     <script src="../shared/slides/relay-config.js?v=1"></script>
     <script src="../shared/slides/background-utils.js?v=1"></script>
@@ -560,14 +568,14 @@
     <script src="../shared/slides/slides-typography.js?v=1"></script>
     <script src="../shared/slides/element-style-schema.js?v=1"></script>
     <script src="../shared/slides/slides-core.js?v=36"></script>
-    <script src="../shared/slides/slides-themes.js?v=6"></script>
+    <script src="../shared/slides/slides-themes.js?v=7"></script>
     <script src="../shared/slides/slides-diagram-renderer.js?v=1"></script>
-    <script src="../shared/slides/slides-renderer-canvas.js?v=9"></script>
+    <script src="../shared/slides/slides-renderer-canvas.js?v=10"></script>
     <script src="../shared/slides/ui-icons.js?v=2"></script>
     <script src="../vendor/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script src="../shared/slides/firebase-storage.js?v=10"></script>
     <script src="../shared/slides/firebase-modal.js?v=4"></script>
-    <script type="module" src="viewer-main.js?v=32"></script>
+    <script type="module" src="viewer-main.js?v=33"></script>
     <script src="viewer/presenter-supplemental.js?v=2"></script>
 
     <!-- Post-session analytics dashboard -->

@@ -1098,6 +1098,36 @@
             transform-origin: top left;
             pointer-events: none;
         }
+        /* Contraste renforcé (ponctuel, local au présentateur — jamais diffusé à la
+           salle). Les couleurs des blocs de code sont codées en dur avec !important
+           dans shared/slides/slides-themes.js (#020617/#f8fafc) quel que soit le
+           thème de slide ; ces règles, plus spécifiques (#pv-current-panel.pv-
+           contrast-N en préfixe), doivent donc rester !important elles aussi pour
+           l'emporter (sinon une déclaration !important gagne toujours face à une
+           déclaration normale, quelle que soit la spécificité). Posé/retiré par
+           setContrastPreset() dans viewer-main.js, réinitialisé à chaque changement
+           de slide (goTo). */
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block pre,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block pre code {
+            background: #000000 !important;
+        }
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block pre code {
+            color: #ffffff !important;
+            text-shadow: none;
+        }
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block pre,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block pre code {
+            background: #000000 !important;
+        }
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block pre code {
+            color: #ffffff !important;
+            text-shadow: none;
+            font-weight: 600;
+            font-size: calc(var(--sl-code-font-size, 13px) * 1.2) !important;
+            line-height: calc(var(--sl-code-line-height, 1.58) * 1.05) !important;
+        }
         .pv-slide-counter {
             margin-top: 8px;
             font-size: 0.8rem;

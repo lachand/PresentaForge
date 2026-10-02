@@ -623,6 +623,10 @@
                     H.render.applyPresenterFragment(msg);
                     break;
 
+                case ROOM_MSG.CODE_SCROLL:
+                    H.render.applyPresenterCodeScroll(msg);
+                    break;
+
                 case ROOM_MSG.WHITEBOARD_SYNC:
                     H.render.applyWhiteboardSyncMessage(msg);
                     break;

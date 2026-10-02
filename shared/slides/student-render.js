@@ -1066,6 +1066,23 @@
             }
         }
 
+        // Défilement molette d'un bloc de code trop long, diffusé par le présentateur
+        // (cf. slides/viewer-main.js) — même principe que applyPresenterFragment :
+        // n'applique que si on suit le présentateur et qu'on est sur la bonne slide.
+        // Ne rattrape pas un élève qui rejoint en cours de route (limite connue,
+        // le bloc reste en haut jusqu'au prochain mouvement de molette du présentateur).
+        function applyPresenterCodeScroll(msg) {
+            if (!st.followPresenter) return;
+            const slideIdx = toSafeInt(msg.index);
+            if (slideIdx !== null && slideIdx !== st.currentIndex) return;
+            const blockIndex = toSafeInt(msg.blockIndex);
+            const ratio = Number(msg.ratio);
+            if (blockIndex === null || blockIndex < 0 || !Number.isFinite(ratio)) return;
+            const inner = document.getElementById('slide-inner');
+            const codeEl = inner?.querySelectorAll('.sl-highlight-block pre code')[blockIndex];
+            if (codeEl) codeEl.scrollTop = ratio * Math.max(0, codeEl.scrollHeight - codeEl.clientHeight);
+        }
+
         function applyInitDisplay(msg) {
             document.getElementById('join-screen').style.display = 'none';
             document.getElementById('main-view').style.display = 'flex';
@@ -1392,6 +1409,7 @@ window.addEventListener('load', function() {
             applyInitDisplay,
             applyPresenterSlideChange,
             applyPresenterFragment,
+            applyPresenterCodeScroll,
             showSlide,
             applyFragmentProgress,
             scaleSlide,

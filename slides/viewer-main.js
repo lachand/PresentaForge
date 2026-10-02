@@ -2,7 +2,7 @@
         import Reveal from '../vendor/revealjs/5.1.0/dist/reveal.esm.js';
         import Highlight from '../vendor/revealjs/5.1.0/plugin/highlight/highlight.esm.js';
         import { createWhiteboardController } from './viewer/whiteboard.js';
-        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=8';
+        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=9';
         import { clearNode, el, appendAll } from './viewer/dom-utils.js';
         import { resolveRealtimeContract } from './viewer/runtime-contracts.js';
         import { createViewerAppState } from './viewer/app-state.js';
@@ -1909,6 +1909,30 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
         });
         roomInitRelayWsInput();
 
+        /* ── Défilement molette d'un bloc de code, synchronisé à la salle ───
+         * `scroll` ne remonte (bubble) jamais, mais se capture bien en phase de
+         * capture sur un ancêtre stable — plus fiable qu'écouter `wheel` et faire
+         * le calcul de delta soi-même (couvre aussi trackpad/clavier). Throttle
+         * simple par horodatage pour ne pas saturer BroadcastChannel/WebRTC. */
+        function _attachCodeScrollBroadcast(scopeEl, { getSlideIndex, getSlideEl, send }) {
+            if (!scopeEl) return;
+            let lastSentAt = 0;
+            scopeEl.addEventListener('scroll', e => {
+                const target = e.target;
+                if (!target?.matches?.('.sl-highlight-block pre code')) return;
+                const now = Date.now();
+                if (now - lastSentAt < 80) return;
+                lastSentAt = now;
+                const slideEl = getSlideEl();
+                if (!slideEl) return;
+                const blockIndex = Array.from(slideEl.querySelectorAll('.sl-highlight-block pre code')).indexOf(target);
+                if (blockIndex < 0) return;
+                const max = Math.max(0, target.scrollHeight - target.clientHeight);
+                const ratio = max > 0 ? target.scrollTop / max : 0;
+                send({ slideIndex: getSlideIndex(), blockIndex, ratio });
+            }, true);
+        }
+
         /* ── Reveal.js mode (normal presentation) ─────────── */
         async function initRevealMode(data) {
             // Hide presenter view, show reveal
@@ -2040,6 +2064,18 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 }
             });
 
+            // Code trop long : défilement molette (local, natif, grâce à l'overflow
+            // désormais universel) rediffusé aux étudiants connectés. Pas de
+            // BroadcastChannel ici : ce mode EST déjà l'écran projeté, il n'y a pas
+            // de fenêtre audience séparée à synchroniser.
+            _attachCodeScrollBroadcast(root, {
+                getSlideIndex: () => deck.getState().indexh,
+                getSlideEl: () => deck.getCurrentSlide() || root,
+                send: ({ slideIndex, blockIndex, ratio }) => {
+                    if (_room.active) roomBroadcast({ type: ROOM_MSG.CODE_SCROLL, index: slideIndex, blockIndex, ratio });
+                },
+            });
+
             ViewerRuntime.revealDeck = deck;
         }
 
@@ -2152,6 +2188,30 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 });
             }
 
+            // Contraste renforcé — ponctuel, local à cet écran uniquement (jamais
+            // diffusé via `channel`/`roomBroadcast`), réinitialisé à chaque
+            // changement de slide par goTo(). Presets mutuellement exclusifs :
+            // cliquer le preset actif l'annule, cliquer l'autre le remplace.
+            let _contrastPreset = null; // null | 1 | 2
+            const _contrastBtns = {
+                1: document.getElementById('pv-btn-contrast-1'),
+                2: document.getElementById('pv-btn-contrast-2'),
+            };
+            function setContrastPreset(n) {
+                _contrastPreset = n;
+                const pvCurrentPanel = document.getElementById('pv-current-panel');
+                pvCurrentPanel?.classList.toggle('pv-contrast-1', n === 1);
+                pvCurrentPanel?.classList.toggle('pv-contrast-2', n === 2);
+                Object.entries(_contrastBtns).forEach(([key, btn]) => {
+                    if (!btn) return;
+                    const isActive = n === Number(key);
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                });
+            }
+            _contrastBtns[1]?.addEventListener('click', () => setContrastPreset(_contrastPreset === 1 ? null : 1));
+            _contrastBtns[2]?.addEventListener('click', () => setContrastPreset(_contrastPreset === 2 ? null : 2));
+
             // Apply theme + scoped CSS for presenter frames
             const themeData = window.OEIDesignTokens?.resolvePresentationTheme
                 ? window.OEIDesignTokens.resolvePresentationTheme(data)
@@ -2223,6 +2283,18 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             // pouvoir lire window.opener.__oeiPresentDeck en repli quand le quota
             // localStorage a fait échouer l'écriture de PRESENT_DATA (gros deck).
             const audienceWin = window.open(audienceUrl.toString(), 'oei-audience');
+
+            // Code trop long : défilement molette sur la prévisualisation du
+            // présentateur (#pv-current-inner), rediffusé à la fenêtre audience
+            // (BroadcastChannel) et aux étudiants connectés (WebRTC).
+            _attachCodeScrollBroadcast(document.getElementById('pv-current-panel'), {
+                getSlideIndex: () => currentIndex,
+                getSlideEl: () => document.getElementById('pv-current-inner'),
+                send: ({ slideIndex, blockIndex, ratio }) => {
+                    channel.postMessage({ type: SYNC_MSG.CODE_SCROLL, slideIndex, blockIndex, ratio });
+                    if (_room.active) roomBroadcast({ type: ROOM_MSG.CODE_SCROLL, index: slideIndex, blockIndex, ratio });
+                },
+            });
 
             let currentIndex = 0;
             let currentFragmentIndex = -1; // -1 = aucun fragment visible
@@ -2662,6 +2734,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 if (idx < 0 || idx >= slides.length) return;
                 currentIndex = idx;
                 currentFragmentIndex = -1; // reset fragments on slide change
+                setContrastPreset(null); // contraste ponctuel : jamais conservé d'une slide à l'autre
                 _setLiveCaption('');
                 ViewerRuntime.presenterCurrentIndex = idx;
                 ViewerRuntime.presenterCurrentFragment = currentFragmentIndex;

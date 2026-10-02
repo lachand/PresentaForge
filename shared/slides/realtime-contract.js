@@ -43,6 +43,11 @@
         RANK_ORDER_END: 'rank-order:end',
         ROULETTE_PICK: 'roulette:pick',
         ZOOM: 'zoom',
+        // Défilement manuel (molette) d'un bloc de code trop long pour sa hauteur —
+        // diffusé par le présentateur pour que l'audience voie la même portion du
+        // bloc. `ratio` = scrollTop / (scrollHeight - clientHeight), 0..1, pour rester
+        // correct même si la taille de police diffère légèrement entre écrans.
+        CODE_SCROLL: 'code:scroll',
     });
 
     const ROOM_MSG = Object.freeze({
@@ -111,6 +116,9 @@
         // rattrapage tardif reste synchronisé sans rediffusion.
         TIMER_ADHOC_START: 'timer:adhoc:start',
         TIMER_ADHOC_END: 'timer:adhoc:end',
+        // Même besoin que SYNC_MSG.CODE_SCROLL (défilement molette d'un bloc de code
+        // trop long), diffusé en plus vers les étudiants connectés en salle WebRTC.
+        CODE_SCROLL: 'code:scroll',
     });
 
     const syncTypes = new Set(Object.values(SYNC_MSG));
@@ -236,6 +244,8 @@
             && (msg.x == null || typeof msg.x === 'number')
             && (msg.y == null || typeof msg.y === 'number')
             && (msg.scale == null || typeof msg.scale === 'number'),
+        [SYNC_MSG.CODE_SCROLL]: msg => isNonNegInt(msg.slideIndex) && isNonNegInt(msg.blockIndex)
+            && typeof msg.ratio === 'number' && msg.ratio >= 0 && msg.ratio <= 1,
     });
 
     const ROOM_VALIDATORS = Object.freeze({
@@ -325,6 +335,8 @@
         [ROOM_MSG.SLIDE_FRAGMENT]: msg => isNonNegInt(msg.index)
             && (((msg.fragmentOrder != null) && isInt(msg.fragmentOrder)) || ((msg.fragmentIndex != null) && isInt(msg.fragmentIndex)))
             && (msg.hidden == null || isBoolean(msg.hidden) || msg.hidden === 0 || msg.hidden === 1),
+        [ROOM_MSG.CODE_SCROLL]: msg => isNonNegInt(msg.index) && isNonNegInt(msg.blockIndex)
+            && typeof msg.ratio === 'number' && msg.ratio >= 0 && msg.ratio <= 1,
         [ROOM_MSG.POLL_START]: msg => isString(msg.pollId || '', 120)
             && isString(msg.prompt || '', 1200)
             && isStringArray(msg.options || [], 16, 320)

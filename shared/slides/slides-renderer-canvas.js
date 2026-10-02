@@ -630,14 +630,14 @@
                 const hasCaptions = zoneLabels.some(t => t);
                 const captionHtml = hasCaptions ? `<div class="${P}-hl-caption"><div class="${P}-hl-caption-inner">${esc(zoneLabels[0] || '')}</div></div>` : '';
                 const labelsAttr = hasCaptions ? ` data-hl-labels="${esc(JSON.stringify(zoneLabels))}"` : '';
-                // Bloc à plusieurs zones (surlignage pas-à-pas) : le code peut dépasser la
-                // hauteur du bloc (contrairement à un bloc simple, dont la taille de police
-                // s'ajuste normalement au moment de la rédaction). On y active le défilement
-                // + le défilement automatique du plugin Reveal.js Highlight vers la zone
-                // active à chaque pas (scrollHighlightedLineIntoView, déclenché par les
-                // événements 'visible'/'hidden' — voir syncHighlightCaptions côté JS), plutôt
-                // que sur tout bloc `highlight` (le simple `overflow:visible` existant reste
-                // inchangé pour un bloc sans étapes, pour ne rien changer à son rendu/export).
+                // Bloc à plusieurs zones (surlignage pas-à-pas). Le défilement du code
+                // (scrollbar + ombre) est désormais actif sur TOUT bloc `highlight`, qu'il
+                // soit "stepped" ou non (shared/slides/slides-themes.js, règle
+                // `.sl-highlight-block pre code`) — cette classe ne pilote plus que le
+                // défilement automatique vers la zone active à chaque pas
+                // (scrollHighlightedLineIntoView, déclenché par les événements
+                // 'visible'/'hidden' — voir syncHighlightCaptions côté JS) et le parsing
+                // des zones `data-line-numbers`, qui n'ont de sens qu'à plusieurs zones.
                 const stepped = highlightZones.length > 1;
                 const blockClasses = [hasCaptions && `${P}-highlight-block-annotated`, stepped && `${P}-highlight-block-stepped`].filter(Boolean).join(' ');
                 // Use Reveal.js native <pre><code> (no code-terminal wrapper)
