@@ -1968,7 +1968,11 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             await deck.initialize();
 
             const mountVisible = () => {
-                SlidesRenderer.mountRuntimeElements(root, deck);
+                // soloQuiz:true — un lien public direct (viewer.html?firebase=...) n'a ni
+                // présentateur ni salle : les quiz-live doivent s'auto-corriger localement,
+                // comme pour l'export HTML standalone (editor-export.js) et la révision
+                // hors-CM (student-render.js, H.reviseOffline).
+                SlidesRenderer.mountRuntimeElements(root, deck, { soloQuiz: true });
                 SlidesRenderer.syncHighlightCaptions(deck.getCurrentSlide?.() || root);
             };
             mountVisible();
