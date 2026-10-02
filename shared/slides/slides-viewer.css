@@ -1128,6 +1128,82 @@
             font-size: calc(var(--sl-code-font-size, 13px) * 1.2) !important;
             line-height: calc(var(--sl-code-line-height, 1.58) * 1.05) !important;
         }
+        /* Coloration syntaxique (hljs/monokai.css, vendor/revealjs/.../highlight/monokai.css)
+           — gardée et intensifiée en mode contraste, pas aplatie en blanc. Les couleurs
+           Monokai d'origine sont pensées pour un fond #020617 ; sur fond noir pur, on les
+           rend plus vives/saturées pour rester lisibles (demande utilisateur : "plus
+           péchues"). Mêmes couleurs pour les 2 presets, seuls fond/taille/graisse varient
+           déjà entre eux. */
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-tag,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-keyword,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-selector-tag,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-literal,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-strong,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-name,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-tag,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-keyword,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-selector-tag,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-literal,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-strong,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-name {
+            color: #ff4fa3 !important;
+        }
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-code,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-code {
+            color: #5fe3ff !important;
+        }
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-attribute,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-symbol,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-regexp,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-link,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-attribute,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-symbol,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-regexp,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-link {
+            color: #d896ff !important;
+        }
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-string,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-bullet,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-subst,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-title,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-section,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-emphasis,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-type,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-built_in,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-builtin-name,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-selector-attr,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-selector-pseudo,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-addition,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-variable,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-template-tag,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-template-variable,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-string,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-bullet,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-subst,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-title,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-section,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-emphasis,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-type,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-built_in,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-builtin-name,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-selector-attr,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-selector-pseudo,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-addition,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-variable,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-template-tag,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-template-variable {
+            color: #baff3d !important;
+        }
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-comment,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-quote,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-deletion,
+        #pv-current-panel.pv-contrast-1 .sl-highlight-block .hljs-meta,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-comment,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-quote,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-deletion,
+        #pv-current-panel.pv-contrast-2 .sl-highlight-block .hljs-meta {
+            color: #9a9a9a !important;
+        }
         .pv-slide-counter {
             margin-top: 8px;
             font-size: 0.8rem;
