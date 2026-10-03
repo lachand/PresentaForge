@@ -705,7 +705,7 @@ html, body {
 .el-type-btn .el-icon { font-size: 1.15rem; line-height: 1; display: flex; }
 .el-type-btn .el-icon .ms { font-size: 1.15rem; }
 .el-type-btn:hover {
-    color: var(--el-color, var(--primary));
+    color: var(--on-surface);
     background: var(--surface-container-highest);
 }
 .el-type-btn[data-el="heading"] { --el-color: #60a5fa; }
