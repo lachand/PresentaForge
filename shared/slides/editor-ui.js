@@ -125,6 +125,36 @@ function hideTooltip() {
     if (_tooltipEl) _tooltipEl.classList.remove('visible');
 }
 
+/* ── Lier les <label> à leur champ de formulaire (a11y) ───────────
+ * Tout le ruban + le panneau de propriétés posent `<label>Texte</label>`
+ * juste à côté d'un input/select/textarea, sans `for` : un lecteur d'écran
+ * n'annonce alors que le type du contrôle ("liste déroulante"), jamais son
+ * nom ("Titre"). Deux formes rencontrées : label et contrôle frères directs
+ * (`<label>X</label><select id="y">`, le cas le plus courant) ou label suivi
+ * d'un contrôle dans un conteneur `.props-row`/`.fmt-field` plus large mais
+ * ne portant qu'un seul champ. Un label qui ENVELOPPE déjà son contrôle
+ * (ex. `.fmt-check-inline`) a une association implicite valide — on le
+ * laisse intact. Génère un id auto seulement si le contrôle n'en a pas. */
+let _autoLabelIdCounter = 0;
+function linkFormLabels(container) {
+    if (!container) return;
+    const isFormControl = node => node && /^(INPUT|SELECT|TEXTAREA)$/.test(node.tagName);
+    container.querySelectorAll('label:not([for])').forEach(label => {
+        if (label.querySelector('input, select, textarea')) return; // déjà imbriqué, association implicite OK
+        let control = label.nextElementSibling;
+        if (!isFormControl(control)) {
+            const siblings = label.parentElement
+                ? label.parentElement.querySelectorAll('input, select, textarea')
+                : [];
+            control = siblings.length === 1 ? siblings[0] : null;
+        }
+        if (!control) return;
+        if (!control.id) control.id = `oei-auto-label-${++_autoLabelIdCounter}`;
+        label.setAttribute('for', control.id);
+    });
+}
+window.OEILinkFormLabels = linkFormLabels;
+
 
 const _editorAiPipeline = window.OEIEditorAIPipeline || null;
 if (!_editorAiPipeline) {

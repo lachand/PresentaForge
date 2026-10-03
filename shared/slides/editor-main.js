@@ -219,6 +219,7 @@ function init() {
 
     // Enhanced ribbon features
     initRichTooltips();
+    window.OEILinkFormLabels?.(document);
     initSplitButtons();
     initCollapsibleRibbon();
     initCollapsiblePanels();

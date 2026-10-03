@@ -234,6 +234,7 @@ function updatePropsPanel() {
             const titleEl = document.getElementById('props-title');
             if (titleEl) titleEl.textContent = 'Connecteur';
             _renderConnectorProps(panel, conn);
+            window.OEILinkFormLabels?.(panel);
             _bindConnectorProps(conn);
             return;
         }
@@ -1111,6 +1112,7 @@ function updatePropsPanel() {
     </div>`;
 
     panel.innerHTML = html;
+    window.OEILinkFormLabels?.(panel);
     _bindPropsPanel(el);
     if (typeof window.renderA11yElementHints === 'function') {
         try { window.renderA11yElementHints(el, panel); } catch (_) {}

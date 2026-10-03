@@ -74,7 +74,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-ai-quiz.js?v=2'],
     ['../shared/slides/editor-ai-passes.js?v=2'],
     ['../shared/slides/editor-ai-review-ui.js?v=2'],
-    ['../shared/slides/editor-ui.js?v=23'],
+    ['../shared/slides/editor-ui.js?v=24'],
     ['../shared/slides/editor-clipboard.js?v=9'],
     ['../shared/slides/editor-search.js?v=8'],
     ['../shared/slides/editor-slide-ops.js?v=9'],
@@ -84,7 +84,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-zoom-view.js?v=10'],
     ['../shared/slides/editor-widget-picker.js?v=3'],
     ['../shared/slides/editor-diagram-panel.js?v=1'],
-    ['../shared/slides/editor-props-panel.js?v=28'],
+    ['../shared/slides/editor-props-panel.js?v=29'],
     ['../shared/slides/editor-format-tab.js?v=12'],
     ['../shared/slides/editor-insert.js?v=10'],
     ['../shared/slides/editor-block-presets.js?v=4'],
@@ -120,7 +120,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-checker.js?v=12'],
     ['../shared/slides/banner-picker.js?v=1'],
     ['../shared/slides/editor-bindings.js?v=30'],
-    ['../shared/slides/editor-main.js?v=7'],
+    ['../shared/slides/editor-main.js?v=8'],
 ]);
 
 loadClassicScriptGroups(EDITOR_BOOTSTRAP_GROUPS, {
