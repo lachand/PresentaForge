@@ -50,6 +50,21 @@
     --tone-violet-bg: #ede9fe; --tone-violet-text: #6d28d9;
     --tone-indigo-bg: #eef2ff; --tone-indigo-border: #c7d2fe; --tone-indigo-text: #3730a3;
     --tone-purple-bg: #ede9fe; --tone-purple-border: #ddd6fe; --tone-purple-text: #5b21b6;
+
+    /* Couleurs de catégorie du menu d'insertion (barre de filtre + icônes des
+       éléments) — une par catégorie réelle de initInsertionGroupFilter()
+       (editor-bindings.js, byElType/groupMeta), posées en inline style sur
+       les éléments générés pour rester la seule source de vérité de ce
+       classement (pas de 2e mapping à maintenir en CSS). */
+    --cat-content: #3b82f6;
+    --cat-media: #ec4899;
+    --cat-diagram: #6366f1;
+    --cat-maths: #8b5cf6;
+    --cat-code: #22c55e;
+    --cat-assessment: #f59e0b;
+    --cat-activity: #14b8a6;
+    --cat-facilitation: #d946ef;
+    --cat-integration: #f97316;
 }
 
 /* Rayons éditeur : conservés le temps du Lot 4 (échelle dense) */
@@ -660,6 +675,7 @@ html, body {
     width: 12px;
     height: 12px;
     flex-shrink: 0;
+    color: var(--cat-color, inherit);
 }
 .insert-cat-arrow svg { width: 10px; height: 10px; }
 .insert-cat-split:hover {
@@ -694,7 +710,7 @@ html, body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary);
+    color: var(--cat-color, var(--primary));
     flex-shrink: 0;
 }
 .insert-menu-empty {

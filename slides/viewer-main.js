@@ -2197,29 +2197,55 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             // changement de slide par goTo(). Presets mutuellement exclusifs :
             // cliquer le preset actif l'annule, cliquer l'autre le remplace.
             // Preset 3 = dernier recours (noir sur fond blanc, sans coloration) si
-            // même le noir pur reste illisible.
+            // même le noir pur reste illisible. Un seul bouton + menu (au lieu de
+            // 3 boutons séparés) : moins de place prise dans une toolbar déjà
+            // dense (R2, audit UI/UX indépendant).
             let _contrastPreset = null; // null | 1 | 2 | 3
-            const _contrastBtns = {
-                1: document.getElementById('pv-btn-contrast-1'),
-                2: document.getElementById('pv-btn-contrast-2'),
-                3: document.getElementById('pv-btn-contrast-3'),
-            };
+            const _contrastBtn = document.getElementById('pv-btn-contrast');
+            const _contrastMenu = document.getElementById('pv-contrast-menu');
+            const _contrastMenuItems = _contrastMenu ? Array.from(_contrastMenu.querySelectorAll('.pv-contrast-menu-item')) : [];
             function setContrastPreset(n) {
                 _contrastPreset = n;
                 const pvCurrentPanel = document.getElementById('pv-current-panel');
                 pvCurrentPanel?.classList.toggle('pv-contrast-1', n === 1);
                 pvCurrentPanel?.classList.toggle('pv-contrast-2', n === 2);
                 pvCurrentPanel?.classList.toggle('pv-contrast-3', n === 3);
-                Object.entries(_contrastBtns).forEach(([key, btn]) => {
-                    if (!btn) return;
-                    const isActive = n === Number(key);
-                    btn.classList.toggle('active', isActive);
-                    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                _contrastMenuItems.forEach(itemBtn => {
+                    const isActive = n === Number(itemBtn.dataset.preset);
+                    itemBtn.setAttribute('aria-checked', isActive ? 'true' : 'false');
                 });
+                _contrastBtn?.classList.toggle('active', n !== null);
+                _contrastBtn?.setAttribute('aria-pressed', n !== null ? 'true' : 'false');
             }
-            _contrastBtns[1]?.addEventListener('click', () => setContrastPreset(_contrastPreset === 1 ? null : 1));
-            _contrastBtns[2]?.addEventListener('click', () => setContrastPreset(_contrastPreset === 2 ? null : 2));
-            _contrastBtns[3]?.addEventListener('click', () => setContrastPreset(_contrastPreset === 3 ? null : 3));
+            function closeContrastMenu() {
+                _contrastMenu?.classList.add('hidden');
+                _contrastBtn?.setAttribute('aria-expanded', 'false');
+            }
+            _contrastBtn?.addEventListener('click', e => {
+                e.stopPropagation();
+                const willOpen = _contrastMenu?.classList.contains('hidden');
+                if (willOpen) {
+                    _contrastMenu.classList.remove('hidden');
+                    _contrastBtn.setAttribute('aria-expanded', 'true');
+                } else {
+                    closeContrastMenu();
+                }
+            });
+            _contrastMenuItems.forEach(itemBtn => {
+                itemBtn.addEventListener('click', () => {
+                    const n = Number(itemBtn.dataset.preset);
+                    setContrastPreset(_contrastPreset === n ? null : n);
+                    closeContrastMenu();
+                });
+            });
+            document.addEventListener('click', e => {
+                if (!_contrastMenu || _contrastMenu.classList.contains('hidden')) return;
+                if (e.target === _contrastBtn || _contrastBtn?.contains(e.target) || _contrastMenu.contains(e.target)) return;
+                closeContrastMenu();
+            });
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') closeContrastMenu();
+            });
 
             // Apply theme + scoped CSS for presenter frames
             const themeData = window.OEIDesignTokens?.resolvePresentationTheme

@@ -942,7 +942,7 @@ function initInsertionGroupFilter() {
     const toolbar = document.createElement('div');
     toolbar.className = 'insert-categories-toolbar';
     toolbar.innerHTML = groupMeta.map(g => `
-        <div class="split-btn insert-cat-split" data-group="${g.id}">
+        <div class="split-btn insert-cat-split" data-group="${g.id}" style="--cat-color: var(--cat-${g.id})">
             <button type="button" class="insert-cat-main" data-group="${g.id}">
                 <span class="insert-cat-icon">${icon(g.icon)}</span>
                 <span class="insert-cat-label">${esc(g.label)}</span>
@@ -970,6 +970,10 @@ function initInsertionGroupFilter() {
 
     const renderMenu = (groupId, anchorSplit) => {
         const entries = itemsByGroup.get(groupId) || [];
+        // Tous les items d'un même menu partagent la catégorie ouverte : poser
+        // --cat-color une fois sur le conteneur (hérité par .insert-menu-icon)
+        // plutôt que de le répéter par entrée.
+        menu.style.setProperty('--cat-color', `var(--cat-${groupId})`);
         menu.innerHTML = entries.length
             ? entries.map(entry => `
                 <button type="button" class="tb-dropdown-item insert-menu-item" data-item-key="${entry.key}">
