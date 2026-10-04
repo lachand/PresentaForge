@@ -27,7 +27,7 @@
       "number": "00",
       "title": "Avant de commencer",
       "subtitle": "Rappel et formation des groupes",
-      "notes": "Rappeler en 2 minutes le contenu du TD3 : sujet formulé en question, histoire en 7 étapes, règles de forme, élocution. Cette séance se concentre sur la toute première étape : le sujet et la bibliographie."
+      "notes": "Rappeler le contenu du TD3 : sujet formulé en question, histoire en 7 étapes, règles de forme, élocution. Cette séance se concentre sur la toute première étape : le sujet et la bibliographie."
     },
     {
       "type": "bullets",
@@ -55,8 +55,8 @@
       "type": "chapter",
       "number": "01",
       "title": "Choisir son thème",
-      "subtitle": "15 minutes",
-      "notes": "Lancer le chronomètre dès que les groupes sont formés."
+      "subtitle": "Formation des groupes",
+      "notes": "Lancer l'exercice dès que les groupes sont formés."
     },
     {
       "type": "canvas",
@@ -101,7 +101,7 @@
           "type": "list",
           "x": 140,
           "y": 170,
-          "w": 720,
+          "w": 1000,
           "h": 460,
           "z": 1,
           "data": {
@@ -117,22 +117,9 @@
             "fontSize": 21,
             "color": "var(--sl-text)"
           }
-        },
-        {
-          "id": "el_0004",
-          "type": "timer",
-          "x": 900,
-          "y": 150,
-          "w": 220,
-          "h": 170,
-          "z": 1,
-          "data": {
-            "duration": 900,
-            "label": "15 minutes"
-          }
         }
       ],
-      "notes": "Passer dans les groupes pour valider les thèmes choisis — certains groupes auront tendance à choisir un thème trop large (ex. 'l'intelligence artificielle') plutôt qu'une question précise (ex. 'comment l'IA transforme-t-elle les diagnostics médicaux ?').",
+      "notes": "Passer dans les groupes pour valider les thèmes choisis : certains groupes auront tendance à choisir un thème trop large (ex. 'l'intelligence artificielle') plutôt qu'une question précise (ex. 'comment l'IA transforme-t-elle les diagnostics médicaux ?').",
       "keypoints": [
         "À la fin du bloc : un thème par groupe, formulé sous forme de question précise."
       ]
@@ -141,14 +128,14 @@
       "type": "chapter",
       "number": "02",
       "title": "Recherche de mots-clés et de sources",
-      "subtitle": "60 minutes",
+      "subtitle": "Le cœur de la séance",
       "notes": "Le plus gros bloc de la séance."
     },
     {
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0005",
+          "id": "el_0004",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -167,7 +154,7 @@
           }
         },
         {
-          "id": "el_0006",
+          "id": "el_0005",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -183,11 +170,11 @@
           }
         },
         {
-          "id": "el_0007",
+          "id": "el_0006",
           "type": "list",
           "x": 140,
           "y": 170,
-          "w": 720,
+          "w": 1000,
           "h": 460,
           "z": 1,
           "data": {
@@ -202,19 +189,6 @@
             "fontSize": 21,
             "color": "var(--sl-text)"
           }
-        },
-        {
-          "id": "el_0008",
-          "type": "timer",
-          "x": 900,
-          "y": 150,
-          "w": 220,
-          "h": 170,
-          "z": 1,
-          "data": {
-            "duration": 1200,
-            "label": "20 minutes"
-          }
         }
       ],
       "notes": "Orienter les groupes qui ne trouvent que 2-3 mots-clés très proches les uns des autres vers des angles différents du sujet (définitions, causes, conséquences, acteurs, exemples concrets).",
@@ -226,7 +200,7 @@
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0009",
+          "id": "el_0007",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -245,7 +219,7 @@
           }
         },
         {
-          "id": "el_0010",
+          "id": "el_0008",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -261,11 +235,11 @@
           }
         },
         {
-          "id": "el_0011",
+          "id": "el_0009",
           "type": "list",
           "x": 140,
           "y": 170,
-          "w": 720,
+          "w": 1000,
           "h": 460,
           "z": 1,
           "data": {
@@ -281,19 +255,6 @@
             "fontSize": 21,
             "color": "var(--sl-text)"
           }
-        },
-        {
-          "id": "el_0012",
-          "type": "timer",
-          "x": 900,
-          "y": 150,
-          "w": 220,
-          "h": 170,
-          "z": 1,
-          "data": {
-            "duration": 2400,
-            "label": "40 minutes"
-          }
         }
       ],
       "notes": "Beaucoup de groupes vont vouloir garder la première source trouvée sans juger sa pertinence : rappeler qu'une source doit être évaluée (date, auteur, type de publication) avant d'être retenue.",
@@ -306,13 +267,13 @@
       "number": "03",
       "title": "Rendu R1",
       "subtitle": "Dépôt sur Moodle",
-      "notes": "Rappeler le dépôt avant de lancer les 15 dernières minutes."
+      "notes": "Rappeler le dépôt avant la fin de la séance."
     },
     {
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0013",
+          "id": "el_0010",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -331,7 +292,7 @@
           }
         },
         {
-          "id": "el_0014",
+          "id": "el_0011",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -347,7 +308,7 @@
           }
         },
         {
-          "id": "el_0015",
+          "id": "el_0012",
           "type": "list",
           "x": 140,
           "y": 170,
@@ -368,7 +329,7 @@
           }
         },
         {
-          "id": "el_0016",
+          "id": "el_0013",
           "type": "table",
           "x": 140,
           "y": 410,
@@ -412,7 +373,7 @@
           }
         }
       ],
-      "notes": "Grille à 3 niveaux, cohérente avec le dossier d'organisation (grille-evaluation.md). Peut être affichée à l'écran pendant les 10 dernières minutes pour que les groupes s'auto-vérifient avant de déposer.",
+      "notes": "Grille à 3 niveaux, cohérente avec le dossier d'organisation (grille-evaluation.md). Peut être affichée à l'écran avant la fin de la séance pour que les groupes s'auto-vérifient avant de déposer.",
       "keypoints": [
         "Dépôt Moodle avant la fin de la séance (+ tolérance courte définie par l'enseignant)."
       ]

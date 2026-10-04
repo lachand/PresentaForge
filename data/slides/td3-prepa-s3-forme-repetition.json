@@ -27,7 +27,7 @@
       "number": "00",
       "title": "Avant de commencer",
       "subtitle": "Rappel du rendu R2",
-      "notes": "Vérifier que chaque groupe a bien apporté un premier jet de slides — c'est la condition pour pouvoir répéter dans de bonnes conditions."
+      "notes": "Vérifier que chaque groupe a bien apporté un premier jet de slides : c'est la condition pour pouvoir répéter dans de bonnes conditions."
     },
     {
       "type": "bullets",
@@ -37,7 +37,7 @@
         "Répéter sa présentation devant un autre groupe",
         "S'auto-évaluer et évaluer un autre groupe avec la grille élocution / non-verbal / timing"
       ],
-      "notes": "La séance est centrée sur la répétition en conditions réelles, pas sur la rédaction de contenu — c'est la dernière occasion avant l'oral noté."
+      "notes": "La séance est centrée sur la répétition en conditions réelles, pas sur la rédaction de contenu : c'est la dernière occasion avant l'oral noté."
     },
     {
       "type": "chapter",
@@ -108,7 +108,7 @@
           }
         }
       ],
-      "notes": "Faire passer chaque groupe sur cette checklist en 2-3 minutes avant la répétition proprement dite, pour éviter de répéter une version qui sera de toute façon à corriger.",
+      "notes": "Faire passer chaque groupe sur cette checklist avant la répétition proprement dite, pour éviter de répéter une version qui sera de toute façon à corriger.",
       "keypoints": [
         "Vérifier la checklist de forme avant la répétition, pas après."
       ]
@@ -117,7 +117,7 @@
       "type": "chapter",
       "number": "02",
       "title": "Répétition croisée",
-      "subtitle": "Durée définie par l'enseignant",
+      "subtitle": "Chaque groupe observe un autre groupe",
       "notes": "Préparer à l'avance l'appariement des groupes et l'ordre de passage."
     },
     {
@@ -163,7 +163,7 @@
           "type": "list",
           "x": 140,
           "y": 170,
-          "w": 720,
+          "w": 1000,
           "h": 460,
           "z": 1,
           "data": {
@@ -178,22 +178,9 @@
             "fontSize": 21,
             "color": "var(--sl-text)"
           }
-        },
-        {
-          "id": "el_0007",
-          "type": "timer",
-          "x": 900,
-          "y": 420,
-          "w": 220,
-          "h": 170,
-          "z": 1,
-          "data": {
-            "duration": 480,
-            "label": "8 minutes"
-          }
         }
       ],
-      "notes": "Le timer est indicatif (8 minutes par défaut, à ajuster selon la durée réellement imposée pour l'oral final). Insister : on répète en conditions réelles, debout, avec ses slides projetées, pas assis à table.",
+      "notes": "Insister : on répète en conditions réelles, debout, avec ses slides projetées, pas assis à table. Le temps imparti est celui réellement prévu pour l'oral final, à annoncer par l'enseignant.",
       "keypoints": [
         "Répéter dans les conditions réelles du jour J : debout, chronométré, slides projetées."
       ]
@@ -202,7 +189,7 @@
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0008",
+          "id": "el_0007",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -221,7 +208,7 @@
           }
         },
         {
-          "id": "el_0009",
+          "id": "el_0008",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -237,7 +224,7 @@
           }
         },
         {
-          "id": "el_0010",
+          "id": "el_0009",
           "type": "table",
           "x": 140,
           "y": 170,
@@ -286,7 +273,7 @@
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0011",
+          "id": "el_0010",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -305,7 +292,7 @@
           }
         },
         {
-          "id": "el_0012",
+          "id": "el_0011",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -321,18 +308,18 @@
           }
         },
         {
-          "id": "el_0013",
+          "id": "el_0012",
           "type": "list",
           "x": 140,
           "y": 170,
-          "w": 720,
+          "w": 1000,
           "h": 460,
           "z": 1,
           "data": {
             "items": [
-              "Le groupe observateur donne son retour oral (2-3 minutes)",
+              "Le groupe observateur donne son retour oral",
               "Le groupe qui a présenté ajuste ce qui peut l'être avant la fin de la séance",
-              "Échanger les rôles si le temps le permet"
+              "Échanger les rôles si possible"
             ],
             "ordered": false
           },
@@ -340,22 +327,9 @@
             "fontSize": 21,
             "color": "var(--sl-text)"
           }
-        },
-        {
-          "id": "el_0014",
-          "type": "timer",
-          "x": 900,
-          "y": 150,
-          "w": 220,
-          "h": 170,
-          "z": 1,
-          "data": {
-            "duration": 900,
-            "label": "15 minutes"
-          }
         }
       ],
-      "notes": "Si le temps le permet, inverser les rôles pour que les deux groupes répètent et reçoivent un retour."
+      "notes": "Si possible, inverser les rôles pour que les deux groupes répètent et reçoivent un retour."
     },
     {
       "type": "chapter",
@@ -368,7 +342,7 @@
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0015",
+          "id": "el_0013",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -387,7 +361,7 @@
           }
         },
         {
-          "id": "el_0016",
+          "id": "el_0014",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -403,7 +377,7 @@
           }
         },
         {
-          "id": "el_0017",
+          "id": "el_0015",
           "type": "list",
           "x": 140,
           "y": 170,
@@ -423,7 +397,7 @@
           }
         },
         {
-          "id": "el_0018",
+          "id": "el_0016",
           "type": "table",
           "x": 140,
           "y": 370,
@@ -489,7 +463,7 @@
         "Vérifier votre matériel (clé USB, ordinateur, format de fichier)",
         "Vérifier l'ordre de passage communiqué par l'enseignant"
       ],
-      "notes": "Dernière slide avant les 2 séances de présentation — rassurer : tout le travail de fond (sujet, plan, forme) a déjà été fait et validé sur les 3 rendus précédents."
+      "notes": "Dernière slide avant les 2 séances de présentation : rassurer, tout le travail de fond (sujet, plan, forme) a déjà été fait et validé sur les 3 rendus précédents."
     }
   ]
 }

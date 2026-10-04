@@ -110,7 +110,7 @@
           }
         }
       ],
-      "notes": "Identique à la slide du TD3 — redonner les mêmes mots pour que les groupes utilisent ce vocabulaire exact dans leur rendu.",
+      "notes": "Identique à la slide du TD3 : redonner les mêmes mots pour que les groupes utilisent ce vocabulaire exact dans leur rendu.",
       "keypoints": [
         "Le plan attendu en rendu R2 doit suivre ces 7 étapes, même brièvement pour certaines."
       ]
@@ -119,7 +119,7 @@
       "type": "chapter",
       "number": "02",
       "title": "Rédaction du plan",
-      "subtitle": "40 minutes",
+      "subtitle": "Le cœur de la séance",
       "notes": "Bloc principal de la séance."
     },
     {
@@ -165,7 +165,7 @@
           "type": "list",
           "x": 140,
           "y": 170,
-          "w": 720,
+          "w": 1000,
           "h": 460,
           "z": 1,
           "data": {
@@ -181,19 +181,6 @@
             "fontSize": 21,
             "color": "var(--sl-text)"
           }
-        },
-        {
-          "id": "el_0007",
-          "type": "timer",
-          "x": 900,
-          "y": 150,
-          "w": 220,
-          "h": 170,
-          "z": 1,
-          "data": {
-            "duration": 2400,
-            "label": "40 minutes"
-          }
         }
       ],
       "notes": "Certains groupes vont vouloir sauter directement à 'l'action' sans poser de contexte ni de challenge clair : les orienter vers la slide de rappel si besoin.",
@@ -205,14 +192,14 @@
       "type": "chapter",
       "number": "03",
       "title": "Feedback croisé",
-      "subtitle": "20 minutes",
+      "subtitle": "Lecture croisée entre groupes",
       "notes": "Préparer à l'avance l'appariement des groupes (qui lit le plan de qui) pour gagner du temps."
     },
     {
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0008",
+          "id": "el_0007",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -231,7 +218,7 @@
           }
         },
         {
-          "id": "el_0009",
+          "id": "el_0008",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -247,37 +234,24 @@
           }
         },
         {
-          "id": "el_0010",
+          "id": "el_0009",
           "type": "list",
           "x": 140,
           "y": 170,
-          "w": 720,
+          "w": 1000,
           "h": 460,
           "z": 1,
           "data": {
             "items": [
               "Échanger votre plan avec un autre groupe",
               "Lire le plan reçu avec la grille : structure respectée ? Fil conducteur clair ? Plan adapté au sujet ?",
-              "Donner un retour oral de 2-3 minutes au groupe concerné"
+              "Donner un retour oral au groupe concerné"
             ],
             "ordered": false
           },
           "style": {
             "fontSize": 21,
             "color": "var(--sl-text)"
-          }
-        },
-        {
-          "id": "el_0011",
-          "type": "timer",
-          "x": 900,
-          "y": 150,
-          "w": 220,
-          "h": 170,
-          "z": 1,
-          "data": {
-            "duration": 1200,
-            "label": "20 minutes"
           }
         }
       ],
@@ -290,7 +264,7 @@
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0012",
+          "id": "el_0010",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -309,7 +283,7 @@
           }
         },
         {
-          "id": "el_0013",
+          "id": "el_0011",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -325,11 +299,11 @@
           }
         },
         {
-          "id": "el_0014",
+          "id": "el_0012",
           "type": "list",
           "x": 140,
           "y": 170,
-          "w": 720,
+          "w": 1000,
           "h": 460,
           "z": 1,
           "data": {
@@ -343,19 +317,6 @@
           "style": {
             "fontSize": 21,
             "color": "var(--sl-text)"
-          }
-        },
-        {
-          "id": "el_0015",
-          "type": "timer",
-          "x": 900,
-          "y": 150,
-          "w": 220,
-          "h": 170,
-          "z": 1,
-          "data": {
-            "duration": 900,
-            "label": "15 minutes"
           }
         }
       ],
@@ -372,7 +333,7 @@
       "type": "canvas",
       "elements": [
         {
-          "id": "el_0016",
+          "id": "el_0013",
           "type": "heading",
           "x": 60,
           "y": 40,
@@ -391,7 +352,7 @@
           }
         },
         {
-          "id": "el_0017",
+          "id": "el_0014",
           "type": "shape",
           "x": 60,
           "y": 112,
@@ -407,7 +368,7 @@
           }
         },
         {
-          "id": "el_0018",
+          "id": "el_0015",
           "type": "list",
           "x": 140,
           "y": 170,
@@ -428,7 +389,7 @@
           }
         },
         {
-          "id": "el_0019",
+          "id": "el_0016",
           "type": "table",
           "x": 140,
           "y": 410,
@@ -493,7 +454,7 @@
         "Préparer un premier jet de slides, en respectant les règles de forme vues en TD3 (sobriété, citations, images sourcées)",
         "Apporter ce premier jet à la séance S3 : elle commence directement par une répétition"
       ],
-      "notes": "Travail attendu entre les séances : sans un premier jet de slides, la répétition de S3 n'est pas possible dans le temps imparti."
+      "notes": "Travail attendu entre les séances : sans un premier jet de slides, la répétition de S3 commence sans base de travail."
     }
   ]
 }

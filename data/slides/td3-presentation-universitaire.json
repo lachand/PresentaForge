@@ -42,7 +42,7 @@
       "number": "01",
       "title": "Avant la présentation",
       "subtitle": "Le travail de recherche",
-      "notes": "Chapitre : tout le travail en amont de la présentation elle-même — trouver un sujet, faire la recherche bibliographique, rassembler la matière."
+      "notes": "Chapitre : tout le travail en amont de la présentation elle-même, trouver un sujet, faire la recherche bibliographique, rassembler la matière."
     },
     {
       "type": "canvas",
@@ -91,7 +91,7 @@
           "h": 40,
           "z": 1,
           "data": {
-            "text": "Une des phases les plus importantes — et les plus difficiles"
+            "text": "Une des phases les plus importantes, et les plus difficiles"
           },
           "style": {
             "fontSize": 22,
@@ -246,7 +246,7 @@
         "Chercher des illustrations",
         "Réfléchir à une histoire à raconter"
       ],
-      "notes": "Transition vers le chapitre suivant : une fois la matière réunie, l'enjeu devient de la mettre en forme — d'où le prochain chapitre sur le plan et l'histoire."
+      "notes": "Transition vers le chapitre suivant : une fois la matière réunie, l'enjeu devient de la mettre en forme, d'où le prochain chapitre sur le plan et l'histoire."
     },
     {
       "type": "chapter",
@@ -445,7 +445,7 @@
           }
         }
       ],
-      "notes": "L'analogie aéronautique (schéma de droite) fonctionne bien à l'oral : la plupart des accidents aériens ont lieu au décollage/atterrissage, pas en croisière — de la même façon, l'introduction et la conclusion sont les moments où le jury forme/confirme son jugement. Un plan 'parfait au milieu' mais bâclé en intro/conclusion laissera une mauvaise impression.",
+      "notes": "L'analogie aéronautique (schéma de droite) fonctionne bien à l'oral : la plupart des accidents aériens ont lieu au décollage/atterrissage, pas en croisière. De la même façon, l'introduction et la conclusion sont les moments où le jury forme/confirme son jugement. Un plan 'parfait au milieu' mais bâclé en intro/conclusion laissera une mauvaise impression.",
       "keypoints": [
         "Soigner particulièrement l'introduction et la conclusion : c'est là que se joue l'essentiel de l'impression laissée au jury."
       ]
@@ -499,7 +499,7 @@
           "data": {
             "items": [
               "Diapositives sobres : pas de template, ou un template simple",
-              "Pas de transition complexe ou trop nombreuse — on évite les transitions complexes et nombreuses",
+              "Pas de transition complexe ou trop nombreuse",
               "On peut quand même faire apparaître les éléments par bloc, avec parcimonie et sans effet particulier"
             ],
             "ordered": false
@@ -1302,7 +1302,7 @@
               [
                 "Cette semaine",
                 "Recherche bibliographique (démarrage)",
-                "—"
+                "-"
               ],
               [
                 "Séance S1",
