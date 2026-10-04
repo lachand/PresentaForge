@@ -1,0 +1,439 @@
+{
+  "schemaVersion": 2,
+  "theme": "icom",
+  "metadata": {
+    "title": "Accompagnement - Séance de préparation 1 - Sujet et bibliographie",
+    "author": "Valentin Lachand-Pascal",
+    "created": "2026-10-04",
+    "modified": "2026-10-04",
+    "email": "valentin.lachand-pascal@univ-lyon2.fr"
+  },
+  "showSlideNumber": true,
+  "footerText": "Accompagnement - Prépa S1",
+  "autoNumberChapters": true,
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Institut de la Communication - Licence",
+      "title": "Accompagnement - Séance de préparation 1",
+      "subtitle": "Sujet et bibliographie",
+      "author": "Valentin Lachand-Pascal",
+      "date": "2026",
+      "email": "valentin.lachand-pascal@univ-lyon2.fr",
+      "notes": "Première des 3 séances de préparation à la présentation (après le TD3 méthodologie). Objectif : à la fin de la séance, chaque groupe a un thème formulé en question et une bibliographie de 5-8 sources résumées. Rendu R1 déposé sur Moodle en fin de séance."
+    },
+    {
+      "type": "chapter",
+      "number": "00",
+      "title": "Avant de commencer",
+      "subtitle": "Rappel et formation des groupes",
+      "notes": "Rappeler en 2 minutes le contenu du TD3 : sujet formulé en question, histoire en 7 étapes, règles de forme, élocution. Cette séance se concentre sur la toute première étape : le sujet et la bibliographie."
+    },
+    {
+      "type": "bullets",
+      "title": "Objectifs de la séance",
+      "items": [
+        "Choisir un thème précis, formulé sous forme de question",
+        "Identifier des mots-clés pertinents pour la recherche",
+        "Trouver et évaluer 5 à 8 sources",
+        "Démarrer un outil bibliographique (Zotero)"
+      ],
+      "notes": "Ces 4 objectifs correspondent exactement au contenu du rendu R1 attendu en fin de séance."
+    },
+    {
+      "type": "bullets",
+      "title": "Rappel : élargir sa recherche",
+      "items": [
+        "Varier les synonymes et les termes liés au sujet",
+        "Utiliser les opérateurs de recherche (guillemets, booléens) vus avec Méthodoc",
+        "Varier les types de sources : articles scientifiques, mémoires/thèses, sites institutionnels, presse spécialisée",
+        "Une source = une référence complète + un résumé de 1 à 2 lignes"
+      ],
+      "notes": "Rappel direct du TD2 Méthodoc (la ville intelligente) : les étudiants ont déjà pratiqué cette méthode, il s'agit de la réappliquer à leur propre thème."
+    },
+    {
+      "type": "chapter",
+      "number": "01",
+      "title": "Choisir son thème",
+      "subtitle": "15 minutes",
+      "notes": "Lancer le chronomètre dès que les groupes sont formés."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0001",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 1 : formation des groupes et choix du thème"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0002",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0003",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Former les groupes (taille définie par l'enseignant)",
+              "Lister 3 thèmes possibles liés au cours concerné",
+              "Choisir celui qui se formule le plus clairement sous forme de question",
+              "Valider le thème auprès de l'enseignant si besoin"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 21,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0004",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 900,
+            "label": "15 minutes"
+          }
+        }
+      ],
+      "notes": "Passer dans les groupes pour valider les thèmes choisis — certains groupes auront tendance à choisir un thème trop large (ex. 'l'intelligence artificielle') plutôt qu'une question précise (ex. 'comment l'IA transforme-t-elle les diagnostics médicaux ?').",
+      "keypoints": [
+        "À la fin du bloc : un thème par groupe, formulé sous forme de question précise."
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "02",
+      "title": "Recherche de mots-clés et de sources",
+      "subtitle": "60 minutes",
+      "notes": "Le plus gros bloc de la séance."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0005",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 2 : mots-clés"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0006",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0007",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Par groupe, lister un maximum de mots-clés pertinents sur le thème choisi",
+              "Inclure synonymes et termes liés",
+              "Exercice sur papier ou traitement de texte partagé"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 21,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0008",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 1200,
+            "label": "20 minutes"
+          }
+        }
+      ],
+      "notes": "Orienter les groupes qui ne trouvent que 2-3 mots-clés très proches les uns des autres vers des angles différents du sujet (définitions, causes, conséquences, acteurs, exemples concrets).",
+      "keypoints": [
+        "Une bonne liste de mots-clés couvre plusieurs angles du sujet, pas seulement des synonymes."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0009",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 3 : recherche et évaluation des sources"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0010",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0011",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Rechercher des sources avec Google Scholar et/ou les ressources Méthodoc",
+              "Retenir 5 à 8 sources pertinentes et variées",
+              "Pour chaque source : référence complète (cf. TD3, citation Google Scholar) + résumé de 1-2 lignes",
+              "Enregistrer chaque source dans Zotero"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 21,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0012",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 2400,
+            "label": "40 minutes"
+          }
+        }
+      ],
+      "notes": "Beaucoup de groupes vont vouloir garder la première source trouvée sans juger sa pertinence : rappeler qu'une source doit être évaluée (date, auteur, type de publication) avant d'être retenue.",
+      "keypoints": [
+        "5 à 8 sources variées, chacune avec sa référence complète et un résumé personnel de 1-2 lignes dans Zotero."
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "03",
+      "title": "Rendu R1",
+      "subtitle": "Dépôt sur Moodle",
+      "notes": "Rappeler le dépôt avant de lancer les 15 dernières minutes."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0013",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Rendu R1 : fiche sujet et bibliographie"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0014",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0015",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 1000,
+          "h": 220,
+          "z": 1,
+          "data": {
+            "items": [
+              "Le thème, formulé sous forme de question",
+              "5 à 8 sources, chacune avec sa référence complète",
+              "Un résumé de 1 à 2 lignes par source"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0016",
+          "type": "table",
+          "x": 140,
+          "y": 410,
+          "w": 1000,
+          "h": 230,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Critère",
+                "Insuffisant",
+                "Satisfaisant",
+                "Très bien"
+              ],
+              [
+                "Formulation du sujet",
+                "Thème trop large ou pas en question",
+                "Question correcte mais imprécise",
+                "Question précise, claire, pertinente"
+              ],
+              [
+                "Pertinence et variété des sources",
+                "< 5 sources ou toutes du même type",
+                "5-8 sources, peu de variété",
+                "5-8 sources pertinentes et variées"
+              ],
+              [
+                "Qualité des résumés",
+                "Résumés absents ou copiés-collés",
+                "Résumés présents mais superficiels",
+                "Résumés clairs, reformulés, utiles"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "headerBg": "var(--sl-primary)",
+            "headerColor": "#ffffff",
+            "borderColor": "var(--sl-border)"
+          }
+        }
+      ],
+      "notes": "Grille à 3 niveaux, cohérente avec le dossier d'organisation (grille-evaluation.md). Peut être affichée à l'écran pendant les 10 dernières minutes pour que les groupes s'auto-vérifient avant de déposer.",
+      "keypoints": [
+        "Dépôt Moodle avant la fin de la séance (+ tolérance courte définie par l'enseignant)."
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Si vous avez fini en avance",
+      "items": [
+        "Approfondir la bibliographie : ajouter 2-3 sources supplémentaires",
+        "Commencer à identifier la structure narrative de votre présentation (qui sont les « personnages », quel est le « contexte », le « challenge » ?)"
+      ],
+      "notes": "Les groupes en avance ne doivent jamais attendre : cette réserve les fait avancer sur le travail de la séance S2 sans l'anticiper complètement."
+    },
+    {
+      "type": "bullets",
+      "title": "Avant la séance suivante",
+      "items": [
+        "Garder votre Zotero à jour et accessible",
+        "Relire vos sources : vous en aurez besoin pour construire votre histoire en séance S2"
+      ],
+      "notes": "Travail attendu entre les séances : la séance S2 commence directement sur la rédaction du plan, pas sur une reprise de la bibliographie."
+    }
+  ]
+}

@@ -1,0 +1,499 @@
+{
+  "schemaVersion": 2,
+  "theme": "icom",
+  "metadata": {
+    "title": "Accompagnement - Séance de préparation 2 - Plan et histoire",
+    "author": "Valentin Lachand-Pascal",
+    "created": "2026-10-04",
+    "modified": "2026-10-04",
+    "email": "valentin.lachand-pascal@univ-lyon2.fr"
+  },
+  "showSlideNumber": true,
+  "footerText": "Accompagnement - Prépa S2",
+  "autoNumberChapters": true,
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Institut de la Communication - Licence",
+      "title": "Accompagnement - Séance de préparation 2",
+      "subtitle": "Plan et histoire",
+      "author": "Valentin Lachand-Pascal",
+      "date": "2026",
+      "email": "valentin.lachand-pascal@univ-lyon2.fr",
+      "notes": "Deuxième séance de préparation. Chaque groupe arrive avec un thème validé et une bibliographie (rendu R1). Objectif : construire le plan détaillé de la présentation en suivant la structure narrative vue en TD3. Rendu R2 en fin de séance."
+    },
+    {
+      "type": "chapter",
+      "number": "00",
+      "title": "Avant de commencer",
+      "subtitle": "Rappel du rendu R1",
+      "notes": "Tour rapide : chaque groupe rappelle en une phrase son thème (la question posée). Permet de vérifier que tous les thèmes sont bien formulés avant d'avancer."
+    },
+    {
+      "type": "bullets",
+      "title": "Objectifs de la séance",
+      "items": [
+        "Revoir la structure narrative en 7 étapes (TD3)",
+        "Rédiger un plan détaillé suivant cette structure",
+        "Recevoir et exploiter un retour croisé d'un autre groupe"
+      ],
+      "notes": "L'essentiel de la séance est la rédaction du plan ; le retour croisé est un filet de sécurité avant le rendu, pas une évaluation en soi."
+    },
+    {
+      "type": "chapter",
+      "number": "01",
+      "title": "Rappel : la structure narrative",
+      "subtitle": "7 étapes",
+      "notes": "Chapitre court : re-projeter si besoin les slides 8-9 du TD3."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0001",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Rappel : quelle histoire raconter ?"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0002",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0003",
+          "type": "list",
+          "x": 140,
+          "y": 160,
+          "w": 1000,
+          "h": 480,
+          "z": 1,
+          "data": {
+            "items": [
+              "Introduction",
+              "Présentation des personnages (le sujet de la présentation)",
+              "Présentation du contexte",
+              "Le challenge / la problématique",
+              "L'action : comment on fait pour résoudre la problématique",
+              "Le climax : la tension dramatique est à son comble, on présente les résultats",
+              "Discussion : comment peut-on élargir les résultats"
+            ],
+            "ordered": true
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        }
+      ],
+      "notes": "Identique à la slide du TD3 — redonner les mêmes mots pour que les groupes utilisent ce vocabulaire exact dans leur rendu.",
+      "keypoints": [
+        "Le plan attendu en rendu R2 doit suivre ces 7 étapes, même brièvement pour certaines."
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "02",
+      "title": "Rédaction du plan",
+      "subtitle": "40 minutes",
+      "notes": "Bloc principal de la séance."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0004",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 1 : rédiger le plan détaillé"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0005",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0006",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Pour chacune des 7 étapes, noter les points clés à mentionner",
+              "S'appuyer sur les sources rassemblées en S1",
+              "Ne pas rédiger le texte final : juste les idées, sous forme de notes",
+              "Vérifier que chaque étape a au moins 1-2 points clés (pas d'étape vide)"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 21,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0007",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 2400,
+            "label": "40 minutes"
+          }
+        }
+      ],
+      "notes": "Certains groupes vont vouloir sauter directement à 'l'action' sans poser de contexte ni de challenge clair : les orienter vers la slide de rappel si besoin.",
+      "keypoints": [
+        "Un plan complet couvre les 7 étapes, avec des points clés concrets (pas des titres vides)."
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "03",
+      "title": "Feedback croisé",
+      "subtitle": "20 minutes",
+      "notes": "Préparer à l'avance l'appariement des groupes (qui lit le plan de qui) pour gagner du temps."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0008",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 2 : lecture croisée"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0009",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0010",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Échanger votre plan avec un autre groupe",
+              "Lire le plan reçu avec la grille : structure respectée ? Fil conducteur clair ? Plan adapté au sujet ?",
+              "Donner un retour oral de 2-3 minutes au groupe concerné"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 21,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0011",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 1200,
+            "label": "20 minutes"
+          }
+        }
+      ],
+      "notes": "Le but n'est pas de noter le plan du camarade, juste de repérer un trou évident (étape manquante, fil conducteur peu clair) avant le rendu.",
+      "keypoints": [
+        "Un regard extérieur repère souvent un trou dans le fil conducteur qu'on ne voit plus soi-même."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0012",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 3 : ajustement"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0013",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0014",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Reprendre votre plan à la lumière du retour reçu",
+              "Compléter les étapes trop légères",
+              "Finaliser la mise en forme du rendu"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 21,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0015",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 900,
+            "label": "15 minutes"
+          }
+        }
+      ],
+      "notes": "Dernière occasion de retravailler le plan avant le dépôt."
+    },
+    {
+      "type": "chapter",
+      "number": "04",
+      "title": "Rendu R2",
+      "subtitle": "Dépôt sur Moodle",
+      "notes": "Rappeler le dépôt avant la fin de la séance."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0016",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Rendu R2 : plan détaillé"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0017",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0018",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 1000,
+          "h": 220,
+          "z": 1,
+          "data": {
+            "items": [
+              "Un plan de 1 à 2 pages",
+              "Les 7 étapes de la structure narrative",
+              "Les points clés à mentionner pour chaque étape"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0019",
+          "type": "table",
+          "x": 140,
+          "y": 410,
+          "w": 1000,
+          "h": 230,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Critère",
+                "Insuffisant",
+                "Satisfaisant",
+                "Très bien"
+              ],
+              [
+                "Respect de la structure narrative",
+                "Étapes manquantes ou dans le désordre",
+                "7 étapes présentes mais inégales",
+                "7 étapes présentes et équilibrées"
+              ],
+              [
+                "Clarté du fil conducteur",
+                "On ne voit pas où le plan mène",
+                "Fil conducteur présent mais confus par endroits",
+                "Fil conducteur clair du début à la fin"
+              ],
+              [
+                "Adéquation au sujet/sources",
+                "Peu de lien avec le sujet ou les sources de R1",
+                "Lien présent mais partiel",
+                "Plan clairement nourri par les sources rassemblées"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "headerBg": "var(--sl-primary)",
+            "headerColor": "#ffffff",
+            "borderColor": "var(--sl-border)"
+          }
+        }
+      ],
+      "notes": "Même logique de grille que R1, adaptée aux critères du plan.",
+      "keypoints": [
+        "Dépôt Moodle avant la fin de la séance (+ tolérance courte)."
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Si vous avez fini en avance",
+      "items": [
+        "Commencer à chercher ou créer les illustrations pour vos futures slides",
+        "Repérer, pour chaque étape du plan, quelle image pourrait l'illustrer"
+      ],
+      "notes": "Prépare directement le travail de la séance S3 (forme des slides)."
+    },
+    {
+      "type": "bullets",
+      "title": "Avant la séance suivante",
+      "items": [
+        "Préparer un premier jet de slides, en respectant les règles de forme vues en TD3 (sobriété, citations, images sourcées)",
+        "Apporter ce premier jet à la séance S3 : elle commence directement par une répétition"
+      ],
+      "notes": "Travail attendu entre les séances : sans un premier jet de slides, la répétition de S3 n'est pas possible dans le temps imparti."
+    }
+  ]
+}

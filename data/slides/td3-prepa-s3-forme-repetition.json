@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 2,
+  "theme": "icom",
+  "metadata": {
+    "title": "Accompagnement - Séance de préparation 3 - Forme et répétition",
+    "author": "Valentin Lachand-Pascal",
+    "created": "2026-10-04",
+    "modified": "2026-10-04",
+    "email": "valentin.lachand-pascal@univ-lyon2.fr"
+  },
+  "showSlideNumber": true,
+  "footerText": "Accompagnement - Prépa S3",
+  "autoNumberChapters": true,
+  "slides": [
+    {
+      "type": "title",
+      "eyebrow": "Institut de la Communication - Licence",
+      "title": "Accompagnement - Séance de préparation 3",
+      "subtitle": "Forme des slides et répétition",
+      "author": "Valentin Lachand-Pascal",
+      "date": "2026",
+      "email": "valentin.lachand-pascal@univ-lyon2.fr",
+      "notes": "Troisième et dernière séance de préparation avant les présentations. Chaque groupe arrive avec un premier jet de slides (plan validé en S2, mis en forme). Objectif : vérifier le respect des règles de forme, répéter devant un autre groupe, s'auto-évaluer. Rendu R3 en fin de séance : slides quasi-finalisées + grille remplie."
+    },
+    {
+      "type": "chapter",
+      "number": "00",
+      "title": "Avant de commencer",
+      "subtitle": "Rappel du rendu R2",
+      "notes": "Vérifier que chaque groupe a bien apporté un premier jet de slides — c'est la condition pour pouvoir répéter dans de bonnes conditions."
+    },
+    {
+      "type": "bullets",
+      "title": "Objectifs de la séance",
+      "items": [
+        "Vérifier le respect des règles de forme (sobriété, citations, images)",
+        "Répéter sa présentation devant un autre groupe",
+        "S'auto-évaluer et évaluer un autre groupe avec la grille élocution / non-verbal / timing"
+      ],
+      "notes": "La séance est centrée sur la répétition en conditions réelles, pas sur la rédaction de contenu — c'est la dernière occasion avant l'oral noté."
+    },
+    {
+      "type": "chapter",
+      "number": "01",
+      "title": "Rappel : les règles de forme",
+      "subtitle": "TD3",
+      "notes": "Chapitre court, re-projeter les slides 10-11 du TD3 si besoin."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0001",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Checklist avant de répéter"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0002",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0003",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 1000,
+          "h": 420,
+          "z": 1,
+          "data": {
+            "items": [
+              "Diapositives sobres, pas de template chargé",
+              "Pas de transition complexe",
+              "Citations entre crochets [Auteur, Année]",
+              "Images sourcées et alignées",
+              "Peu de texte : l'histoire se raconte à l'oral"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        }
+      ],
+      "notes": "Faire passer chaque groupe sur cette checklist en 2-3 minutes avant la répétition proprement dite, pour éviter de répéter une version qui sera de toute façon à corriger.",
+      "keypoints": [
+        "Vérifier la checklist de forme avant la répétition, pas après."
+      ]
+    },
+    {
+      "type": "chapter",
+      "number": "02",
+      "title": "Répétition croisée",
+      "subtitle": "Durée définie par l'enseignant",
+      "notes": "Préparer à l'avance l'appariement des groupes et l'ordre de passage."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0004",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 1 : répétition chronométrée"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0005",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0006",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Présenter devant un autre groupe, dans les conditions du jour J",
+              "Le groupe qui observe remplit la grille élocution / non-verbal / timing",
+              "Respecter le temps imparti (annoncé par l'enseignant)"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 21,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0007",
+          "type": "timer",
+          "x": 900,
+          "y": 420,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 480,
+            "label": "8 minutes"
+          }
+        }
+      ],
+      "notes": "Le timer est indicatif (8 minutes par défaut, à ajuster selon la durée réellement imposée pour l'oral final). Insister : on répète en conditions réelles, debout, avec ses slides projetées, pas assis à table.",
+      "keypoints": [
+        "Répéter dans les conditions réelles du jour J : debout, chronométré, slides projetées."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0008",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Grille d'observation"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0009",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0010",
+          "type": "table",
+          "x": 140,
+          "y": 170,
+          "w": 1000,
+          "h": 280,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Critère",
+                "À observer"
+              ],
+              [
+                "Élocution",
+                "Volume, timbre, rythme, pauses, prononciation, articulation"
+              ],
+              [
+                "Langage non verbal",
+                "Occupation de l'espace, gestes, sourire"
+              ],
+              [
+                "Timing",
+                "Respect du temps imparti, ni trop court ni trop long"
+              ],
+              [
+                "Forme des slides",
+                "Sobriété, citations, images sourcées"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 19,
+            "color": "var(--sl-text)",
+            "headerBg": "var(--sl-primary)",
+            "headerColor": "#ffffff",
+            "borderColor": "var(--sl-border)"
+          }
+        }
+      ],
+      "notes": "Cette grille reprend mot pour mot les critères du TD3 (slides élocution / langage non verbal). Le groupe observateur la remplit pendant la répétition de l'autre groupe, puis la rend au groupe concerné.",
+      "keypoints": [
+        "La grille remplie par le groupe observateur fait partie du rendu R3 (auto/co-évaluation)."
+      ]
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0011",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Exercice 2 : retour et ajustements"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0012",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0013",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 720,
+          "h": 460,
+          "z": 1,
+          "data": {
+            "items": [
+              "Le groupe observateur donne son retour oral (2-3 minutes)",
+              "Le groupe qui a présenté ajuste ce qui peut l'être avant la fin de la séance",
+              "Échanger les rôles si le temps le permet"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 21,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0014",
+          "type": "timer",
+          "x": 900,
+          "y": 150,
+          "w": 220,
+          "h": 170,
+          "z": 1,
+          "data": {
+            "duration": 900,
+            "label": "15 minutes"
+          }
+        }
+      ],
+      "notes": "Si le temps le permet, inverser les rôles pour que les deux groupes répètent et reçoivent un retour."
+    },
+    {
+      "type": "chapter",
+      "number": "03",
+      "title": "Rendu R3",
+      "subtitle": "Dépôt sur Moodle",
+      "notes": "Rappeler le dépôt avant la fin de la séance."
+    },
+    {
+      "type": "canvas",
+      "elements": [
+        {
+          "id": "el_0015",
+          "type": "heading",
+          "x": 60,
+          "y": 40,
+          "w": 1160,
+          "h": 70,
+          "z": 1,
+          "data": {
+            "text": "Rendu R3 : slides et auto-évaluation"
+          },
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "color": "var(--sl-heading)",
+            "textAlign": "left",
+            "fontFamily": "var(--sl-font-heading)"
+          }
+        },
+        {
+          "id": "el_0016",
+          "type": "shape",
+          "x": 60,
+          "y": 112,
+          "w": 160,
+          "h": 5,
+          "z": 1,
+          "data": {
+            "shape": "rect"
+          },
+          "style": {
+            "fill": "var(--sl-primary)",
+            "opacity": 1
+          }
+        },
+        {
+          "id": "el_0017",
+          "type": "list",
+          "x": 140,
+          "y": 170,
+          "w": 1000,
+          "h": 180,
+          "z": 1,
+          "data": {
+            "items": [
+              "Les slides quasi-finalisées (PDF ou lien)",
+              "La grille d'observation remplie (la vôtre, reçue du groupe qui vous a observé)"
+            ],
+            "ordered": false
+          },
+          "style": {
+            "fontSize": 22,
+            "color": "var(--sl-text)"
+          }
+        },
+        {
+          "id": "el_0018",
+          "type": "table",
+          "x": 140,
+          "y": 370,
+          "w": 1000,
+          "h": 230,
+          "z": 1,
+          "data": {
+            "rows": [
+              [
+                "Critère",
+                "Insuffisant",
+                "Satisfaisant",
+                "Très bien"
+              ],
+              [
+                "Respect des règles de forme",
+                "Slides chargées, citations/images non conformes",
+                "Règles globalement respectées, quelques oublis",
+                "Règles de forme toutes respectées"
+              ],
+              [
+                "Élocution et non-verbal observés",
+                "Peu travaillés, lecture du texte",
+                "Corrects, encore un peu hésitants",
+                "Maîtrisés, présentation vivante"
+              ],
+              [
+                "Respect du timing",
+                "Très en dessous ou très au-dessus du temps imparti",
+                "Proche du temps imparti",
+                "Timing respecté précisément"
+              ]
+            ]
+          },
+          "style": {
+            "fontSize": 17,
+            "color": "var(--sl-text)",
+            "headerBg": "var(--sl-primary)",
+            "headerColor": "#ffffff",
+            "borderColor": "var(--sl-border)"
+          }
+        }
+      ],
+      "notes": "Dernière grille avant l'oral noté : elle porte sur ce qui a été observé en répétition, pas une nouvelle relecture du fond (déjà évalué en R1/R2).",
+      "keypoints": [
+        "Dépôt Moodle avant la fin de la séance (+ tolérance courte)."
+      ]
+    },
+    {
+      "type": "bullets",
+      "title": "Si vous avez fini en avance",
+      "items": [
+        "Répéter une seconde fois, en chronométrant précisément",
+        "Demander un second avis à un autre groupe si possible"
+      ],
+      "notes": "Plus un groupe répète, plus l'oral noté se déroulera sereinement."
+    },
+    {
+      "type": "bullets",
+      "title": "Avant la présentation",
+      "items": [
+        "Relire une dernière fois vos slides",
+        "Vérifier votre matériel (clé USB, ordinateur, format de fichier)",
+        "Vérifier l'ordre de passage communiqué par l'enseignant"
+      ],
+      "notes": "Dernière slide avant les 2 séances de présentation — rassurer : tout le travail de fond (sujet, plan, forme) a déjà été fait et validé sur les 3 rendus précédents."
+    }
+  ]
+}
