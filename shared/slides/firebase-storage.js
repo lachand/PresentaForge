@@ -279,11 +279,16 @@
     // Firestore plafonne un champ de document ET le document entier à ~1 Mio. Les
     // decks avec images base64 dépassent largement → on découpe la chaîne JSON en
     // fragments stockés dans des documents FRÈRES de la même collection
-    // (`<id>__pN`), chacun sous la limite. Documents frères (pas sous-collection)
-    // → couverts par les mêmes règles de sécurité que `<id>`. Ils n'ont pas de
-    // champ `modified` donc `listPresentations()` (qui fait `orderBy('modified')`)
-    // les ignore automatiquement. Un deck sous la limite reste en `json` inline
-    // (rétro-compatible : `chunks` absent ou 0).
+    // (`<id>__pN`), chacun sous la limite. Documents frères (pas sous-collection) :
+    // une règle de sécurité du type `allow read: if resource.data.public == true`
+    // s'évalue document par document, donc chaque fragment doit PORTER SON PROPRE
+    // champ `public` (dupliqué depuis le document racine à l'écriture, ci-dessous) —
+    // sans ça, la lecture publique non authentifiée (loadPublicPresentation,
+    // slides/course.html) échoue avec "Missing or insufficient permissions" sur tout
+    // deck assez gros pour être fragmenté, même si le document racine est public.
+    // Ils n'ont pas de champ `modified` donc `listPresentations()` (qui fait
+    // `orderBy('modified')`) les ignore automatiquement. Un deck sous la limite
+    // reste en `json` inline (rétro-compatible : `chunks` absent ou 0).
     const _CHUNK_BYTES = 768 * 1024;   // marge sous ~1 048 487 octets
     const _partId = (id, i) => `${id}__p${i}`;
 
@@ -449,7 +454,7 @@
         const parts = [];
         for (let i = 0; i < json.length; i += _CHUNK_BYTES) parts.push(json.slice(i, i + _CHUNK_BYTES));
         const batch = _db.batch();
-        parts.forEach((s, i) => batch.set(col.doc(_partId(id, i)), { s }));
+        parts.forEach((s, i) => batch.set(col.doc(_partId(id, i)), { s, public: isPublic }));
         batch.set(col.doc(id), { ...meta, json: '', chunks: parts.length });
         await batch.commit();
         await _clearParts(col, id, parts.length); // supprime d'éventuels fragments en trop d'une version antérieure
