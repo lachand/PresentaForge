@@ -292,17 +292,32 @@
     const _CHUNK_BYTES = 768 * 1024;   // marge sous ~1 048 487 octets
     const _partId = (id, i) => `${id}__p${i}`;
 
-    /** Lit et concatène les fragments contigus `<id>__p0..` (s'arrête au premier absent). */
+    /**
+     * Lit et concatène les fragments `<id>__p0..`. Quand `expected` est connu (cas
+     * normal : `chunks` du document racine), on s'arrête PILE à ce nombre — on ne
+     * sonde JAMAIS un fragment au-delà. C'est nécessaire, pas juste une optimisation :
+     * en lecture publique non authentifiée, la règle de sécurité ne peut accorder
+     * l'accès qu'via `resource.data.public == true`, ce qui exige que le document
+     * EXISTE. Sur un document inexistant, Firestore ne peut pas distinguer "refusé"
+     * de "absent" pour un appelant anonyme : il renvoie "Missing or insufficient
+     * permissions" (jamais `exists:false`) — contrairement à la règle propriétaire
+     * (`request.auth.uid == userId`), qui elle résout proprement un doc absent en
+     * `exists:false` quel que soit son contenu. Avant ce correctif, la boucle sondait
+     * UN fragment de trop (`__pN` après le dernier `__p(N-1)` réel) pour détecter la
+     * fin de la liste : invisible pour le propriétaire connecté, mais une exception
+     * non rattrapée pour tout visiteur anonyme (slides/course.html) sur TOUT deck
+     * assez gros pour être fragmenté — même avec `public: true` sur chaque fragment.
+     * Seul le cas `expected` inconnu (0, legacy/orphelins) sonde encore à l'aveugle.
+     */
     async function _readParts(col, id, expected = 0) {
         let json = '';
         let i = 0;
-        for (;;) {
+        const limit = expected > 0 ? expected : 513; // garde-fou à 512 si expected inconnu
+        for (; i < limit; i++) {
             // eslint-disable-next-line no-await-in-loop
             const snap = await col.doc(_partId(id, i)).get();
             if (!snap.exists) break;
             json += (snap.data() || {}).s || '';
-            i++;
-            if (i > 512) break; // garde-fou
         }
         if (expected && i < expected) throw new Error(`Fragments incomplets : ${i}/${expected}`);
         return { json, count: i };
