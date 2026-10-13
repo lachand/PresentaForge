@@ -32,18 +32,29 @@ const _propsNotify = (message, type = '') => {
     if (typeof fn === 'function') fn(message, type);
 };
 
-const CODE_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Correction', 'Solution', 'Astuce', 'Bonnes pratiques', 'Erreur frequente', 'Demo', 'Synthese'];
-const CODE_LABEL_PRESETS = ['Code', 'Snippet', 'API', 'Debug', 'Performance', 'Bonnes pratiques', 'Correction', 'Erreur frequente', 'Analyse'];
-const DEFINITION_LABEL_PRESETS = ['Definition', 'Notion', 'Rappel', 'Theoreme', 'Propriete', 'Attention', 'Erreur frequente', 'A retenir', 'Vocabulaire'];
+/**
+ * Préréglage correspondant à une valeur, sans tenir compte des accents ni de la casse :
+ * un deck enregistré avant la correction des libellés (« Erreur frequente ») retrouve
+ * « Erreur fréquente » au lieu de basculer en « Personnalisé » (audit UX 2026-10, E-U2).
+ */
+function _matchPreset(presets, value) {
+    const norm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, ' ').toLowerCase().trim();
+    const target = norm(value);
+    return presets.find(p => norm(p) === target) || '__custom__';
+}
+
+const CODE_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Correction', 'Solution', 'Astuce', 'Bonnes pratiques', 'Erreur fréquente', 'Démo', 'Synthèse'];
+const CODE_LABEL_PRESETS = ['Code', 'Snippet', 'API', 'Debug', 'Performance', 'Bonnes pratiques', 'Correction', 'Erreur fréquente', 'Analyse'];
+const DEFINITION_LABEL_PRESETS = ['Définition', 'Notion', 'Rappel', 'Théorème', 'Propriété', 'Attention', 'Erreur fréquente', 'À retenir', 'Vocabulaire'];
 const DEFINITION_EXAMPLE_LABEL_PRESETS = ['Exemple', 'Application', 'Contre-exemple', 'Cas limite', 'Remarque'];
-const CARD_TITLE_PRESETS = ['Objectif', 'Consigne', 'Correction', 'Astuce', 'Erreur frequente', 'Checklist', 'A retenir'];
-const CALLOUT_LABEL_PRESETS = ['Info', 'Attention', 'Important', 'Astuce', 'A retenir', 'Erreur frequente'];
-const EXERCISE_TITLE_PRESETS = ['Exercice guide', 'Mise en pratique', 'Atelier', 'Challenge', 'Correction guidee'];
+const CARD_TITLE_PRESETS = ['Objectif', 'Consigne', 'Correction', 'Astuce', 'Erreur fréquente', 'Checklist', 'À retenir'];
+const CALLOUT_LABEL_PRESETS = ['Info', 'Attention', 'Important', 'Astuce', 'À retenir', 'Erreur fréquente'];
+const EXERCISE_TITLE_PRESETS = ['Exercice guidé', 'Mise en pratique', 'Atelier', 'Challenge', 'Correction guidée'];
 const BEFORE_AFTER_TITLE_PRESETS = ['Avant / Après', 'État initial / cible', 'Problème / solution', 'Comparaison'];
-const MISTAKE_TITLE_PRESETS = ['Erreur frequente vs correction', 'Piege classique', 'Mauvaise approche vs bonne approche'];
+const MISTAKE_TITLE_PRESETS = ['Erreur fréquente vs correction', 'Piège classique', 'Mauvaise approche vs bonne approche'];
 const RUBRIC_TITLE_PRESETS = ['Grille d’évaluation', 'Barème', 'Critères de réussite'];
-const TERMINAL_LABEL_PRESETS = ['Session terminal', 'Commandes', 'Sortie terminal', 'Debug CLI', 'Trace execution'];
-const ASSESSMENT_LABEL_PRESETS = ['Quiz', 'Exercice', 'Evaluation', 'Correction'];
+const TERMINAL_LABEL_PRESETS = ['Session terminal', 'Commandes', 'Sortie terminal', 'Debug CLI', 'Trace d’exécution'];
+const ASSESSMENT_LABEL_PRESETS = ['Quiz', 'Exercice', 'Évaluation', 'Correction'];
 const LABEL_TONE_PRESETS = [
     { value: 'auto', label: 'Auto (selon label)' },
     { value: 'primary', label: 'Primaire' },
@@ -334,11 +345,11 @@ function updatePropsPanel() {
             break;
 
         case 'definition': {
-            const blockLabel = String(d.label ?? d.blockLabel ?? 'Definition').trim() || 'Definition';
+            const blockLabel = String(d.label ?? d.blockLabel ?? 'Définition').trim() || 'Définition';
             const exampleLabel = String(d.exampleLabel ?? 'Exemple').trim() || 'Exemple';
             const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
-            const selectedBlockPreset = DEFINITION_LABEL_PRESETS.includes(blockLabel) ? blockLabel : '__custom__';
-            const selectedExamplePreset = DEFINITION_EXAMPLE_LABEL_PRESETS.includes(exampleLabel) ? exampleLabel : '__custom__';
+            const selectedBlockPreset = _matchPreset(DEFINITION_LABEL_PRESETS, blockLabel);
+            const selectedExamplePreset = _matchPreset(DEFINITION_EXAMPLE_LABEL_PRESETS, exampleLabel);
             const blockOptions = DEFINITION_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedBlockPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
@@ -348,10 +359,10 @@ function updatePropsPanel() {
             const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Definition</div>
-                <div class="props-row"><label>Label bloc</label><select id="sp-def-label-preset">${blockOptions}<option value="__custom__"${selectedBlockPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Label bloc</label><select id="sp-def-label-preset">${blockOptions}<option value="__custom__"${selectedBlockPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte bloc</label><input type="text" id="sp-def-label" value="${escAttr(blockLabel)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-def-tone">${toneOptions}</select></div>
-                <div class="props-row props-row-spaced"><label>Label exemple</label><select id="sp-def-example-label-preset">${exampleOptions}<option value="__custom__"${selectedExamplePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row props-row-spaced"><label>Label exemple</label><select id="sp-def-example-label-preset">${exampleOptions}<option value="__custom__"${selectedExamplePreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte exemple</label><input type="text" id="sp-def-example-label" value="${escAttr(exampleLabel)}" class="sp-elstyle-input"></div>
                 <div class="sp-hint-text sp-hint-text-lh">Le terme, la definition et l'exemple se modifient directement sur le canvas.</div>
             </div>`;
@@ -361,14 +372,14 @@ function updatePropsPanel() {
         case 'callout-box': {
             const labelValue = String(d.label ?? 'Info').trim() || 'Info';
             const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
-            const selectedPreset = CALLOUT_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const selectedPreset = _matchPreset(CALLOUT_LABEL_PRESETS, labelValue);
             const labelOptions = CALLOUT_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
             const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Callout box</div>
-                <div class="props-row"><label>Label</label><select id="sp-callout-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Label</label><select id="sp-callout-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-callout-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-callout-tone">${toneOptions}</select></div>
                 <label class="sp-field-label sp-field-label-top">Message</label>
@@ -378,8 +389,8 @@ function updatePropsPanel() {
         }
 
         case 'exercise-block': {
-            const titleValue = String(d.title ?? 'Exercice guide').trim() || 'Exercice guide';
-            const selectedTitlePreset = EXERCISE_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const titleValue = String(d.title ?? 'Exercice guidé').trim() || 'Exercice guidé';
+            const selectedTitlePreset = _matchPreset(EXERCISE_TITLE_PRESETS, titleValue);
             const titleOptions = EXERCISE_TITLE_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
@@ -387,7 +398,7 @@ function updatePropsPanel() {
             const hints = Array.isArray(d.hints) ? d.hints : [];
             html = `<div class="props-section">
                 <div class="props-section-title">Exercice</div>
-                <div class="props-row"><label>Titre</label><select id="sp-ex-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Titre</label><select id="sp-ex-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ex-title" value="${escAttr(titleValue)}" class="sp-elstyle-input"></div>
                 <label class="sp-field-label sp-field-label-top">Objectif</label>
                 <textarea id="sp-ex-objective" rows="3" class="sp-textarea">${esc(d.objective || '')}</textarea>
@@ -410,7 +421,7 @@ function updatePropsPanel() {
 
         case 'before-after': {
             const titleValue = String(d.title ?? 'Avant / Après').trim() || 'Avant / Après';
-            const selectedTitlePreset = BEFORE_AFTER_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const selectedTitlePreset = _matchPreset(BEFORE_AFTER_TITLE_PRESETS, titleValue);
             const titleOptions = BEFORE_AFTER_TITLE_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
@@ -418,7 +429,7 @@ function updatePropsPanel() {
             const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Before / After</div>
-                <div class="props-row"><label>Titre</label><select id="sp-ba-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Titre</label><select id="sp-ba-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ba-title" value="${escAttr(titleValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-ba-tone">${toneOptions}</select></div>
             </div>
@@ -436,8 +447,8 @@ function updatePropsPanel() {
         }
 
         case 'mistake-fix': {
-            const titleValue = String(d.title ?? 'Erreur frequente vs correction').trim() || 'Erreur frequente vs correction';
-            const selectedTitlePreset = MISTAKE_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const titleValue = String(d.title ?? 'Erreur fréquente vs correction').trim() || 'Erreur fréquente vs correction';
+            const selectedTitlePreset = _matchPreset(MISTAKE_TITLE_PRESETS, titleValue);
             const titleOptions = MISTAKE_TITLE_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
@@ -445,13 +456,13 @@ function updatePropsPanel() {
             const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Erreur / Correction</div>
-                <div class="props-row"><label>Titre</label><select id="sp-mf-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Titre</label><select id="sp-mf-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte titre</label><input type="text" id="sp-mf-title" value="${escAttr(titleValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-mf-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Langage</label><select id="sp-mf-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
             </div>
             <div class="props-section">
-                <div class="props-section-title">Erreur frequente</div>
+                <div class="props-section-title">Erreur fréquente</div>
                 <textarea id="sp-mf-mistake" rows="6" class="sp-textarea sp-textarea-mono sp-textarea-tabbed">${esc(d.mistake || '')}</textarea>
             </div>
             <div class="props-section">
@@ -464,7 +475,7 @@ function updatePropsPanel() {
         case 'rubric-block':
         case 'rubrick-block': {
             const titleValue = String(d.title ?? 'Grille d’évaluation').trim() || 'Grille d’évaluation';
-            const selectedTitlePreset = RUBRIC_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const selectedTitlePreset = _matchPreset(RUBRIC_TITLE_PRESETS, titleValue);
             const titleOptions = RUBRIC_TITLE_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
@@ -474,7 +485,7 @@ function updatePropsPanel() {
             const rows = Array.isArray(d.rows) ? d.rows : [];
             html = `<div class="props-section">
                 <div class="props-section-title">Rubric block</div>
-                <div class="props-row"><label>Titre</label><select id="sp-rb-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Titre</label><select id="sp-rb-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte titre</label><input type="text" id="sp-rb-title" value="${escAttr(titleValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-rb-tone">${toneOptions}</select></div>
             </div>
@@ -484,16 +495,15 @@ function updatePropsPanel() {
                 <textarea id="sp-rb-levels" rows="4" class="sp-textarea">${esc(levels.join('\n'))}</textarea>
             </div>
             <div class="props-section">
-                <div class="props-section-title">Critères (JSON)</div>
-                <textarea id="sp-rb-rows" rows="10" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(rows, null, 2))}</textarea>
-                <div class="sp-hint-text sp-hint-text-tight">Format: [{"criterion":"…","descriptors":["…","…","…"]}]</div>
+                <div class="props-section-title">Critères d'évaluation</div>
+                <textarea id="sp-rb-rows" rows="10" class="sp-textarea sp-textarea-mono sp-textarea-sm" data-json-list data-json-list-item="critère" data-json-list-add="+ Ajouter un critère" data-json-list-blank='{"criterion":"","descriptors":[]}'>${esc(JSON.stringify(rows, null, 2))}</textarea>
             </div>`;
             break;
         }
 
         case 'terminal-session': {
             const labelValue = String(d.label ?? 'Session terminal').trim() || 'Session terminal';
-            const selectedPreset = TERMINAL_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const selectedPreset = _matchPreset(TERMINAL_LABEL_PRESETS, labelValue);
             const labelOptions = TERMINAL_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
@@ -501,7 +511,7 @@ function updatePropsPanel() {
             const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Session terminal</div>
-                <div class="props-row"><label>Label</label><select id="sp-term-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Label</label><select id="sp-term-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-term-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-term-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Langage</label><select id="sp-term-lang"><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
@@ -516,14 +526,14 @@ function updatePropsPanel() {
             const steps = Array.isArray(d.stepperSteps) ? d.stepperSteps : [];
             const labelValue = String(d.label ?? d.blockTitle ?? 'Exemple').trim() || 'Exemple';
             const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
-            const selectedPreset = CODE_EXAMPLE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const selectedPreset = _matchPreset(CODE_EXAMPLE_LABEL_PRESETS, labelValue);
             const labelOptions = CODE_EXAMPLE_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
             const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Exemple</div>
-                <div class="props-row"><label>Titre</label><select id="sp-ce-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Titre</label><select id="sp-ce-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte titre</label><input type="text" id="sp-ce-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-ce-tone">${toneOptions}</select></div>
                 <label class="sp-field-label">Texte</label>
@@ -534,9 +544,8 @@ function updatePropsPanel() {
                 html += `<div class="props-section">
                     <div class="props-section-title">Stepper</div>
                     <div class="props-row"><label>Titre</label><input type="text" id="sp-ce-stepper-title" value="${escAttr(d.stepperTitle || '')}" class="sp-elstyle-input"></div>
-                    <label class="sp-field-label sp-field-label-top">Étapes JSON</label>
-                    <textarea id="sp-ce-stepper-steps" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(steps, null, 2))}</textarea>
-                    <div class="sp-hint-text sp-hint-text-tight">Format: [{"title":"...","detail":"...","code":"..."}]</div>
+                    <label class="sp-field-label sp-field-label-top">Étapes</label>
+                    <textarea id="sp-ce-stepper-steps" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm" data-json-list data-json-list-item="étape" data-json-list-add="+ Ajouter une étape" data-json-list-blank='{"title":"","detail":"","code":""}'>${esc(JSON.stringify(steps, null, 2))}</textarea>
                 </div>`;
             } else {
                 html += `<div class="props-section">
@@ -560,14 +569,14 @@ function updatePropsPanel() {
         case 'code': {
             const labelValue = String(d.label ?? 'Code').trim() || 'Code';
             const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
-            const selectedPreset = CODE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const selectedPreset = _matchPreset(CODE_LABEL_PRESETS, labelValue);
             const labelOptions = CODE_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
             const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Code</div>
-                <div class="props-row"><label>Label</label><select id="sp-code-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Label</label><select id="sp-code-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-code-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-code-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Lang</label><select id="sp-code-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JS</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
@@ -597,14 +606,14 @@ function updatePropsPanel() {
         case 'card': {
             const cardItems = d.items || [];
             const titleValue = String(d.title || '').trim();
-            const selectedTitlePreset = CARD_TITLE_PRESETS.includes(titleValue) ? titleValue : '__custom__';
+            const selectedTitlePreset = _matchPreset(CARD_TITLE_PRESETS, titleValue);
             const titleOptions = CARD_TITLE_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedTitlePreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
             const toneOptions = _toneOptionsHtml(_normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto'));
             html = `<div class="props-section">
                 <div class="props-section-title">Carte</div>
-                <div class="props-row"><label>Preset titre</label><select id="sp-card-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Preset titre</label><select id="sp-card-title-preset">${titleOptions}<option value="__custom__"${selectedTitlePreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-card-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-card-tone">${toneOptions}</select></div>
             </div>
@@ -790,14 +799,14 @@ function updatePropsPanel() {
             const hls = d.highlights || [];
             const labelValue = String(d.label ?? 'Code').trim() || 'Code';
             const toneValue = _normalizeTonePreset(d.tone ?? d.labelTone ?? 'auto');
-            const selectedPreset = CODE_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const selectedPreset = _matchPreset(CODE_LABEL_PRESETS, labelValue);
             const labelOptions = CODE_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
             const toneOptions = _toneOptionsHtml(toneValue);
             html = `<div class="props-section">
                 <div class="props-section-title">Code</div>
-                <div class="props-row"><label>Label</label><select id="sp-hl-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Label</label><select id="sp-hl-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-hl-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Couleur</label><select id="sp-hl-tone">${toneOptions}</select></div>
                 <div class="props-row"><label>Lang</label><select id="sp-hl-lang"><option value="python"${d.language === 'python' ? ' selected' : ''}>Python</option><option value="javascript"${d.language === 'javascript' ? ' selected' : ''}>JavaScript</option><option value="java"${d.language === 'java' ? ' selected' : ''}>Java</option><option value="c"${d.language === 'c' ? ' selected' : ''}>C</option><option value="bash"${d.language === 'bash' ? ' selected' : ''}>Bash / Terminal</option><option value="html"${d.language === 'html' ? ' selected' : ''}>HTML</option><option value="css"${d.language === 'css' ? ' selected' : ''}>CSS</option><option value="sql"${d.language === 'sql' ? ' selected' : ''}>SQL</option><option value="yaml"${d.language === 'yaml' ? ' selected' : ''}>YAML</option><option value="json"${d.language === 'json' ? ' selected' : ''}>JSON</option><option value="text"${d.language === 'text' ? ' selected' : ''}>Texte</option></select></div>
@@ -860,13 +869,13 @@ function updatePropsPanel() {
         case 'quiz-live': {
             const qlOpts = d.options || [];
             const labelValue = String(d.label ?? 'Quiz').trim() || 'Quiz';
-            const selectedPreset = ASSESSMENT_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const selectedPreset = _matchPreset(ASSESSMENT_LABEL_PRESETS, labelValue);
             const labelOptions = ASSESSMENT_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">Quiz</div>
-                <div class="props-row"><label>Label</label><select id="sp-ql-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Label</label><select id="sp-ql-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-ql-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <label class="sp-field-label">Question</label>
                 <textarea id="sp-ql-question" rows="3" class="sp-textarea">${esc(d.question || '')}</textarea>
@@ -900,13 +909,13 @@ function updatePropsPanel() {
 
         case 'mcq-single': {
             const labelValue = String(d.label ?? 'QCM simple').trim() || 'QCM simple';
-            const selectedPreset = ASSESSMENT_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const selectedPreset = _matchPreset(ASSESSMENT_LABEL_PRESETS, labelValue);
             const labelOptions = ASSESSMENT_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">QCM simple</div>
-                <div class="props-row"><label>Label</label><select id="sp-mcqs-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Label</label><select id="sp-mcqs-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-mcqs-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <label class="sp-field-label">Question</label>
                 <textarea id="sp-mcqs-question" rows="3" class="sp-textarea">${esc(d.question || '')}</textarea>
@@ -931,13 +940,13 @@ function updatePropsPanel() {
 
         case 'mcq-multi': {
             const labelValue = String(d.label ?? 'QCM multi').trim() || 'QCM multi';
-            const selectedPreset = ASSESSMENT_LABEL_PRESETS.includes(labelValue) ? labelValue : '__custom__';
+            const selectedPreset = _matchPreset(ASSESSMENT_LABEL_PRESETS, labelValue);
             const labelOptions = ASSESSMENT_LABEL_PRESETS
                 .map((preset) => `<option value="${escAttr(preset)}"${selectedPreset === preset ? ' selected' : ''}>${esc(preset)}</option>`)
                 .join('');
             html = `<div class="props-section">
                 <div class="props-section-title">QCM multi</div>
-                <div class="props-row"><label>Label</label><select id="sp-mcqm-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalise</option></select></div>
+                <div class="props-row"><label>Label</label><select id="sp-mcqm-label-preset">${labelOptions}<option value="__custom__"${selectedPreset === '__custom__' ? ' selected' : ''}>Personnalisé</option></select></div>
                 <div class="props-row"><label>Texte label</label><input type="text" id="sp-mcqm-label" value="${escAttr(labelValue)}" class="sp-elstyle-input"></div>
                 <label class="sp-field-label">Question</label>
                 <textarea id="sp-mcqm-question" rows="3" class="sp-textarea">${esc(d.question || '')}</textarea>
@@ -1040,9 +1049,8 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Algo stepper</div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-as-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
-                <label class="sp-field-label sp-field-label-top">Étapes JSON</label>
-                <textarea id="sp-as-steps" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(d.steps || [], null, 2))}</textarea>
-                <div class="sp-hint-text sp-hint-text-tight">Format: [{"title":"","detail":"","code":""}]</div>
+                <label class="sp-field-label sp-field-label-top">Étapes</label>
+                <textarea id="sp-as-steps" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm" data-json-list data-json-list-item="étape" data-json-list-add="+ Ajouter une étape" data-json-list-blank='{"title":"","detail":"","code":""}'>${esc(JSON.stringify(d.steps || [], null, 2))}</textarea>
             </div>`;
             break;
 
@@ -1051,9 +1059,8 @@ function updatePropsPanel() {
                 <div class="props-section-title">Gallery annotable</div>
                 <div class="props-row"><label>Image</label><input type="text" id="sp-ga-src" value="${escAttr(d.src || '')}" placeholder="../images/..." class="sp-elstyle-input"></div>
                 <div class="props-row"><label>Texte alt</label><input type="text" id="sp-ga-alt" value="${escAttr(d.alt || '')}" placeholder="Description de l'image annotée" class="sp-elstyle-input"></div>
-                <label class="sp-field-label sp-field-label-top">Notes JSON</label>
-                <textarea id="sp-ga-notes" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(d.notes || [], null, 2))}</textarea>
-                <div class="sp-hint-text sp-hint-text-tight">Format: [{"x":25,"y":40,"text":"..."}]</div>
+                <label class="sp-field-label sp-field-label-top">Notes sur l'image</label>
+                <textarea id="sp-ga-notes" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm" data-json-list data-json-list-item="note" data-json-list-add="+ Ajouter une note" data-json-list-blank='{"x":50,"y":50,"text":""}'>${esc(JSON.stringify(d.notes || [], null, 2))}</textarea>
             </div>`;
             break;
 
@@ -1070,9 +1077,8 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Kanban mini</div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-kb-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
-                <label class="sp-field-label sp-field-label-top">Colonnes JSON</label>
-                <textarea id="sp-kb-columns" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(d.columns || [], null, 2))}</textarea>
-                <div class="sp-hint-text sp-hint-text-tight">Format: [{"name":"À faire","cards":["..."]}]</div>
+                <label class="sp-field-label sp-field-label-top">Colonnes</label>
+                <textarea id="sp-kb-columns" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm" data-json-list data-json-list-item="colonne" data-json-list-add="+ Ajouter une colonne" data-json-list-blank='{"name":"","cards":[]}'>${esc(JSON.stringify(d.columns || [], null, 2))}</textarea>
             </div>`;
             break;
 
@@ -1090,9 +1096,8 @@ function updatePropsPanel() {
             html = `<div class="props-section">
                 <div class="props-section-title">Flashcards</div>
                 <div class="props-row"><label>Titre</label><input type="text" id="sp-fc-title" value="${escAttr(d.title || '')}" class="sp-elstyle-input"></div>
-                <label class="sp-field-label sp-field-label-top">Cartes JSON</label>
-                <textarea id="sp-fc-cards" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm">${esc(JSON.stringify(d.cards || [], null, 2))}</textarea>
-                <div class="sp-hint-text sp-hint-text-tight">Format: [{"front":"...","back":"..."}]</div>
+                <label class="sp-field-label sp-field-label-top">Cartes</label>
+                <textarea id="sp-fc-cards" rows="8" class="sp-textarea sp-textarea-mono sp-textarea-sm" data-json-list data-json-list-item="carte" data-json-list-add="+ Ajouter une carte" data-json-list-blank='{"front":"","back":""}'>${esc(JSON.stringify(d.cards || [], null, 2))}</textarea>
             </div>`;
             break;
 
@@ -1112,6 +1117,8 @@ function updatePropsPanel() {
     </div>`;
 
     panel.innerHTML = html;
+    // Listes structurées (critères, étapes, colonnes, cartes, notes) : cartes à champs au lieu du JSON brut.
+    if (typeof enhanceJsonListEditors === 'function') enhanceJsonListEditors(panel);
     window.OEILinkFormLabels?.(panel);
     _bindPropsPanel(el);
     if (typeof window.renderA11yElementHints === 'function') {
@@ -1157,8 +1164,8 @@ function _bindPropsPanel(el) {
                 canvasEditor.updateData(id, { data: { label: value } });
                 const presetSelect = document.getElementById('sp-def-label-preset');
                 if (presetSelect) {
-                    const normalized = value.trim() || 'Definition';
-                    presetSelect.value = DEFINITION_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    const normalized = value.trim() || 'Définition';
+                    presetSelect.value = _matchPreset(DEFINITION_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-def-label-preset', inp => {
@@ -1178,7 +1185,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-def-example-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Exemple';
-                    presetSelect.value = DEFINITION_EXAMPLE_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(DEFINITION_EXAMPLE_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-def-example-label-preset', inp => {
@@ -1200,7 +1207,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-callout-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Info';
-                    presetSelect.value = CALLOUT_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(CALLOUT_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-callout-label-preset', inp => {
@@ -1223,8 +1230,8 @@ function _bindPropsPanel(el) {
                 canvasEditor.updateData(id, { data: { title: value } });
                 const presetSelect = document.getElementById('sp-ex-title-preset');
                 if (presetSelect) {
-                    const normalized = value.trim() || 'Exercice guide';
-                    presetSelect.value = EXERCISE_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    const normalized = value.trim() || 'Exercice guidé';
+                    presetSelect.value = _matchPreset(EXERCISE_TITLE_PRESETS, normalized);
                 }
             });
             bindChange('sp-ex-title-preset', inp => {
@@ -1253,7 +1260,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-ba-title-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Avant / Après';
-                    presetSelect.value = BEFORE_AFTER_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(BEFORE_AFTER_TITLE_PRESETS, normalized);
                 }
             });
             bindChange('sp-ba-title-preset', inp => {
@@ -1279,8 +1286,8 @@ function _bindPropsPanel(el) {
                 canvasEditor.updateData(id, { data: { title: value } });
                 const presetSelect = document.getElementById('sp-mf-title-preset');
                 if (presetSelect) {
-                    const normalized = value.trim() || 'Erreur frequente vs correction';
-                    presetSelect.value = MISTAKE_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    const normalized = value.trim() || 'Erreur fréquente vs correction';
+                    presetSelect.value = _matchPreset(MISTAKE_TITLE_PRESETS, normalized);
                 }
             });
             bindChange('sp-mf-title-preset', inp => {
@@ -1307,7 +1314,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-rb-title-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Grille d’évaluation';
-                    presetSelect.value = RUBRIC_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(RUBRIC_TITLE_PRESETS, normalized);
                 }
             });
             bindChange('sp-rb-title-preset', inp => {
@@ -1336,7 +1343,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-term-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Session terminal';
-                    presetSelect.value = TERMINAL_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(TERMINAL_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-term-label-preset', inp => {
@@ -1366,7 +1373,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-code-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Code';
-                    presetSelect.value = CODE_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(CODE_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-code-label-preset', inp => {
@@ -1412,7 +1419,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-card-title-preset');
                 if (presetSelect) {
                     const normalized = value.trim();
-                    presetSelect.value = CARD_TITLE_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(CARD_TITLE_PRESETS, normalized);
                 }
             });
             bindChange('sp-card-title-preset', inp => {
@@ -1863,7 +1870,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-hl-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Code';
-                    presetSelect.value = CODE_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(CODE_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-hl-label-preset', inp => {
@@ -1947,7 +1954,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-ql-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Quiz';
-                    presetSelect.value = ASSESSMENT_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(ASSESSMENT_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-ql-label-preset', inp => {
@@ -2002,7 +2009,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-mcqs-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'QCM simple';
-                    presetSelect.value = ASSESSMENT_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(ASSESSMENT_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-mcqs-label-preset', inp => {
@@ -2033,7 +2040,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-mcqm-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'QCM multi';
-                    presetSelect.value = ASSESSMENT_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(ASSESSMENT_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-mcqm-label-preset', inp => {
@@ -2167,7 +2174,7 @@ function _bindPropsPanel(el) {
                 const presetSelect = document.getElementById('sp-ce-label-preset');
                 if (presetSelect) {
                     const normalized = value.trim() || 'Exemple';
-                    presetSelect.value = CODE_EXAMPLE_LABEL_PRESETS.includes(normalized) ? normalized : '__custom__';
+                    presetSelect.value = _matchPreset(CODE_EXAMPLE_LABEL_PRESETS, normalized);
                 }
             });
             bindChange('sp-ce-label-preset', inp => {

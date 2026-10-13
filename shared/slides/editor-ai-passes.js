@@ -58,7 +58,7 @@
         }
         return ns;
     }
-    const _createAIPassRunnerOverlay = (total) => _reviewUiModule()._createAIPassRunnerOverlay(total);
+    const _createAIPassRunnerOverlay = (total, opts) => _reviewUiModule()._createAIPassRunnerOverlay(total, opts);
     const _reviewAIPassOutput = (args) => _reviewUiModule()._reviewAIPassOutput(args);
     const _reviewPass2IllustrationsChoice = (items) => _reviewUiModule()._reviewPass2IllustrationsChoice(items);
     const _reviewPass3GeneratedImagesChoice = (items) => _reviewUiModule()._reviewPass3GeneratedImagesChoice(items);
@@ -774,7 +774,13 @@ async function _runGeminiFivePassFlow({ brief, tuning, pipeline, ai }) {
         return;
     }
 
-    const runner = _createAIPassRunnerOverlay(5);
+    // « Arrêter » interrompt la requête en cours (AbortController) : plus besoin d'attendre la fin
+    // d'une passe de plusieurs dizaines de secondes (audit UX 2026-10, E-X1). Les noms de passes
+    // remplacent « Passe 1…5 » (E-X4).
+    const runner = _createAIPassRunnerOverlay(5, {
+        onStop: () => _client.stopAIGeneration(),
+        stepNames: ['Plan pédagogique', 'Composants visuels', 'JSON complet', 'Composants et lisibilité', 'Validation finale'],
+    });
     const passNames = {
         1: 'Plan pédagogique',
         2: 'Composants visuels',
@@ -784,8 +790,10 @@ async function _runGeminiFivePassFlow({ brief, tuning, pipeline, ai }) {
     };
     const isCancelledError = (err) => (
         err?.code === _AI_PASS_CANCELLED_CODE
+        || err?.code === _client.AI_ABORTED_CODE   // « Arrêter » pendant une génération
         || err?.code === (window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED')
     );
+    _client.resetAIStop();
     try {
         const promptTemplate = await _fetchAIPromptTemplate();
         const previous = {};
@@ -953,7 +961,7 @@ async function _runGeminiFivePassFlow({ brief, tuning, pipeline, ai }) {
                 });
                 const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: `${providerLabel} ${ai.model}` });
                 if (!ok) throw _makeAIPassCancelledError('import-final');
-                editor.load(result.data);
+                await loadExternalDeck(editor, result.data, { reason: 'before-ai' });
                 notify(`Pipeline ${providerLabel} terminé (${ai.model})`, 'success');
                 break;
             } catch (err) {
@@ -974,6 +982,7 @@ async function _runGeminiFivePassFlow({ brief, tuning, pipeline, ai }) {
         }
     } finally {
         runner.close();
+        _client.resetAIStop();
     }
 }
 

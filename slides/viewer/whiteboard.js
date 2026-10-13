@@ -232,6 +232,9 @@ export function createWhiteboardController(deps) {
         document.getElementById('wb-text-editor-input')?.addEventListener('input', renderTextDraftPreview);
         document.getElementById('wb-text-confirm')?.addEventListener('click', confirmTextEditor);
         document.getElementById('wb-text-cancel')?.addEventListener('click', closeTextEditor);
+        // Phase de capture + stopImmediatePropagation : Retour arrière / Suppr suppriment le
+        // tracé sélectionné SANS atteindre la navigation présentateur (Retour arrière = slide
+        // précédente), quel que soit l'ordre d'enregistrement des écouteurs (audit UX 2026-10, W1).
         document.addEventListener('keydown', e => {
             if (!wb.active) return;
             const editorOpen = document.getElementById('wb-text-editor')?.classList.contains('active');
@@ -240,9 +243,11 @@ export function createWhiteboardController(deps) {
                 return;
             }
             if ((e.key === 'Delete' || e.key === 'Backspace') && wb.tool === 'select') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
                 deleteSelected();
             }
-        });
+        }, true);
 
         emitSyncState('init', false);
     }

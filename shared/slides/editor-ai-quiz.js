@@ -368,7 +368,7 @@ async function _runGeminiQuizAugmentFlow({ tuning, ai }) {
         }
 
         const result = _insertQuizSlidesIntoPresentation(current, plan);
-        editor.load(result.data);
+        await loadExternalDeck(editor, result.data, { reason: 'before-ai-quiz', unlink: false });
         notify(`${result.inserted} slide(s) quiz ajoutée(s)`, 'success');
     } catch (err) {
         notify(`Ajout de quiz impossible: ${err?.message || 'erreur inconnue'}`, 'error');

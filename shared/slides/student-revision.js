@@ -231,7 +231,11 @@
             const status = document.getElementById('revision-status');
             const stats = revisionStats();
             if (status) {
-                status.innerHTML = `${icon('bookmark_star')}<span>Deck ${stats.total} · Due ${stats.dueNow} · N ${stats.counts.new} · R ${stats.counts.review} · K ${stats.counts.known} · Semaine ${stats.weeklyDone}/${stats.weeklyGoal}</span>`;
+                // Libellés en français courant, sans abréviations (audit UX 2026-10, V1). Seuls des nombres
+                // sont interpolés : aucun contenu externe dans ce HTML.
+                const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+                const due = stats.dueNow > 0 ? `${plural(stats.dueNow, 'diapo à revoir aujourd\'hui', 'diapos à revoir aujourd\'hui')}` : 'Rien à revoir aujourd\'hui';
+                status.innerHTML = `${icon('bookmark_star')}<span>${due} · ${plural(stats.counts.new, 'nouvelle', 'nouvelles')} · ${plural(stats.counts.review, 'en cours', 'en cours')} · ${plural(stats.counts.known, 'maîtrisée', 'maîtrisées')} · objectif de la semaine : ${stats.weeklyDone} / ${stats.weeklyGoal}</span>`;
             }
 
             const currentBucket = revisionEntry(st.currentIndex).bucket;
@@ -244,19 +248,19 @@
             const exit = document.getElementById('revision-exit');
 
             if (markNew) {
-                markNew.innerHTML = `${icon('refresh')}<span>Nouveau</span>`;
+                markNew.innerHTML = `${icon('refresh')}<span>Pas du tout</span>`;
                 markNew.classList.toggle('active', currentBucket === 'new');
             }
             if (markReview) {
-                markReview.innerHTML = `${icon('clock')}<span>À revoir</span>`;
+                markReview.innerHTML = `${icon('clock')}<span>Un peu</span>`;
                 markReview.classList.toggle('active', currentBucket === 'review');
             }
             if (markKnown) {
-                markKnown.innerHTML = `${icon('check')}<span>Connu</span>`;
+                markKnown.innerHTML = `${icon('check')}<span>Bien</span>`;
                 markKnown.classList.toggle('active', currentBucket === 'known');
             }
             if (markEasy) {
-                markEasy.innerHTML = `${icon('flash') || icon('check')}<span>Facile</span>`;
+                markEasy.innerHTML = `${icon('flash') || icon('check')}<span>Parfaitement</span>`;
                 markEasy.classList.toggle('active', currentBucket === 'known' && Number(revisionEntry(st.currentIndex).lastGrade) >= 5);
             }
             if (exportBtn) exportBtn.innerHTML = `${icon('download') || icon('copy')}<span>Export</span>`;
@@ -710,9 +714,9 @@
                 try {
                     const raw = await file.text();
                     const parsed = JSON.parse(raw);
-                    if (!importRevisionProgress(parsed)) alert('Fichier de progression invalide.');
+                    if (!importRevisionProgress(parsed)) H.render.showNotice('Ce fichier n\'est pas une progression de révision valide.', 5000);
                 } catch (err) {
-                    alert('Import impossible: JSON invalide.');
+                    H.render.showNotice('Import impossible : le fichier est illisible (JSON invalide).', 5000);
                 } finally {
                     e.target.value = '';
                 }

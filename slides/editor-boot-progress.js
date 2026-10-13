@@ -1,7 +1,11 @@
 /* editor-boot-progress.js — barre de progression du bootstrap éditeur.
    Extrait de editor.html (chantier 8 : plus de <script> inline → CSP script-src 'self'). */
 (function(){
-    var loaded=0, TOTAL=76;
+    var loaded=0, TOTAL=76;   // valeur de repli ; remplacée par le total réel annoncé par le bootstrap
+    window.addEventListener('oei:editor-bootstrap-start',function(e){
+        var t=e&&e.detail&&Number(e.detail.total);
+        if(t>0) TOTAL=t;
+    });
     window.addEventListener('oei:editor-bootstrap-progress',function(){
         loaded++;
         var b=document.getElementById('sl-boot-bar');

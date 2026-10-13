@@ -14,6 +14,12 @@
 /* editor-preview.js — Slide list, drag-and-drop, canvas editor mount, preview rendering, popovers, template conversion */
 
 let _canvasLoadedIndex = -1;
+/**
+ * Force le rechargement du canvas depuis `editor.data` au prochain rendu. À appeler
+ * après toute mutation directe des données hors du canvas (rechercher/remplacer…),
+ * sinon le canvas garde ses éléments en mémoire et réécrit l'ancienne valeur.
+ */
+function invalidateCanvasEditor() { _canvasLoadedIndex = -1; }
 const _previewRuntime = window.OEIEditorRuntimeState?.create
     ? window.OEIEditorRuntimeState.create(window)
     : null;
@@ -155,10 +161,7 @@ function renderSlideList() {
                     else activeEditor.duplicateSlide(i);
                     break;
                 case 'del': {
-                    const label = target.length > 1 ? `${target.length} slides supprimés` : 'Slide supprimé';
-                    if (target.length > 1 && typeof activeEditor.removeSlides === 'function') activeEditor.removeSlides(target);
-                    else activeEditor.removeSlide(i);
-                    notifyUndo(label, () => activeEditor.undo());
+                    _deleteSlidesWithUndo(activeEditor, target);  // editor-bindings.js
                     break;
                 }
             }
@@ -386,8 +389,10 @@ function positionPopover(popover, refEvent) {
         left = refEvent.clientX + 12;
         top = refEvent.clientY - 30;
     } else {
-        const preview = document.getElementById('preview-wrapper');
-        const r = preview.getBoundingClientRect();
+        // L'id réel est `preview-wrap` (l'ancien `preview-wrapper` n'existe pas : TypeError
+        // quand le popover s'ouvrait sans événement souris, ex. « Fichier local… »).
+        const preview = document.getElementById('preview-wrap');
+        const r = preview ? preview.getBoundingClientRect() : { right: ww, top: 0 };
         left = r.right - 340;
         top = r.top + 40;
     }

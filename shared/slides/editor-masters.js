@@ -440,14 +440,14 @@ function applyMaster(masterId, options = {}) {
 /**
  * Save the current slide as a custom master.
  */
-function saveAsMaster(name) {
+async function saveAsMaster(name) {
     const slide = editor.currentSlide;
     if (!slide || slide.type !== 'canvas') {
         notify('Sélectionnez un slide canvas', 'info');
         return;
     }
     if (!name) {
-        name = prompt('Nom du master :');
+        name = await OEIDialog.prompt('Nom du master :', { title: 'Enregistrer comme master', placeholder: 'ex. : Titre de section' });
         if (!name) return;
     }
     editor.data.masters = editor.data.masters || [];

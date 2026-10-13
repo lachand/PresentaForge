@@ -1577,7 +1577,7 @@ html, body {
     min-width: 16px; height: 16px; padding: 0 4px;
     border-radius: 8px; font-size: 0.55rem; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
-    background: var(--primary); color: #fff; line-height: 1; pointer-events: none;
+    background: var(--primary); color: var(--on-primary, #fff); line-height: 1; pointer-events: none;
 }
 .tb-badge.warning { background: var(--warning); }
 .tb-badge.danger { background: var(--danger); }
@@ -2139,7 +2139,7 @@ html, body {
     font-family: var(--font); transition: all var(--transition-fast);
 }
 .aspect-btn:hover { border-color: var(--primary); color: var(--primary); }
-.aspect-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.aspect-btn.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary, #fff); }
 
 /* H1: Zoom controls */
 .zoom-controls { display: flex; align-items: center; gap: 4px; }
@@ -2279,7 +2279,7 @@ html, body {
     font-family: var(--font); transition: all var(--transition-fast);
 }
 .transition-chip:hover { border-color: var(--primary); color: var(--primary); }
-.transition-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.transition-chip.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary, #fff); }
 
 /* ── Shape picker dropdown ── */
 .shape-picker {
@@ -2423,7 +2423,7 @@ html, body {
     color: var(--muted); font-size: 0.75rem; transition: all var(--transition-fast);
 }
 .fmt-toggle:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); }
-.fmt-toggle.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.fmt-toggle.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary, #fff); }
 .fmt-toggle .ms { font-size: 12px; }
 
 /* ── Image fit selector ── */
@@ -2435,7 +2435,7 @@ html, body {
     font-family: var(--font); transition: all var(--transition-fast);
 }
 .fit-btn:hover { border-color: var(--primary); color: var(--primary); }
-.fit-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.fit-btn.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary, #fff); }
 
 /* ── CSS filter presets ── */
 .filter-chips { display: flex; flex-wrap: wrap; gap: 2px; }
@@ -2958,7 +2958,7 @@ input[type="number"]::-webkit-outer-spin-button {
     font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
 }
 .cel-rich-btn:hover { background: var(--primary-muted, rgba(129,140,248,0.12)); }
-.cel-rich-btn.active { background: var(--primary, #818cf8); color: #fff; }
+.cel-rich-btn.active { background: var(--primary, #818cf8); color: var(--on-primary, #fff); }
 
 /* ── File drop overlay ── */
 .drop-overlay {
@@ -2984,7 +2984,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .tl-toggle-btn.active { color: var(--primary); border-color: var(--primary); background: var(--primary-muted); }
 .tl-toggle-btn svg { opacity: .7; flex-shrink: 0; }
 .timeline-count {
-    background: var(--primary); color: #fff;
+    background: var(--primary); color: var(--on-primary, #fff);
     font-size: 8px; font-weight: 700; min-width: 14px;
     height: 14px; border-radius: 7px; display: inline-flex;
     align-items: center; justify-content: center; padding: 0 3px;
@@ -3322,7 +3322,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .copy-slide-cancel-btn { background: transparent; }
 .copy-slide-confirm-btn {
     background: var(--primary, #818cf8);
-    color: #fff;
+    color: var(--on-primary, #fff);
     border-color: transparent;
 }
 .copy-slide-confirm-btn:disabled {
@@ -4499,3 +4499,68 @@ body.is-loading #preview-frame {
     .split-btn-main { min-height: 44px; }
     .ribbon-tab { height: 48px; padding: 0 16px; }
 }
+
+/* Bouton « Présenter » permanent de la barre d'onglets (audit UX 2026-10, E-I1) */
+.ribbon-present-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-left: 6px; padding: 4px 12px; min-height: 28px;
+    font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+}
+.ribbon-present-btn .ms { font-size: 16px; }
+
+/* Indicateur de sauvegarde : état « dans ce navigateur seulement » + cliquable (E-D6) */
+.save-dot.local { background: var(--on-surface-muted, #757682); }
+.save-indicator { cursor: pointer; border-radius: 6px; padding: 2px 6px; }
+.save-indicator:hover { background: var(--surface-container-high, rgba(0,0,0,.05)); }
+
+/* Aide des raccourcis et palette (audit UX 2026-10, T12 / E-I4 / E-I5) */
+.shortcuts-modal { max-height: 86vh; display: flex; flex-direction: column; }
+.shortcuts-body { overflow-y: auto; display: grid; gap: 14px 24px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.shortcuts-body h3 { margin: 0 0 6px; font-size: 0.85rem; color: var(--on-surface-variant, #414750); }
+.shortcuts-tips { grid-column: 1 / -1; }
+.shortcuts-tips ul { margin: 0; padding-left: 1.2em; line-height: 1.6; }
+.shortcuts-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.shortcuts-table th { text-align: left; font-weight: 400; padding: 4px 12px 4px 0; white-space: nowrap; width: 1%; }
+.shortcuts-table td { padding: 4px 0; }
+.shortcuts-modal kbd, .cmd-shortcut {
+    font: 600 0.72rem var(--font-mono, ui-monospace, monospace);
+    padding: 2px 6px; border-radius: 4px;
+    background: var(--surface-container-high, rgba(0,0,0,.06));
+    border: 1px solid var(--outline-variant, rgba(0,0,0,.15));
+}
+.cmd-shortcut { margin-left: auto; opacity: 0.85; }
+.command-palette-item { display: flex; align-items: center; gap: 8px; }
+.command-palette-empty { padding: 16px; text-align: center; color: var(--on-surface-variant, #414750); font-size: 0.85rem; }
+
+/* Bouton « Arrêter la génération » de la fenêtre de progression IA (audit UX 2026-10, E-X1) */
+.ai-pass-stop-row { display: flex; justify-content: flex-end; margin: 4px 0 8px; }
+.ai-pass-stop-row[hidden] { display: none; }
+
+/* Éditeur de listes structurées (audit UX 2026-10, E-P1) */
+.jle { display: grid; gap: 8px; }
+.jle-list { display: grid; gap: 8px; }
+.jle-item { border: 1px solid var(--outline-variant, rgba(0,0,0,.15)); border-radius: 8px; padding: 8px 10px; margin: 0; min-width: 0; }
+.jle-item legend { font-size: 0.78rem; font-weight: 700; padding: 0 6px; }
+.jle-field { display: grid; gap: 2px; margin-bottom: 6px; }
+.jle-field label { font-size: 0.74rem; color: var(--on-surface-variant, #414750); }
+.jle-input { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.8rem; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--outline-variant, rgba(0,0,0,.2)); background: var(--surface-container-lowest, #fff); color: inherit; }
+textarea.jle-input { resize: vertical; }
+.jle-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.jle-btn, .jle-add { font: inherit; font-size: 0.76rem; padding: 4px 10px; min-height: 28px; border-radius: 6px; border: 1px solid var(--outline-variant, rgba(0,0,0,.2)); background: var(--surface-container, #f3edea); color: inherit; cursor: pointer; }
+.jle-btn:disabled { opacity: 0.4; cursor: default; }
+.jle-btn--danger { color: var(--danger, #c62828); }
+.jle-add { justify-self: start; font-weight: 600; }
+.jle-empty { margin: 0; font-size: 0.78rem; color: var(--on-surface-variant, #414750); }
+.jle-advanced summary { font-size: 0.74rem; cursor: pointer; color: var(--on-surface-variant, #414750); }
+.jle-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Pied de la colonne des slides : bouton Aide (raccourcis et premiers pas) */
+.sn-footer { flex-shrink: 0; padding: 4px 10px 8px; }
+.sn-footer-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: none; border-radius: 6px; cursor: pointer;
+    padding: 5px 8px; font: inherit; font-size: 0.8125rem;
+    color: var(--on-surface-variant);
+}
+.sn-footer-item:hover { background: var(--surface-container-high); color: var(--on-surface); }
+.sn-footer-item:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }

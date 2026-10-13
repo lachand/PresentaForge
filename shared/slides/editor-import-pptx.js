@@ -86,15 +86,14 @@ async function importPowerPoint() {
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return resolve(false);
-            notify('Import PPTX en cours…', 'warning');
+            // Choix AVANT l'analyse (qui peut être longue) : ajouter à la fin ou remplacer.
+            const mode = await chooseImportMode(editor, file.name);
+            if (!mode) { notify('Import PPTX annulé', 'info'); return resolve(false); }
+            notify('Import PPTX en cours…', 'info');
             try {
                 const data = await _pptxParse(file);
-                const currentCount = editor?.data?.slides?.length || 0;
-                const msg = `Remplacer la présentation en cours (${currentCount} slide${currentCount > 1 ? 's' : ''}) par les ${data.slides.length} slides importées de ${file.name} ?\nCette action n'est pas annulable (Ctrl+Z ne reviendra pas en arrière).`;
-                const ok = window.OEIDialog?.confirm ? await window.OEIDialog.confirm(msg) : window.confirm(msg);
-                if (!ok) { notify('Import PPTX annulé', 'warning'); return resolve(false); }
-                editor.load(data);
-                notify(`Importé : ${data.slides.length} slides depuis ${file.name}`, 'success');
+                await applyImportedDeck(editor, data, mode);
+                notify(`${mode === 'append' ? 'Ajouté' : 'Importé'} : ${data.slides.length} slides depuis ${file.name} (Ctrl+Z pour annuler)`, 'success');
                 resolve(true);
             } catch (err) {
                 console.error('[OEI] PPTX import error:', err);

@@ -83,6 +83,18 @@ function searchNext() {
     _searchCursor = { slideIdx: 0, fieldIdx: 0 };
     if (typeof ctx.notify === 'function') ctx.notify('Aucun résultat (rebouclé)', 'warning');
 }
+/**
+ * Valide une mutation directe de `editor.data` : historique + rafraîchissement de
+ * l'interface (miniatures, aperçu) + rechargement du canvas, qui sinon gardait ses
+ * éléments en mémoire et réécrivait l'ancienne valeur à la modification suivante.
+ */
+function _commitSearchMutation(ctx) {
+    const ed = ctx.editor;
+    if (!ed) return;
+    ed._push();
+    if (typeof invalidateCanvasEditor === 'function') invalidateCanvasEditor();  // editor-preview.js
+    if (typeof ed.onUpdate === 'function') ed.onUpdate('slides');
+}
 function replaceOne() {
     const ctx = _searchCtx();
     const q = document.getElementById('search-input')?.value;
@@ -94,8 +106,9 @@ function replaceOne() {
     for (const f of fields) {
         const val = String(f.obj[f.key]);
         if (val.toLowerCase().includes(q.toLowerCase())) {
-            f.obj[f.key] = val.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), r);
-            ctx.editor?._push();
+            // Remplaçant en fonction : `r` est inséré tel quel (pas d'interprétation de `$&`, `$1`…).
+            f.obj[f.key] = val.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), () => r);
+            _commitSearchMutation(ctx);
             if (typeof ctx.notify === 'function') ctx.notify('Remplacé', 'success');
             return;
         }
@@ -112,12 +125,12 @@ function replaceAll() {
     for (const slide of slides) {
         for (const f of _getSearchableFields(slide)) {
             const val = String(f.obj[f.key]);
-            if (re.test(val)) { f.obj[f.key] = val.replace(re, r); count++; }
+            if (re.test(val)) { f.obj[f.key] = val.replace(re, () => r); count++; }
             re.lastIndex = 0;
         }
     }
     if (count) {
-        ctx.editor?._push();
+        _commitSearchMutation(ctx);
         if (typeof ctx.notify === 'function') ctx.notify(`${count} remplacement(s)`, 'success');
     } else if (typeof ctx.notify === 'function') {
         ctx.notify('Aucun résultat', 'warning');

@@ -180,8 +180,60 @@ export function createRoomPeerLifecycleRuntime(params = {}) {
         peerReconnectRuntime.clear();
     };
 
+    // R-D2 : reconnexion P2P plafonnée (elle était infinie, sans issue affichée).
+    const MAX_PEER_RECONNECT = 8;
+    // R-D1 : délai sans ouverture P2P au-delà duquel la salle s'ouvre via le relais.
+    const RELAY_FALLBACK_MS = 6000;
+    const setTimeoutFn = (typeof params.setTimeoutFn === 'function') ? params.setTimeoutFn : setTimeout;
+    const clearTimeoutFn = (typeof params.clearTimeoutFn === 'function') ? params.clearTimeoutFn : clearTimeout;
+    let relayFallbackTimer = null;
+    const relayConfigured = () => !!(relayOptions.enabled && relayOptions.wsUrl);
+    const clearRelayFallbackTimer = () => {
+        if (relayFallbackTimer) { clearTimeoutFn(relayFallbackTimer); relayFallbackTimer = null; }
+    };
+
+    /**
+     * La connexion directe (P2P) ne passe pas mais le relais est disponible : on garde la
+     * salle ouverte via le relais seul au lieu de la fermer (réseau filtré type eduroam).
+     * @returns {boolean} true si la salle continue via le relais
+     */
+    const degradeToRelayOnly = () => {
+        if (!room.active || !relayConfigured() || !(relayRoom.active || relayRoom.ws)) return false;
+        peerReconnectRuntime.clear();
+        if (room.peer) { try { room.peer.destroy(); } catch (_) {} room.peer = null; }
+        roomSetStatus('Connexion directe indisponible : la salle continue via le serveur de secours.', 'warn');
+        roomUpdatePanel();
+        return true;
+    };
+
     const schedulePeerReconnect = (reason = '') => {
+        const attempts = typeof peerReconnectRuntime.getAttempts === 'function' ? peerReconnectRuntime.getAttempts() : 0;
+        if (attempts >= MAX_PEER_RECONNECT) {
+            if (degradeToRelayOnly()) return false;
+            closeTransport({
+                statusText: 'Salle injoignable : le réseau bloque la connexion. Réessayez « Ouvrir la salle », ou passez par un partage de connexion.',
+                statusTone: 'error',
+            });
+            return false;
+        }
         return peerReconnectRuntime.schedule(reason);
+    };
+
+    /** R-D1 : ouvre la salle via le relais quand le P2P n'a pas abouti à temps. */
+    const activateRelayFallback = roomId => {
+        relayFallbackTimer = null;
+        if (room.active || !room.peer || !relayConfigured()) return;
+        room.active = true;
+        viewerRuntime.studentRoom = room;
+        viewerRuntime.studentRoomBroadcast = roomBroadcast;
+        const studentUrl = buildStudentUrl(roomId);
+        room.studentUrl = studentUrl;
+        _setCopyButtonReadyState(studentUrl);
+        relayOpen(roomId);
+        roomSetStatus('Réseau filtré : salle ouverte via le serveur de secours (la connexion directe continue d\'essayer).', 'warn');
+        roomUpdateStudents();
+        if (isPresenterMode) switchRoomPresenterMode('technique', true);
+        onPeerOpen();
     };
 
     const _setCopyButtonConnectingState = () => {
@@ -238,8 +290,11 @@ export function createRoomPeerLifecycleRuntime(params = {}) {
         roomSetStatus('Connexion P2P…', 'warn');
 
         room.peer = new PeerCtor(roomId, peerOptions);
+        clearRelayFallbackTimer();
+        if (relayConfigured()) relayFallbackTimer = setTimeoutFn(() => activateRelayFallback(roomId), RELAY_FALLBACK_MS);
 
         room.peer.on('open', id => {
+            clearRelayFallbackTimer();
             clearPeerReconnectTimer();
             peerReconnectRuntime.resetAttempts();
             room.active = true;
@@ -250,7 +305,8 @@ export function createRoomPeerLifecycleRuntime(params = {}) {
             room.studentUrl = studentUrl;
             _setCopyButtonReadyState(studentUrl);
 
-            if (relayOptions.enabled && relayOptions.wsUrl) relayOpen(id);
+            // Relais déjà ouvert par le repli R-D1 : ne pas le rouvrir (déconnecterait ses étudiants).
+            if (relayConfigured() && relayRoom.roomId !== id) relayOpen(id);
             roomSetStatus(relayRoom.active ? 'Salle active (P2P + relay).' : 'Salle active.', 'ok');
             roomUpdateStudents();
             if (isPresenterMode) switchRoomPresenterMode('technique', true);
@@ -300,7 +356,8 @@ export function createRoomPeerLifecycleRuntime(params = {}) {
             // NAT symétrique, partage de connexion mobile) : même repli complet, pour la même
             // raison — voir commentaire ci-dessus. Avant ce correctif, room.peer n'était jamais
             // détruit ici, ce qui bloquait toute réouverture ultérieure de la salle.
-            closeTransport({ statusText: `Erreur salle: ${roomEsc(peerError.message || String(peerError))}`, statusTone: 'error' });
+            if (degradeToRelayOnly()) return;
+            closeTransport({ statusText: `Erreur salle : ${roomEsc(peerError.message || String(peerError))}`, statusTone: 'error' });
         });
         return true;
     };
@@ -309,6 +366,7 @@ export function createRoomPeerLifecycleRuntime(params = {}) {
      * @param {{ setStatus?: boolean, statusText?: string, statusTone?: string, updatePanel?: boolean, switchPresenterMode?: boolean, runPreviewUpdater?: boolean }} [options]
      */
     const closeTransport = (options = {}) => {
+        clearRelayFallbackTimer();
         clearPeerReconnectTimer();
         peerReconnectRuntime.resetAttempts();
         room.active = false;

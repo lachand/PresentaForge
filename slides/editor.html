@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=8">
-    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=45">
+    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=49">
     <link rel="stylesheet" href="../shared/components/widgets.css">
     <style id="sl-preview-theme"></style>
     <style id="sl-thumb-css"></style>
@@ -23,7 +23,7 @@
 <body class="is-loading">
 <!-- ── Loading progress bar (removed when bootstrap completes) ── -->
 <div id="sl-boot-wrap"><div id="sl-boot-bar"></div></div>
-<script src="editor-boot-progress.js?v=1"></script>
+<script src="editor-boot-progress.js?v=2"></script>
 <div id="app">
     <!-- ═══════ RIBBON ═══════ -->
     <div id="ribbon">
@@ -41,7 +41,7 @@
             <button class="ribbon-tab ui-tab" data-ribbon="affichage" role="tab" id="ribbontab-affichage" aria-controls="ribbon-affichage" aria-selected="false" tabindex="-1">Affichage</button>
             <button class="ribbon-tab ui-tab contextual" data-ribbon="format" id="tab-format" role="tab" aria-controls="ribbon-format" aria-selected="false" tabindex="-1">Format</button>
             <div class="u-flex-1"></div>
-            <div class="save-indicator" id="save-indicator">
+            <div class="save-indicator" id="save-indicator" role="button" tabindex="0" aria-live="polite">
                 <span class="save-dot saved" id="save-dot"></span>
                 <span id="file-name-indicator" class="file-name-indicator" title="Aucun fichier lié — Ctrl+S pour sauvegarder">Brouillon</span>
                 <span id="save-text" class="save-text-offset"></span>
@@ -57,6 +57,10 @@
             </button>
             <button class="tb-btn ui-btn tb-btn-compact-history" id="btn-review-comments" title="Commentaires de relecture" aria-label="Commentaires de relecture">
                 <span class="ms">rate_review</span>
+            </button>
+            <!-- Présenter : action la plus fréquente, toujours visible (audit UX 2026-10, E-I1) -->
+            <button class="ui-btn ui-btn--primary ribbon-present-btn" id="btn-present-quick" type="button" title="Présenter (F5) - Maj+clic ou Maj+F5 : mode présentateur">
+                <span class="ms" aria-hidden="true">play_arrow</span><span>Présenter</span>
             </button>
             <!-- Hidden theme toggle — kept for JS compatibility (editor-ui.js references icon-sun/icon-moon) -->
             <button class="tb-btn ui-btn tb-icon-hidden" id="btn-toggle-theme" aria-hidden="true">
@@ -132,7 +136,7 @@
             <!-- A3/A4: Search -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-search" data-tooltip="Rechercher & Remplacer|Ctrl+F / Ctrl+H" data-shortcut="Ctrl+F"><span class="ms">search</span> Rechercher</button>
+                    <button class="tb-btn ui-btn" id="btn-search" data-tooltip="Rechercher & Remplacer|Ctrl+F" data-shortcut="Ctrl+F"><span class="ms">search</span> Rechercher</button>
                 </div>
                 <span class="ribbon-group-label">Recherche</span>
             </div>
@@ -637,8 +641,8 @@
         </div>
         <!-- Sidebar footer -->
         <div class="sn-footer">
-            <button class="sn-footer-item">
-                <span class="ms" style="font-size:15px;">help</span>
+            <button class="sn-footer-item" id="btn-help" type="button" title="Raccourcis clavier et premiers pas (?)">
+                <span class="ms" style="font-size:15px;" aria-hidden="true">help</span>
                 Aide
             </button>
         </div>
@@ -828,6 +832,6 @@
 <!-- ═══════ SCRIPTS ═══════ -->
 <script src="../shared/slides/firebase-storage.js?v=13"></script>
 <script src="../shared/slides/firebase-modal.js?v=4"></script>
-<script type="module" src="editor-bootstrap.js?v=32"></script>
+<script type="module" src="editor-bootstrap.js?v=38"></script>
 </body>
 </html>

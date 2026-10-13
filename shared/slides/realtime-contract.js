@@ -48,6 +48,10 @@
         // bloc. `ratio` = scrollTop / (scrollHeight - clientHeight), 0..1, pour rester
         // correct même si la taille de police diffère légèrement entre écrans.
         CODE_SCROLL: 'code:scroll',
+        // Audience → présentateur : « je viens de (re)charger, renvoyez l'état complet ».
+        // Sans ce handshake, une fenêtre projecteur rechargée (ou ouverte en retard)
+        // restait sur la slide 1 jusqu'au prochain clic du présentateur.
+        AUDIENCE_HELLO: 'audience:hello',
     });
 
     const ROOM_MSG = Object.freeze({
@@ -244,6 +248,7 @@
             && (msg.x == null || typeof msg.x === 'number')
             && (msg.y == null || typeof msg.y === 'number')
             && (msg.scale == null || typeof msg.scale === 'number'),
+        [SYNC_MSG.AUDIENCE_HELLO]: () => true,
         [SYNC_MSG.CODE_SCROLL]: msg => isNonNegInt(msg.slideIndex) && isNonNegInt(msg.blockIndex)
             && typeof msg.ratio === 'number' && msg.ratio >= 0 && msg.ratio <= 1,
     });
@@ -287,7 +292,8 @@
         [ROOM_MSG.REMOTE_COMMAND_ACK]: msg => (msg.command == null || isString(msg.command, 120))
             && (msg.ok == null || isBoolean(msg.ok))
             && (msg.rid == null || isString(msg.rid, 160))
-            && (msg.reason == null || isString(msg.reason, 300)),
+            && (msg.reason == null || isString(msg.reason, 300))
+            && (msg.expiresAt == null || (typeof msg.expiresAt === 'number' && Number.isFinite(msg.expiresAt))),
         [ROOM_MSG.REMOTE_REVOKED]: msg => msg.reason == null || isString(msg.reason, 300),
         [ROOM_MSG.ACK]: msg => msg.rid == null || isString(msg.rid, 160),
         [ROOM_MSG.SYNC_REQUEST]: msg => (msg.roomId == null || isString(msg.roomId, 80)) && (msg.want == null || isStringArray(msg.want, 30, 80)),

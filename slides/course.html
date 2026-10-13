@@ -7,7 +7,7 @@
     <title>presentaForge - Cours</title>
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
-    <link rel="stylesheet" href="../shared/slides/slides-course.css?v=8">
+    <link rel="stylesheet" href="../shared/slides/slides-course.css?v=9">
 </head>
 <body>
     <div id="course-status" class="course-status" role="status" aria-live="polite">
@@ -25,31 +25,26 @@
                     favoris, vos notes et votre progression slide par slide (répétition
                     espacée) - pratique pour revoir un cours à votre rythme.</p>
                 <ol>
-                    <li>Ci-dessous, cliquez sur <strong>« JSON de révision »</strong> à côté
-                        de la présentation qui vous intéresse - un fichier
-                        <code>revision-….json</code> se télécharge.
-                        <img src="assets/help/revision-help-1-download.png?v=4" alt="Boutons « Accéder aux diapos », « Suivre la présentation en direct », « JSON de révision » et « PDF » à côté d’une présentation dans le catalogue" class="course-revision-help-img"></li>
-                    <li>Ouvrez <a href="student.html" target="_blank" rel="noopener">student.html</a>
-                        (le mode étudiant de presentaForge).</li>
-                    <li>Cliquez sur <strong>« Importer une révision (fichier .json) »</strong> et
-                        sélectionnez le fichier téléchargé à l’étape 1.
-                        <img src="assets/help/revision-help-2-import.png?v=1" alt="Section « Mes cours à réviser » et bouton « Importer une révision » sur l’écran d’accueil de student.html" class="course-revision-help-img"></li>
-                    <li>Le cours apparaît désormais dans <strong>« Mes cours à réviser »</strong>
-                        à chaque réouverture de student.html sur ce navigateur - plus besoin de
-                        réimporter.</li>
+                    <li>Ci-dessous, cliquez sur <strong>« Réviser ce cours »</strong> à côté
+                        de la présentation qui vous intéresse.</li>
+                    <li>L’espace de révision s’ouvre directement avec ce cours : plus rien à
+                        télécharger ni à importer.</li>
+                    <li>Le cours reste ensuite disponible dans <strong>« Mes cours à
+                        réviser »</strong> à chaque ouverture de l’espace étudiant sur ce
+                        navigateur.</li>
                 </ol>
-                <p class="course-revision-help-note">Le fichier téléchargé est « vierge » (aucun
-                    favori/note déjà pris) : c’est un point de départ pour votre progression
-                    personnelle, pas un export de notes existantes.</p>
+                <p class="course-revision-help-note">Vous démarrez sans favori ni note : c’est un point de
+                    départ pour votre progression personnelle. Le bouton « Fichier de révision »
+                    sert seulement à transférer votre révision vers un autre appareil.</p>
                 <p class="course-revision-help-warning">
                     <strong>Attention :</strong> vos favoris/notes/progression sont stockés
                     uniquement dans ce navigateur (aucun compte, aucun serveur). Si vous videz
                     le cache/les données de site de votre navigateur, changez d'ordinateur ou
                     passez en navigation privée, tout est perdu. Pensez à sauvegarder
-                    régulièrement : en mode révision sur student.html, le bouton
+                    régulièrement : dans l’espace de révision, le bouton
                     <strong>« Export »</strong> de la barre de révision télécharge votre
                     progression actuelle (favoris/notes compris) dans un fichier que vous
-                    pouvez ensuite réimporter (même bouton « Importer une révision ») après un
+                    pouvez ensuite réimporter (bouton « Importer une révision » de l’espace étudiant) après un
                     changement de navigateur ou d'appareil.
                 </p>
             </div>
@@ -58,7 +53,7 @@
         <ul id="course-catalog-list" class="course-catalog-list"></ul>
     </main>
     <script src="../shared/slides/firebase-storage.js?v=13"></script>
-    <script src="../shared/slides/student-storage.js?v=6"></script>
+    <script src="../shared/slides/student-storage.js?v=7"></script>
     <!-- Chaîne de rendu MINIMALE pour l'impression PDF en place (shared/slides/print-export.js)
          - le moteur de rendu des slides uniquement, jamais tout editor-bootstrap.js (UI
          complète de l'éditeur, ~50 scripts) ; ordre de chargement strict, cf. commentaires
@@ -68,11 +63,11 @@
     <script src="../shared/slides/html-sanitizer.js?v=1"></script>
     <script src="../shared/slides/slides-typography.js?v=1"></script>
     <script src="../shared/slides/element-style-schema.js?v=1"></script>
-    <script src="../shared/slides/slides-core.js?v=36"></script>
+    <script src="../shared/slides/slides-core.js?v=37"></script>
     <script src="../shared/slides/slides-themes.js?v=7"></script>
     <script src="../shared/slides/slides-diagram-renderer.js?v=1"></script>
-    <script src="../shared/slides/slides-renderer-canvas.js?v=10"></script>
+    <script src="../shared/slides/slides-renderer-canvas.js?v=11"></script>
     <script src="../shared/slides/print-export.js?v=1"></script>
-    <script src="course-main.js?v=10"></script>
+    <script src="course-main.js?v=11"></script>
 </body>
 </html>

@@ -192,11 +192,11 @@ export function computeRoomNetworkDiagnostics(state) {
 
     let hintText;
     if (relayUnreachable) {
-        hintText = 'P2P uniquement — peut échouer sur eduroam / réseau filtré. Redéploiement : docs/developer/RELAY_DEPLOY.md.';
+        hintText = 'Connexion directe uniquement : peut échouer sur certains Wi‑Fi (eduroam). Le serveur de secours ne répond pas.';
     } else if (relayConfigured) {
         hintText = 'Si certains étudiants sont bloqués (ex: eduroam), partagez le lien "Forcer relay".';
     } else {
-        hintText = 'Ajoutez relayWs pour offrir un fallback réseau en plus du P2P.';
+        hintText = 'Aucun serveur de secours configuré : sur un Wi‑Fi filtré, les étudiants peuvent ne pas réussir à se connecter.';
     }
 
     return {

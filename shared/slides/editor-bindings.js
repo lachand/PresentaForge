@@ -34,6 +34,19 @@ const _bindingsCtx = () => {
 };
 const _bindingsEditor = () => _bindingsCtx().editor;
 const _bindingsCanvasEditor = () => _bindingsCtx().canvasEditor || null;
+/**
+ * Suppression de slides avec toast « Annuler » qui réinsère précisément les slides
+ * supprimés (partagé par le ruban, Maj+Suppr et la miniature d'editor-preview.js).
+ */
+function _deleteSlidesWithUndo(targetEditor, indices) {
+    const restore = targetEditor.removeSlidesWithRestore(indices);
+    if (!restore) {
+        _bindingsNotify('Impossible de supprimer : la présentation doit garder au moins un slide.', 'warning');
+        return;
+    }
+    notifyUndo(indices.length > 1 ? `${indices.length} slides supprimés` : 'Slide supprimé', restore);
+}
+
 const _bindingsNotify = (message, type = '') => {
     const fn = _bindingsCtx().notify;
     if (typeof fn === 'function') fn(message, type);
@@ -367,15 +380,14 @@ function bindToolbar() {
     });
     document.getElementById('btn-convert-canvas').addEventListener('click', convertTemplateToCanvas);
 
-    document.getElementById('pres-title').addEventListener('click', () => {
-        const title = prompt('Nom de la présentation :', activeEditor.data.metadata.title);
+    document.getElementById('pres-title').addEventListener('click', async () => {
+        const title = await OEIDialog.prompt('Nom de la présentation :', { title: 'Renommer la présentation', value: activeEditor.data.metadata.title || '' });
         if (title !== null) activeEditor.setMetadata('title', title);
     });
 
-    document.getElementById('btn-import').addEventListener('click', () => {
-        openFromFile();
-        window.resetEditorBindingContext?.();
-    });
+    // openFromFile() délie lui-même fichier + Firebase, uniquement en cas de succès
+    // (annuler le sélecteur de fichier ne doit pas couper la synchro cloud en cours).
+    document.getElementById('btn-import').addEventListener('click', () => { openFromFile(); });
     document.getElementById('btn-edit-metadata')?.addEventListener('click', openMetadataModal);
 
     // Import PowerPoint
@@ -396,6 +408,7 @@ function bindToolbar() {
             mode: 'open',
             onLoad: (data, id) => {
                 activeEditor.load(data);
+                window.resetFileHandle?.();  // le fichier local lié n'est plus ce document
                 window.OEIFirebase?.setCurrentId(id);
                 window.OEIFirebase?.markLoaded(id);
                 try { sessionStorage.setItem('oei-firebase-open-id', id); } catch {}
@@ -509,7 +522,7 @@ function bindToolbar() {
             const json = JSON.stringify(data);
             const course = data.metadata?.course || '';
             await fb.savePresentation(JSON.parse(json), fb.getCurrentId(), { course });
-            _fbAutoSaveHash = json.length + '|' + json.slice(0, 120);
+            _fbAutoSaveHash = json;
             window.updateFirebaseCloudBadge?.('saved');
             _bindingsNotify('Sauvegardé sur Firebase', 'success');
             return true;
@@ -524,6 +537,7 @@ function bindToolbar() {
     // Firebase — sauvegarde automatique toutes les 60s. Désactivée en mode export groupé
     // (window.__OEI_BATCH_EXPORT_MODE, posé par editor-main.js) : un export lent (PDF/PPTX sur
     // un gros deck) ne doit jamais déclencher une écriture Firestore non sollicitée.
+    // _fbAutoSaveHash = dernier JSON poussé (chaîne complète, pas une empreinte).
     let _fbAutoSaveHash = null;
     if (!window.__OEI_BATCH_EXPORT_MODE) {
         setInterval(async () => {
@@ -531,15 +545,15 @@ function bindToolbar() {
             if (!_fbUploadAllowed(fb)) return;
             const data = activeEditor?.data;
             if (!data) return;
-            // Hash rapide pour détecter les changements
+            // Comparaison sur le JSON complet : une empreinte partielle (longueur +
+            // préfixe) ratait toute correction de même longueur hors du préfixe.
             const json  = JSON.stringify(data);
-            const hash  = json.length + '|' + json.slice(0, 120);
-            if (hash === _fbAutoSaveHash) return;
+            if (json === _fbAutoSaveHash) return;
             window.updateFirebaseCloudBadge?.('syncing');
             try {
                 const course = data.metadata?.course || '';
                 await fb.savePresentation(JSON.parse(json), fb.getCurrentId(), { course });
-                _fbAutoSaveHash = hash;
+                _fbAutoSaveHash = json;
                 window.updateFirebaseCloudBadge?.('saved');
             } catch { window.updateFirebaseCloudBadge?.('error'); }
         }, 60_000);
@@ -624,10 +638,7 @@ function bindRibbon() {
         const runtimeEditor = getEditor();
         if (!runtimeEditor) return;
         const selected = _selectedSlideIndicesForOps();
-        const label = selected.length > 1 ? `${selected.length} slides supprimés` : 'Slide supprimé';
-        if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
-        else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
-        notifyUndo(label, () => runtimeEditor.undo());
+        _deleteSlidesWithUndo(runtimeEditor, selected.length > 1 ? selected : [runtimeEditor.selectedIndex]);
     });
 
     // A5: Slide move up/down
@@ -776,6 +787,22 @@ function bindRibbon() {
 
     // Command palette button
     document.getElementById('btn-command-palette')?.addEventListener('click', openCommandPalette);
+    // Indicateur de sauvegarde cliquable : enregistre (fichier lié / Firebase / nouveau fichier).
+    const saveIndicatorEl = document.getElementById('save-indicator');
+    const saveFromIndicator = () => {
+        const _fb = window.OEIFirebase;
+        if (_fb?.isReady() && _fb?.getCurrentId() && _fb.getCurrentId() === _fb.getLoadedId?.()) window._saveToFirebaseNow?.();
+        else saveToFile();
+    };
+    saveIndicatorEl?.addEventListener('click', e => { if (!e.target.closest('#fb-cloud-badge')) saveFromIndicator(); });
+    saveIndicatorEl?.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); saveFromIndicator(); } });
+    document.getElementById('btn-help')?.addEventListener('click', () => openShortcutsHelp());
+    document.getElementById('btn-present-quick')?.addEventListener('click', e => {
+        launchPresentation(e.shiftKey ? 'presenter' : undefined);
+    });
+    // Raccourci de la palette affiché selon la plateforme (⌘K seulement sur Mac).
+    const cmdkKbd = document.querySelector('#btn-command-palette kbd');
+    if (cmdkKbd && !/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '')) cmdkKbd.textContent = 'Ctrl+K';
 
     // Revision history
     document.getElementById('btn-revision-history')?.addEventListener('click', openRevisionHistory);
@@ -1052,47 +1079,59 @@ function updateToolbarState() {
 function bindKeyboard() {
     const getEditor = () => _bindingsEditor();
     const getCanvasEditor = () => _bindingsCanvasEditor();
+    const saveNow = () => {
+        const _fb = window.OEIFirebase;
+        if (_fb?.isReady() && _fb?.getCurrentId() && _fb.getCurrentId() === _fb.getLoadedId?.()) {
+            window._saveToFirebaseNow?.();
+        } else {
+            saveToFile();
+        }
+    };
     document.addEventListener('keydown', e => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-        if (e.target.isContentEditable) return;
+        // Avec Maj (ou Verr. Maj), `e.key` vaut 'Z', 'G', 'V'… : on compare en minuscules,
+        // sinon Ctrl+Maj+Z / Ctrl+Maj+G / Ctrl+Maj+V ne se déclenchent jamais.
+        const k = (typeof e.key === 'string' && e.key.length === 1) ? e.key.toLowerCase() : e.key;
+        const mod = e.ctrlKey || e.metaKey;
+        const inField = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'
+            || e.target.tagName === 'SELECT' || e.target.isContentEditable;
+        if (inField) {
+            // Raccourcis globaux actifs même dans un champ : sans ça, Ctrl+S ouvre
+            // « Enregistrer la page » du navigateur depuis les notes ou une édition de texte.
+            // Le blur valide d'abord l'édition en cours (texte inline, champ du panneau).
+            if (mod && k === 's') { e.preventDefault(); e.target.blur?.(); saveNow(); }
+            else if (mod && k === 'k') { e.preventDefault(); e.target.blur?.(); openCommandPalette(); }
+            return;
+        }
         const runtimeEditor = getEditor();
         if (!runtimeEditor) return;
         const runtimeCanvas = getCanvasEditor();
         const inSlideList = !!(window.isSlideListInteractionContext && window.isSlideListInteractionContext());
-        if (e.ctrlKey || e.metaKey) {
-            if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); runtimeEditor.undo(); }
-            if (e.key === 'z' && e.shiftKey) { e.preventDefault(); runtimeEditor.redo(); }
-            if (e.key === 'y') { e.preventDefault(); runtimeEditor.redo(); }
-            if (e.key === 's') {
-                e.preventDefault();
-                const _fb = window.OEIFirebase;
-                if (_fb?.isReady() && _fb?.getCurrentId() && _fb.getCurrentId() === _fb.getLoadedId?.()) {
-                    window._saveToFirebaseNow?.();
-                } else {
-                    saveToFile();
-                }
-            }
-            if (e.key === 'k') { e.preventDefault(); openCommandPalette(); }
-            if (e.key === 'f') { e.preventDefault(); openSearchDialog(); }
-            if (e.key === 'x') { e.preventDefault(); clipboardCut(); }
-            if (e.key === 'c') {
+        if (mod) {
+            if (k === 'z' && !e.shiftKey) { e.preventDefault(); runtimeEditor.undo(); }
+            if (k === 'z' && e.shiftKey) { e.preventDefault(); runtimeEditor.redo(); }
+            if (k === 'y') { e.preventDefault(); runtimeEditor.redo(); }
+            if (k === 's') { e.preventDefault(); saveNow(); }
+            if (k === 'k') { e.preventDefault(); openCommandPalette(); }
+            if (k === 'f') { e.preventDefault(); openSearchDialog(); }
+            if (k === 'x') { e.preventDefault(); clipboardCut(); }
+            if (k === 'c') {
                 e.preventDefault();
                 if (inSlideList) _copySelectedSlidesToClipboard();
                 else clipboardCopy();
             }
-            if (e.key === 'v' && e.shiftKey) {
+            if (k === 'v' && e.shiftKey) {
                 e.preventDefault();
                 openCopyToSlideDialog();
-            } else if (e.key === 'v') {
+            } else if (k === 'v') {
                 e.preventDefault();
                 if (inSlideList) _pasteSlidesFromClipboard();
                 else clipboardPaste();
             }
-            if (e.key === 'd') { e.preventDefault(); document.getElementById('fmt-duplicate')?.click(); }
-            if (e.key === 'a') { e.preventDefault(); selectAll(); }
-            if (e.key === 'g' && e.shiftKey) { e.preventDefault(); ungroupSelected(); }
-            else if (e.key === 'g') { e.preventDefault(); groupSelected(); }
-            if (e.key === 'l' && runtimeCanvas?.selectedIds?.size > 0) {
+            if (k === 'd') { e.preventDefault(); document.getElementById('fmt-duplicate')?.click(); }
+            if (k === 'a') { e.preventDefault(); selectAll(); }
+            if (k === 'g' && e.shiftKey) { e.preventDefault(); ungroupSelected(); }
+            else if (k === 'g') { e.preventDefault(); groupSelected(); }
+            if (k === 'l' && runtimeCanvas?.selectedIds?.size > 0) {
                 // Jusque-là seul le panneau de propriétés permettait de verrouiller un
                 // élément. Sélection mixte (verrouillé + déverrouillé) : tout verrouiller
                 // en un coup plutôt que d'inverser chacun indépendamment (résultat imprévisible).
@@ -1133,10 +1172,7 @@ function bindKeyboard() {
         }
         if (e.key === 'Delete' && e.shiftKey) {
             const selected = _selectedSlideIndicesForOps();
-            const label = selected.length > 1 ? `${selected.length} slides supprimés` : 'Slide supprimé';
-            if (selected.length > 1 && typeof runtimeEditor.removeSlides === 'function') runtimeEditor.removeSlides(selected);
-            else runtimeEditor.removeSlide(runtimeEditor.selectedIndex);
-            notifyUndo(label, () => runtimeEditor.undo());
+            _deleteSlidesWithUndo(runtimeEditor, selected.length > 1 ? selected : [runtimeEditor.selectedIndex]);
         }
         if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?.selectedIds?.size > 0) runtimeCanvas.removeSelected();
         if (e.key === 'Delete' && !e.shiftKey && runtimeCanvas?._selectedWaypointHandle) {
@@ -1149,6 +1185,11 @@ function bindKeyboard() {
         if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             openQuickInsert();
+        }
+        // « ? » (Maj+/ ou touche dédiée) : aide des raccourcis, partout hors champ de saisie.
+        if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            openShortcutsHelp();
         }
         if (e.key === 'Escape') {
             // Exit connector mode if active

@@ -367,12 +367,20 @@ export function createRoomRemoteControl(params) {
     }
 
     function ackCommand(conn, rid, ok, reason = '') {
+        // Expiration glissante renvoyée au téléphone : sans elle, il gardait l'échéance
+        // d'AUTH_OK et désactivait ses boutons au bout de 15 min en plein cours, alors que
+        // la session était prolongée côté présentateur (audit UX 2026-10, H1).
+        let expiresAt = 0;
+        for (const session of state.sessions.values()) {
+            if (session && session.peerId === conn?.peer) expiresAt = Math.max(expiresAt, Number(session.expiresAt) || 0);
+        }
         safePeerSend(conn, {
             type: ROOM_MSG.REMOTE_COMMAND_ACK,
             rid: trim(rid, 80),
             ok: !!ok,
             reason: trim(reason, 120),
             at: now(),
+            ...(expiresAt > 0 ? { expiresAt } : {}),
         });
     }
 

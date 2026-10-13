@@ -182,17 +182,28 @@ async function resolveInitialDeck(params) {
     // 3. Brouillon local (SLIDE_DRAFT).
     if (!superseded() && editor.loadDraft()) return;
 
-    // 4. Démo par défaut, sinon deck vide.
+    // 4. Premier lancement : présentation VIERGE + invitation à explorer la démo.
+    // Avant, la démo de 27 slides devenait le brouillon de travail : on modifiait la démo
+    // sans le savoir et le « premier cours » héritait de 27 slides (audit UX 2026-10, E-I3).
     if (!superseded()) {
-        try {
-            const r = await fetch('../data/slides/demo-complete.json');
-            if (!r.ok) throw new Error(String(r.status));
-            const data = await r.json();
-            if (superseded()) return;
-            editor.load(data);
-        } catch {
-            if (!superseded()) editor.new();
-        }
+        editor.new();
+        if (!window.__OEI_BATCH_EXPORT_MODE) window.OEIToast?.show('Nouvelle présentation vierge. Besoin d\'inspiration ? La démo montre tous les types de slides.', {
+            type: 'info',
+            duration: 15000,
+            action: { label: 'Ouvrir la démo', onClick: () => { openDemoDeck(); } },
+        });
+    }
+}
+
+/** Charge la démo complète comme un import (annulable, délie fichier / cloud). */
+async function openDemoDeck() {
+    try {
+        const r = await fetch('../data/slides/demo-complete.json');
+        if (!r.ok) throw new Error(String(r.status));
+        await loadExternalDeck(editor, await r.json(), { reason: 'before-demo' });
+        notify('Démo ouverte : Ctrl+Z ou « Nouvelle » pour repartir de zéro.', 'info');
+    } catch (err) {
+        notify('Démo indisponible : ' + (err?.message || err), 'error');
     }
 }
 

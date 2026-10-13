@@ -265,7 +265,7 @@
             case 'definition': {
                 const s = el.style || {};
                 const base = SlidesShared.resolveElementFontSize('definition', s, opts.typography, 16);
-                const labelRaw = String(el.data?.label ?? el.data?.blockLabel ?? 'Definition').trim() || 'Definition';
+                const labelRaw = String(el.data?.label ?? el.data?.blockLabel ?? 'Définition').trim() || 'Définition';
                 const label = labelRaw;
                 const exampleLabel = String(el.data?.exampleLabel ?? 'Exemple').trim() || 'Exemple';
                 const tone = SlidesShared.tonePalette(el.data?.labelTone ?? el.data?.tone, labelRaw);

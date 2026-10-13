@@ -18,6 +18,16 @@
         return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    /** Erreur Firebase / réseau → phrase lisible (audit UX 2026-10, C6). */
+    function friendlyError(e) {
+        const raw = String((e && e.message) || e || '');
+        const code = String((e && e.code) || '').toLowerCase();
+        if (code.includes('not-found') || /introuvable|not found/i.test(raw)) return 'Ce cours n\'est pas (ou plus) disponible. Vérifiez le lien Moodle ou contactez l\'enseignant.';
+        if (code.includes('permission') || /permission/i.test(raw)) return 'Ce cours n\'est pas accessible : l\'enseignant l\'a peut-être retiré de la publication.';
+        if (code.includes('unavailable') || /network|offline|fetch/i.test(raw)) return 'Connexion impossible. Vérifiez votre réseau puis réessayez.';
+        return 'Une erreur est survenue. Réessayez dans un instant.';
+    }
+
     function showError(message) {
         if (!statusEl) return;
         statusEl.classList.add('course-status--error');
@@ -58,9 +68,10 @@
                 <div class="course-catalog-item">${badge}<span class="course-catalog-item-title">${esc(p.title)}</span></div>
                 <div class="course-catalog-actions">
                     <a class="course-catalog-action course-catalog-action--primary" href="${esc(url)}">Accéder aux diapos</a>
+                    <button type="button" class="course-catalog-action" data-action="revise" data-uid="${esc(uid)}" data-id="${esc(p.id)}" title="Ouvre l'espace de révision avec ce cours (favoris, notes, répétition espacée), sans rien télécharger">Réviser ce cours</button>
                     ${liveBtn}
-                    <button type="button" class="course-catalog-action" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}">JSON de révision</button>
-                    <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">PDF</button>
+                    <button type="button" class="course-catalog-action" data-action="export-pdf" data-uid="${esc(uid)}" data-id="${esc(p.id)}">Télécharger en PDF</button>
+                    <button type="button" class="course-catalog-action course-catalog-action--quiet" data-action="download-json" data-uid="${esc(uid)}" data-id="${esc(p.id)}" title="Fichier de sauvegarde à importer dans l'espace de révision (usage avancé, autre appareil)">Fichier de révision</button>
                     <span class="course-catalog-action-status" aria-live="polite"></span>
                 </div>
             </li>`;
@@ -77,6 +88,42 @@
     function setRowBusy(li, busy) {
         if (!li) return;
         li.querySelectorAll('.course-catalog-action').forEach(btn => { btn.disabled = busy; });
+    }
+
+    /**
+     * « Réviser ce cours » : archive le deck dans le stockage local de CE navigateur (même
+     * origine que student.html) puis ouvre l'espace de révision — plus de fichier à
+     * télécharger puis réimporter à la main (audit UX 2026-10, C1). Seul le deck est importé :
+     * les favoris, notes et planning déjà pris par l'étudiant ne sont jamais écrasés.
+     */
+    async function handleRevise(li, uid, id) {
+        if (!window.OEIStudentStorage || !window.OEIFirebase) {
+            setRowStatus(li, 'Espace de révision indisponible. Rechargez la page.', true);
+            return;
+        }
+        setRowBusy(li, true);
+        setRowStatus(li, 'Préparation de la révision…', false);
+        try {
+            const deck = await window.OEIFirebase.loadPublicPresentation(uid, id);
+            const bundle = window.OEIStudentStorage.buildBlankReviseBundle(deck, {
+                title: deck && deck.metadata && deck.metadata.title,
+                author: deck && deck.metadata && deck.metadata.author,
+            });
+            const storage = window.OEIStudentStorage.create({ roomId: '' });
+            const res = await storage.importReviseFile(bundle.deck);
+            if (!res.ok || !res.courseKey) {
+                const quota = res.reason === 'quota' || res.reason === 'no-idb' || res.reason === 'idb-write';
+                setRowStatus(li, quota
+                    ? 'Stockage du navigateur insuffisant pour ce cours (navigation privée ?). Utilisez « Fichier de révision ».'
+                    : 'Impossible de préparer la révision de ce cours.', true);
+                return;
+            }
+            location.href = 'student.html?revise=' + encodeURIComponent(res.courseKey);
+        } catch (e) {
+            setRowStatus(li, friendlyError(e), true);
+        } finally {
+            setRowBusy(li, false);
+        }
     }
 
     /**
@@ -109,7 +156,7 @@
             setTimeout(() => URL.revokeObjectURL(url), 4000);
             setRowStatus(li, 'Téléchargé ✓', false);
         } catch (e) {
-            setRowStatus(li, 'Erreur : ' + (e && e.message ? e.message : String(e)), true);
+            setRowStatus(li, friendlyError(e), true);
         } finally {
             setRowBusy(li, false);
         }
@@ -135,7 +182,7 @@
             await window.OEIPrintExport.printDeckInPlace(deck);
             setRowStatus(li, '', false);
         } catch (e) {
-            setRowStatus(li, 'Erreur : ' + (e && e.message ? e.message : String(e)), true);
+            setRowStatus(li, friendlyError(e), true);
         } finally {
             setRowBusy(li, false);
         }
@@ -152,7 +199,8 @@
             const uid = btn.dataset.uid;
             const id = btn.dataset.id;
             if (!uid || !id || !li) return;
-            if (btn.dataset.action === 'download-json') handleDownloadJson(li, uid, id);
+            if (btn.dataset.action === 'revise') handleRevise(li, uid, id);
+            else if (btn.dataset.action === 'download-json') handleDownloadJson(li, uid, id);
             else if (btn.dataset.action === 'export-pdf') handleExportPdf(li, uid, id);
         });
     }
@@ -185,7 +233,7 @@
             const presentations = await fb.listPublicPresentationsForCourse(uid, course);
             renderCatalog(course, presentations, uid);
         } catch (e) {
-            showError('Erreur : ' + (e && e.message ? e.message : String(e)));
+            showError(friendlyError(e));
         }
     }
 

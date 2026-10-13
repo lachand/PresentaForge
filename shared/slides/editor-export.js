@@ -893,7 +893,7 @@ function _renderNativeDefinition(pdf, slide, dims, themeData, typography) {
     const headingSize = Math.round(typography.heading * 0.6);
     const bodySize = Math.round(typography.text * 18 / 22);
 
-    const labelRaw = String(slide.label ?? slide.blockLabel ?? 'Definition').trim() || 'Definition';
+    const labelRaw = String(slide.label ?? slide.blockLabel ?? 'Définition').trim() || 'Définition';
     const tone = _resolveToneHex(themeData, slide.labelTone ?? slide.tone, labelRaw);
     const exampleLabel = String(slide.exampleLabel ?? 'Exemple').trim() || 'Exemple';
 

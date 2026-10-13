@@ -5,6 +5,128 @@
 (function(global){
     'use strict';
 
+    // ── Python (Pyodide) dans un Worker ───────────────────────────────────────────────────
+    // Avant, Pyodide tournait sur le thread principal sans limite de temps : une boucle infinie
+    // figeait le présentateur (navigation, salle, chrono). Désormais l'exécution a lieu dans un
+    // worker : minuteur d'exécution (n'inclut pas le chargement de Pyodide), arrêt manuel, et
+    // terminaison du worker si besoin (audit UX 2026-10, K1/K2). Le code utilisateur est transmis
+    // par message à Pyodide : jamais évalué comme chaîne JS (CSP sans 'unsafe-eval' respectée).
+    const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
+    const PY_RUN_TIMEOUT_MS = 10000;
+    const PY_LOAD_TIMEOUT_MS = 60000;
+
+    const PYTHON_WORKER_SOURCE = [
+        'importScripts(' + JSON.stringify(PYODIDE_URL) + ');',
+        'let pyPromise = null;',
+        'const post = (m) => self.postMessage(m);',
+        'const getPy = () => { if (!pyPromise) pyPromise = loadPyodide(); return pyPromise; };',
+        'self.onmessage = async (e) => {',
+        '  const msg = e.data || {};',
+        '  if (msg.type !== "run") return;',
+        '  const id = msg.id;',
+        '  let py;',
+        '  post({ id, type: "loading" });',
+        '  try { py = await getPy(); } catch (err) { pyPromise = null; post({ id, type: "load-error", message: String((err && err.message) || err) }); return; }',
+        '  try {',
+        '    py.setStdout({ batched: (t) => post({ id, type: "stdout", text: t }) });',
+        '    py.setStderr({ batched: (t) => post({ id, type: "stderr", text: t }) });',
+        '    post({ id, type: "started" });',
+        '    const result = await py.runPythonAsync(String(msg.code || ""));',
+        '    post({ id, type: "done", result: (result === undefined || result === null) ? null : String(result) });',
+        '  } catch (err) { post({ id, type: "error", message: String((err && err.message) || err) }); }',
+        '};',
+    ].join('\n');
+
+    /**
+     * Exécuteur Python réutilisable (un worker « chaud », un seul run à la fois).
+     * Dépendances injectables pour les tests (aucun accès global implicite).
+     * @param {{ Worker?: any, Blob?: any, createObjectURL?: Function, revokeObjectURL?: Function,
+     *   setTimeout?: Function, clearTimeout?: Function, runTimeoutMs?: number, loadTimeoutMs?: number }} [env]
+     */
+    function createPythonRunner(env = {}) {
+        const WorkerCtor = env.Worker || (typeof Worker !== 'undefined' ? Worker : null);
+        const BlobCtor = env.Blob || (typeof Blob !== 'undefined' ? Blob : null);
+        const makeUrl = env.createObjectURL || (blob => URL.createObjectURL(blob));
+        const revokeUrl = env.revokeObjectURL || (u => URL.revokeObjectURL(u));
+        const setT = env.setTimeout || setTimeout;
+        const clearT = env.clearTimeout || clearTimeout;
+        const runTimeoutMs = env.runTimeoutMs || PY_RUN_TIMEOUT_MS;
+        const loadTimeoutMs = env.loadTimeoutMs || PY_LOAD_TIMEOUT_MS;
+        let worker = null;
+        let workerUrl = null;
+        let seq = 0;
+        let current = null;
+
+        const supported = () => !!(WorkerCtor && BlobCtor);
+        const dispose = () => {
+            if (worker) { try { worker.terminate(); } catch (_) { /* déjà arrêté */ } worker = null; }
+            if (workerUrl) { try { revokeUrl(workerUrl); } catch (_) { /* ignoré */ } workerUrl = null; }
+        };
+        const ensureWorker = () => {
+            if (worker) return worker;
+            workerUrl = makeUrl(new BlobCtor([PYTHON_WORKER_SOURCE], { type: 'text/javascript' }));
+            worker = new WorkerCtor(workerUrl);
+            return worker;
+        };
+
+        /**
+         * @param {string} code
+         * @param {{ onLoading?: Function, onStdout?: Function, onStderr?: Function, onDone?: Function,
+         *   onError?: Function, onLoadError?: Function, onTimeout?: Function, onCancel?: Function }} [h]
+         * @returns {{ cancel: () => void }}
+         */
+        function run(code, h = {}) {
+            if (current) current.cancel();
+            const w = ensureWorker();
+            const id = ++seq;
+            let phase = 'loading';
+            let finished = false;
+            let timer = null;
+            const arm = (ms) => { clearT(timer); timer = setT(onTimer, ms); };
+            const finish = (disposeWorker) => {
+                if (finished) return false;
+                finished = true;
+                clearT(timer);
+                current = null;
+                if (disposeWorker) dispose();
+                return true;
+            };
+            const onTimer = () => {
+                const wasRunning = phase === 'running';
+                if (finish(true)) (wasRunning ? h.onTimeout : h.onLoadError)?.(wasRunning ? runTimeoutMs : 'Chargement de Python trop long');
+            };
+            w.onmessage = (event) => {
+                const m = event && event.data ? event.data : {};
+                if (m.id !== id || finished) return;
+                switch (m.type) {
+                    case 'loading': h.onLoading?.(); break;
+                    case 'started': phase = 'running'; arm(runTimeoutMs); break;   // le minuteur ne compte que l'exécution
+                    case 'stdout': h.onStdout?.(String(m.text ?? '')); break;
+                    case 'stderr': h.onStderr?.(String(m.text ?? '')); break;
+                    case 'done': if (finish(false)) h.onDone?.(m.result == null ? null : String(m.result)); break;
+                    case 'error': if (finish(false)) h.onError?.(String(m.message || 'Erreur Python')); break;
+                    case 'load-error': if (finish(true)) h.onLoadError?.(String(m.message || 'Pyodide indisponible')); break;
+                    default: break;
+                }
+            };
+            w.onerror = (event) => {
+                event?.preventDefault?.();
+                if (finish(true)) h.onLoadError?.(String(event?.message || 'Script Pyodide inaccessible (réseau bloqué ?)'));
+            };
+            arm(loadTimeoutMs);
+            current = {
+                cancel() { if (finish(true)) h.onCancel?.(); },
+            };
+            w.postMessage({ type: 'run', id, code: String(code || '') });
+            return { cancel: () => current && current.cancel() };
+        }
+
+        return { run, dispose, supported, get busy() { return !!current; } };
+    }
+
+    let _pyRunner = null;
+    const getPythonRunner = () => (_pyRunner || (_pyRunner = createPythonRunner()));
+
     /**
      * Monte les éléments code-live dans le container.
      * @param {Element} container
@@ -145,30 +267,27 @@
                 };
             };
 
-            const runPython = async (code) => {
+            // Repli (Worker/Blob indisponible) : ancien chemin sur le thread principal, sans limite de temps.
+            const runPythonMainThread = async (code) => {
                 consoleEl.textContent = '';
                 _outputText = '';
                 appendOutput('⏳ Chargement de Python…\n', 'var(--sl-muted)');
                 if (!global._slPyodideLoaded) {
-                    global._slPyodideLoaded = true;
                     try {
                         await new Promise((resolve, reject) => {
                             const s = document.createElement('script');
-                            s.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
-                            s.onload = resolve; s.onerror = reject;
+                            s.src = PYODIDE_URL;
+                            s.onload = resolve; s.onerror = () => reject(new Error('script Pyodide inaccessible'));
                             document.head.appendChild(s);
                         });
                         global._slPyodide = await loadPyodide();
+                        global._slPyodideLoaded = true;
                     } catch(e) {
                         appendOutput('❌ Impossible de charger Python: ' + e.message + '\n', '#f87171');
+                        emitOutput();
                         return;
                     }
                 }
-                // Wait for ongoing load
-                while (!global._slPyodide && global._slPyodideLoaded) {
-                    await new Promise(r => setTimeout(r, 200));
-                }
-                if (!global._slPyodide) return;
                 consoleEl.textContent = '';
                 try {
                     global._slPyodide.setStdout({ batched: (text) => appendOutput(text + '\n', 'var(--sl-code-text,#e2e8f0)') });
@@ -181,8 +300,43 @@
                 emitOutput();
             };
 
+            const runLabel = btnRun.textContent;
+            let activePyRun = null;
+            const setRunning = (running) => {
+                btnRun.textContent = running ? '■ Arrêter' : runLabel;
+                btnRun.setAttribute('aria-pressed', running ? 'true' : 'false');
+            };
+            const endPyRun = () => { activePyRun = null; setRunning(false); emitOutput(); };
+
+            const runPython = (code) => {
+                const runner = getPythonRunner();
+                if (!runner.supported()) return runPythonMainThread(code);
+                consoleEl.textContent = '';
+                _outputText = '';
+                let loadingShown = false;
+                try {
+                    activePyRun = runner.run(code, {
+                        onLoading: () => { if (!loadingShown) { loadingShown = true; appendOutput('⏳ Chargement de Python (première exécution)…\n', 'var(--sl-muted)'); } },
+                        onStdout: (t) => appendOutput(t + '\n', 'var(--sl-code-text,#e2e8f0)'),
+                        onStderr: (t) => appendOutput(t + '\n', '#f87171'),
+                        onDone: (result) => { if (result !== null) appendOutput('→ ' + result + '\n', '#a5b4fc'); endPyRun(); },
+                        onError: (message) => { appendOutput('❌ ' + message + '\n', '#f87171'); endPyRun(); },
+                        onLoadError: (message) => { appendOutput('❌ Impossible de charger Python : ' + message + '\n', '#f87171'); endPyRun(); },
+                        onTimeout: (ms) => { appendOutput('❌ Exécution interrompue après ' + Math.round(ms / 1000) + ' s (boucle infinie ?). Python sera rechargé au prochain essai.\n', '#f87171'); endPyRun(); },
+                        onCancel: () => { appendOutput('■ Exécution arrêtée.\n', '#fbbf24'); endPyRun(); },
+                    });
+                    setRunning(true);
+                } catch (e) {
+                    // Création du worker refusée (CSP, navigateur) : repli sur le thread principal.
+                    activePyRun = null;
+                    return runPythonMainThread(code);
+                }
+            };
+
             btnRun.addEventListener('click', (e) => {
                 e.stopPropagation(); e.preventDefault();
+                // Pendant une exécution Python, le même bouton arrête le calcul.
+                if (activePyRun) { activePyRun.cancel(); return; }
                 const code = codeArea.value;
                 if (lang === 'javascript' || lang === 'js') runJS(code);
                 else runPython(code);
@@ -202,5 +356,5 @@
         });
     }
 
-    global.OEISlidesSpecialCodeRuntime = Object.freeze({ mountCodeElements });
+    global.OEISlidesSpecialCodeRuntime = Object.freeze({ mountCodeElements, testUtils: Object.freeze({ createPythonRunner, PYTHON_WORKER_SOURCE }) });
 })(typeof window !== 'undefined' ? window : globalThis);

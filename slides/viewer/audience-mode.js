@@ -415,8 +415,14 @@ export async function initAudienceMode(ctx) {
                 if (msg.show && url) {
                     const img = /** @type {HTMLImageElement|null} */ (document.getElementById('sl-audience-qr-img'));
                     const urlEl = document.getElementById('sl-audience-qr-url');
-                    if (img) img.src = buildQrImageSrc(url, 320);
+                    if (img && img.dataset.url !== url) { img.src = buildQrImageSrc(url, 480); img.dataset.url = url; }
                     if (urlEl) urlEl.textContent = url;
+                    // Code de salle lisible de loin + nombre d'étudiants connectés (R-C5).
+                    const codeEl = document.getElementById('sl-audience-qr-code');
+                    if (codeEl) { try { codeEl.textContent = new URL(url).searchParams.get('room') || ''; } catch (_) { codeEl.textContent = ''; } }
+                    const countEl = document.getElementById('sl-audience-qr-count');
+                    const n = Math.max(0, toNumberOr(msg.count, 0));
+                    if (countEl) countEl.textContent = n > 0 ? `${n} étudiant${n > 1 ? 's' : ''} connecté${n > 1 ? 's' : ''}` : 'En attente des étudiants…';
                     overlay?.classList.add('open');
                 } else {
                     overlay?.classList.remove('open');
@@ -558,6 +564,8 @@ export async function initAudienceMode(ctx) {
                 break;
         }
     };
+    // Handshake : demander l'état courant au présentateur (fenêtre rechargée / ouverte en retard).
+    try { channel.postMessage({ type: SYNC_MSG.AUDIENCE_HELLO }); } catch (_) {}
 
     // ── Shared helper: actual rendered slide bounds ────────────────────
     // Reveal.js centers/scales slides inside `.reveal .slides`. Using `.reveal`

@@ -29,6 +29,40 @@
         const syncRuntime = H.syncRuntime;
 
         const MAX_RECONNECT = 30;
+        let _everConnected = false;
+        let _waitingActionsBound = false;
+
+        // Raisons techniques (PeerJS / relay) → libellés compréhensibles par un étudiant.
+        function humanReason(reason) {
+            const r = String(reason || '').toLowerCase();
+            if (r.includes('peer-unavailable')) return 'Salle introuvable';
+            if (r.includes('signalisation')) return 'Connexion au serveur perdue';
+            if (r.includes('network') || r.includes('offline') || r.includes('online')) return 'Réseau indisponible';
+            if (r.includes('relay')) return 'Connexion de secours en cours';
+            return 'Connexion interrompue';
+        }
+
+        // Boutons « Réessayer maintenant » / « Changer de code » du voile d'attente :
+        // plus d'impasse sur un spinner quand la connexion n'aboutit pas.
+        function showWaitingActions(show) {
+            const box = document.getElementById('waiting-actions');
+            if (!box) return;
+            box.hidden = !show;
+            if (!show || _waitingActionsBound) return;
+            _waitingActionsBound = true;
+            document.getElementById('waiting-retry')?.addEventListener('click', () => {
+                showWaitingActions(false);
+                const waitEl = document.getElementById('waiting-text');
+                if (waitEl) waitEl.textContent = 'Nouvelle tentative de connexion…';
+                connect({});
+            });
+            document.getElementById('waiting-change-room')?.addEventListener('click', () => {
+                try { if (st.pseudo) sessionStorage.setItem('oei-student-pending-pseudo', st.pseudo); } catch (_) {}
+                const url = new URL(location.href);
+                url.searchParams.delete('room');
+                location.href = url.toString();
+            });
+        }
         const RELAY_FALLBACK_ATTEMPT = 5;
         const MAX_RESYNC_RETRY = 3;
         const RESYNC_TIMEOUT_MS = 9000;
@@ -166,6 +200,8 @@
                 else syncRuntime({ connected: !!connected });
             }
             if (connected) {
+                _everConnected = true;
+                showWaitingActions(false);
                 _startTelemetryLoop();
                 sendStudentTelemetry('connected', true);
             } else {
@@ -487,12 +523,20 @@
             const waitEl = document.getElementById('waiting-text');
             const banner = document.getElementById('reconnect-banner');
             const mode = (forcedMode || st.transportMode) === 'relay' ? 'Relay' : 'P2P';
-            const left = delayMs > 0 ? ` · retry ${Math.max(1, Math.round(delayMs / 1000))}s` : '';
+            const delaySec = Math.max(1, Math.round(delayMs / 1000));
+            const left = delayMs > 0 ? ` · retry ${delaySec}s` : '';
             const safeReason = toSafeString(reason || _lastConnectError || 'reconnexion', 80);
-            const text = `${mode} · ${safeReason}${left}`;
-            if (waitEl) waitEl.textContent = text;
-            if (banner) banner.textContent = `Connexion instable — ${text}`;
-            setConnectionState(CONNECTION_STATE.RETRYING, text, 'warn');
+            // Détail technique réservé au badge de connexion ; texte lisible pour l'étudiant.
+            const technical = `${mode} · ${safeReason}${left}`;
+            const human = `${humanReason(safeReason)}${delayMs > 0 ? ` - nouvel essai dans ${delaySec} s…` : '…'}`;
+            if (waitEl) {
+                waitEl.textContent = (!_everConnected && /peer-unavailable/.test(safeReason))
+                    ? `Aucune présentation active avec ce code pour le moment. Vérifiez le code, ou attendez que l'enseignant ouvre la salle : nouvel essai automatique dans ${delaySec} s.`
+                    : human;
+            }
+            if (banner) banner.textContent = `Connexion perdue - ${human.charAt(0).toLowerCase()}${human.slice(1)}`;
+            if (!_everConnected) showWaitingActions(true);
+            setConnectionState(CONNECTION_STATE.RETRYING, technical, 'warn');
         }
 
         function relaySocketReady() {
@@ -712,7 +756,8 @@
             // relais pour prendre le relais — sur réseau filtré (eduroam) c'est sans issue.
             if (reconnectAttempts === RELAY_FALLBACK_ATTEMPT && !_relayAvailable && st.transportMode !== 'relay') {
                 const waitEl = document.getElementById('waiting-text');
-                if (waitEl) waitEl.textContent = 'Connexion P2P difficile — réseau filtré ? Aucun relais configuré : essayez 4G / partage de connexion.';
+                if (waitEl) waitEl.textContent = 'La connexion n\'aboutit pas : le Wi‑Fi bloque peut-être la connexion. Essayez avec les données mobiles (4G / partage de connexion).';
+                showWaitingActions(true);
                 setConnectionDetail('P2P difficile · pas de relais', 'warn');
             }
             if (reconnectAttempts >= MAX_RECONNECT) {
@@ -721,8 +766,9 @@
                     return;
                 }
                 const waitEl = document.getElementById('waiting-text');
-                const text = 'Connexion impossible. Réseau bloquant WebRTC (ex: eduroam). Essayez 4G/partage ou relayWs.';
+                const text = 'Connexion impossible. Le Wi‑Fi bloque peut-être la connexion : essayez avec les données mobiles (4G / partage de connexion), ou vérifiez le code de la salle.';
                 if (waitEl) waitEl.textContent = text;
+                showWaitingActions(true);
                 setConnectionState(CONNECTION_STATE.OFFLINE, 'Connexion impossible (P2P/relay)', 'error');
                 return;
             }

@@ -166,9 +166,9 @@ export function createRoomRelayRuntime(params) {
         relayRoom.reconnectAttempts += 1;
         const delay = reconnectDelayMs(relayRoom.reconnectAttempts);
         if (relayRoom.reconnectAttempts >= 3) {
-            roomSetStatus('Relais injoignable — salle en P2P uniquement (peut échouer sur eduroam). Voir docs/developer/RELAY_DEPLOY.md.', 'warn');
+            roomSetStatus('Serveur de secours injoignable : la salle reste en connexion directe (peut échouer sur certains Wi‑Fi comme eduroam).', 'warn');
         } else {
-            roomSetStatus(`Relay déconnecté, reconnexion…${reason ? ` (${reason})` : ''}`, 'warn');
+            roomSetStatus('Serveur de secours déconnecté, reconnexion…', 'warn');
         }
         roomUpdatePanel();
         relayRoom.reconnectTimer = setTimeoutFn(() => {
@@ -237,7 +237,7 @@ export function createRoomRelayRuntime(params) {
 
         relayRoom.ws.addEventListener('error', () => {
             relayRoom.active = false;
-            roomSetStatus('Relay en erreur (fallback indisponible).', 'warn');
+            roomSetStatus('Serveur de secours en erreur : connexion directe uniquement.', 'warn');
         });
     }
 

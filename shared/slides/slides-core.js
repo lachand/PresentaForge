@@ -739,7 +739,7 @@ class SlidesRenderer {
 
     static _definition(s) {
         const title = s.title ? `<h2>${SlidesRenderer.esc(s.title)}</h2>` : '';
-        const labelRaw = String(s.label ?? s.blockLabel ?? 'Definition').trim() || 'Definition';
+        const labelRaw = String(s.label ?? s.blockLabel ?? 'Définition').trim() || 'Définition';
         const label = SlidesRenderer.esc(labelRaw);
         const tone = SlidesShared.tonePalette(s.labelTone ?? s.tone, labelRaw);
         const exampleLabel = SlidesRenderer.esc(String(s.exampleLabel ?? 'Exemple').trim() || 'Exemple');

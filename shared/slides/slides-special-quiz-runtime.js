@@ -271,18 +271,20 @@
                 btnStart.textContent = '⏳';
                 statusEl.textContent = 'Connexion P2P en cours…';
 
-                // Load PeerJS
-                if (!global._slPeerLoaded) {
-                    global._slPeerLoaded = true;
-                    await new Promise((resolve, reject) => {
-                        const s = document.createElement('script');
-                        s.src = '../vendor/peerjs/1.5.5/peerjs.min.js';
-                        s.onload = resolve; s.onerror = reject;
-                        document.head.appendChild(s);
-                    });
-                }
-
                 try {
+                    // Chargement PeerJS DANS le try : un échec (réseau, CSP) laissait sinon le
+                    // bouton bloqué sur « ⏳ » sans message ni nouvel essai possible.
+                    // Drapeau posé seulement après un chargement réussi : un échec permet un nouvel essai.
+                    if (typeof global.Peer !== 'function') {
+                        await new Promise((resolve, reject) => {
+                            const s = document.createElement('script');
+                            s.src = '../vendor/peerjs/1.5.5/peerjs.min.js';
+                            s.onload = resolve;
+                            s.onerror = () => reject(new Error('module de connexion (PeerJS) introuvable'));
+                            document.head.appendChild(s);
+                        });
+                        global._slPeerLoaded = true;
+                    }
                     peer = new Peer(roomId, { debug: 0 });
                     await new Promise((resolve, reject) => {
                         peer.on('open', resolve);

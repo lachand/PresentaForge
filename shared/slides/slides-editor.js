@@ -232,7 +232,13 @@ class SlidesEditor {
         this.onUpdate('new');
     }
 
-    load(data) {
+    /**
+     * @param {object} data
+     * @param {{ keepHistory?: boolean }} [opts] — `keepHistory:true` (import / génération
+     *   qui remplace le deck courant) garde la pile d'annulation : Ctrl+Z revient au deck
+     *   d'avant l'import au lieu d'être vidé.
+     */
+    load(data, opts = {}) {
         let incoming = data;
         if (window.OEIImportPipeline?.normalizeData) {
             try {
@@ -250,8 +256,10 @@ class SlidesEditor {
         this.selectedIndex = 0;
         this.selectedSlides = new Set([0]);
         this._slideSelectionAnchor = 0;
-        this._historyStack = [];
-        this._historyIndex = -1;
+        if (!opts.keepHistory) {
+            this._historyStack = [];
+            this._historyIndex = -1;
+        }
         this._push();
         if (this._lastSaveOk === false) this._onDraftSaveFailed();
         this.onUpdate('load');
@@ -533,6 +541,36 @@ class SlidesEditor {
         this._slideSelectionAnchor = next;
         this._push();
         this.onUpdate('slides');
+    }
+
+    /**
+     * Supprime des slides et renvoie une fonction qui réinsère **exactement** ces
+     * slides à leur position (et non un `undo()` générique, qui annulerait la
+     * dernière action quelle qu'elle soit). Renvoie `null` si la suppression est
+     * refusée (il doit rester au moins un slide).
+     * @param {number[]} indices
+     * @returns {(() => void) | null}
+     */
+    removeSlidesWithRestore(indices) {
+        const sorted = this._sanitizeSlideIndices(indices);
+        if (!sorted.length || this.data.slides.length - sorted.length < 1) return null;
+        const removed = sorted.map(idx => ({ idx, slide: JSON.parse(JSON.stringify(this.data.slides[idx])) }));
+        if (sorted.length > 1) this.removeSlides(sorted);
+        else this.removeSlide(sorted[0]);
+        let restored = false;
+        return () => {
+            if (restored) return;
+            restored = true;
+            removed.forEach(({ idx, slide }) => {
+                this.data.slides.splice(Math.min(idx, this.data.slides.length), 0, slide);
+            });
+            const back = removed.map(r => Math.min(r.idx, this.data.slides.length - 1));
+            this.selectedIndex = back[0];
+            this.selectedSlides = new Set(back);
+            this._slideSelectionAnchor = back[0];
+            this._push();
+            this.onUpdate('slides');
+        };
     }
 
     moveSlide(from, to) {

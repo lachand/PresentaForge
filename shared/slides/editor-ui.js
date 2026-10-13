@@ -241,6 +241,8 @@ function initSplitButtons() {
     // B5: New presentation
     document.getElementById('btn-open-new')?.addEventListener('click', async () => {
         if (await OEIDialog.confirm('Créer une nouvelle présentation ? Les modifications non sauvegardées seront perdues.')) {
+            // Instantané de la présentation quittée : récupérable dans l'historique des révisions.
+            try { await window.saveRevision?.('before-new'); } catch {}
             editor.new();
             window.resetEditorBindingContext?.();
             notify('Nouvelle présentation', 'success');
@@ -262,8 +264,7 @@ function initSplitButtons() {
                 });
                 const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: 'Presse-papier' });
                 if (!ok) return;
-                editor.load(result.data);
-                window.resetEditorBindingContext?.();
+                await loadExternalDeck(editor, result.data, { reason: 'before-import' });
                 notify(
                     result.report?.fixes?.length
                         ? `Importé (${result.report.fixes.length} correction(s))`
@@ -273,8 +274,7 @@ function initSplitButtons() {
                 return;
             }
             const data = JSON.parse(_repairJsonText(text));
-            editor.load(data);
-            window.resetEditorBindingContext?.();
+            await loadExternalDeck(editor, data, { reason: 'before-import' });
             notify('Importé depuis le presse-papier', 'success');
         } catch (e) {
             const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
@@ -326,22 +326,56 @@ function updateTabIndicator() {
 /* ── I3: Auto-save Indicator ───────────────────────────── */
 
 let _savedState = true;
+// Dernier état écrit dans le fichier lié (JSON du deck) + heure : permet de distinguer
+// « enregistré dans le fichier » de « modifié depuis » (audit UX 2026-10, E-D6).
+let _fileSavedJson = null;
+let _fileSavedAt = 0;
 
+/** À appeler après un enregistrement / une ouverture de fichier local réussi. */
+function markFileSaved() {
+    try { _fileSavedJson = JSON.stringify(editor.data); } catch { _fileSavedJson = null; }
+    _fileSavedAt = Date.now();
+    updateSaveIndicator(true);
+}
+
+const _hhmm = t => new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Trois états explicites, au lieu d'un point vert qui signifiait seulement « dans le
+ * stockage de ce navigateur » : navigateur seul / fichier lié (à jour ou modifié) /
+ * Firebase (piloté par updateFirebaseCloudBadge).
+ */
 function updateSaveIndicator(saved) {
     _savedState = saved;
     const fb = window.OEIFirebase;
     const fbActive = fb?.isReady?.() && fb?.getCurrentId?.();
     const dot  = document.getElementById('save-dot');
     const text = document.getElementById('save-text');
+    const box  = document.getElementById('save-indicator');
+    const set = (dotClass, msg, title) => {
+        if (dot)  dot.className    = 'save-dot ' + dotClass;
+        if (text) text.textContent = msg;
+        if (box)  box.title = title;
+    };
     if (fbActive) {
         // Firebase active : chaque modification est "en attente de sync"
         // updateFirebaseCloudBadge('saved') remettra le point au vert après la sync
-        if (dot)  dot.className    = 'save-dot unsaved';
-        if (text) text.textContent = 'Modifications en attente';
-    } else {
-        if (dot)  dot.className    = 'save-dot ' + (saved ? 'saved' : 'unsaved');
-        if (text) text.textContent = saved ? '' : 'Non sauvegardé';
+        set('unsaved', 'Modifications en attente', 'Synchronisation Firebase automatique (toutes les 60 s). Cliquer ou Ctrl+S pour synchroniser maintenant.');
+        return;
     }
+    if (!saved) {
+        set('unsaved', 'Non sauvegardé', 'Le stockage du navigateur est plein : enregistrez un fichier (Ctrl+S) pour ne rien perdre.');
+        return;
+    }
+    const fileName = typeof getLinkedFileName === 'function' ? getLinkedFileName() : '';
+    if (fileName) {
+        let dirty = true;
+        try { dirty = _fileSavedJson == null || JSON.stringify(editor.data) !== _fileSavedJson; } catch {}
+        if (dirty) set('unsaved', 'Modifié', `Modifications non enregistrées dans ${fileName}. Cliquer ou Ctrl+S pour enregistrer.`);
+        else set('saved', `Enregistré${_fileSavedAt ? ' à ' + _hhmm(_fileSavedAt) : ''}`, `Enregistré dans ${fileName}.`);
+        return;
+    }
+    set('local', 'Dans ce navigateur', 'Sauvegarde automatique dans ce navigateur uniquement (perdue si vous videz le cache ou changez de poste). Cliquer ou Ctrl+S pour enregistrer un fichier.');
 }
 
 /* ── Firebase cloud badge ── */

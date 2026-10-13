@@ -167,16 +167,16 @@ async function importPDF() {
             const file = event.target.files?.[0];
             if (!file) return resolve(false);
 
-            notify('Import PDF en cours…', 'warning');
+            // Choix AVANT l'analyse (qui peut être longue) : ajouter à la fin ou remplacer.
+            // Chaque page du PDF devient une image (non modifiable comme du texte).
+            const mode = await chooseImportMode(editor, file.name);
+            if (!mode) { notify('Import PDF annulé', 'info'); return resolve(false); }
+            notify('Import PDF en cours… (chaque page devient une image)', 'info');
             try {
                 const pdfjsLib = await _ensurePdfJsLib();
                 const data = await _parsePdfToSlides(file, pdfjsLib);
-                const currentCount = editor?.data?.slides?.length || 0;
-                const msg = `Remplacer la présentation en cours (${currentCount} slide${currentCount > 1 ? 's' : ''}) par les ${data.slides.length} slides importées de ${file.name} ?\nCette action n'est pas annulable (Ctrl+Z ne reviendra pas en arrière).`;
-                const ok = window.OEIDialog?.confirm ? await window.OEIDialog.confirm(msg) : window.confirm(msg);
-                if (!ok) { notify('Import PDF annulé', 'warning'); return resolve(false); }
-                editor.load(data);
-                notify(`Importé : ${data.slides.length} slides depuis ${file.name}`, 'success');
+                await applyImportedDeck(editor, data, mode);
+                notify(`${mode === 'append' ? 'Ajouté' : 'Importé'} : ${data.slides.length} slides depuis ${file.name} (Ctrl+Z pour annuler)`, 'success');
                 resolve(true);
             } catch (err) {
                 console.error('[OEI] PDF import error:', err);

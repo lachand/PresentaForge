@@ -53,12 +53,76 @@ function resetEditorBindingContext(opts = {}) {
         } catch {}
         return;
     }
+    // Le fichier local lié (File System Access) doit aussi être délié : sinon Ctrl+S
+    // réécrit l'ancien JSON avec le nouveau deck, sans confirmation.
+    try { window.resetFileHandle?.(); } catch {}
     try { window.OEIFirebase?.clearCurrentId?.(); } catch {}
     try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
     try { history.replaceState({}, '', location.pathname); } catch {}
     try { window.updateFirebaseCloudBadge?.('hidden'); } catch {}
 }
 window.resetEditorBindingContext = resetEditorBindingContext;
+
+/**
+ * Remplace le deck courant par un deck d'origine externe (import PDF/PPTX,
+ * génération IA) : instantané de l'état courant dans l'historique des révisions,
+ * puis chargement **annulable** (Ctrl+Z revient au deck précédent), puis
+ * déliaison du fichier local et du document Firebase — le nouveau contenu ne doit
+ * jamais être poussé silencieusement sous l'ancien fichier / id cloud.
+ *
+ * @param {object} targetEditor — instance SlidesEditor
+ * @param {object} data — deck à charger
+ * @param {{ reason?: string, unlink?: boolean }} [opts] — `unlink:false` quand le
+ *   deck chargé reste le même document logique (ajout de slides quiz).
+ */
+/**
+ * Import d'un fichier externe (PDF, PPTX) : demander AVANT l'analyse s'il faut remplacer
+ * la présentation ou ajouter les slides à la fin (audit UX 2026-10, E-X3). Une
+ * présentation vierge (un seul slide sans contenu) est remplacée sans question.
+ * @returns {Promise<'replace'|'append'|null>} null = annulé
+ */
+async function chooseImportMode(targetEditor, fileName) {
+    const slides = targetEditor?.data?.slides || [];
+    const pristine = slides.length <= 1 && !slides.some(s => {
+        const { type, ...rest } = s || {};
+        return Object.values(rest).some(v => (Array.isArray(v) ? v.length : (typeof v === 'string' ? v.trim() : v)));
+    });
+    if (pristine) return 'replace';
+    const n = slides.length;
+    const safeName = String(fileName || 'le fichier').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const msg = `Importer <b>${safeName}</b> dans la présentation en cours (${n} slide${n > 1 ? 's' : ''}) ?<br>Dans les deux cas, Ctrl+Z ramène l'état actuel.`;
+    if (!window.OEIDialog?.choose) return 'replace';
+    return window.OEIDialog.choose(msg, {
+        title: 'Importer des slides',
+        choices: [
+            { value: 'append', label: 'Ajouter à la fin', primary: true },
+            { value: 'replace', label: 'Remplacer la présentation', danger: true },
+        ],
+    });
+}
+
+/**
+ * Applique un deck importé selon le mode choisi : « replace » = nouveau document
+ * (loadExternalDeck, délie fichier / cloud) ; « append » = même document, slides ajoutés
+ * à la fin (annulable), sélection sur le premier slide ajouté.
+ */
+async function applyImportedDeck(targetEditor, data, mode) {
+    if (mode !== 'append') {
+        await loadExternalDeck(targetEditor, data, { reason: 'before-import' });
+        return;
+    }
+    const firstNew = targetEditor.data.slides.length;
+    const merged = { ...targetEditor.data, slides: [...targetEditor.data.slides, ...(data?.slides || [])] };
+    await loadExternalDeck(targetEditor, merged, { reason: 'before-import-append', unlink: false });
+    if (typeof targetEditor.selectSlide === 'function') targetEditor.selectSlide(Math.min(firstNew, targetEditor.data.slides.length - 1));
+}
+
+async function loadExternalDeck(targetEditor, data, opts = {}) {
+    const { reason = 'before-import', unlink = true } = opts;
+    try { await window.saveRevision?.(reason); } catch {}
+    targetEditor.load(data, { keepHistory: true });
+    if (unlink) resetEditorBindingContext();
+}
 
 function initFileDrop() {
     const wrap = document.getElementById('preview-wrap');
@@ -125,8 +189,7 @@ function initFileDrop() {
                             });
                             const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name });
                             if (!ok) return;
-                            ctx.editor?.load(result.data);
-                            resetEditorBindingContext();
+                            if (ctx.editor) await loadExternalDeck(ctx.editor, result.data);
                             if (typeof ctx.notify === 'function') {
                                 ctx.notify(
                                     result.report?.fixes?.length
@@ -139,8 +202,7 @@ function initFileDrop() {
                         }
                         const data = JSON.parse(_repairJsonText(rawText));
                         if (!Array.isArray(data?.slides)) throw new Error('Format JSON invalide');
-                        ctx.editor?.load(data);
-                        resetEditorBindingContext();
+                        if (ctx.editor) await loadExternalDeck(ctx.editor, data);
                         if (typeof ctx.notify === 'function') ctx.notify('Présentation chargée', 'success');
                     } catch(e) {
                         const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';

@@ -269,7 +269,8 @@ body {
 .quiz-question { font-size: 1rem; font-weight: 600; color: var(--text); line-height: 1.5; margin-bottom: 14px; text-align: center; flex-shrink: 0; }
 .quiz-options { display: flex; flex-direction: column; gap: 9px; flex: 1; }
 .quiz-option {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    font: inherit; color: inherit; min-height: 44px;
     padding: 12px 14px; border: none; border-radius: var(--radius-md, 0.75rem);
     background: var(--surface-container-highest); cursor: pointer; transition: all 0.15s; user-select: none;
 }
@@ -277,7 +278,8 @@ body {
 .quiz-option:active:not(.disabled) { transform: scale(0.98); }
 .quiz-option.selected { background: var(--primary-mid); }
 .quiz-option.correct { background: var(--success-light) !important; }
-.quiz-option.wrong { background: var(--danger-light) !important; opacity: 0.65; }
+.quiz-option.wrong { background: var(--danger-light) !important; outline: 2px solid var(--danger); outline-offset: -2px; }
+.quiz-option.correct { outline: 2px solid var(--success); outline-offset: -2px; }
 .quiz-option.disabled { cursor: default; }
 .quiz-opt-letter {
     width: 32px; height: 32px; border-radius: var(--radius-pill, 999px); background: var(--primary-fixed);
@@ -469,7 +471,10 @@ body {
     width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.25);
     border-top-color: currentColor; border-radius: 50%; animation: spin 0.8s linear infinite;
 }
-.waiting-text { font-size: 0.8rem; color: rgba(255,255,255,0.85); }
+.waiting-text { font-size: 0.9rem; color: #fff; max-width: min(90%, 34rem); text-align: center; line-height: 1.45; padding: 0 12px; }
+.waiting-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.waiting-actions[hidden] { display: none; }
+.waiting-actions .ui-btn { min-height: 44px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Nav bar ─────────────────────────────────── */
@@ -1604,3 +1609,6 @@ body.revise-offline #revision-bar { display: flex !important; }
 #slide-inner .fragment.visible { opacity: 1; visibility: inherit; }
 #slide-inner pre.code-wrapper > code.fragment { visibility: visible; }
 #slide-inner pre.code-wrapper > code.fragment:not(.visible) { opacity: 0 !important; }
+
+/* Compteur de la question anonyme (audit UX 2026-10, S-X1) */
+.question-count { font-size: 0.75rem; color: var(--on-surface-variant, #414750); text-align: right; }

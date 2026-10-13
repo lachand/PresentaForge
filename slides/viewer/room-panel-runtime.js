@@ -87,6 +87,24 @@ export function updateRoomPanelRuntime(context = {}) {
     const tabs = document.getElementById('rm-tabs');
     if (tabs) tabs.style.display = _room.active ? '' : 'none';
 
+    // Ouvrir / Fermer la salle (R-C1/R-C2). « Connexion » = un Peer existe mais pas encore ouvert :
+    // bouton désactivé pour éviter un second Peer sur le même id.
+    const roomOpenBtn = document.getElementById('rm-room-open');
+    const roomCloseBtn = document.getElementById('rm-room-close');
+    const roomConnecting = !_room.active && !!_room.peer;
+    if (roomOpenBtn) {
+        roomOpenBtn.hidden = !!_room.active;
+        roomOpenBtn.disabled = roomConnecting;
+        roomOpenBtn.textContent = roomConnecting ? 'Ouverture…' : 'Ouvrir la salle';
+    }
+    if (roomCloseBtn) {
+        roomCloseBtn.hidden = !_room.active;
+        if (!_room.active) {
+            delete roomCloseBtn.dataset.confirm;
+            roomCloseBtn.textContent = 'Fermer la salle';
+        }
+    }
+
     // ── Bannière activités en cours ───────────────────
     const activeToolsBanner = document.getElementById('rm-active-tools');
     if (activeToolsBanner) {
@@ -122,7 +140,7 @@ export function updateRoomPanelRuntime(context = {}) {
             const dot = el('span');
             dot.innerHTML = UI_ICONS.dot;
             summary.appendChild(dot);
-            summary.appendChild(document.createTextNode(`${n} étudiant(s) connecté(s)`));
+            summary.appendChild(document.createTextNode(`${n} étudiant${n > 1 ? 's' : ''} connecté${n > 1 ? 's' : ''}`));
 
             const list = el('div', { className: 'rm-student-list' });
             sorted.forEach((s, i) => {

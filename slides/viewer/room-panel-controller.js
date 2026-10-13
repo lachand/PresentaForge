@@ -37,18 +37,19 @@ export function normalizeRoomPresenterMode(mode) {
 }
 
 /**
+ * Le « mode » ne choisit plus que l'onglet affiché par défaut : les 5 onglets restent
+ * toujours visibles. Le sélecteur de mode (#pv-room-mode-tabs) n'existe plus dans le DOM,
+ * si bien que masquer des onglets par mode rendait le Tableau de bord inaccessible et
+ * cachait les Outils (audit UX 2026-10, R-C3).
  * @param {unknown} mode
  * @returns {{ mode: 'live'|'interactions'|'technique', allowedTabs: string[], defaultTab: string }}
  */
 export function resolveRoomPresenterTabs(mode) {
     const safeMode = normalizeRoomPresenterMode(mode);
-    if (safeMode === 'live') {
-        return { mode: safeMode, allowedTabs: ['students', 'hands', 'questions'], defaultTab: 'questions' };
-    }
-    if (safeMode === 'interactions') {
-        return { mode: safeMode, allowedTabs: ['dashboard', 'tools'], defaultTab: 'dashboard' };
-    }
-    return { mode: safeMode, allowedTabs: ['tools'], defaultTab: 'tools' };
+    const allowedTabs = [...ROOM_TABS];
+    if (safeMode === 'live') return { mode: safeMode, allowedTabs, defaultTab: 'questions' };
+    if (safeMode === 'interactions') return { mode: safeMode, allowedTabs, defaultTab: 'dashboard' };
+    return { mode: safeMode, allowedTabs, defaultTab: 'tools' };
 }
 
 /**

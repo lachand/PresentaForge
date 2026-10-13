@@ -15,14 +15,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=8">
-    <link rel="stylesheet" href="../shared/slides/slides-student.css?v=13">
+    <link rel="stylesheet" href="../shared/slides/slides-student.css?v=15">
     <link rel="stylesheet" href="../shared/components/widgets.css">
     <!-- Presentation theme injected dynamically -->
     <style id="presentation-theme"></style>
 </head>
 <body>
-    <div id="reconnect-banner">Reconnexion en cours…</div>
-    <div id="nudge-toast"></div>
+    <div id="reconnect-banner" role="status" aria-live="polite">Reconnexion en cours…</div>
+    <div id="nudge-toast" role="status" aria-live="polite"></div>
 
     <!-- Join screen -->
     <div id="join-screen">
@@ -33,16 +33,16 @@
             </div>
             <div class="join-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="5" width="3" height="13"/></svg></div>
             <h1>Rejoindre</h1>
-            <p>Entrez votre prénom pour rejoindre la présentation en cours</p>
+            <p id="join-intro">Entrez votre prénom pour rejoindre la présentation en cours</p>
             <div id="room-input-row">
-                <input id="room-id-input" type="text" placeholder="ID de la salle (peerId)" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+                <input id="room-id-input" type="text" placeholder="Code de la salle (donné par l'enseignant)" aria-label="Code de la salle" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
                 <button id="btn-scan-qr" title="Scanner le QR code" aria-label="Scanner le QR code">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h1"/><path d="M19 14h1"/><path d="M14 19h1"/><path d="M19 19h1"/><path d="M14 17h3v2"/></svg>
                 </button>
             </div>
-            <input id="pseudo-input" class="join-input ui-input" type="text" placeholder="Votre prénom" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+            <input id="pseudo-input" class="join-input ui-input" type="text" placeholder="Votre prénom" aria-label="Votre prénom" aria-describedby="join-status" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
             <button id="join-btn" class="join-btn ui-btn ui-btn--primary"><span>Rejoindre</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button>
-            <div id="join-status" class="status-msg"></div>
+            <div id="join-status" class="status-msg" role="status" aria-live="polite"></div>
 
             <!-- Réviser hors CM : la liste des cours suivis est peuplée depuis
                  l'archive locale ; le bouton d'import reste toujours visible pour
@@ -100,11 +100,17 @@
             <div id="quiz-overlay"></div>
             <div id="waiting-overlay">
                 <div class="waiting-spinner"></div>
-                <div class="waiting-text" id="waiting-text">Connexion…</div>
+                <div class="waiting-text" id="waiting-text" role="status" aria-live="polite">Connexion…</div>
+                <!-- Issues quand la connexion n'aboutit pas (audit UX 2026-10, S-J5/S-J6) -->
+                <div class="waiting-actions" id="waiting-actions" hidden>
+                    <button id="waiting-retry" class="ui-btn ui-btn--primary" type="button">Réessayer maintenant</button>
+                    <button id="waiting-change-room" class="ui-btn" type="button">Changer de code</button>
+                </div>
             </div>
             <div id="question-overlay">
                 <div id="question-overlay-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3v-7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4z"/></svg>Poser une question anonyme</div>
-                <textarea id="question-text" class="ui-textarea" maxlength="300" placeholder="Votre question…"></textarea>
+                <textarea id="question-text" class="ui-textarea" maxlength="300" placeholder="Votre question…" aria-label="Votre question (anonyme)" aria-describedby="question-count"></textarea>
+                <div id="question-count" class="question-count">0 / 300 · Ctrl+Entrée pour envoyer</div>
                 <div class="overlay-row">
                     <button id="question-send" class="join-btn ui-btn ui-btn--primary">Envoyer</button>
                     <button id="question-cancel" class="ui-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Annuler</button>
@@ -220,13 +226,13 @@
         </div>
         <div id="revision-bar">
             <span id="revision-status"></span>
-            <button id="revision-mark-new" class="revision-action ui-btn" title="Marquer comme nouveau"></button>
-            <button id="revision-mark-review" class="revision-action ui-btn" title="Marquer à revoir"></button>
-            <button id="revision-mark-known" class="revision-action ui-btn" title="Marquer comme connu"></button>
-            <button id="revision-mark-easy" class="revision-action ui-btn" title="Très facile"></button>
+            <button id="revision-mark-new" class="revision-action ui-btn" title="Cette diapo : je ne la maîtrise pas du tout (à revoir très vite)" aria-label="Je ne maîtrise pas du tout cette diapo"></button>
+            <button id="revision-mark-review" class="revision-action ui-btn" title="Cette diapo : je la maîtrise un peu (à revoir bientôt)" aria-label="Je maîtrise un peu cette diapo"></button>
+            <button id="revision-mark-known" class="revision-action ui-btn" title="Cette diapo : je la maîtrise bien (revue plus tard)" aria-label="Je maîtrise bien cette diapo"></button>
+            <button id="revision-mark-easy" class="revision-action ui-btn" title="Cette diapo : je la maîtrise parfaitement (revue dans longtemps)" aria-label="Je maîtrise parfaitement cette diapo"></button>
             <button id="revision-export" class="revision-action ui-btn" title="Exporter la progression"></button>
             <button id="revision-import" class="revision-action ui-btn" title="Importer la progression"></button>
-            <input id="revision-import-file" type="file" accept="application/json" hidden>
+            <input id="revision-import-file" type="file" accept=".json,application/json" hidden>
             <button id="revision-exit" class="revision-action ui-btn" title="Quitter le mode révision"></button>
         </div>
         <details id="notes-panel">
@@ -361,6 +367,6 @@
         </div>
     </div>
 
-    <script type="module" src="student-bootstrap.js?v=13"></script>
+    <script type="module" src="student-bootstrap.js?v=16"></script>
 </body>
 </html>

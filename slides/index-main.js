@@ -64,6 +64,7 @@
     const RECENT_KEY = Storage?.KEYS?.RECENT_PRESENTATIONS || 'oei-recent-presentations';
 
     const EXAMPLES = [
+        { file: '../data/slides/presentaforge-presentation.json', title: 'PresentaForge — Présentation de l\'outil', slides: 41, theme: 'light', topic: 'Outil', icon: 'slide' },
         { file: '../data/slides/exemple-git.json', title: 'GitHub Actions — Introduction', slides: 10, theme: 'dark', topic: 'CI/CD', icon: 'flow' },
         { file: '../data/slides/demo-complete.json', title: 'Démo complète — Tous les types', slides: 24, theme: 'icom', topic: 'Complet', icon: 'lab' },
     ];
@@ -162,6 +163,24 @@
             return { title: '', theme: '', tags: [], thumb: null };
         }
     }
+
+    /**
+     * Erreur Firebase / réseau → phrase lisible + action proposée (audit UX 2026-10, T5).
+     * Le détail technique est conservé entre parenthèses pour le support, jamais en premier.
+     * @param {any} e
+     * @returns {string} texte brut (à échapper avant insertion HTML)
+     */
+    const friendlyError = e => {
+        const code = String(e?.code || '').toLowerCase();
+        const raw = String(e?.message || e || '').trim();
+        const detail = raw ? ` (${raw.slice(0, 160)})` : '';
+        if (code.includes('permission-denied') || /permission|insufficient/i.test(raw)) return 'Action refusée : vous n\'avez pas les droits sur cette présentation. Reconnectez-vous avec le bon compte.' + detail;
+        if (code.includes('unauthenticated') || /not signed in|non connecté/i.test(raw)) return 'Vous n\'êtes plus connecté. Reconnectez-vous puis réessayez.' + detail;
+        if (code.includes('unavailable') || code.includes('network') || /network|offline|failed to fetch/i.test(raw)) return 'Connexion impossible pour le moment. Vérifiez votre réseau (VPN, bloqueur de publicité) puis réessayez.' + detail;
+        if (code.includes('resource-exhausted') || /quota/i.test(raw)) return 'Quota de stockage atteint. Supprimez des présentations ou réessayez plus tard.' + detail;
+        if (code.includes('not-found')) return 'Présentation introuvable : elle a peut-être été supprimée.' + detail;
+        return 'Une erreur est survenue. Réessayez ; si elle persiste, rechargez la page.' + detail;
+    };
 
     const esc = value => String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -886,7 +905,7 @@
         try {
             await navigator.clipboard?.writeText(url);
         } catch (_) {
-            prompt('Lien persistant du cours :', url);
+            await OEIDialog.prompt('Copiez ce lien (Ctrl+C) :', { title: 'Lien du catalogue du cours', value: url, confirmLabel: 'Fermer', cancelLabel: 'Annuler' });
             return;
         }
         if (target) {
@@ -917,7 +936,7 @@
         try {
             await navigator.clipboard?.writeText(url);
         } catch (_) {
-            prompt('Lien de salle du cours :', url);
+            await OEIDialog.prompt('Copiez ce lien (Ctrl+C) :', { title: 'Lien de la salle en direct', value: url, confirmLabel: 'Fermer', cancelLabel: 'Annuler' });
             return;
         }
         if (target) {
@@ -1017,7 +1036,7 @@
             <article class="pres-card"${draggableAttr}>
                 <div class="pres-cover" style="${escAttr(coverStyle)}">
                     ${selectBoxHtml}
-                    <button type="button" class="cover-kicker cover-kicker--btn ${p.public ? 'cover-kicker--public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public) — cliquer pour rendre privé' : 'Privé — cliquer pour rendre visible des étudiants (lien de cours, partage public)'}">${p.public ? '👁 Public' : '🔒 Privé'}</button>
+                    <button type="button" class="cover-kicker cover-kicker--btn ${p.public ? 'cover-kicker--public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public). Cliquer pour la rendre privée.' : 'Privée : seul vous la voyez. Cliquer pour la rendre visible des étudiants.'}" aria-pressed="${p.public ? 'true' : 'false'}">${p.public ? '👁 Visible étudiants' : '🔒 Privé'}</button>
                     ${coverInner}
                 </div>
                 <div class="pres-content">
@@ -1046,8 +1065,8 @@
             <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${escAttr(key)}">renommer</button>
             <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${escAttr(key)}">bandeau</button>
             <button type="button" class="firebase-course-rename-btn" data-action="export-course-firebase" data-course="${escAttr(key)}">exporter</button>
-            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Lien de catalogue pour Moodle — liste les présentations de ce cours marquées 👁 Public, l'étudiant choisit laquelle consulter">🔗 catalogue</button>` : ''}
-            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-room-link-firebase" data-course="${escAttr(key)}" title="Lien de salle pour Moodle — les étudiants rejoignent toujours la même salle en direct, quel que soit le deck présenté pour ce cours">🚪 salle</button>` : ''}
+            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : la liste des présentations de ce cours rendues visibles des étudiants, chacun choisit celle à consulter">🔗 Lien Moodle du catalogue</button>` : ''}
+            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-room-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : les étudiants rejoignent toujours la même salle en direct, quelle que soit la présentation projetée pour ce cours">🚪 Lien de la salle en direct</button>` : ''}
         ` : '';
 
         // Drill-down actif : en-tête « Retour » + grille à plat des seules présentations de
@@ -1108,7 +1127,7 @@
             _firebaseCourseBanners = banners;
             renderFirebaseDecks();
         } catch (e) {
-            host.innerHTML = `<div class="firebase-empty">Erreur : ${esc(e.message)}</div>`;
+            host.innerHTML = `<div class="firebase-empty">${esc(friendlyError(e))}</div>`;
         }
     }
 
@@ -1149,7 +1168,7 @@
             _firebaseSelectedIds.delete(p.id);
             renderFirebaseDecks();
         } catch (e) {
-            await OEIDialog.alert('Erreur : ' + e.message);
+            await OEIDialog.alert(esc(friendlyError(e)), { title: 'Opération impossible' });
         }
     }
 
@@ -1176,7 +1195,7 @@
             p.course = trimmed;
             renderFirebaseDecks();
         } catch (e) {
-            await OEIDialog.alert('Erreur : ' + e.message);
+            await OEIDialog.alert(esc(friendlyError(e)), { title: 'Opération impossible' });
         }
     }
 
@@ -1187,12 +1206,20 @@
         const p = _firebaseDecks[idx];
         if (!p) return;
         const next = !p.public;
+        // Confirmation : un clic accidentel publiait (ou retirait) un cours du catalogue Moodle,
+        // sans retour visible (audit UX 2026-10, A2).
+        const title = esc(p.title || 'cette présentation');
+        const ok = await OEIDialog.confirm(next
+            ? `Rendre <b>${title}</b> visible des étudiants ?<br>Toute personne disposant du lien (catalogue Moodle, lien de cours) pourra la consulter.`
+            : `Rendre <b>${title}</b> privée ?<br>Elle disparaîtra du catalogue du cours et les liens partagés ne fonctionneront plus.`,
+            { title: next ? 'Publier la présentation' : 'Retirer de la publication', confirmLabel: next ? 'Rendre visible' : 'Rendre privée', cancelLabel: 'Annuler' });
+        if (!ok) return;
         try {
             await window.OEIFirebase.updatePresentationMeta(p.id, { public: next });
             p.public = next;
             renderFirebaseDecks();
         } catch (e) {
-            await OEIDialog.alert('Erreur : ' + e.message);
+            await OEIDialog.alert(esc(friendlyError(e)), { title: 'Opération impossible' });
         }
     }
 
@@ -1224,7 +1251,7 @@
     async function renameFirebaseCourse(course) {
         const affected = _firebaseDecks.filter(p => (p.course || '') === course);
         if (!affected.length) return;
-        const next = prompt(`Renommer le cours « ${course} » (${affected.length} présentation${affected.length > 1 ? 's' : ''}) :`, course);
+        const next = await OEIDialog.prompt(`Renommer le cours « ${course} » (${affected.length} présentation${affected.length > 1 ? 's' : ''}) :`, { title: 'Renommer le cours', value: course, allowEmpty: true, confirmLabel: 'Renommer' });
         if (next === null) return;
         const trimmed = next.trim();
         if (trimmed === course) return;
@@ -1244,7 +1271,7 @@
             }
             renderFirebaseDecks();
         } catch (e) {
-            await OEIDialog.alert('Erreur : ' + e.message);
+            await OEIDialog.alert(esc(friendlyError(e)), { title: 'Opération impossible' });
         }
     }
 
@@ -1259,7 +1286,7 @@
                     _firebaseCourseBanners[course] = banner;
                     renderFirebaseDecks();
                 } catch (e) {
-                    await OEIDialog.alert('Erreur : ' + e.message);
+                    await OEIDialog.alert(esc(friendlyError(e)), { title: 'Opération impossible' });
                 }
             },
             onClear: async () => {
@@ -1268,7 +1295,7 @@
                     delete _firebaseCourseBanners[course];
                     renderFirebaseDecks();
                 } catch (e) {
-                    await OEIDialog.alert('Erreur : ' + e.message);
+                    await OEIDialog.alert(esc(friendlyError(e)), { title: 'Opération impossible' });
                 }
             },
         });
@@ -1388,7 +1415,7 @@
                 const orig = target.textContent;
                 target.textContent = '✓ Copié !';
                 setTimeout(() => { target.textContent = orig; }, 2000);
-            }).catch(() => prompt('Lien de partage :', url));
+            }).catch(() => OEIDialog.prompt('Copiez ce lien (Ctrl+C) :', { title: 'Lien de partage', value: url, confirmLabel: 'Fermer' }));
         }
     });
 

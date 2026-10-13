@@ -163,7 +163,7 @@ class CanvasEditor {
             case 'widget':
                 return { ...base, data: { widget: 'workflow-trigger-simulator', config: {} } };
             case 'definition':
-                return { ...base, data: { label: 'Definition', term: 'Terme', definition: 'La définition complète du terme.', exampleLabel: 'Exemple', example: '' }, style: {} };
+                return { ...base, data: { label: 'Définition', term: 'Terme', definition: 'La définition complète du terme.', exampleLabel: 'Exemple', example: '' }, style: {} };
             case 'callout-box':
                 return {
                     ...base,

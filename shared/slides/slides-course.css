@@ -91,9 +91,12 @@ html, body {
     flex-wrap: wrap;
 }
 .course-catalog-action {
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    padding: 5px 10px;
+    padding: 8px 14px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
     border-radius: 999px;
     border: 1px solid #e2e8f0;
     background: #f1f5f9;
@@ -111,18 +114,21 @@ html, body {
     cursor: default;
 }
 .course-catalog-action--primary {
-    background: #3b82f6;
-    border-color: #3b82f6;
+    /* #1d4ed8 sur blanc ≈ 6,7:1 (l'ancien #3b82f6 ≈ 3,7:1, sous le seuil AA — audit UX C5). */
+    background: #1d4ed8;
+    border-color: #1d4ed8;
     color: #ffffff;
 }
-.course-catalog-action--primary:hover {
-    background: #2563eb;
-    border-color: #2563eb;
+.course-catalog-action--primary:hover:not(:disabled) {
+    background: #1e40af;
+    border-color: #1e40af;
 }
+.course-catalog-action--quiet { background: transparent; color: #475569; }
+.course-catalog-action:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
 .course-catalog-action--live {
     background: #fef2f2;
     border-color: #fecaca;
-    color: #dc2626;
+    color: #b91c1c;
 }
 .course-catalog-action--live:hover {
     background: #fee2e2;
@@ -227,3 +233,8 @@ html, body {
     line-height: 1.55;
 }
 .course-revision-help-warning strong { color: #b45309; }
+
+/* Cibles tactiles confortables sur mobile (audit UX 2026-10, C5) */
+@media (max-width: 640px) {
+    .course-catalog-action { min-height: 44px; padding: 10px 16px; }
+}

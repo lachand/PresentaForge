@@ -53,6 +53,8 @@
         'use strict';
 
         const Storage = window.OEIStorage || null;
+        // Prénom saisi sur l'écran « code + prénom », conservé le temps du rechargement vers ?room=.
+        const PENDING_PSEUDO_KEY = 'oei-student-pending-pseudo';
         const RealtimeContract = window.OEIRealtimeContract || {};
         const NetworkSession = window.OEINetworkSession || {};
         const ROOM_MSG = RealtimeContract.ROOM_MSG;
@@ -126,21 +128,45 @@
             const qrClose = document.getElementById('qr-scan-close');
 
             if (roomInputRow) roomInputRow.classList.add('visible');
-            setJoinStatus('Entrez l\'ID de la salle ou scannez le QR code.', 'info');
+            const joinIntro = document.getElementById('join-intro');
+            if (joinIntro) joinIntro.textContent = 'Saisissez le code de la salle donné par l\'enseignant (ou scannez le QR code), puis votre prénom.';
+            setJoinStatus('', '');
+            // Retour depuis « Changer de code » : le prénom est conservé.
+            try {
+                const kept = sessionStorage.getItem(PENDING_PSEUDO_KEY);
+                const pseudoEl = document.getElementById('pseudo-input');
+                if (kept && pseudoEl && !pseudoEl.value) pseudoEl.value = kept;
+            } catch (_) {}
             renderReviseHome();
             bindReviseImport();
 
             if (joinBtn) {
                 joinBtn.disabled = false;
+                // Pas de { once: true } : après une erreur (« code requis »), le bouton devait
+                // rester utilisable — il ne répondait plus (audit UX 2026-10, S-J1).
                 joinBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     const rid = roomIdInput?.value?.trim();
-                    if (!rid) { setJoinStatus('ID de salle requis.', 'error'); return; }
+                    if (!rid) {
+                        setJoinStatus('Saisissez le code de la salle.', 'error');
+                        roomIdInput?.setAttribute('aria-invalid', 'true');
+                        roomIdInput?.focus();
+                        return;
+                    }
+                    roomIdInput?.removeAttribute('aria-invalid');
+                    // Le prénom déjà saisi survit au rechargement vers ?room= (S-J2).
+                    const pseudo = document.getElementById('pseudo-input')?.value?.trim() || '';
+                    try { if (pseudo) sessionStorage.setItem(PENDING_PSEUDO_KEY, pseudo); } catch (_) {}
+                    joinBtn.disabled = true;
                     const url = new URL(location.href);
                     url.searchParams.set('room', rid);
                     location.href = url.toString();
-                }, { once: true });
+                });
+                // Entrée valide le formulaire depuis l'un ou l'autre champ.
+                [roomIdInput, document.getElementById('pseudo-input')].forEach(el => {
+                    el?.addEventListener('keydown', ev => { if (ev.key === 'Enter') joinBtn.click(); });
+                });
             }
 
             let _qrStream = null;
@@ -703,5 +729,18 @@
             H.transport.connect({});
         });
 
-        document.getElementById('pseudo-input').focus();
+        // Prénom saisi avant la redirection vers ?room= : on rejoint directement (S-J2).
+        let pendingPseudo = '';
+        try {
+            pendingPseudo = sessionStorage.getItem(PENDING_PSEUDO_KEY) || '';
+            sessionStorage.removeItem(PENDING_PSEUDO_KEY);
+        } catch (_) {}
+        const pseudoInputEl = document.getElementById('pseudo-input');
+        if (pendingPseudo && pseudoInputEl) {
+            pseudoInputEl.value = pendingPseudo;
+            document.getElementById('join-btn').click();
+        } else if (window.matchMedia?.('(pointer: fine)').matches) {
+            // Pas d'autofocus au tactile : le clavier virtuel masquerait la moitié de l'écran.
+            pseudoInputEl?.focus();
+        }
     })();

@@ -44,7 +44,7 @@ async function saveToFile() {
 
         _updateFileIndicator(_fileHandle.name);
         notify('Sauvegardé : ' + _fileHandle.name, 'success');
-        updateSaveIndicator(true);
+        markFileSaved();
         saveRevision('save');
     } catch (err) {
         if (err.name === 'AbortError') return; // User cancelled picker
@@ -62,6 +62,9 @@ async function openFromFile() {
         // Fallback: classic file input
         try {
             await editor.importJson();
+            // Nouveau document : délie l'ancien fichier / document cloud (seulement
+            // après un chargement réussi — annuler le sélecteur ne doit rien couper).
+            window.resetEditorBindingContext?.();
             notify('Présentation chargée', 'success');
         } catch (e) {
             const cancelCode = window.OEIImportPipeline?.IMPORT_CANCELLED_CODE || 'OEI_IMPORT_CANCELLED';
@@ -92,9 +95,13 @@ async function openFromFile() {
             data = JSON.parse(_repairJsonText(text));
             if (!Array.isArray(data.slides)) throw new Error('Format invalide');
         }
-        _fileHandle = handle;
         editor.load(data);
+        // Délier l'ancien fichier / document cloud AVANT de lier le nouveau fichier
+        // (resetEditorBindingContext remet aussi _fileHandle à null).
+        window.resetEditorBindingContext?.();
+        _fileHandle = handle;
         _updateFileIndicator(handle.name);
+        markFileSaved();
         notify(
             report?.fixes?.length
                 ? `Ouvert : ${handle.name} (${report.fixes.length} correction(s))`
@@ -117,7 +124,11 @@ async function openFromFile() {
 function resetFileHandle() {
     _fileHandle = null;
     _updateFileIndicator(null);
+    if (typeof updateSaveIndicator === 'function') updateSaveIndicator(true);
 }
+
+/** Nom du fichier local lié (File System Access), ou '' (indicateur de sauvegarde). */
+function getLinkedFileName() { return _fileHandle?.name || ''; }
 
 function _updateFileIndicator(filename) {
     const el = document.getElementById('file-name-indicator');
@@ -147,7 +158,7 @@ function _revisionTypeLabel(type) {
         bullets: 'Contenu',
         code: 'Code',
         split: 'Split',
-        definition: 'Definition',
+        definition: 'Définition',
         comparison: 'Comparaison',
         simulation: 'Simulation',
         image: 'Image',

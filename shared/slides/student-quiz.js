@@ -101,23 +101,40 @@
 
             const qDiv = document.createElement('div');
             qDiv.className = 'quiz-question';
+            qDiv.id = 'qt-question';
             qDiv.textContent = data.question || 'Question';
             overlay.appendChild(qDiv);
 
+            // Options = vrais boutons (clavier, lecteur d'écran) groupés sous la question —
+            // c'étaient des <div> cliquables, inutilisables sans souris (audit UX 2026-10, S-Q1).
             const optsDiv = document.createElement('div');
             optsDiv.className = 'quiz-options';
+            optsDiv.setAttribute('role', 'group');
+            optsDiv.setAttribute('aria-labelledby', 'qt-question');
             const options = data.options || [];
             options.forEach((opt, i) => {
-                const div = document.createElement('div');
-                div.className = 'quiz-option';
-                div.innerHTML = `<span class="quiz-opt-letter">${String.fromCharCode(65 + i)}</span><span class="quiz-opt-text">${esc(opt)}</span>`;
-                div.addEventListener('click', () => selectAnswer(i, div, optsDiv, data, remaining));
-                optsDiv.appendChild(div);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'quiz-option';
+                btn.setAttribute('aria-pressed', 'false');
+                const letterEl = document.createElement('span');
+                letterEl.className = 'quiz-opt-letter';
+                letterEl.setAttribute('aria-hidden', 'true');
+                letterEl.textContent = String.fromCharCode(65 + i);
+                const textEl = document.createElement('span');
+                textEl.className = 'quiz-opt-text';
+                textEl.textContent = String(opt ?? '');
+                btn.append(letterEl, textEl);
+                btn.setAttribute('aria-label', `Réponse ${String.fromCharCode(65 + i)} : ${String(opt ?? '')}`);
+                btn.addEventListener('click', () => selectAnswer(i, btn, optsDiv, data, remaining));
+                optsDiv.appendChild(btn);
             });
             overlay.appendChild(optsDiv);
 
             const resultDiv = document.createElement('div');
             resultDiv.id = 'qt-result';
+            resultDiv.setAttribute('role', 'status');
+            resultDiv.setAttribute('aria-live', 'polite');
             overlay.appendChild(resultDiv);
 
             overlay.classList.add('active');
@@ -144,8 +161,12 @@
             quizSelectedAnswer = index;
             clearInterval(quizTimerInterval);
 
-            optsDiv.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+            optsDiv.querySelectorAll('.quiz-option').forEach(o => {
+                o.classList.add('disabled');
+                o.setAttribute('aria-disabled', 'true');
+            });
             optEl.classList.add('selected');
+            optEl.setAttribute('aria-pressed', 'true');
 
             const duration = parseInt(data.duration) || 30;
             const responseTime = Math.min((Date.now() - quizStartTime) / 1000, duration);
@@ -162,7 +183,10 @@
         function timeoutQuiz(optsDiv) {
             quizAnswered = false;
             H.syncRuntime({ quizAnswered: false });
-            if (optsDiv) optsDiv.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+            if (optsDiv) optsDiv.querySelectorAll('.quiz-option').forEach(o => {
+                o.classList.add('disabled');
+                o.setAttribute('aria-disabled', 'true');
+            });
             const resultDiv = document.getElementById('qt-result');
             if (resultDiv) resultDiv.innerHTML = '<div class="quiz-result-banner timeout">⏰ Temps écoulé</div>';
         }
@@ -179,6 +203,13 @@
             });
 
             const resultDiv = document.getElementById('qt-result');
+            // Bonne réponse : lettre + texte (la lettre seule obligeait à relire les options).
+            const correctLabel = (() => {
+                if (correctAnswer < 0) return '?';
+                const txt = String((data.options || quizData?.options || [])[correctAnswer] ?? '').trim();
+                const letter = String.fromCharCode(65 + correctAnswer);
+                return txt ? `${letter} (${txt})` : letter;
+            })();
             if (quizAnswered && quizSelectedAnswer !== null) {
                 const isCorrect = quizSelectedAnswer === correctAnswer;
                 if (isCorrect) {
@@ -187,14 +218,13 @@
                     if (resultDiv) resultDiv.innerHTML = `<div class="quiz-result-banner correct">✅ Correct ! +${quizEarnedPoints.toLocaleString()} pts</div>`;
                 } else {
                     if (resultDiv) {
-                        const letter = correctAnswer >= 0 ? String.fromCharCode(65 + correctAnswer) : '?';
-                        resultDiv.innerHTML = `<div class="quiz-result-banner wrong">❌ Incorrect — bonne réponse : ${esc(letter)}</div>`;
+                        resultDiv.innerHTML = `<div class="quiz-result-banner wrong">❌ Incorrect - bonne réponse : ${esc(correctLabel)}</div>`;
                     }
                 }
             } else {
                 if (resultDiv) {
-                    const letter = correctAnswer >= 0 ? String.fromCharCode(65 + correctAnswer) : '?';
-                    resultDiv.innerHTML = `<div class="quiz-result-banner wrong">Bonne réponse : ${esc(letter)}</div>`;
+                    // Pas de réponse : ton neutre, pas l'état « faux » (rouge).
+                    resultDiv.innerHTML = `<div class="quiz-result-banner timeout">Bonne réponse : ${esc(correctLabel)}</div>`;
                 }
             }
 
@@ -208,7 +238,7 @@
                 st.quizActive = false;
                 H.syncRuntime({ quizActive: false });
                 quizData = null;
-            }, 3500);
+            }, 6000);  // 3,5 s ne laissait pas le temps de lire la correction
         }
 
         function dismissActiveQuiz() {
@@ -659,7 +689,20 @@
                 dpAddMessage('qa', { text, from: 'Vous', own: true });
                 document.getElementById('question-text').value = '';
                 document.getElementById('question-overlay').style.display = 'none';
+                // Confirmation visible : la question part sur un autre onglet (« Échanges ») et
+                // l'envoi pouvait sembler n'avoir rien fait (audit UX 2026-10, S-X1).
+                H.render.showNotice('Question envoyée anonymement à l\'enseignant. ✓');
+                const qc = document.getElementById('question-count'); if (qc) qc.textContent = '0 / 300 · Ctrl+Entrée pour envoyer';
+                document.getElementById('question-btn')?.focus();
             });
+            // Ctrl/⌘+Entrée envoie, Échap annule ; compteur de caractères.
+            const qText = document.getElementById('question-text');
+            const qCount = document.getElementById('question-count');
+            qText?.addEventListener('keydown', ev => {
+                if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); document.getElementById('question-send')?.click(); }
+                else if (ev.key === 'Escape') { ev.preventDefault(); document.getElementById('question-cancel')?.click(); document.getElementById('question-btn')?.focus(); }
+            });
+            qText?.addEventListener('input', () => { if (qCount) qCount.textContent = `${qText.value.length} / 300`; });
 
             ['poll', 'wc', 'exitticket', 'rankorder'].forEach(id => {
                 const overlayId = id === 'wc' ? 'wordcloud-overlay' : `${id}-overlay`;

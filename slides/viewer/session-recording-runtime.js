@@ -409,9 +409,13 @@ export function createSessionRecordingRuntime(params = {}) {
             parts.push(state.paused
                 ? `Enregistrement en pause · ${formatClock(elapsed)}`
                 : `Enregistrement en cours · ${formatClock(elapsed)}`);
-            const codecLabel = state.audioCodecLabel || 'audio auto';
-            const bitrateLabel = audioBitrateLabel(state.audioBitsPerSecond || state.audioTargetBitsPerSecond);
-            parts.push(bitrateLabel ? `Codec: ${codecLabel} (${bitrateLabel})` : `Codec: ${codecLabel}`);
+            if (state.audioError) {
+                parts.push(`⚠ SANS SON (${state.audioError})`);
+            } else {
+                const codecLabel = state.audioCodecLabel || 'audio auto';
+                const bitrateLabel = audioBitrateLabel(state.audioBitsPerSecond || state.audioTargetBitsPerSecond);
+                parts.push(bitrateLabel ? `Codec: ${codecLabel} (${bitrateLabel})` : `Codec: ${codecLabel}`);
+            }
             parts.push(state.speechEnabled ? 'Sous-titres auto: actif' : 'Sous-titres auto: indisponible');
             status.textContent = parts.join(' · ');
             status.classList.add('recording');
@@ -651,8 +655,24 @@ export function createSessionRecordingRuntime(params = {}) {
 
     const hasUnsavedWork = () => !!(state.active || (state.lastSession && !state.exported));
 
+    const _toast = (msg, opts) => { try { win?.OEIToast?.show(msg, opts); } catch (_) { /* toast optionnel */ } };
+
     const startSessionRecording = async () => {
         if (state.active) return;
+        // Un enregistrement inachevé non exporté serait purgé par startDraft() : on ne le
+        // détruit plus silencieusement (audit UX 2026-10, G2). L'action du toast repasse par
+        // le bouton REC (et donc par l'enveloppe de viewer-main : capture du tableau blanc).
+        if (state.recoveredDraft) {
+            _toast('Un enregistrement inachevé n\'a pas encore été exporté (bandeau au-dessus des notes). Exportez-le, ou supprimez-le pour démarrer.', {
+                type: 'warning',
+                duration: 0,
+                action: {
+                    label: 'Le supprimer et enregistrer',
+                    onClick: () => { _discardDraft(); doc?.getElementById('pv-btn-rec')?.click(); },
+                },
+            });
+            return;
+        }
         stopReplay();
         state.exportMessage = '';
         setLiveCaption('');
@@ -669,6 +689,7 @@ export function createSessionRecordingRuntime(params = {}) {
         state.audioBlob = null;
         state.audioBitsPerSecond = 0;
         state.audioCodecLabel = '';
+        state.audioError = '';
         state.audioStartOffsetMs = 0;
         state.lastSession = null;
         state.draftChunkIndex = 0;
@@ -753,7 +774,17 @@ export function createSessionRecordingRuntime(params = {}) {
                 state.audioMimeType = 'audio/webm';
                 state.audioBitsPerSecond = 0;
                 state.audioCodecLabel = '';
+                // Avant : l'enregistrement continuait SANS son en affichant « audio auto » —
+                // l'enseignant le découvrait après coup (audit UX 2026-10, G1).
+                const denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+                state.audioError = denied ? 'micro refusé' : 'micro indisponible';
+                _toast(denied
+                    ? 'Accès au micro refusé : l\'enregistrement continue SANS SON (slides et interactions seulement). Autorisez le micro dans le navigateur puis relancez l\'enregistrement.'
+                    : 'Micro indisponible : l\'enregistrement continue SANS SON (slides et interactions seulement).', { type: 'error', duration: 0 });
             }
+        } else {
+            state.audioError = 'enregistrement audio non pris en charge';
+            _toast('Ce navigateur ne permet pas d\'enregistrer le son : l\'enregistrement continue sans audio.', { type: 'warning', duration: 10000 });
         }
         startSpeechRecognition();
         updateUi();
@@ -974,7 +1005,19 @@ export function createSessionRecordingRuntime(params = {}) {
         };
         mkBtn('Exporter le replay', () => _recoverExport('replay'));
         mkBtn('Audio + JSON', () => _recoverExport('raw'));
-        mkBtn('Supprimer', () => { _discardDraft(); });
+        // Suppression définitive en 2 temps (audit UX 2026-10, G3).
+        let delTimer = null;
+        const delBtn = mkBtn('Supprimer', () => {
+            if (delBtn.dataset.confirm !== '1') {
+                delBtn.dataset.confirm = '1';
+                delBtn.textContent = 'Confirmer la suppression';
+                if (delTimer) clearTimeoutFn(delTimer);
+                delTimer = setTimeoutFn(() => { delete delBtn.dataset.confirm; delBtn.textContent = 'Supprimer'; }, 4000);
+                return;
+            }
+            if (delTimer) clearTimeoutFn(delTimer);
+            _discardDraft();
+        });
         bar.appendChild(msg);
         bar.appendChild(actions);
         anchor.parentNode.insertBefore(bar, anchor);
@@ -1022,6 +1065,8 @@ export function createSessionRecordingRuntime(params = {}) {
         } catch (err) {
             console.error('Recovery export error:', err);
             busyBtns.forEach(b => { b.disabled = false; });
+            const msgEl = doc && doc.querySelector('#pv-rec-recovery .pv-rec-recovery-msg');
+            if (msgEl) msgEl.textContent = `Échec de l'export (${err?.message || 'erreur inconnue'}). L'enregistrement est conservé : réessayez ou essayez « Audio + JSON ».`;
         }
     }
 

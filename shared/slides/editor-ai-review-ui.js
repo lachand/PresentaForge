@@ -391,22 +391,26 @@ function _reviewPass3GeneratedImagesChoice(items) {
     });
 }
 
-function _createAIPassRunnerOverlay(total = 5) {
+function _createAIPassRunnerOverlay(total = 5, { onStop = null, stepNames = [] } = {}) {
     const overlay = document.createElement('div');
     overlay.className = 'ai-pass-overlay';
+    const stepLabel = (i) => _escapeHtmlAi(String(stepNames[i] || `Passe ${i + 1}`));
     overlay.innerHTML = `
-        <div class="ai-pass-modal" role="dialog" aria-modal="true" aria-label="Pipeline Gemini">
+        <div class="ai-pass-modal" role="dialog" aria-modal="true" aria-label="Génération IA">
             <div class="ai-pass-head">
-                <h3 class="ai-pass-title">Pipeline Gemini (5 passes)</h3>
-                <div class="ai-pass-subtitle" data-ai-pass-status>Initialisation…</div>
+                <h3 class="ai-pass-title">Génération IA (${total} passes)</h3>
+                <div class="ai-pass-subtitle" data-ai-pass-status role="status" aria-live="polite">Initialisation…</div>
             </div>
             <div class="ai-pass-steps" data-ai-pass-steps>
                 ${Array.from({ length: total }).map((_, i) => `
                     <div class="ai-pass-step" data-pass-step="${i + 1}">
                         <span class="ai-pass-step-dot">${i + 1}</span>
-                        <span class="ai-pass-step-label">Passe ${i + 1}</span>
+                        <span class="ai-pass-step-label">${stepLabel(i)}</span>
                     </div>
                 `).join('')}
+            </div>
+            <div class="ai-pass-stop-row" data-ai-pass-stop-row hidden>
+                <button type="button" class="tb-btn ui-btn ui-btn--danger" data-ai-pass-stop>Arrêter la génération</button>
             </div>
             <div class="ai-pass-skeleton" data-ai-pass-skeleton>
                 <div class="ai-pass-skel-line w-80"></div>
@@ -431,6 +435,22 @@ function _createAIPassRunnerOverlay(total = 5) {
     const retryBtn = overlay.querySelector('[data-ai-pass-retry]');
     const closeBtn = overlay.querySelector('[data-ai-pass-close]');
     const skipBtn = overlay.querySelector('[data-ai-pass-skip]');
+    const stopRow = overlay.querySelector('[data-ai-pass-stop-row]');
+    const stopBtn = overlay.querySelector('[data-ai-pass-stop]');
+    // Le bouton n'est visible que pendant qu'une requête tourne : on ne propose pas d'arrêter
+    // quand on attend une décision (relancer, passer, fermer).
+    const showStop = (visible) => {
+        if (!stopRow) return;
+        stopRow.hidden = !visible || typeof onStop !== 'function';
+        if (visible && stopBtn) { stopBtn.disabled = false; stopBtn.textContent = 'Arrêter la génération'; }
+    };
+    stopBtn?.addEventListener('click', () => {
+        if (typeof onStop !== 'function') return;
+        stopBtn.disabled = true;
+        stopBtn.textContent = 'Arrêt en cours…';
+        if (statusEl) statusEl.textContent = 'Arrêt en cours…';
+        try { onStop(); } catch (_) { /* l'arrêt est un best-effort */ }
+    });
     let decisionResolver = null;
     let previewLog = [];
     const setStepState = (idx, state) => {
@@ -501,6 +521,7 @@ function _createAIPassRunnerOverlay(total = 5) {
             clearMediaStrip();
             if (skeletonEl) skeletonEl.classList.add('is-visible');
             hideActions();
+            showStop(true);
         },
         setProgress(idx, label, detail = '') {
             if (idx > 0) setStepState(idx, 'is-active');
@@ -508,6 +529,7 @@ function _createAIPassRunnerOverlay(total = 5) {
             if (skeletonEl) skeletonEl.classList.add('is-visible');
             appendPreviewLine(detail);
             hideActions();
+            if (!stopBtn?.disabled) showStop(true);   // pas de réarmement pendant un arrêt en cours
         },
         setDone(idx, previewText) {
             setStepState(idx, 'is-done');
@@ -516,6 +538,7 @@ function _createAIPassRunnerOverlay(total = 5) {
             if (previewEl) previewEl.textContent = _formatPassPreview(previewText, 240);
             if (skeletonEl) skeletonEl.classList.remove('is-visible');
             hideActions();
+            showStop(false);
         },
         setError(idx, message) {
             if (idx > 0) setStepState(idx, 'is-error');
@@ -523,6 +546,7 @@ function _createAIPassRunnerOverlay(total = 5) {
             previewLog = [];
             if (previewEl) previewEl.textContent = String(message || 'Erreur inconnue');
             if (skeletonEl) skeletonEl.classList.remove('is-visible');
+            showStop(false);
         },
         pushImage(idx, src, label = '') {
             if (idx > 0) setStepState(idx, 'is-active');
@@ -634,7 +658,7 @@ function _reviewAIPassOutput({ pass, title, content, hint, onRerun }) {
                 return;
             }
             try {
-                if (rerunStatusEl) rerunStatusEl.textContent = 'Relance Gemini en cours…';
+                if (rerunStatusEl) rerunStatusEl.textContent = 'Relance en cours…';
                 setBusy(true);
                 const next = await onRerun({
                     pass,

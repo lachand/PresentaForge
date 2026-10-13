@@ -14,8 +14,12 @@
  * Uses a minimal QR encoder (alphanumeric mode, version auto).
  * Falls back to an API if the URL is too long.
  */
-function insertQRCodeSlide() {
-    const url = prompt('URL à partager via QR code :', window.location.href);
+async function insertQRCodeSlide() {
+    const url = await OEIDialog.prompt('URL à partager via QR code :', {
+        title: 'Slide QR code',
+        value: window.location.href,
+        validate: v => (/^https?:\/\//i.test(v) ? '' : 'Saisissez une adresse commençant par http:// ou https://'),
+    });
     if (!url) return;
 
     // Generate QR as SVG data URI using the QR API (lightweight, no lib needed)

@@ -270,8 +270,8 @@ function openAssetsManager() {
                     _enhNotify('Impossible de copier l’URL', 'error');
                 }
             });
-            row.querySelector('[data-act="replace"]')?.addEventListener('click', () => {
-                const next = prompt('Nouvelle URL de l’asset :', asset.url);
+            row.querySelector('[data-act="replace"]')?.addEventListener('click', async () => {
+                const next = await OEIDialog.prompt('Nouvelle URL de l’asset :', { title: 'Remplacer l’asset', value: asset.url });
                 if (!next || next === asset.url) return;
                 if (_eeSetAssetUrl(asset, next, activeEditor)) {
                     activeEditor._push();
@@ -283,8 +283,8 @@ function openAssetsManager() {
                     _enhNotify('Mise à jour impossible', 'error');
                 }
             });
-            row.querySelector('[data-act="replace-all"]')?.addEventListener('click', () => {
-                const next = prompt('Remplacer toutes les occurrences de cette URL par :', asset.url);
+            row.querySelector('[data-act="replace-all"]')?.addEventListener('click', async () => {
+                const next = await OEIDialog.prompt('Remplacer toutes les occurrences de cette URL par :', { title: 'Remplacer partout', value: asset.url });
                 if (!next || next === asset.url) return;
                 const changed = _eeReplaceAssetUrlEverywhere(activeEditor.data, asset.url, next);
                 if (changed > 0) {
@@ -396,8 +396,11 @@ function openAssetsManager() {
     };
     const addSvgBtn = modal.querySelector('#assets-add-svg-url');
     if (addSvgBtn) addSvgBtn.onclick = async () => {
-        const url = prompt('URL SVG à importer dans le slide canvas courant :', 'https://');
-        if (!url || !/^https?:\/\//i.test(url.trim())) return;
+        const url = await OEIDialog.prompt('URL SVG à importer dans le slide canvas courant :', {
+            title: 'Importer un SVG', value: 'https://',
+            validate: v => (/^https?:\/\//i.test(v) ? '' : 'Saisissez une adresse commençant par http:// ou https://'),
+        });
+        if (!url) return;
         const runtimeCanvasEditor = _enhCtx().canvasEditor;
         if (activeEditor.currentSlide?.type !== 'canvas' || !runtimeCanvasEditor) {
             _enhNotify('Passez sur un slide canvas pour insérer un SVG', 'warning');
@@ -405,7 +408,7 @@ function openAssetsManager() {
         }
         try {
             const dataUrl = await _eeFetchUrlAsDataUrl(url.trim());
-            const alt = prompt('Texte alternatif (accessibilité) :', 'Icône SVG') || 'Icône SVG';
+            const alt = (await OEIDialog.prompt('Texte alternatif (accessibilité) :', { title: 'Texte alternatif', value: 'Icône SVG' })) || 'Icône SVG';
             const el = runtimeCanvasEditor.add('image');
             runtimeCanvasEditor.updateData(el.id, { data: { src: dataUrl, alt } });
             _enhNotify('SVG intégré au canvas courant', 'success');

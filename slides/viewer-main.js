@@ -2,13 +2,15 @@
         import Reveal from '../vendor/revealjs/5.1.0/dist/reveal.esm.js';
         import Highlight from '../vendor/revealjs/5.1.0/plugin/highlight/highlight.esm.js';
         import { createWhiteboardController } from './viewer/whiteboard.js';
-        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=9';
+        import { initAudienceMode as initAudienceModeModule } from './viewer/audience-mode.js?v=11';
         import { clearNode, el, appendAll } from './viewer/dom-utils.js';
         import { resolveRealtimeContract } from './viewer/runtime-contracts.js';
         import { createViewerAppState } from './viewer/app-state.js';
         import { createTopicEventBus } from './viewer/event-bus.js';
         import { safePeerSend, broadcastPeers, roomSendInitAuto, resendInitChunks } from './viewer/room-transport.js?v=2';
         import { postSyncMessage } from './viewer/audience-sync.js';
+        import { openAudienceWindow, createSessionParticipantLog, bindRoomOpenCloseButtons, bindLeaveGuard } from './viewer/presenter-session-guards.js';
+        import '../shared/slides/ui-toast.js?v=1';
         import { initNormalModeToolbar } from './viewer/normal-mode-toolbar.js';
         import { applyStatusState, showFloatingReaction } from './viewer/room-ui.js';
 import {
@@ -16,7 +18,7 @@ import {
     buildStudentRoomUrl,
     computeRoomNetworkDiagnostics,
     resolveDraftView,
-} from './viewer/room-links.js?v=5';
+} from './viewer/room-links.js?v=6';
 import {
     buildRoomSnapshot,
 } from './viewer/room-bridge-snapshot.js';
@@ -105,7 +107,7 @@ import {
     createRoomRemoteControl,
     runRemotePresenterCommand,
 } from './viewer/room-remote-control.js';
-import { createRoomRelayRuntime } from './viewer/room-relay-runtime.js?v=2';
+import { createRoomRelayRuntime } from './viewer/room-relay-runtime.js?v=3';
 import {
     applyStudentFeedbackMessage,
     applyStudentHandMessage,
@@ -327,6 +329,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
 
         /* ── Whiteboard (drawing overlay) ─────────────────── */
         let _whiteboard = null;
+        let _leaveGuard = null;  // R-D6 (presenter-session-guards.js)
         let _whiteboardLastSync = null;
         let _whiteboardRecordFrames = false;
         let _recordWhiteboardFrame = () => {};
@@ -445,6 +448,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
         };
         // Réactions emoji étudiantes taguées par slide, pour le rapport de fin de session. [{ emoji, pseudo, slideIndex, time }]
         const _roomReactions = [];
+        const _sessionParticipants = createSessionParticipantLog(); // G5 : déconnectés gardés pour le Bilan
         let _roomPresenterMode = 'live';
         let _pvQrVisible = false;
         let _subtitleActive = false;
@@ -944,7 +948,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             const url = roomAudienceQrUrl();
             if (shouldShow && (!url || !_room.active)) return false;
             _pvQrVisible = shouldShow;
-            _postPresenterSync({ type: SYNC_MSG.ROOM_QR, show: shouldShow, url: shouldShow ? url : '' });
+            _postPresenterSync({ type: SYNC_MSG.ROOM_QR, show: shouldShow, url: shouldShow ? url : '', count: Object.keys(_room.students || {}).length });
             roomUpdateQrButtonsUI();
             return true;
         }
@@ -1016,8 +1020,8 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             const specEl = document.getElementById('pv-spectateurs-count');
             if (specEl) {
                 const n = Object.keys(_room.students || {}).length;
-                specEl.textContent = n === 0 ? '0 spectateur' : n === 1 ? '1 spectateur' : `${n} spectateurs`;
-                specEl.classList.toggle('has-students', n > 0);
+                specEl.textContent = !_room.active ? 'Salle fermée' : `${n} étudiant${n > 1 ? 's' : ''} connecté${n > 1 ? 's' : ''}`; // R-C8
+                specEl.classList.toggle('has-students', n > 0); if (_pvQrVisible && _room.active) roomSetAudienceQrVisibility(true); // R-C5 : compteur projeté
             }
             // Refresh inline quick panel if open
             if (typeof renderPresenterQuickPanel === 'function') renderPresenterQuickPanel();
@@ -1571,6 +1575,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                         toTrimmedString,
                         now: () => Date.now(),
                     });
+                    _sessionParticipants.track(peerId, _room.students[peerId]);
                     safePeerSend(conn, { type: ROOM_MSG.WELCOME, title: _presentationData?.metadata?.title || 'Présentation', peerId });
                     if (conn.__transport === 'relay') _roomSendInit(conn);
                     if (_subtitleActive) safePeerSend(conn, { type: ROOM_MSG.SUBTITLE_ACTIVE, active: true });
@@ -1843,6 +1848,11 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             if (isPresenterMode) switchRoomPresenterMode('technique', true);
         }
 
+        bindRoomOpenCloseButtons({ // R-C1/R-C2 : salle ouvrable en mode normal, enfin fermable
+            isActive: () => !!_room.active, isConnecting: () => !_room.active && !!_room.peer,
+            getStudentCount: () => Object.keys(_room.students || {}).length,
+            onOpen: () => { roomOpenPeer().finally(roomUpdatePanel); roomUpdatePanel(); }, onClose: roomClose,
+        });
         const roomShowReaction = (emoji, pseudo) => showFloatingReaction(emoji, pseudo);
 
         const _roomPanelController = createRoomPanelController({
@@ -2283,6 +2293,8 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
 
             // Open audience window
             const channel = new BroadcastChannel(CHANNEL_NAME);
+            // P-A2 : une fenêtre audience (re)chargée annonce AUDIENCE_HELLO → état complet renvoyé.
+            channel.addEventListener('message', e => { if (e?.data?.type === SYNC_MSG.AUDIENCE_HELLO) broadcastState(); });
             _presenterSyncChannel = channel;
             window.OEIPresenterSyncBridge = {
                 SYNC_MSG,
@@ -2309,6 +2321,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 getCurrentIndex: () => currentIndex,
                 // Rapport de fin de session (questions/feedback/réactions taguées par slide)
                 getSessionInsights: () => _sessionReport.getInsights(),
+                getSessionParticipants: () => _sessionParticipants.list(),
                 downloadSessionReport: () => _sessionReport.download(),
             };
             const audienceUrl = new URL(location.href);
@@ -2317,7 +2330,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
             // Pas de 'noopener' : la fenêtre projecteur (même origine, notre code) doit
             // pouvoir lire window.opener.__oeiPresentDeck en repli quand le quota
             // localStorage a fait échouer l'écriture de PRESENT_DATA (gros deck).
-            const audienceWin = window.open(audienceUrl.toString(), 'oei-audience');
+            openAudienceWindow(audienceUrl.toString(), { toast: window.OEIToast }); // P-A1 : popup bloquée → toast
 
             // Code trop long : défilement molette sur la prévisualisation du
             // présentateur (#pv-current-inner), rediffusé à la fenêtre audience
@@ -2932,6 +2945,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 exportSessionRecording: _exportSessionRecording,
                 exportReplayStandalone: _exportReplayStandalone,
                 beforeNavigateToEditor: () => {
+                    _leaveGuard?.allowExit();
                     if (_sessionRec.active) _stopSessionRecording();
                     _stopReplay();
                     if (_presenterSyncChannel === channel) _presenterSyncChannel = null;
@@ -3074,13 +3088,23 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 roomUpdatePanel();
             });
 
-            // Resize handler to re-scale slides
-            const resizeObs = new ResizeObserver(() => renderCurrentSlide());
+            // P-B5 : resize = recalage d'échelle seul (un re-rendu remettait à zéro quiz, code-live, chrono).
+            let _refitRaf = 0;
+            const resizeObs = new ResizeObserver(() => {
+                cancelAnimationFrame(_refitRaf);
+                _refitRaf = requestAnimationFrame(() => {
+                    _fitPreview(document.getElementById('pv-current-inner'), document.getElementById('pv-current-frame'));
+                    const nextInner = document.getElementById('pv-next-inner');
+                    if (!nextInner?.querySelector('.pv-next-empty')) _fitPreview(nextInner, document.getElementById('pv-next-frame'));
+                    _whiteboard?.refresh();
+                });
+            });
             resizeObs.observe(document.getElementById('pv-current-frame'));
             resizeObs.observe(document.getElementById('pv-next-frame'));
 
-            // Clean up on close
-            window.addEventListener('beforeunload', () => {
+            // R-D6 : confirmer F5/fermeture si salle active ; nettoyage sur pagehide (départ effectif).
+            _leaveGuard = bindLeaveGuard({ shouldWarn: () => !!_room.active });
+            window.addEventListener('pagehide', () => {
                 if (_sessionRec.active) _stopSessionRecording();
                 _stopReplay();
                 if (_presenterSyncChannel === channel) _presenterSyncChannel = null;

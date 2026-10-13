@@ -92,7 +92,8 @@
                 return;
             }
             const secLeft = Math.max(0, Math.round((tokenExpiresAt - now) / 1000));
-            sessionEl.textContent = `Session active (${secLeft}s restantes)`;
+            const left = secLeft >= 60 ? `${Math.round(secLeft / 60)} min` : `${secLeft} s`;
+            sessionEl.textContent = `Session active (${left} restantes, prolongée à chaque commande)`;
         }
 
         async function authenticate() {
@@ -187,7 +188,10 @@
                             updateControls();
                             break;
                         case ROOM_MSG.REMOTE_COMMAND_ACK:
+                            // Expiration glissante : chaque commande prolonge la session.
+                            if (Number(msg.expiresAt) > 0) tokenExpiresAt = Number(msg.expiresAt);
                             setStatus(msg.ok ? 'Commande envoyée.' : (msg.reason || 'Commande refusée.'), msg.ok ? 'ok' : 'warn');
+                            updateControls();
                             break;
                         case ROOM_MSG.REMOTE_REVOKED:
                             token = '';

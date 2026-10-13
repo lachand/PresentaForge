@@ -98,6 +98,9 @@
             } else if (cmd === 'createLink') {
                 const sel = window.getSelection();
                 if (!sel.rangeCount || sel.isCollapsed) return;
+                // prompt() natif conservé volontairement (audit UX 2026-10, T1) : une modale
+                // déplacerait le focus, l'éditable ferait son `blur` (commit + sortie d'édition)
+                // et la sélection à lier serait perdue.
                 const url = prompt('URL du lien :', 'https://');
                 if (url) document.execCommand('createLink', false, url);
             } else {

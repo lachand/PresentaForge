@@ -122,14 +122,26 @@
             }
         }
 
+        // Messages destinés à l'étudiant (navigation bloquée, étape à valider…) : toast lisible
+        // et annoncé (role=status). Le badge #conn-state, 0.68rem et tronqué, reste réservé à
+        // l'état du réseau (audit UX 2026-10, S-N1).
+        let _noticeTimer = null;
+        function showNotice(message, ms = 3600) {
+            const toast = document.getElementById('nudge-toast');
+            if (!toast) return;
+            toast.textContent = String(message || '');
+            toast.classList.add('show');
+            if (_noticeTimer) clearTimeout(_noticeTimer);
+            _noticeTimer = setTimeout(() => toast.classList.remove('show'), ms);
+        }
+
         function markCheckpointCompleted(idx = st.currentIndex, reason = '') {
             const safe = Number(idx);
             if (!Number.isFinite(safe) || safe < 0) return;
             _checkpointCompletedSlides.add(safe);
             updateCheckpointStatus();
             if (_checkpointRequiredSlides.has(safe)) {
-                const detail = reason ? `Checkpoint validé (${reason})` : 'Checkpoint validé';
-                H.setConnectionDetail(detail, 'ok');
+                showNotice('Étape validée : vous pouvez passer à la suite.');
             }
         }
 
@@ -137,7 +149,7 @@
             if (direction <= 0) return true;
             if (!currentSlideCheckpointLocked()) return true;
             updateCheckpointStatus();
-            H.setConnectionDetail('Checkpoint requis avant le slide suivant', 'warn');
+            showNotice('Validez d\'abord l\'activité de cette diapo (quiz, question…) pour passer à la suite.');
             return false;
         }
 
@@ -222,7 +234,7 @@
             H.revision.updateControls();
             updateCheckpointStatus();
             updateNavSync();
-            H.setConnectionDetail('Navigation libre — vous ne suivez plus le présentateur', 'warn');
+            showNotice('Navigation libre : vous ne suivez plus l\'enseignant. Touchez « Rejoindre » pour le retrouver.');
             H.transport.sendTelemetry('follow-toggle', true);
         }
 
@@ -959,7 +971,7 @@
             const allowedMax = maxPresenterAllowedIndex();
             if (target > allowedMax) {
                 target = allowedMax;
-                H.setConnectionDetail(`Navigation limitée à la slide ${allowedMax + 1} (présentateur)`, 'warn');
+                showNotice(`L'enseignant limite l'accès à la diapo ${allowedMax + 1} pour le moment.`);
             }
             st.currentIndex = target;
             H.syncRuntime({ currentIndex: target });
@@ -1146,7 +1158,7 @@
             });
             document.getElementById('nav-next')?.addEventListener('click', () => {
                 if (st.currentIndex >= maxPresenterAllowedIndex()) {
-                    H.setConnectionDetail('Vous ne pouvez pas dépasser la slide courante du présentateur', 'warn');
+                    showNotice('Vous ne pouvez pas dépasser la diapo en cours de l\'enseignant.');
                     return;
                 }
                 st.followPresenter = false;
@@ -1316,10 +1328,10 @@
                     sections.push(`<div class="course-divider">${esc(c.title || (exp.course && exp.course.title) || 'Cours')}</div>`
                         + `<div class="course-${ci}">${_slidePagesHtml(rendered.slidesHtml, exp.notes || {}, c.title || 'Cours')}</div>`);
                 }
-                if (!sections.length) { alert('Aucun cours de la séance à exporter.'); return; }
+                if (!sections.length) { showNotice('Aucun cours de la séance à exporter.'); return; }
                 pages = sections.join('\n');
             } else {
-                if (!st.slidesHtml.length) { alert('Aucune slide chargée.'); return; }
+                if (!st.slidesHtml.length) { showNotice('Aucune diapo chargée : rien à exporter.'); return; }
                 printThemeCSS = (document.getElementById('presentation-theme')?.textContent || '').replace(/#slide-inner/g, '.slide-inner-print');
                 pages = _slidePagesHtml(st.slidesHtml, _notesData, title);
             }
@@ -1399,12 +1411,13 @@ window.addEventListener('load', function() {
 </body></html>`;
 
             const w = window.open('', '_blank', 'width=920,height=820');
-            if (!w) { alert('Autorisez les popups pour exporter en PDF.'); return; }
+            if (!w) { showNotice('Autorisez les fenêtres pop-up de ce site pour exporter en PDF.', 6000); return; }
             w.document.write(html);
             w.document.close();
         }
 
         return {
+            showNotice,
             applyInit,
             applyInitDisplay,
             applyPresenterSlideChange,

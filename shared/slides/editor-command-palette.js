@@ -24,13 +24,30 @@ const COMMANDS = [
     { id: 'add-comparison', label: 'Ajouter slide : Comparaison', iconKey: 'shuffle', action: () => editor.addSlide('comparison', editor.selectedIndex) },
     { id: 'add-simulation', label: 'Ajouter slide : Simulation', iconKey: 'settings', action: () => editor.addSlide('simulation', editor.selectedIndex) },
     { id: 'add-chapter', label: 'Ajouter slide : Chapitre', iconKey: 'bookmark', action: () => editor.addSlide('chapter', editor.selectedIndex) },
-    { id: 'dup', label: 'Dupliquer le slide actuel', iconKey: 'copy', action: () => editor.duplicateSlide(editor.selectedIndex) },
+    { id: 'dup', label: 'Dupliquer le slide actuel', iconKey: 'copy', keys: 'Ctrl+D', action: () => editor.duplicateSlide(editor.selectedIndex) },
     { id: 'del', label: 'Supprimer le slide actuel', iconKey: 'trash', action: async () => { if(await OEIDialog.confirm('Supprimer le slide actuel ?', { danger: true })) editor.removeSlide(editor.selectedIndex); } },
-    { id: 'copy-to-slide', label: 'Copier la sélection vers un autre slide (Ctrl+Shift+V)', iconKey: 'copy', action: () => openCopyToSlideDialog() },
-    { id: 'undo', label: 'Annuler', iconKey: 'undo', action: () => editor.undo() },
-    { id: 'redo', label: 'Rétablir', iconKey: 'redo', action: () => editor.redo() },
+    { id: 'copy-to-slide', label: 'Copier la sélection vers un autre slide', iconKey: 'copy', keys: 'Ctrl+Maj+V', action: () => openCopyToSlideDialog() },
+    { id: 'undo', label: 'Annuler', iconKey: 'undo', keys: 'Ctrl+Z', action: () => editor.undo() },
+    { id: 'redo', label: 'Rétablir', iconKey: 'redo', keys: 'Ctrl+Maj+Z', action: () => editor.redo() },
     { id: 'export-json', label: 'Exporter en JSON', iconKey: 'save', action: () => { editor.exportJson(); notify('Fichier téléchargé', 'success'); } },
-    { id: 'present', label: 'Lancer la présentation', iconKey: 'play', action: () => launchPresentation() },
+    { id: 'present', label: 'Lancer la présentation', iconKey: 'play', keys: 'F5', action: () => launchPresentation() },
+    // Actions du ruban déclenchées par leur bouton : la palette retrouve ainsi tout ce qui existe
+    // déjà, sans dupliquer la logique (audit UX 2026-10, E-I4).
+    { id: 'save', label: 'Enregistrer', iconKey: 'save', keys: 'Ctrl+S', words: 'sauvegarder fichier firebase', action: () => document.getElementById('save-indicator')?.click() },
+    { id: 'search', label: 'Rechercher et remplacer', iconKey: 'search', keys: 'Ctrl+F', action: () => openSearchDialog() },
+    { id: 'help', label: 'Aide : raccourcis clavier et premiers pas', iconKey: 'help', keys: '?', words: 'aide raccourcis clavier', action: () => openShortcutsHelp() },
+    { id: 'new', label: 'Nouvelle présentation', iconKey: 'plus', action: () => document.getElementById('btn-open-new')?.click() },
+    { id: 'open-json', label: 'Ouvrir un fichier JSON', iconKey: 'folder', words: 'importer charger', action: () => document.getElementById('btn-import')?.click() },
+    { id: 'import-pptx', label: 'Importer un PowerPoint (PPTX)', iconKey: 'upload', words: 'powerpoint', action: () => document.getElementById('btn-import-pptx')?.click() },
+    { id: 'import-pdf', label: 'Importer un PDF', iconKey: 'upload', action: () => document.getElementById('btn-import-pdf')?.click() },
+    { id: 'export-pdf', label: 'Exporter en PDF', iconKey: 'download', words: 'imprimer', action: () => document.getElementById('btn-export-pdf')?.click() },
+    { id: 'export-pptx', label: 'Exporter en PowerPoint (PPTX)', iconKey: 'download', words: 'powerpoint', action: () => document.getElementById('btn-export-pptx')?.click() },
+    { id: 'export-html', label: 'Exporter en HTML autonome', iconKey: 'download', action: () => document.getElementById('btn-export-html')?.click() },
+    { id: 'history', label: 'Historique des révisions', iconKey: 'history', words: 'versions restaurer', action: () => document.getElementById('btn-revision-history')?.click() },
+    { id: 'checker', label: 'Vérifier la présentation', iconKey: 'check', words: 'vérificateur contrôle', action: () => document.getElementById('btn-checker')?.click() },
+    { id: 'ai', label: 'Générer avec l\'IA', iconKey: 'sparkles', words: 'intelligence artificielle pipeline', action: () => document.getElementById('btn-ai-tuning')?.click() },
+    { id: 'hide', label: 'Masquer ou afficher le slide', iconKey: 'eye', action: () => document.getElementById('btn-hide-slide')?.click() },
+    { id: 'convert-canvas', label: 'Convertir le slide en canvas', iconKey: 'grid', words: 'libre gabarit', action: () => document.getElementById('btn-convert-canvas')?.click() },
     { id: 'theme-dark', label: 'Thème slide : Sombre', iconKey: 'moon', action: () => { editor.setTheme('dark'); buildThemeSelect(); } },
     { id: 'theme-light', label: 'Thème slide : Clair', iconKey: 'sun', action: () => { editor.setTheme('light'); buildThemeSelect(); } },
     { id: 'theme-academic', label: 'Thème slide : Académique', iconKey: 'bookmark_star', action: () => { editor.setTheme('academic'); buildThemeSelect(); } },
@@ -53,17 +70,43 @@ function closeCommandPalette() {
 }
 function renderCommandResults(query) {
     const container = document.getElementById('cmd-results');
-    const esc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const iconHtml = key => (typeof window.oeiIcon === 'function' ? window.oeiIcon(key) : '');
-    const q = query.toLowerCase().trim();
-    const filtered = q ? COMMANDS.filter(c => c.label.toLowerCase().includes(q)) : COMMANDS;
-    container.innerHTML = filtered.map((c, i) =>
-        `<button class="command-palette-item${i === 0 ? ' active' : ''}" data-cmd-idx="${i}">
-            <span class="cmd-icon">${iconHtml(c.iconKey) || esc((c.label || '?')[0])}</span>
-            <span class="cmd-label">${esc(c.label)}</span>
-        </button>`
-    ).join('');
-    container.querySelectorAll('.command-palette-item').forEach((btn, idx) => {
-        btn.addEventListener('click', () => { filtered[idx]?.action(); closeCommandPalette(); });
+    // Recherche sans accents ni casse (« definition » trouve « Définition »), sur le libellé
+    // et des mots-clés (« powerpoint », « sauvegarder »).
+    const norm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const terms = norm(query).split(/\s+/).filter(Boolean);
+    const filtered = terms.length
+        ? COMMANDS.filter(c => { const hay = norm(c.label + ' ' + (c.words || '')); return terms.every(t => hay.includes(t)); })
+        : COMMANDS;
+    container.textContent = '';
+    if (!filtered.length) {
+        const empty = document.createElement('div');
+        empty.className = 'command-palette-empty';
+        empty.setAttribute('role', 'status');
+        empty.textContent = 'Aucune commande ne correspond. Essayez un autre mot (« exporter », « slide », « thème »…).';
+        container.appendChild(empty);
+        return;
+    }
+    filtered.forEach((c, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'command-palette-item' + (i === 0 ? ' active' : '');
+        btn.dataset.cmdIdx = String(i);
+        const icon = document.createElement('span');
+        icon.className = 'cmd-icon';
+        const svg = iconHtml(c.iconKey);
+        if (svg) icon.innerHTML = svg; else icon.textContent = (c.label || '?')[0];
+        const label = document.createElement('span');
+        label.className = 'cmd-label';
+        label.textContent = c.label;
+        btn.append(icon, label);
+        if (c.keys && typeof formatShortcut === 'function') {
+            const kbd = document.createElement('kbd');
+            kbd.className = 'cmd-shortcut';
+            kbd.textContent = formatShortcut(c.keys);
+            btn.appendChild(kbd);
+        }
+        btn.addEventListener('click', () => { closeCommandPalette(); c.action(); });
+        container.appendChild(btn);
     });
 }

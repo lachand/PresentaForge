@@ -16,17 +16,52 @@
         updateClock();
         setInterval(updateClock, 1000);
 
+        // ── Menu « Plus » de la barre présentateur (P-B1) ──────────────
+        var moreBtn = document.getElementById('pv-btn-more');
+        var moreMenu = document.getElementById('pv-more-menu');
+        function setMoreOpen(open) {
+            if (!moreBtn || !moreMenu) return;
+            moreMenu.classList.toggle('hidden', !open);
+            moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) moreMenu.querySelector('button')?.focus();
+        }
+        if (moreBtn && moreMenu) {
+            moreBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                setMoreOpen(moreMenu.classList.contains('hidden'));
+            });
+            // Une action choisie ferme le menu (son propre handler a déjà été exécuté).
+            moreMenu.addEventListener('click', function (e) {
+                if (e.target.closest('button')) setMoreOpen(false);
+            });
+            document.addEventListener('click', function (e) {
+                if (!moreMenu.classList.contains('hidden') && !e.target.closest('#pv-more')) setMoreOpen(false);
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !moreMenu.classList.contains('hidden')) {
+                    e.stopPropagation();
+                    setMoreOpen(false);
+                    moreBtn.focus();
+                }
+            }, true);
+        }
+
         // ── End Show → Analytics modal (or editor if no room) ─────────
         var _pvaEsc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
+        // « Fin » ouvre TOUJOURS l'écran de fin (Bilan + export + retour éditeur) : avant, sans
+        // étudiant encore connecté, il quittait directement vers l'éditeur et le Bilan (questions,
+        // scores) était perdu — or en fin de cours les étudiants partent avant l'enseignant
+        // (audit UX 2026-10, G5 / P-B2). Les étudiants déconnectés restent dans le classement.
         var btnEndShow = document.getElementById('pv-btn-end-show');
         if (btnEndShow) {
             btnEndShow.addEventListener('click', function () {
-                var room = window._studentRoom || window.__oeiViewerRuntime?.studentRoom;
-                var students = room && room.students ? Object.values(room.students) : [];
-                if (!room || !room.active || students.length === 0) {
-                    document.getElementById('pv-btn-editor')?.click();
-                    return;
+                var bridge = window.OEIPresenterSyncBridge;
+                var students = [];
+                try { students = bridge && bridge.getSessionParticipants ? bridge.getSessionParticipants() : []; } catch (_) { students = []; }
+                if (!students.length) {
+                    var room = window._studentRoom || window.__oeiViewerRuntime?.studentRoom;
+                    students = room && room.students ? Object.values(room.students) : [];
                 }
                 _openAnalyticsDashboard(students);
             });
@@ -95,7 +130,9 @@
             var totalQ = withScore.reduce(function(acc, s) { return acc + (s.quizCount || 0); }, 0);
             var avgAccuracy = totalQ > 0 ? Math.round(totalCorrect / totalQ * 100) : null;
 
-            document.getElementById('pva-count').textContent = n + ' étudiant' + (n > 1 ? 's' : '') + ' connecté' + (n > 1 ? 's' : '');
+            document.getElementById('pva-count').textContent = n === 0
+                ? 'Aucun étudiant dans la salle pendant la séance'
+                : n + ' étudiant' + (n > 1 ? 's' : '') + ' pendant la séance';
             var accBits = [];
             if (avgAccuracy !== null) accBits.push(avgAccuracy + '% de bonnes réponses');
             if (insights && insights.totals) {
@@ -124,12 +161,24 @@
             document.getElementById('pva-leaderboard').innerHTML = renderPvaLeaderboardHtml(students);
 
             modal.classList.add('is-open');
-            modal.addEventListener('keydown', function(e) { if (e.key === 'Escape') _closeAnalyticsDashboard(); }, { once: true });
+            // Échap : écouté sur le document (la modale n'a jamais le focus, l'ancien listener
+            // { once } posé sur elle ne se déclenchait pas) ; focus déplacé dans la modale.
+            document.addEventListener('keydown', _onAnalyticsKeydown, true);
+            document.getElementById('pva-close')?.focus();
+        }
+
+        function _onAnalyticsKeydown(e) {
+            if (e.key !== 'Escape') return;
+            e.preventDefault();
+            e.stopPropagation();
+            _closeAnalyticsDashboard();
         }
 
         function _closeAnalyticsDashboard() {
             var modal = document.getElementById('pv-analytics-modal');
             if (modal) modal.classList.remove('is-open');
+            document.removeEventListener('keydown', _onAnalyticsKeydown, true);
+            document.getElementById('pv-btn-end-show')?.focus();
         }
 
         document.getElementById('pva-close')?.addEventListener('click', _closeAnalyticsDashboard);

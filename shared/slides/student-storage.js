@@ -203,10 +203,27 @@
         };
         const _writeIndex = list => localSetJSON(REVISE_INDEX_KEY, list);
 
-        const _deleteArchiveKeys = ck => {
+        /**
+         * @param {string} ck
+         * @param {{ keepPersonal?: boolean }} [opts] — `keepPersonal:true` (évictions
+         *   automatiques : plafond MRU, quota) ne retire que le deck, volumineux et
+         *   re-téléchargeable en rejoignant le cours. Notes, favoris et planning de révision
+         *   (petits, irremplaçables) ne sont plus jamais effacés sans action de l'étudiant
+         *   (audit UX 2026-10, V3) : ils réapparaissent si le cours est de nouveau archivé.
+         */
+        const _deleteArchiveKeys = (ck, opts = {}) => {
             const k = _reviseKeys(ck);
-            localRemove(k.deck); localRemove(k.revision); localRemove(k.bookmarks); localRemove(k.notes);
+            localRemove(k.deck);
+            if (!opts.keepPersonal) { localRemove(k.revision); localRemove(k.bookmarks); localRemove(k.notes); }
             if (_blobStore && _blobStore.available()) { _blobStore.delete(_blobId(ck)).catch(() => {}); }
+        };
+
+        // Demande au navigateur de ne pas évincer le stockage du site (best-effort, une fois).
+        let _persistRequested = false;
+        const _requestPersistentStorage = () => {
+            if (_persistRequested) return;
+            _persistRequested = true;
+            try { root.navigator?.storage?.persist?.().catch?.(() => {}); } catch (_) { /* non supporté */ }
         };
 
         const _upsertIndex = entry => {
@@ -214,7 +231,7 @@
             list.unshift(entry);
             list.sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0));
             if (list.length > REVISE_INDEX_CAP) {
-                list.slice(REVISE_INDEX_CAP).forEach(e => _deleteArchiveKeys(e.courseKey));
+                list.slice(REVISE_INDEX_CAP).forEach(e => _deleteArchiveKeys(e.courseKey, { keepPersonal: true }));
                 list = list.slice(0, REVISE_INDEX_CAP);
             }
             _writeIndex(list);
@@ -226,7 +243,7 @@
                 .sort((a, b) => (Number(a.updatedAt) || 0) - (Number(b.updatedAt) || 0));
             const victim = list[0];
             if (!victim) return false;
-            _deleteArchiveKeys(victim.courseKey);
+            _deleteArchiveKeys(victim.courseKey, { keepPersonal: true });
             _writeIndex(_readIndex().filter(e => e.courseKey !== victim.courseKey));
             return true;
         };
@@ -344,6 +361,7 @@
                 // Nettoyage d'un éventuel blob IDB orphelin si on repasse inline.
                 if (!record.store && hasIdb) { _blobStore.delete(_blobId(ck)).catch(() => {}); }
                 _upsertIndex({ courseKey: ck, title: meta.title, author: meta.author, slideCount: meta.slideCount, updatedAt: now });
+                _requestPersistentStorage();
                 return { ok: true };
             },
 

@@ -18,6 +18,42 @@
     const _stripCodeFences = S.stripCodeFences;
     const _tryParseJsonLoose = S.tryParseJsonLoose;
 
+// ── Arrêt volontaire d'une génération (audit UX 2026-10, E-X1) ──────────────────────────
+// Chaque requête enregistre son AbortController ; stopAIGeneration() les interrompt toutes et
+// les marque « arrêt utilisateur » pour distinguer ce cas d'un simple timeout.
+const AI_ABORTED_CODE = 'OEI_AI_ABORTED';
+const _aiActiveControllers = new Set();
+let _aiStopRequested = false;
+
+function _trackAIController(controller) {
+    // Arrêt demandé entre deux appels : l'appel suivant échoue tout de suite au lieu de repartir.
+    // Le drapeau est remis à zéro par le pipeline (resetAIStop) au début et à la fin d'une génération.
+    if (_aiStopRequested) throw _makeAIAbortedError();
+    if (controller) _aiActiveControllers.add(controller);
+    return controller;
+}
+function _untrackAIController(controller) {
+    if (controller) _aiActiveControllers.delete(controller);
+}
+function _makeAIAbortedError() {
+    const err = new Error('Génération arrêtée');
+    err.code = AI_ABORTED_CODE;
+    return err;
+}
+/** Interrompt toutes les requêtes IA en cours. @returns {number} nombre de requêtes interrompues */
+function stopAIGeneration() {
+    _aiStopRequested = true;
+    let n = 0;
+    _aiActiveControllers.forEach((controller) => {
+        controller.__userStopped = true;
+        try { controller.abort(); n += 1; } catch (_) { /* déjà terminée */ }
+    });
+    return n;
+}
+function isAIStopRequested() { return _aiStopRequested; }
+/** Remet le drapeau à zéro au début d'une nouvelle génération. */
+function resetAIStop() { _aiStopRequested = false; }
+
 function _extractGeminiText(payload) {
     const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
     const parts = [];
@@ -121,7 +157,7 @@ function _summarizeGeminiCandidateParts(payload) {
 }
 
 async function _callGeminiGenerate({ apiKey, model, prompt, temperature, timeoutMs }) {
-    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const controller = _trackAIController(typeof AbortController !== 'undefined' ? new AbortController() : null);
     const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -149,12 +185,14 @@ async function _callGeminiGenerate({ apiKey, model, prompt, temperature, timeout
         return _stripCodeFences(text);
     } catch (err) {
         if (err?.name === 'AbortError') {
+            if (controller && controller.__userStopped) throw _makeAIAbortedError();
             const timeoutLabel = Number.isFinite(Number(timeoutMs)) ? `${Math.trunc(Number(timeoutMs))} ms` : 'délai imparti';
             throw new Error(`Timeout Gemini (${timeoutLabel})`);
         }
         throw err;
     } finally {
         if (timer) clearTimeout(timer);
+        _untrackAIController(controller);
     }
 }
 
@@ -171,7 +209,7 @@ function _extractClaudeText(payload) {
 // l'en-tête `anthropic-dangerous-direct-browser-access` ; la clé reste locale
 // (localStorage), même posture qu'avec Gemini.
 async function _callClaudeGenerate({ apiKey, model, prompt, system, temperature, timeoutMs, maxTokens }) {
-    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const controller = _trackAIController(typeof AbortController !== 'undefined' ? new AbortController() : null);
     const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
     try {
         const body = {
@@ -206,12 +244,14 @@ async function _callClaudeGenerate({ apiKey, model, prompt, system, temperature,
         return _stripCodeFences(text);
     } catch (err) {
         if (err?.name === 'AbortError') {
+            if (controller && controller.__userStopped) throw _makeAIAbortedError();
             const timeoutLabel = Number.isFinite(Number(timeoutMs)) ? `${Math.trunc(Number(timeoutMs))} ms` : 'délai imparti';
             throw new Error(`Timeout Claude (${timeoutLabel})`);
         }
         throw err;
     } finally {
         if (timer) clearTimeout(timer);
+        _untrackAIController(controller);
     }
 }
 
@@ -225,7 +265,7 @@ async function _callAITextGenerate({ provider, apiKey, model, prompt, system, te
 }
 
 async function _callGeminiGenerateImage({ apiKey, model, prompt, temperature, timeoutMs }) {
-    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const controller = _trackAIController(typeof AbortController !== 'undefined' ? new AbortController() : null);
     const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -268,12 +308,14 @@ async function _callGeminiGenerateImage({ apiKey, model, prompt, temperature, ti
         };
     } catch (err) {
         if (err?.name === 'AbortError') {
+            if (controller && controller.__userStopped) throw _makeAIAbortedError();
             const timeoutLabel = Number.isFinite(Number(timeoutMs)) ? `${Math.trunc(Number(timeoutMs))} ms` : 'délai imparti';
             throw new Error(`Timeout Gemini image (${timeoutLabel})`);
         }
         throw err;
     } finally {
         if (timer) clearTimeout(timer);
+        _untrackAIController(controller);
     }
 }
 
@@ -421,6 +463,10 @@ function _describeGeminiImageError(err, timeoutMs) {
         _extractClaudeText,
         _callClaudeGenerate,
         _callAITextGenerate,
+        AI_ABORTED_CODE,
+        stopAIGeneration,
+        isAIStopRequested,
+        resetAIStop,
         _supportsNativeGeminiImageModel,
         _toBase64Utf8,
         _svgToDataUrl,
