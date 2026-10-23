@@ -288,6 +288,7 @@ export function createSessionRecordingRuntime(params = {}) {
         lastSession: null,
         labelTimer: null,
         exportBusy: false,
+        recorderStopped: Promise.resolve(),
         exportMessage: '',
         // Persistance brouillon (IndexedDB)
         draftChunkIndex: 0,
@@ -808,8 +809,19 @@ export function createSessionRecordingRuntime(params = {}) {
         if (state.draftFlushTimer) { clearTimeoutFn(state.draftFlushTimer); state.draftFlushTimer = null; }
         Promise.resolve(_flushDraft()).catch(() => {});
         stopSpeechRecognition();
-        if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
-            try { state.mediaRecorder.stop(); } catch (_) {}
+        const stoppingRecorder = state.mediaRecorder;
+        state.recorderStopped = Promise.resolve();
+        if (stoppingRecorder && stoppingRecorder.state !== 'inactive') {
+            // La dernière tranche audio n'arrive qu'à `onstop` : un export lancé dans la foulée
+            // (bouton Stop) doit l'attendre, sinon il perd la fin de l'enregistrement.
+            state.recorderStopped = new Promise(resolve => {
+                const prevOnStop = stoppingRecorder.onstop;
+                stoppingRecorder.onstop = ev => {
+                    try { if (typeof prevOnStop === 'function') prevOnStop.call(stoppingRecorder, ev); }
+                    finally { resolve(); }
+                };
+            });
+            try { stoppingRecorder.stop(); } catch (_) {}
         }
         state.mediaRecorder = null;
         if (state.mediaStream) {
@@ -953,6 +965,8 @@ export function createSessionRecordingRuntime(params = {}) {
                 setExportMessage('Export replay annulé');
                 return;
             }
+            // Attendre la dernière tranche audio (plafonné : on n'exporte pas sans fin si le recorder ne répond pas).
+            await Promise.race([state.recorderStopped, new Promise(resolve => setTimeoutFn(resolve, 3000))]);
             ensureAudioBlobForExport();
             const audioDataUrl = await blobToDataUrl(state.audioBlob);
             const html = buildReplayStandaloneHtml({

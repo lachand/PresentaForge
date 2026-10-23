@@ -163,7 +163,10 @@ export function bindPresenterToolbarButtons(context = {}) {
     });
     documentRef.getElementById('pv-btn-rec')?.addEventListener('click', async () => {
         if (sessionRec.active) {
+            // Stop = fin de la séance enregistrée : on propose tout de suite le fichier (replay HTML).
+            // Si l'export est annulé, le brouillon reste récupérable (barre de reprise / menu « Plus »).
             stopSessionRecording();
+            await exportReplayStandalone();
             return;
         }
         await startSessionRecording();
