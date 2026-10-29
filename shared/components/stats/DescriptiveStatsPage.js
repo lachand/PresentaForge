@@ -287,7 +287,7 @@ class DescriptiveStatsPage extends SimulationPage {
             <rect x="0" y="0" width="${width}" height="${height}" fill="var(--card)"></rect>
             <line x1="${xMin}" y1="${y}" x2="${xMax}" y2="${y}" stroke="var(--border)" stroke-width="2"></line>
             <rect x="${xQ1}" y="${y - 18}" width="${Math.max(4, xQ3 - xQ1)}" height="36" fill="rgba(79,70,229,0.2)" stroke="var(--primary)"></rect>
-            <line x1="${xMedian}" y1="${y - 20}" x2="${xMedian}" y2="${y + 20}" stroke="var(--accent)" stroke-width="3"></line>
+            <line x1="${xMedian}" y1="${y - 20}" x2="${xMedian}" y2="${y + 20}" stroke="var(--ok)" stroke-width="3"></line>
             <line x1="${xMin}" y1="${y - 12}" x2="${xMin}" y2="${y + 12}" stroke="var(--border)" stroke-width="2"></line>
             <line x1="${xMax}" y1="${y - 12}" x2="${xMax}" y2="${y + 12}" stroke="var(--border)" stroke-width="2"></line>
             <circle cx="${xMean}" cy="${y}" r="5" fill="#f59e0b"></circle>
@@ -301,7 +301,7 @@ class DescriptiveStatsPage extends SimulationPage {
         html += `
             <text x="${padding.left}" y="${height - 10}" text-anchor="start" font-size="11" fill="var(--muted)">min ${this.format(min)}</text>
             <text x="${width - padding.right}" y="${height - 10}" text-anchor="end" font-size="11" fill="var(--muted)">max ${this.format(max)}</text>
-            <text x="${xMedian}" y="${y - 26}" text-anchor="middle" font-size="11" fill="var(--accent)">mediane ${this.format(this.summary.median)}</text>
+            <text x="${xMedian}" y="${y - 26}" text-anchor="middle" font-size="11" fill="var(--ok)">mediane ${this.format(this.summary.median)}</text>
             <text x="${xMean}" y="${y + 30}" text-anchor="middle" font-size="11" fill="#b45309">moyenne ${this.format(this.summary.mean)}</text>
         `;
 

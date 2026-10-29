@@ -71,7 +71,7 @@ function renderThemeMiniGallery() {
     const container = document.getElementById('theme-mini-gallery');
     if (!container || !runtimeEditor?.data) return;
     const themes = SlidesThemes.list();
-    const quickIds = ['dark', 'light', 'academic', 'terminal', 'ocean', 'icom', 'lyon2'];
+    const quickIds = ['signature', 'signature-nuit', 'signature-contraste', 'dark', 'light', 'academic', 'terminal', 'ocean', 'icom', 'lyon2'];
     const current = typeof runtimeEditor.data.theme === 'string' ? runtimeEditor.data.theme : runtimeEditor.data.theme?.id;
     const currentColors = _resolvedThemeColors();
 

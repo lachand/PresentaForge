@@ -330,6 +330,69 @@ const BUILT_IN_LAYOUTS = [
             ]
         }
     },
+    // Dispositions Signature : filets, pas de dégradé ni d'ombre, hiérarchie par la taille et l'espace.
+    {
+        id: 'layout-signature-titre',
+        name: 'Signature : titre',
+        category: 'Signature',
+        slide: {
+            type: 'canvas',
+            elements: [
+                { id: 'm1', type: 'shape', x: 0, y: 0, w: 1280, h: 720, z: 1, data: { shapeType: 'rect' }, style: { fill: 'var(--sl-tag)' } },
+                { id: 'm2', type: 'text', x: 100, y: 190, w: 1080, h: 40, z: 2, data: { text: 'Surtitre, cours ou séance' }, style: { fontSize: 22, fontWeight: 500, color: 'var(--sl-primary)', textAlign: 'left', fontFamily: 'var(--sl-font-mono)' } },
+                { id: 'm3', type: 'heading', x: 100, y: 240, w: 1080, h: 220, z: 3, data: { text: 'Titre de la présentation' }, style: { fontSize: 64, fontWeight: 600, color: 'var(--sl-heading)', textAlign: 'left', fontFamily: 'var(--sl-font-heading)' } },
+                { id: 'm4', type: 'shape', x: 100, y: 480, w: 120, h: 4, z: 4, data: { shapeType: 'rect' }, style: { fill: 'var(--sl-primary)' } },
+                { id: 'm5', type: 'text', x: 100, y: 640, w: 1080, h: 36, z: 5, data: { text: 'Auteur, établissement, 29/10/2026' }, style: { fontSize: 18, fontWeight: 400, color: 'var(--sl-muted)', textAlign: 'left', fontFamily: 'var(--sl-font-body)' } },
+            ]
+        }
+    },
+    {
+        id: 'layout-signature-section',
+        name: 'Signature : section',
+        category: 'Signature',
+        slide: {
+            type: 'canvas',
+            elements: [
+                { id: 'm1', type: 'shape', x: 0, y: 0, w: 1280, h: 720, z: 1, data: { shapeType: 'rect' }, style: { fill: 'var(--sl-heading)' } },
+                { id: 'm2', type: 'text', x: 140, y: 250, w: 1000, h: 40, z: 2, data: { text: 'Partie 1' }, style: { fontSize: 22, fontWeight: 500, color: 'var(--sl-slide-bg)', textAlign: 'center', opacity: 0.75, fontFamily: 'var(--sl-font-mono)' } },
+                { id: 'm3', type: 'heading', x: 140, y: 300, w: 1000, h: 130, z: 3, data: { text: 'Titre de la section' }, style: { fontSize: 60, fontWeight: 600, color: 'var(--sl-slide-bg)', textAlign: 'center', fontFamily: 'var(--sl-font-heading)' } },
+                { id: 'm4', type: 'shape', x: 580, y: 460, w: 120, h: 4, z: 4, data: { shapeType: 'rect' }, style: { fill: 'var(--sl-primary)' } },
+            ]
+        }
+    },
+    {
+        id: 'layout-signature-chiffre',
+        name: 'Signature : chiffre clé',
+        category: 'Signature',
+        slide: {
+            type: 'canvas',
+            elements: [
+                { id: 'm1', type: 'text', x: 80, y: 80, w: 1120, h: 40, z: 1, data: { text: 'Mesure' }, style: { fontSize: 22, fontWeight: 500, color: 'var(--sl-muted)', textAlign: 'left', fontFamily: 'var(--sl-font-body)' } },
+                { id: 'm2', type: 'heading', x: 80, y: 140, w: 700, h: 200, z: 2, data: { text: '68,4' }, style: { fontSize: 168, fontWeight: 500, color: 'var(--sl-primary)', textAlign: 'left', fontFamily: 'var(--sl-font-mono)' } },
+                { id: 'm3', type: 'text', x: 790, y: 240, w: 300, h: 80, z: 3, data: { text: '°C' }, style: { fontSize: 44, fontWeight: 500, color: 'var(--sl-muted)', textAlign: 'left', fontFamily: 'var(--sl-font-mono)' } },
+                { id: 'm4', type: 'shape', x: 80, y: 380, w: 120, h: 2, z: 4, data: { shapeType: 'rect' }, style: { fill: 'var(--sl-heading)' } },
+                { id: 'm5', type: 'text', x: 80, y: 410, w: 1120, h: 140, z: 5, data: { text: 'Phrase de contexte : ce que ce chiffre dit, et pourquoi il compte.' }, style: { fontSize: 30, fontWeight: 400, color: 'var(--sl-text)', textAlign: 'left', fontFamily: 'var(--sl-font-body)' } },
+                { id: 'm6', type: 'text', x: 80, y: 630, w: 1120, h: 36, z: 6, data: { text: 'Figure 1. Légende de la mesure. Source : à renseigner.' }, style: { fontSize: 18, fontWeight: 400, color: 'var(--sl-muted)', textAlign: 'left', fontFamily: 'var(--sl-font-body)' } },
+            ]
+        }
+    },
+    {
+        id: 'layout-signature-comparaison',
+        name: 'Signature : comparaison',
+        category: 'Signature',
+        slide: {
+            type: 'canvas',
+            elements: [
+                { id: 'm1', type: 'heading', x: 60, y: 40, w: 1160, h: 80, z: 1, data: { text: 'Titre de la comparaison' }, style: { fontSize: 40, fontWeight: 600, color: 'var(--sl-heading)', textAlign: 'left', fontFamily: 'var(--sl-font-heading)' } },
+                { id: 'm2', type: 'shape', x: 60, y: 150, w: 560, h: 2, z: 2, data: { shapeType: 'rect' }, style: { fill: 'var(--sl-heading)' } },
+                { id: 'm3', type: 'shape', x: 660, y: 150, w: 560, h: 2, z: 3, data: { shapeType: 'rect' }, style: { fill: 'var(--sl-heading)' } },
+                { id: 'm4', type: 'text', x: 60, y: 165, w: 560, h: 40, z: 4, data: { text: 'Option A' }, style: { fontSize: 22, fontWeight: 500, color: 'var(--sl-primary)', textAlign: 'left', fontFamily: 'var(--sl-font-mono)' } },
+                { id: 'm5', type: 'text', x: 660, y: 165, w: 560, h: 40, z: 5, data: { text: 'Option B' }, style: { fontSize: 22, fontWeight: 500, color: 'var(--sl-primary)', textAlign: 'left', fontFamily: 'var(--sl-font-mono)' } },
+                { id: 'm6', type: 'text', x: 60, y: 225, w: 560, h: 400, z: 6, data: { text: 'Points de la première option.' }, style: { fontSize: 26, fontWeight: 400, color: 'var(--sl-text)', textAlign: 'left', fontFamily: 'var(--sl-font-body)' } },
+                { id: 'm7', type: 'text', x: 660, y: 225, w: 560, h: 400, z: 7, data: { text: 'Points de la seconde option.' }, style: { fontSize: 26, fontWeight: 400, color: 'var(--sl-text)', textAlign: 'left', fontFamily: 'var(--sl-font-body)' } },
+            ]
+        }
+    },
 ];
 
 /* ── Built-in Masters (saved templates) ────────────────── */

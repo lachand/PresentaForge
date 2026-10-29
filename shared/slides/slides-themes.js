@@ -107,6 +107,53 @@ class SlidesThemes {
                 mono: '"Fira Code", "Cascadia Code", monospace',
             },
         },
+        // Thèmes Signature (valeurs de vendor/signature/tokens.css) : papier pour l'impression,
+        // graphite pour la projection en salle sombre, contraste fort (AAA) pour l'accessibilité.
+        signature: {
+            id: 'signature', name: 'Signature (papier)',
+            colors: {
+                bg: '#eae6d7', slideBg: '#f6f2e7', heading: '#2a2118',
+                text: '#43382b', muted: '#5a4d3e', primary: '#a63d14',
+                accent: '#2a5a7c', codeBg: '#dbd6c4', codeText: '#2a2118',
+                border: '#cbc3aa', success: '#14654f', warning: '#8a5a00',
+                tag: 'rgba(166,61,20,0.10)', tagBorder: 'rgba(166,61,20,0.30)',
+            },
+            fonts: {
+                heading: '"Fraunces", "Iowan Old Style", Georgia, serif',
+                body: '"Inter Tight", "Segoe UI", system-ui, sans-serif',
+                mono: '"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace',
+            },
+        },
+        'signature-nuit': {
+            id: 'signature-nuit', name: 'Signature (nuit)',
+            colors: {
+                bg: '#171512', slideBg: '#1e1b18', heading: '#f3ebdc',
+                text: '#d2c8b6', muted: '#bdb1a0', primary: '#e8895a',
+                accent: '#7dc3e0', codeBg: '#27231f', codeText: '#f3ebdc',
+                border: '#3e372f', success: '#55c4a8', warning: '#e8b93e',
+                tag: 'rgba(232,137,90,0.15)', tagBorder: 'rgba(232,137,90,0.35)',
+            },
+            fonts: {
+                heading: '"Fraunces", "Iowan Old Style", Georgia, serif',
+                body: '"Inter Tight", "Segoe UI", system-ui, sans-serif',
+                mono: '"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace',
+            },
+        },
+        'signature-contraste': {
+            id: 'signature-contraste', name: 'Signature (contraste fort)',
+            colors: {
+                bg: '#ffffff', slideBg: '#ffffff', heading: '#000000',
+                text: '#000000', muted: '#333333', primary: '#8a2800',
+                accent: '#003d7a', codeBg: '#f0f0f0', codeText: '#000000',
+                border: '#000000', success: '#004d3a', warning: '#6b4300',
+                tag: 'rgba(138,40,0,0.10)', tagBorder: 'rgba(0,0,0,0.55)',
+            },
+            fonts: {
+                heading: '"Fraunces", "Iowan Old Style", Georgia, serif',
+                body: '"Inter Tight", "Segoe UI", system-ui, sans-serif',
+                mono: '"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace',
+            },
+        },
         lyon2: {
             id: 'lyon2', name: 'Université Lyon 2',
             colors: {

@@ -223,14 +223,14 @@ class DiscreteDistributionPage extends SimulationPage {
             const obsY = height - padding.bottom - obsHeight;
 
             html += `<rect x="${theoX}" y="${theoY}" width="${barWidth}" height="${theoHeight}" fill="var(--primary)" opacity="0.82"></rect>`;
-            html += `<rect x="${obsX}" y="${obsY}" width="${barWidth}" height="${obsHeight}" fill="var(--accent)" opacity="0.68"></rect>`;
+            html += `<rect x="${obsX}" y="${obsY}" width="${barWidth}" height="${obsHeight}" fill="var(--ok)" opacity="0.68"></rect>`;
             html += `<text x="${x0 + (barGroupWidth / 2)}" y="${height - 20}" text-anchor="middle" font-size="11" fill="var(--muted)">x=${this.format(xVal, 2)}</text>`;
         });
 
         html += `
             <rect x="${padding.left}" y="${height - 16}" width="11" height="11" fill="var(--primary)" opacity="0.82"></rect>
             <text x="${padding.left + 16}" y="${height - 7}" font-size="11" fill="var(--muted)">P theorique</text>
-            <rect x="${padding.left + 116}" y="${height - 16}" width="11" height="11" fill="var(--accent)" opacity="0.68"></rect>
+            <rect x="${padding.left + 116}" y="${height - 16}" width="11" height="11" fill="var(--ok)" opacity="0.68"></rect>
             <text x="${padding.left + 132}" y="${height - 7}" font-size="11" fill="var(--muted)">Frequence observee</text>
         `;
 

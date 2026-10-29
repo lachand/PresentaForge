@@ -23,7 +23,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: var(--font-ui);
     background: var(--surface); color: var(--text);
     height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
 }
@@ -48,7 +48,7 @@ body {
 .join-brand-logo-dark { display: none; }
 .join-icon { margin-bottom: 12px; display:flex; align-items:center; justify-content:center; color: var(--primary); }
 .join-icon svg { width: 48px; height: 48px; }
-.join-panel h1 { font-size: 1.3rem; font-weight: 700; font-family: 'Manrope', sans-serif; color: var(--text); margin-bottom: 6px; }
+.join-panel h1 { font-size: 1.3rem; font-weight: 700; font-family: var(--font-editorial); color: var(--text); margin-bottom: 6px; }
 .join-panel p { font-size: 0.82rem; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
 .join-input {
     width: 100%; padding: 13px 16px; border-radius: var(--radius-lg, 1rem);
@@ -64,7 +64,7 @@ body {
     width: 100%; padding: 13px; border-radius: var(--radius-lg, 1rem); border: none;
     background: var(--primary); color: #fff;
     font-size: 1rem; font-weight: 700;
-    font-family: 'Manrope', sans-serif; cursor: pointer; transition: opacity 0.15s; margin-bottom: 12px;
+    font-family: var(--font-editorial); cursor: pointer; transition: opacity 0.15s; margin-bottom: 12px;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
 .join-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
@@ -132,7 +132,7 @@ body {
 .student-brand-logo-dark { display: none; }
 #header-title {
     flex: 1; font-size: 0.8rem; font-weight: 700;
-    font-family: 'Manrope', sans-serif; color: var(--primary);
+    font-family: var(--font-editorial); color: var(--primary);
     text-transform: uppercase; letter-spacing: 0.05em;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -290,7 +290,7 @@ body {
 .quiz-option.correct .quiz-opt-letter { background: var(--success); color: #fff; }
 .quiz-option.wrong .quiz-opt-letter { background: var(--danger); color: #fff; }
 .quiz-opt-text { font-size: 0.92rem; color: var(--text); }
-.quiz-result-banner { margin-top: 10px; padding: 11px 14px; border-radius: var(--radius-md, 0.75rem); font-size: 0.88rem; font-weight: 600; font-family: 'Manrope', sans-serif; text-align: center; flex-shrink: 0; }
+.quiz-result-banner { margin-top: 10px; padding: 11px 14px; border-radius: var(--radius-md, 0.75rem); font-size: 0.88rem; font-weight: 600; font-family: var(--font-editorial); text-align: center; flex-shrink: 0; }
 .quiz-result-banner.sent { background: var(--primary-fixed); color: var(--on-primary-fixed); }
 .quiz-result-banner.correct { background: var(--success-light); color: var(--success); }
 .quiz-result-banner.wrong { background: var(--danger-light); color: var(--danger); }
@@ -303,7 +303,7 @@ body {
     display: flex; align-items: center; gap: 10px; flex-shrink: 0;
     font-size: 0.78rem; color: var(--text);
 }
-#score-pts { color: var(--primary); font-weight: 700; font-size: 0.88rem; font-family: 'Manrope', sans-serif; }
+#score-pts { color: var(--primary); font-weight: 700; font-size: 0.88rem; font-family: var(--font-editorial); }
 #score-pseudo { color: var(--dim); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #score-sep { color: var(--dim); }
 /* Score flash animation (+pts earned) */
@@ -605,7 +605,7 @@ body {
 }
 #student-revtools .srt-label {
     flex-basis: 100%;
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     font-size: 0.58rem; font-weight: 700; letter-spacing: 0.09em;
     text-transform: uppercase; color: var(--muted);
 }
@@ -988,7 +988,7 @@ body {
     font-size: 0.9rem; flex-shrink: 0;
 }
 .ssp-header-title {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     font-size: 0.9375rem;
     font-weight: 700;
     color: var(--text);
@@ -1003,7 +1003,7 @@ body {
     min-height: 0;
 }
 .ssp-section-label {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     font-size: 0.58rem;
     font-weight: 700;
     letter-spacing: 0.09em;
@@ -1017,7 +1017,7 @@ body {
     padding: 10px 12px;
 }
 .ssp-slide-num {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     font-size: 0.6rem;
     font-weight: 700;
     color: var(--primary);
@@ -1159,7 +1159,7 @@ body {
     background: var(--primary);
     color: #fff; border: none;
     border-radius: var(--radius-pill, 999px);
-    font-family: 'Manrope', sans-serif; font-size: 0.78rem; font-weight: 700;
+    font-family: var(--font-editorial); font-size: 0.78rem; font-weight: 700;
     cursor: pointer;
     box-shadow: var(--elev-3);
     transition: opacity 0.15s, transform 0.15s;
@@ -1181,7 +1181,7 @@ body {
     padding: 0 16px 16px;
 }
 .ssp-notes-label {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     font-size: 0.58rem;
     font-weight: 700;
     letter-spacing: 0.09em;
@@ -1227,7 +1227,7 @@ body {
 }
 .dp-tab {
     padding: 7px 14px; font-size: 0.75rem; font-weight: 600;
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     border: none; background: none; cursor: pointer;
     color: var(--muted); border-bottom: 2px solid transparent;
     transition: color 0.12s; margin-bottom: -1px;
@@ -1396,7 +1396,7 @@ body {
 .sfn-btn:disabled { opacity: 0.35; cursor: default; }
 .sfn-btn svg { width: 14px; height: 14px; }
 .sfn-counter {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     font-size: 0.8125rem; font-weight: 700;
     color: var(--on-surface);
     min-width: 56px; text-align: center;
@@ -1556,7 +1556,7 @@ body.revise-offline #revision-bar { display: flex !important; }
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
 }
 .revise-choice-eyebrow {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     font-size: 0.6rem;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -1564,7 +1564,7 @@ body.revise-offline #revision-bar { display: flex !important; }
     color: var(--primary);
 }
 .revise-choice-panel h2 {
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--font-editorial);
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text);
@@ -1576,7 +1576,7 @@ body.revise-offline #revision-bar { display: flex !important; }
 /* Accueil : « Mes cours à réviser » */
 #revise-list-section { margin-top: 20px; text-align: left; }
 .revise-list-title {
-    font: 700 0.9rem 'Manrope', sans-serif;
+    font: 700 0.9rem var(--font-editorial);
     color: var(--text);
     margin: 0 0 10px;
 }

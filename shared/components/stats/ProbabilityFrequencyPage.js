@@ -278,7 +278,7 @@ class ProbabilityFrequencyPage extends SimulationPage {
             const points = sampled.map((p) => `${x(p.trial, maxTrial)},${y(p.frequency)}`).join(' ');
             const last = this.frequencyHistory[this.frequencyHistory.length - 1];
             html += `<polyline points="${points}" fill="none" stroke="var(--primary)" stroke-width="2.4"></polyline>`;
-            html += `<circle cx="${x(last.trial, maxTrial)}" cy="${y(last.frequency)}" r="3.6" fill="var(--accent)"></circle>`;
+            html += `<circle cx="${x(last.trial, maxTrial)}" cy="${y(last.frequency)}" r="3.6" fill="var(--ok)"></circle>`;
             html += `<text x="${x(last.trial, maxTrial)}" y="${y(last.frequency) - 10}" text-anchor="middle" font-size="11" fill="var(--text)">f=${this.formatProbability(last.frequency)}</text>`;
             html += `<text x="${width - padding.right}" y="${height - 8}" text-anchor="end" font-size="11" fill="var(--muted)">n=${last.trial}</text>`;
         } else {

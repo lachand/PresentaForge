@@ -249,7 +249,7 @@ class OsiModelPage extends ConceptPage {
 
             if (!animRunning) return;
             status.textContent = 'Transmission terminée ! Les données ont été livrées au récepteur.';
-            status.style.color = 'var(--accent)';
+            status.style.color = 'var(--ok)';
             setTimeout(() => { status.style.color = ''; }, 3000);
             animRunning = false;
         }

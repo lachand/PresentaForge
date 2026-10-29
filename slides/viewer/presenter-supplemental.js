@@ -393,7 +393,7 @@
                 frame.style.display = 'flex';
                 frame.style.alignItems = 'center';
                 frame.style.justifyContent = 'center';
-                frame.innerHTML = '<span style="font-family:Manrope,sans-serif;font-size:1.5rem;font-weight:700;color:#c1c7d2;">' + (i + 1) + '</span>';
+                frame.innerHTML = '<span style="font-family:var(--font-editorial);font-size:1.5rem;font-weight:700;color:#c1c7d2;">' + (i + 1) + '</span>';
             }
 
             // Number badge

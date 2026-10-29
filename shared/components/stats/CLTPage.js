@@ -340,8 +340,8 @@ class CLTPage extends SimulationPage {
         html += `<polyline points="${pathPoints.join(' ')}" fill="none" stroke="#f59e0b" stroke-width="2.4"></polyline>`;
 
         const muX = xToPx(mu);
-        html += `<line x1="${muX}" y1="${padding.top}" x2="${muX}" y2="${height - padding.bottom}" stroke="var(--accent)" stroke-dasharray="6 4" stroke-width="2"></line>`;
-        html += `<text x="${muX + 4}" y="${padding.top + 14}" font-size="11" fill="var(--accent)">mu=${mu.toFixed(3)}</text>`;
+        html += `<line x1="${muX}" y1="${padding.top}" x2="${muX}" y2="${height - padding.bottom}" stroke="var(--ok)" stroke-dasharray="6 4" stroke-width="2"></line>`;
+        html += `<text x="${muX + 4}" y="${padding.top + 14}" font-size="11" fill="var(--ok)">mu=${mu.toFixed(3)}</text>`;
         html += `<text x="${padding.left}" y="${height - 10}" font-size="11" fill="var(--muted)">min ${minX.toFixed(2)}</text>`;
         html += `<text x="${width - padding.right}" y="${height - 10}" text-anchor="end" font-size="11" fill="var(--muted)">max ${maxX.toFixed(2)}</text>`;
 

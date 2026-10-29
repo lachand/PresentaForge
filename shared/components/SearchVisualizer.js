@@ -257,7 +257,7 @@ class SearchVisualizer extends SimulationPage {
         const result = document.getElementById('result');
         if (!result) return;
         result.textContent = message || '';
-        if (type === 'ok') result.style.color = 'var(--accent)';
+        if (type === 'ok') result.style.color = 'var(--ok)';
         else if (type === 'bad') result.style.color = 'var(--danger)';
         else result.style.color = '';
     }

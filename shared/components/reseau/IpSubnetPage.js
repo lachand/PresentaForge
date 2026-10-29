@@ -168,7 +168,7 @@ class IpSubnetPage extends ConceptPage {
                 </div>
                 <div class="summary-item">
                     <div class="label">Classe</div>
-                    <div class="value">Classe ${ipClass} ${priv ? '<span class="class-badge" style="background:var(--accent);">Privée</span>' : '<span class="class-badge" style="background:var(--warning);">Publique</span>'}</div>
+                    <div class="value">Classe ${ipClass} ${priv ? '<span class="class-badge" style="background:var(--ok);">Privée</span>' : '<span class="class-badge" style="background:var(--warning);">Publique</span>'}</div>
                 </div>
                 <div class="summary-item">
                     <div class="label">Plage d'hôtes</div>

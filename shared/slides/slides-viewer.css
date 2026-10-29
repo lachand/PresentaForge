@@ -15,7 +15,7 @@
             background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(12px);
             box-shadow: 0 4px 12px rgba(29, 27, 26, 0.06), 0 1px 3px rgba(29, 27, 26, 0.04);
             display: flex; align-items: center; gap: 0.5rem;
-            padding: 0.4rem 1rem; font-family: var(--font-ui, 'Inter', system-ui, sans-serif);
+            padding: 0.4rem 1rem; font-family: var(--font-ui);
             transform: translateY(-100%); transition: transform 0.25s ease;
         }
         .sl-brand {
@@ -59,11 +59,11 @@
         #sl-toolbar-hover-zone:hover + #sl-toolbar,
         #sl-toolbar:hover { transform: translateY(0); }
         #sl-toolbar.force-show { transform: translateY(0); }
-        #sl-toolbar-title { flex: 1; color: var(--on-surface, #1d1b1a); font-size: 0.85rem; font-weight: 600; font-family: var(--font-editorial, 'Manrope', sans-serif); }
+        #sl-toolbar-title { flex: 1; color: var(--on-surface, #1d1b1a); font-size: 0.85rem; font-weight: 600; font-family: var(--font-editorial); }
         .sl-tb-btn {
             padding: 0.3rem 0.7rem; border-radius: var(--radius-sm, 4px); border: none;
             background: transparent; color: var(--on-surface-variant, #414750); cursor: pointer;
-            font-size: 0.75rem; font-family: var(--font-ui, 'Inter', system-ui); transition: background 0.12s;
+            font-size: 0.75rem; font-family: var(--font-ui); transition: background 0.12s;
             display: inline-flex; align-items: center; justify-content: center; gap: 6px;
         }
         .sl-tb-btn:hover { background: var(--surface-container-high, #ede7e4); color: var(--on-surface, #1d1b1a); }
@@ -916,7 +916,7 @@
             width: 100vw;
             height: 100vh;
             background: var(--surface, #fef8f5);
-            font-family: var(--font-ui, 'Inter', system-ui, sans-serif);
+            font-family: var(--font-ui);
             color: var(--on-surface, #1d1b1a);
             --pv-notes-width: 420px;
             --pv-notes-font-size: 1.05rem;
@@ -967,7 +967,7 @@
             font-size: 0.78rem;
             font-weight: 700;
             color: var(--on-surface, #1d1b1a);
-            font-family: var(--font-editorial, 'Manrope', sans-serif);
+            font-family: var(--font-editorial);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1004,7 +1004,7 @@
             cursor: pointer;
             font-size: 0.69rem;
             font-weight: 600;
-            font-family: var(--font-ui, 'Inter', system-ui);
+            font-family: var(--font-ui);
             transition: background 0.12s, color 0.12s;
             white-space: nowrap;
         }
@@ -1055,7 +1055,7 @@
             cursor: pointer;
             font-size: 0.72rem;
             font-weight: 600;
-            font-family: var(--font-ui, 'Inter', system-ui);
+            font-family: var(--font-ui);
             text-align: left;
             white-space: nowrap;
         }
@@ -1346,7 +1346,7 @@
             letter-spacing: 0.09em;
             color: var(--on-surface-variant, #414750);
             font-weight: 700;
-            font-family: var(--font-editorial, 'Manrope', sans-serif);
+            font-family: var(--font-editorial);
         }
         .pv-context-link {
             max-width: 100%;
@@ -1457,7 +1457,7 @@
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--on-surface-variant, #414750);
-            font-family: var(--font-editorial, 'Manrope', sans-serif);
+            font-family: var(--font-editorial);
             margin-bottom: 2px;
             font-weight: 700;
             flex-shrink: 0;
@@ -1649,7 +1649,7 @@
             color: var(--on-surface-muted, #8a9099);
             margin-bottom: 6px;
             font-weight: 700;
-            font-family: var(--font-editorial, 'Manrope', sans-serif);
+            font-family: var(--font-editorial);
         }
         .pv-notes-auto .pv-notes-prewrap {
             font-size: 0.82em;
@@ -1729,7 +1729,7 @@
         }
 
         .pv-timer-display {
-            font-family: var(--font-editorial, 'Manrope', sans-serif);
+            font-family: var(--font-editorial);
             font-size: 1.75rem;
             font-weight: 700;
             color: var(--on-surface, #1d1b1a);
@@ -1741,7 +1741,7 @@
         .pv-timer-display.running { color: var(--success, #2e7d32); }
         .pv-timer-display:hover { color: var(--primary, #00508d); }
         .pv-slide-countdown {
-            font-family: var(--font-editorial, 'Manrope', sans-serif);
+            font-family: var(--font-editorial);
             font-size: 1.1rem;
             font-weight: 700;
             font-variant-numeric: tabular-nums;
@@ -2227,7 +2227,7 @@
     letter-spacing: 0.09em;
     color: var(--on-surface-variant, #414750);
     font-weight: 700;
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
     flex: 1;
 }
 .pvqp-close-btn {
@@ -2326,7 +2326,7 @@
 
 /* ── Clock inline in context header ──────────────────────── */
 .pv-clock-inline {
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
     font-size: 0.8rem;
     font-weight: 700;
     color: var(--on-surface-variant, #414750);
@@ -2358,7 +2358,7 @@
     background: none;
     border-radius: var(--radius-md, 0.75rem);
     cursor: pointer;
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
     font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -2430,7 +2430,7 @@
     pointer-events: auto;
 }
 .pv-float-counter {
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
     font-size: 0.8125rem;
     font-weight: 700;
     color: var(--on-surface, #1d1b1a);
@@ -2518,7 +2518,7 @@
     font-size: 0.78rem; font-weight: 600;
     cursor: pointer;
     transition: background 0.12s, color 0.12s;
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
 }
 .pv-mobile-tab.active {
     background: var(--primary-fixed, #d2e4ff);
@@ -2597,7 +2597,7 @@
     flex-shrink: 0;
 }
 .pv-modal-title {
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
     font-size: 1rem;
     font-weight: 700;
     flex: 1;
@@ -2630,7 +2630,7 @@
 
 /* Vue d'ensemble (slide jump) */
 .pv-jump-count {
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--on-surface-muted, #8a9099);
@@ -2690,10 +2690,10 @@
     padding: 1px 5px;
     font-size: 0.625rem;
     font-weight: 700;
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
 }
 .pv-jump-card-title {
-    font-family: var(--font-editorial, 'Manrope', sans-serif);
+    font-family: var(--font-editorial);
     font-size: 0.6875rem;
     font-weight: 600;
     color: var(--on-surface-variant, #414750);
@@ -2713,7 +2713,7 @@
     gap: 4px;
     border-bottom: 1px solid var(--outline-variant, rgba(193, 199, 210, 0.2));
 }
-.pva-count { font-family: var(--font-editorial, 'Manrope', sans-serif); font-size: 0.9375rem; font-weight: 700; }
+.pva-count { font-family: var(--font-editorial); font-size: 0.9375rem; font-weight: 700; }
 .pva-accuracy { font-size: 0.8125rem; color: var(--on-surface-variant, #414750); }
 .pva-body { overflow-y: auto; padding: 8px 20px 12px; flex: 1; }
 .pva-section { margin-top: 14px; }

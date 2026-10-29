@@ -105,7 +105,7 @@ class HashingPage extends ConceptPage {
             fill.style.width = pct + '%';
             fill.textContent = pct + '%';
             const pctNum = parseFloat(pct);
-            if (pctNum < 30) fill.style.background = 'var(--accent)';
+            if (pctNum < 30) fill.style.background = 'var(--ok)';
             else if (pctNum < 60) fill.style.background = 'var(--warning)';
             else fill.style.background = 'var(--danger)';
 

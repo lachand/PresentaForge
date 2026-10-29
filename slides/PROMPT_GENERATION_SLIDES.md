@@ -81,7 +81,7 @@ STRUCTURE RACINE
 - "footerText" — texte de pied de page affiché en bas à gauche (défaut: null)
 - "autoNumberChapters" — numérote automatiquement les slides "chapter" (01, 02…) sans avoir à remplir le champ "number" manuellement (défaut: false)
 
-Thèmes disponibles : "dark", "light", "academic", "terminal", "ocean", "icom" ("icom" = thème maison ICOM Lyon 2)
+Thèmes disponibles : "dark", "light", "academic", "terminal", "ocean", "icom" ("icom" = thème maison ICOM Lyon 2), "lyon2" (Université Lyon 2), "signature" (papier chaud, pour l'impression), "signature-nuit" (graphite, pour la projection en salle sombre), "signature-contraste" (contraste fort, accessibilité). Les trois thèmes Signature s'écrivent avec un trait d'union, tels quels, dans le champ "theme".
 
 ═══════════════════════════════════════════════
 IMAGES ET POIDS DU DECK (RÈGLES IMPÉRATIVES)
@@ -258,7 +258,7 @@ Les colonnes riches conservent la mise en page flow à 2 colonnes (pas besoin de
 DISPOSITIONS / MASTERS (layouts prédéfinis)
 ═══════════════════════════════════════════════
 
-L'éditeur propose 14 dispositions prédéfinies pour les slides canvas.
+L'éditeur propose 26 dispositions prédéfinies pour les slides canvas.
 Tu peux reproduire ces structures dans tes slides canvas :
 
 Catégorie Titre :
@@ -286,6 +286,22 @@ Catégorie Asymétrique :
 Catégorie Image :
 - "Image plein écran" — image 100% + légende en bas
 - "Image + Texte" — heading + image (gauche) + description (droite)
+- "Comparatif visuel (2 images)" - heading + 2 images côte à côte
+
+Autres catégories :
+- Titre : "Citation focus" - grande citation + auteur
+- Timeline : "Timeline horizontale", "Roadmap trimestrielle" (4 cartes Q1 à Q4)
+- Data : "Dashboard KPI" - heading + cartes d'indicateurs
+- Pédagogie : "Problème / Solution / Impact", "Agenda + checkpoints"
+- Atelier : "Atelier (consigne/exercice/retour)"
+
+Catégorie Signature (thèmes "signature*" de préférence ; canvas 1280 × 720, pas de dégradé ni d'ombre) :
+- "Signature : titre" (layout-signature-titre) - fond teinté plein cadre (shape rect, fill var(--sl-tag)), surtitre en mono (x 100, y 190), grand titre Fraunces 64 px (x 100, y 240, 1080 × 220), filet accent 120 × 4 (y 480), pied discret (y 640)
+- "Signature : section" (layout-signature-section) - fond encre plein cadre (fill var(--sl-heading)), repère de partie en mono centré (y 250), titre centré 60 px (y 300), filet accent centré (x 580, y 460)
+- "Signature : chiffre clé" (layout-signature-chiffre) - libellé (y 80), grand chiffre en mono et en accent 168 px (x 80, y 140), unité en mono à droite (x 790, y 240), filet 120 × 2 (y 380), phrase de contexte 30 px (y 410), figure numérotée et sourcée en pied (y 630). Un chiffre clé est toujours accompagné de son unité et de sa source.
+- "Signature : comparaison" (layout-signature-comparaison) - titre 40 px, deux colonnes (x 60 et x 660, 560 de large) ouvertes chacune par un filet de 2 px (y 150) et un libellé mono (y 165), texte 26 px (y 225)
+
+Règles de diapositive Signature : un seul grand titre par diapositive ; texte courant à 24 pt au moins en projection ; format numérique français (« 68,4 °C », espace insécable avant l'unité) ; figures numérotées et légendées ; séries distinguées par le trait et le marqueur, jamais par la seule couleur.
 
 ═══════════════════════════════════════════════
 SLIDES CANVAS (positionnement libre)

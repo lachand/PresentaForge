@@ -278,6 +278,7 @@ class ExerciseRunnerPage extends ConceptPage {
         if (!read.ok) {
             this.feedbackEl.textContent = read.error || 'Réponse invalide.';
             this.feedbackEl.className = 'feedback warning';
+            this.feedbackEl.setAttribute('role', 'alert');
             return;
         }
         const answer = read.value;
@@ -297,6 +298,7 @@ class ExerciseRunnerPage extends ConceptPage {
         if (ok) {
             this.feedbackEl.textContent = `Correct.${explain}`;
             this.feedbackEl.className = 'feedback ok';
+            this.feedbackEl.setAttribute('role', 'status');
         } else {
             const hintValue = this.resolveQuestionHint(question) || this.sanitizeHintText((verdict && verdict.hint) || '');
             const hintSentence = hintValue ? hintValue.replace(/[.!?]+$/, '') : '';
@@ -304,6 +306,7 @@ class ExerciseRunnerPage extends ConceptPage {
             const remediation = question.remediation ? ` ${question.remediation}` : '';
             this.feedbackEl.textContent = `Incorrect.${expectedSuffix}${hint}${explain}${remediation}`;
             this.feedbackEl.className = 'feedback bad';
+            this.feedbackEl.setAttribute('role', 'status');
         }
         this.renderHeader();
     }

@@ -137,6 +137,7 @@ class ConceptPage {
             this.renderLearningObjectives(container);
         }
 
+        let courseBlockCount = 0;
         for (const block of this.data.content) {
             if (!block || block.visible === false) continue;
 
@@ -149,8 +150,13 @@ class ConceptPage {
                 });
                 const renderer = new CourseRenderer(
                     courseData,
-                    { collapsible: block.collapsible !== false }
+                    {
+                        collapsible: block.collapsible !== false,
+                        open: courseBlockCount === 0,
+                        idPrefix: `cours${courseBlockCount}`
+                    }
                 );
+                courseBlockCount += 1;
                 tagged.insertAdjacentHTML('beforeend', renderer.render());
                 container.appendChild(tagged);
                 continue;
@@ -185,6 +191,47 @@ class ConceptPage {
                 await this.renderUnifiedExercisesBlock(block, container);
             }
         }
+        if (showCourse) this.buildPageToc(container);
+    }
+
+    /**
+     * Plan de la page : liste des titres de section des blocs de cours, insérée avant le premier cours.
+     * Utile seulement à partir de 4 sections ; ouvre le cours replié qui contient la cible avant d'y aller.
+     */
+    buildPageToc(container) {
+        const headings = [...container.querySelectorAll('.course-heading[id]')];
+        if (headings.length < 4) return;
+        const firstCourse = container.querySelector('.content-block--course');
+        if (!firstCourse) return;
+        const nav = document.createElement('nav');
+        nav.className = 'page-toc';
+        nav.setAttribute('aria-label', 'Plan de la page');
+        const details = document.createElement('details');
+        details.open = typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 900px)').matches;
+        const summary = document.createElement('summary');
+        summary.textContent = 'Plan de la page';
+        const list = document.createElement('ol');
+        headings.forEach((h) => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = `#${h.id}`;
+            const emoji = h.querySelector('.course-heading-emoji');
+            a.textContent = h.textContent.replace(emoji ? emoji.textContent : '', '').trim();
+            a.addEventListener('click', (event) => {
+                event.preventDefault();
+                for (let node = h.parentElement; node; node = node.parentElement) {
+                    if (node.tagName === 'DETAILS') node.open = true;
+                }
+                h.setAttribute('tabindex', '-1');
+                h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                h.focus({ preventScroll: true });
+            });
+            li.appendChild(a);
+            list.appendChild(li);
+        });
+        details.append(summary, list);
+        nav.appendChild(details);
+        firstCourse.parentNode.insertBefore(nav, firstCourse);
     }
 
     renderLearningObjectives(container) {
@@ -868,6 +915,8 @@ class InlineExerciseWidget {
         if (!this.feedbackEl) return;
         this.feedbackEl.textContent = text || '';
         this.feedbackEl.className = `feedback${type ? ` ${type}` : ''}`;
+        // Saisie invalide : annonce immédiate (alert) ; résultat de correction : annonce polie (status).
+        this.feedbackEl.setAttribute('role', type === 'warning' ? 'alert' : 'status');
     }
 
     submit() {

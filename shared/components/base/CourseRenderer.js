@@ -20,6 +20,10 @@ class CourseRenderer {
     constructor(courseData, options = {}) {
         this.courseData = courseData;
         this.collapsible = options.collapsible !== false;
+        // Premier bloc de cours d'une page : déplié d'emblée (inutile d'ouvrir trois niveaux pour lire).
+        this.open = options.open === true;
+        // Préfixe des ancres de section (plan de la page) : unique par bloc de cours.
+        this.idPrefix = options.idPrefix || 'cours';
         this.renderCache = new Map();
         this.cacheSignature = '';
     }
@@ -49,7 +53,7 @@ class CourseRenderer {
         let html = '';
 
         if (this.collapsible) {
-            html += '<details class="course-section">';
+            html += '<details class="course-section"' + (this.open ? ' open' : '') + '>';
             html += '<summary class="course-title">📖 Cours : ' + this.escapeHtml(this.courseData.title || 'Contenu') + '</summary>';
             html += '<div>';
         } else {
@@ -235,8 +239,10 @@ class CourseRenderer {
         // Titre de la section avec emoji
         if (section.title) {
             const emoji = section.emoji || '';
-            html += `<h3 style="color:var(--primary);margin-top:${sectionIndex === 0 ? '0' : '1.5rem'};">`;
-            html += `${emoji} ${section.title}</h3>`;
+            // h2 : le titre de page est le h1 ; l'ancre alimente le plan de la page (ConceptPage.buildPageToc).
+            html += `<h2 class="course-heading" id="${this.escapeHtml(this.idPrefix)}-s${sectionIndex}">`;
+            if (emoji) html += `<span class="course-heading-emoji" aria-hidden="true">${emoji}</span> `;
+            html += `${section.title}</h2>`;
         }
 
         // Contenu de la section

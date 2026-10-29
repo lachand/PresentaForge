@@ -325,21 +325,23 @@ function init() {
     document.getElementById('cmd-input')?.addEventListener('input', e => renderCommandResults(e.target.value));
     document.getElementById('cmd-input')?.addEventListener('keydown', e => {
         if (e.key === 'Escape') { closeCommandPalette(); return; }
-        const items = document.querySelectorAll('#cmd-results .command-palette-item');
-        const active = document.querySelector('#cmd-results .command-palette-item.active');
-        const activeIdx = [...items].indexOf(active);
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            items[activeIdx]?.classList.remove('active');
-            items[Math.min(activeIdx + 1, items.length - 1)]?.classList.add('active');
-            items[Math.min(activeIdx + 1, items.length - 1)]?.scrollIntoView({ block: 'nearest' });
-        }
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            items[activeIdx]?.classList.remove('active');
-            items[Math.max(activeIdx - 1, 0)]?.classList.add('active');
-            items[Math.max(activeIdx - 1, 0)]?.scrollIntoView({ block: 'nearest' });
-        }
+        const input = e.currentTarget;
+        const items = [...document.querySelectorAll('#cmd-results .command-palette-item')];
+        const activeIdx = items.findIndex(el => el.classList.contains('active'));
+        // Un seul élément porte « active » et aria-selected ; aria-activedescendant suit pour les lecteurs d'écran.
+        const select = idx => {
+            const next = items[Math.max(0, Math.min(idx, items.length - 1))];
+            if (!next) return;
+            items.forEach(el => { el.classList.remove('active'); el.setAttribute('aria-selected', 'false'); });
+            next.classList.add('active');
+            next.setAttribute('aria-selected', 'true');
+            input.setAttribute('aria-activedescendant', next.id);
+            next.scrollIntoView({ block: 'nearest' });
+        };
+        if (e.key === 'ArrowDown') { e.preventDefault(); select(activeIdx + 1); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); select(activeIdx - 1); }
+        if (e.key === 'Home') { e.preventDefault(); select(0); }
+        if (e.key === 'End') { e.preventDefault(); select(items.length - 1); }
         if (e.key === 'Enter') {
             e.preventDefault();
             document.querySelector('#cmd-results .command-palette-item.active')?.click();

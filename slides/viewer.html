@@ -15,12 +15,14 @@
     <link rel="stylesheet" href="../vendor/revealjs/5.1.0/plugin/highlight/monokai.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=8">
+    <link rel="stylesheet" href="../shared/slides/signature-base.css?v=1">
+    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=9">
     <style id="sl-theme-css">/* injected by slides-core.js */</style>
-    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=25">
+    <link rel="stylesheet" href="../shared/slides/slides-viewer.css?v=26">
     <link rel="stylesheet" href="../shared/components/widgets.css">
+    <link rel="stylesheet" href="../shared/slides/signature-presentaforge.css?v=1">
 </head>
 <body>
     <div id="sl-toolbar-hover-zone"></div>
@@ -46,7 +48,7 @@
     <div id="sl-shortcuts-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;">
         <div style="background:var(--sl-surface,#1e1e2e);color:var(--sl-on-surface,#e2e8f0);border-radius:12px;padding:24px 28px;max-width:480px;width:90vw;box-shadow:0 8px 40px rgba(0,0,0,0.5);position:relative;">
             <button id="sl-shortcuts-close" style="position:absolute;top:12px;right:14px;background:none;border:none;color:inherit;font-size:20px;cursor:pointer;opacity:0.6;" title="Fermer">✕</button>
-            <h2 style="margin:0 0 16px;font-size:1.05rem;font-weight:700;font-family:Manrope,Inter,sans-serif;">Raccourcis clavier</h2>
+            <h2 style="margin:0 0 16px;font-size:1.05rem;font-weight:700;font-family:var(--font-editorial);">Raccourcis clavier</h2>
             <table style="width:100%;border-collapse:collapse;font-size:0.82rem;line-height:1.7;">
                 <tbody>
                     <tr><td style="padding:2px 8px 2px 0;opacity:0.6;">Navigation</td><td><kbd>← →</kbd> / <kbd>Espace</kbd></td></tr>
@@ -599,7 +601,7 @@
     <script src="../shared/slides/slides-typography.js?v=1"></script>
     <script src="../shared/slides/element-style-schema.js?v=1"></script>
     <script src="../shared/slides/slides-core.js?v=37"></script>
-    <script src="../shared/slides/slides-themes.js?v=7"></script>
+    <script src="../shared/slides/slides-themes.js?v=8"></script>
     <script src="../shared/slides/slides-diagram-renderer.js?v=1"></script>
     <script src="../shared/slides/slides-renderer-canvas.js?v=11"></script>
     <script src="../shared/slides/ui-icons.js?v=2"></script>
@@ -607,7 +609,7 @@
     <script src="../shared/slides/firebase-storage.js?v=13"></script>
     <script src="../shared/slides/firebase-modal.js?v=4"></script>
     <script type="module" src="viewer-main.js?v=38"></script>
-    <script src="viewer/presenter-supplemental.js?v=4"></script>
+    <script src="viewer/presenter-supplemental.js?v=5"></script>
 
     <!-- Post-session analytics dashboard -->
     <div id="pv-analytics-modal" class="pv-modal-overlay">
@@ -647,7 +649,7 @@
         .pva-row:last-child { border-bottom:none; }
         .pva-rank { width:28px;flex-shrink:0;font-size:1rem;text-align:center; }
         .pva-name { flex:1;font-size:0.85rem;color:var(--on-surface,#1d1b1a);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-        .pva-score { font-size:0.78rem;color:var(--primary,#00508d);font-weight:700;font-family:'Manrope',sans-serif;flex-shrink:0; }
+        .pva-score { font-size:0.78rem;color:var(--primary,#00508d);font-weight:700;font-family:var(--font-editorial);flex-shrink:0; }
         .pva-empty { padding:16px 0;color:var(--on-surface-muted,#8a9099);font-size:0.82rem;text-align:center; }
     </style>
 </body>

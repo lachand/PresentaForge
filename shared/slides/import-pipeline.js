@@ -16,7 +16,7 @@
 
     if (global.OEIImportPipeline) return;
 
-    const SAFE_THEMES = new Set(['dark', 'light', 'beige', 'night', 'solarized', 'black', 'white', 'league', 'icom']);
+    const SAFE_THEMES = new Set(['dark', 'light', 'academic', 'terminal', 'ocean', 'icom', 'lyon2', 'signature', 'signature-nuit', 'signature-contraste', 'beige', 'night', 'solarized', 'black', 'white', 'league']);
     const SUPPORTED_SLIDE_TYPES = new Set(['title', 'chapter', 'bullets', 'code', 'split', 'simulation', 'definition', 'comparison', 'image', 'quote', 'blank', 'quiz', 'canvas']);
     const CURRENT_SCHEMA_VERSION = 2;
     const AI_IMPORT_PIPELINE_KEY = global.OEIStorage?.KEYS?.AI_IMPORT_PIPELINE || 'oei-ai-import-pipeline';

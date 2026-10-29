@@ -210,7 +210,8 @@ body {
 }
 
 .db-feature-card {
-    background: var(--tertiary);
+    background: var(--surface-wood);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-lg);
     padding: 28px 28px 24px;
     display: flex; flex-direction: column; gap: 16px;
@@ -220,22 +221,21 @@ body {
     content: '';
     position: absolute; right: -40px; top: -40px;
     width: 140px; height: 140px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.22);
+    background: color-mix(in srgb, var(--surface-bright) 40%, transparent);
     pointer-events: none;
 }
 .db-feature-card h2 {
     margin: 0;
     font-family: var(--font-editorial);
     font-size: 1.125rem; font-weight: 800;
-    color: var(--on-tertiary-container);
+    color: var(--on-surface);
     line-height: 1.25;
     position: relative; z-index: 1;
 }
 .db-feature-card p {
     margin: 0;
     font-size: 0.8125rem;
-    color: var(--on-tertiary-container);
-    opacity: 0.85;
+    color: var(--on-surface-variant);
     line-height: 1.45;
     position: relative; z-index: 1;
 }

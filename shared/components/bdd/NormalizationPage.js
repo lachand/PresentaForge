@@ -499,7 +499,7 @@ class NormalizationPage extends ConceptPage {
 
             // Is it a super key?
             if (allAttrs.every(a => result.closure.has(a))) {
-                html += '<div style="margin-top:0.5rem;color:var(--accent);font-weight:600;font-size:0.85rem;">C\'est une super-clé (la fermeture contient tous les attributs).</div>';
+                html += '<div style="margin-top:0.5rem;color:var(--ok);font-weight:600;font-size:0.85rem;">C\'est une super-clé (la fermeture contient tous les attributs).</div>';
             } else {
                 html += `<div style="margin-top:0.5rem;color:var(--muted);font-size:0.85rem;">Attributs manquants pour être super-clé : { ${allAttrs.filter(a => !result.closure.has(a)).join(', ')} }</div>`;
             }

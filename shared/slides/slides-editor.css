@@ -34,22 +34,23 @@
 
     --font: var(--font-ui);
     --mono: var(--font-mono);
-    /* TODO Lot 4 : harmoniser cette échelle avec ui-primitives (0.25 / 0.75 / 1rem). */
-    --radius: 6px;
+    --radius: var(--radius-lg);
     --transition-fast: 0.12s ease;
     --transition: 0.15s ease;
 
-    /* Variables OEI compatibilité widgets */
-    --code-bg: #0f172a;
-    --code-text: #e2e8f0;
-    --tone-cyan-bg: #ecfeff; --tone-cyan-border: #a5f3fc; --tone-cyan-text: #155e75;
-    --tone-success-bg: #dcfce7; --tone-success-text: #166534;
-    --tone-danger-bg: #fee2e2; --tone-danger-text: #991b1b;
-    --tone-warning-bg: #fef3c7; --tone-warning-text: #92400e;
-    --tone-blue-bg: #dbeafe; --tone-blue-text: #1d4ed8;
-    --tone-violet-bg: #ede9fe; --tone-violet-text: #6d28d9;
-    --tone-indigo-bg: #eef2ff; --tone-indigo-border: #c7d2fe; --tone-indigo-text: #3730a3;
-    --tone-purple-bg: #ede9fe; --tone-purple-border: #ddd6fe; --tone-purple-text: #5b21b6;
+    /* Variables OEI compatibilité widgets : dérivées des jetons Signature (shared/slides/signature-base.css) */
+    --code-bg: var(--surface-container-high);
+    --code-text: var(--on-surface);
+    --tone-cyan-bg: color-mix(in srgb, var(--cote) 14%, var(--surface-container-lowest));
+    --tone-cyan-border: color-mix(in srgb, var(--cote) 40%, var(--surface-container-lowest));
+    --tone-cyan-text: var(--cote);
+    --tone-success-bg: var(--ok-fond); --tone-success-text: var(--ok);
+    --tone-danger-bg: var(--critique-fond); --tone-danger-text: var(--critique);
+    --tone-warning-bg: var(--attention-fond); --tone-warning-text: var(--attention);
+    --tone-blue-bg: color-mix(in srgb, var(--production) 14%, var(--surface-container-lowest)); --tone-blue-text: var(--production);
+    --tone-violet-bg: color-mix(in srgb, var(--stockage) 14%, var(--surface-container-lowest)); --tone-violet-text: var(--stockage);
+    --tone-indigo-bg: var(--accent-fond); --tone-indigo-border: color-mix(in srgb, var(--accent) 40%, var(--surface-container-lowest)); --tone-indigo-text: var(--accent-strong);
+    --tone-purple-bg: color-mix(in srgb, var(--stockage) 14%, var(--surface-container-lowest)); --tone-purple-border: color-mix(in srgb, var(--stockage) 40%, var(--surface-container-lowest)); --tone-purple-text: var(--stockage);
 
     /* Couleurs de catégorie du menu d'insertion (barre de filtre + icônes des
        éléments) — une par catégorie réelle de initInsertionGroupFilter()
@@ -65,13 +66,6 @@
     --cat-activity: #14b8a6;
     --cat-facilitation: #d946ef;
     --cat-integration: #f97316;
-}
-
-/* Rayons éditeur : conservés le temps du Lot 4 (échelle dense) */
-:root {
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 10px;
 }
 
 html, body {
@@ -147,7 +141,7 @@ html, body {
 .props-row input[type="number"] {
     flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--border);
     color: var(--text); border-radius: 4px; padding: 3px 6px; font-size: 0.72rem;
-    font-family: 'Fira Code', monospace;
+    font-family: var(--font-mono);
     font-variant-ligatures: none;
     font-feature-settings: 'liga' 0, 'calt' 0, 'dlig' 0;
 }
@@ -463,10 +457,10 @@ html, body {
 .ribbon-panel.active { display: flex; }
 .ribbon-group {
     display: flex; flex-direction: column; align-items: stretch;
-    padding: 6px 16px 6px 0; min-width: 0;
+    padding: 6px 10px 6px 0; min-width: 0;
     background: transparent;
     border-right: 1px solid var(--border-subtle);
-    margin-right: 12px;
+    margin-right: 8px;
 }
 .ribbon-group:last-of-type,
 .ribbon-group + .ribbon-sep:last-child,
@@ -1308,6 +1302,8 @@ html, body {
     max-height: 320px; overflow-y: auto; padding: 4px;
 }
 .command-palette-item {
+    width: 100%; min-height: 40px; box-sizing: border-box;
+    border: 0; background: transparent; text-align: left; font-family: var(--font-ui);
     padding: 8px 12px; border-radius: var(--radius);
     cursor: pointer; font-size: 0.82rem; color: var(--text);
     display: flex; align-items: center; gap: 8px;
@@ -2019,7 +2015,7 @@ html, body {
 }
 #md-textarea {
     flex: 1; border: none; outline: none; resize: none;
-    padding: 20px; font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+    padding: 20px; font-family: var(--font-mono);
     font-variant-ligatures: none; font-feature-settings: 'liga' 0, 'calt' 0, 'dlig' 0;
     font-size: 0.82rem; line-height: 1.6;
     background: var(--bg); color: var(--text);
@@ -4162,7 +4158,7 @@ input[type="number"]::-webkit-outer-spin-button {
     padding: 10px;
     resize: vertical;
     box-sizing: border-box;
-    font-family: var(--mono, 'Fira Code', monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
+    font-family: var(--mono, var(--font-mono));font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;
     font-size: 0.9rem;
     font-weight: 500;
     line-height: 1.45;
@@ -4564,3 +4560,31 @@ textarea.jle-input { resize: vertical; }
 }
 .sn-footer-item:hover { background: var(--surface-container-high); color: var(--on-surface); }
 .sn-footer-item:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* ---- Signature : cibles de 40 px minimum dans le ruban et la barre d'actions ---- */
+.ribbon-panel .tb-btn,
+.ribbon-tabs .tb-btn {
+    min-height: 40px;
+    min-width: 40px;
+}
+.props-actions .tb-btn { min-height: 40px; font-size: 0.75rem; }
+
+/* ---- Palette de commandes : en-têtes de groupes ---- */
+.command-palette-group {
+    padding: 8px 12px 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--on-surface-muted);
+    border-top: 1px solid var(--outline-variant);
+    margin-top: 4px;
+}
+.command-palette-group:first-child { border-top: 0; margin-top: 0; }
+.command-palette-item[aria-selected="true"] { outline: 2px solid var(--cote); outline-offset: -2px; }
+
+/* Séparateur fin entre deux sous-ensembles d'un même groupe du ruban */
+.ribbon-inline-sep { align-self: stretch; width: 1px; margin: 4px 2px; background: var(--outline-variant); }
+
+.command-palette-item .cmd-shortcut {
+    margin-left: auto; font-family: var(--font-mono); font-size: 0.72rem; color: var(--on-surface-muted);
+    background: transparent; border: 1px solid var(--outline-variant); border-radius: var(--radius-sm); padding: 0 6px;
+}

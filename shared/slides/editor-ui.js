@@ -97,6 +97,16 @@ function initRichTooltips() {
         if (target) hideTooltip();
     });
     document.addEventListener('mousedown', () => hideTooltip());
+    // Clavier : l'infobulle s'affiche aussi au focus (E-K6) et Échap la masque sans quitter le contrôle.
+    document.addEventListener('focusin', e => {
+        const target = e.target && e.target.closest ? e.target.closest('[data-tooltip]') : null;
+        if (!target) { hideTooltip(); return; }
+        let keyboard = false;
+        try { keyboard = target.matches(':focus-visible'); } catch (_) { keyboard = false; }
+        if (keyboard) { clearTimeout(_tooltipTimer); showTooltip(target); }
+    });
+    document.addEventListener('focusout', () => hideTooltip());
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTooltip(); }, true);
 }
 
 function showTooltip(target) {

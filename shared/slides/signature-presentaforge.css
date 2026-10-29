@@ -1,0 +1,152 @@
+/* signature-presentaforge.css
+ * Signature (fusion Signature x Établi) pour l'éditeur PresentaForge.
+ * À charger APRÈS ui-primitives.css, slides-editor.css et widgets.css.
+ *
+ * Niveau 1 : jetons seulement. Aucun composant touché ; retirer le fichier rend l'éditeur tel qu'avant.
+ * Niveau 2 : ajouter la classe `sig-extras` sur <body> (cotes sous les libellés de groupes, valeurs en mono,
+ *            « Brouillon » en tampon, diapositive active cadrée). CSS seul, sélecteurs existants.
+ *
+ * Rôles : primary = accent brique (sélection, onglet actif, action principale) ; success = ok ; danger = critique ;
+ *         warning = attention ; la couleur de cote (bleu) est réservée aux cotes dessinées.
+ */
+:root {
+    --surface: #EAE6D7;
+    --surface-bright: #F6F2E7;
+    --surface-dim: #CFCAB6;
+    --surface-container-lowest: #F6F2E7;
+    --surface-container-low: #F0ECDF;
+    --surface-container: #E6E1D0;
+    --surface-container-high: #E2DDCD;
+    --surface-container-highest: #DFDACA;
+    --on-surface: #2A2118;
+    --on-surface-variant: #43382B;
+    --on-surface-muted: #5A4D3E;
+    --inverse-surface: #2A2118;
+    --inverse-on-surface: #F6F2E7;
+    --primary: #A63D14;
+    --primary-hover: #862F0C;
+    --primary-container: #A63D14;
+    --primary-fixed: #F2D9C6;
+    --primary-fixed-dim: #E6BFA3;
+    --inverse-primary: #E8895A;
+    --on-primary: #FFF9EF;
+    --on-primary-fixed: #4A1B06;
+    --on-primary-fixed-variant: #862F0C;
+    --secondary: #8A5A00;
+    --secondary-container: #F3E2B3;
+    --on-secondary: #FFFFFF;
+    --on-secondary-container: #4A3000;
+    --on-secondary-fixed-variant: #4A3000;
+    --success: #14654F;
+    --success-light: #D9E8DE;
+    --danger: #A3162B;
+    --danger-light: #F4D0D0;
+    --warning: #8A5A00;
+    --error: #A3162B;
+    --error-container: #F4D0D0;
+    --on-error-container: #5E0C18;
+    --outline: #7A6C58;
+    --outline-variant: #CBC3AA;
+
+    --radius: 2px;
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-lg: 6px;
+    --shadow-sm: 0 1px 0 rgba(42, 33, 24, 0.14);
+    --shadow-ambient: 0 1px 0 rgba(42, 33, 24, 0.14);
+    --shadow-md: 0 1px 0 rgba(42, 33, 24, 0.14);
+    --shadow-overlay: 0 0 0 1px var(--outline-variant), 0 4px 10px rgba(42, 33, 24, 0.14);
+    --ui-overlay: rgba(42, 33, 24, 0.45);
+    --focus-ring-color: var(--cote); /* écart assumé avec la copie d origine : le focus est toujours en bleu de cote, opaque (DESIGN.md, principe 4) */
+
+    --font-ui: 'Inter Tight', 'Inter', system-ui, sans-serif;
+    --font-editorial: 'Inter Tight', 'Inter', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Catégories d'insertion : cinq teintes du système au lieu de neuf. */
+    --cat-content: var(--on-surface-variant);
+    --cat-media: var(--on-surface-variant);
+    --cat-diagram: var(--on-surface-variant);
+    --cat-maths: var(--on-surface-variant);
+    --cat-code: var(--on-surface-variant);
+    --cat-assessment: var(--warning);
+    --cat-activity: var(--success);
+    --cat-facilitation: #8E3A78;
+    --cat-integration: #2A5A7C;
+}
+
+:root[data-theme="dark"],
+[data-theme="dark"],
+body.dark {
+    --surface: #1E1B18;
+    --surface-bright: #27231F;
+    --surface-dim: #171512;
+    --surface-container-lowest: #171512;
+    --surface-container-low: #211E1A;
+    --surface-container: #27231F;
+    --surface-container-high: #302B25;
+    --surface-container-highest: #3A342D;
+    --on-surface: #F3EBDC;
+    --on-surface-variant: #D2C8B6;
+    --on-surface-muted: #A89D8C;
+    --inverse-surface: #F3EBDC;
+    --inverse-on-surface: #1E1B18;
+    --primary: #E8895A;
+    --primary-hover: #F2A27C;
+    --primary-container: #3D2A20;
+    --primary-fixed: #3D2A20;
+    --primary-fixed-dim: #E8895A;
+    --inverse-primary: #A63D14;
+    --on-primary: #1E1B18;
+    --on-primary-fixed: #F2D9C6;
+    --on-primary-fixed-variant: #E8A27C;
+    --secondary: #E8B93E;
+    --secondary-container: #4A3A12;
+    --on-secondary: #2A1F00;
+    --on-secondary-container: #F3E2B3;
+    --success: #2F7A63;
+    --success-light: #1B3A32;
+    --danger: #C4503B;
+    --danger-light: #4A2022;
+    --warning: #986310;
+    --error: #E0705A;
+    --error-container: #5C2417;
+    --on-error-container: #F4D0D0;
+    --outline: #948977;
+    --outline-variant: #3E372F;
+
+    --shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.5);
+    --shadow-ambient: 0 1px 0 rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 1px 0 rgba(0, 0, 0, 0.5);
+    --shadow-overlay: 0 0 0 1px var(--outline-variant), 0 4px 10px rgba(0, 0, 0, 0.5);
+    --ui-overlay: rgba(0, 0, 0, 0.60);
+    --cat-facilitation: #E091C2;
+    --cat-integration: #7DC3E0;
+}
+
+/* ───────────── Niveau 2 : body.sig-extras ───────────── */
+body.sig-extras .ribbon-group-label {
+    position: relative; text-transform: none; letter-spacing: 0;
+    font-family: var(--font-ui); font-size: 0.72rem; font-weight: 500;
+    color: var(--on-surface-variant); padding-top: 9px;
+}
+body.sig-extras .ribbon-group-label::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px;
+    background:
+        linear-gradient(var(--outline-variant), var(--outline-variant)) center / 100% 1px no-repeat,
+        linear-gradient(var(--outline-variant), var(--outline-variant)) left   / 1px 100% no-repeat,
+        linear-gradient(var(--outline-variant), var(--outline-variant)) right  / 1px 100% no-repeat;
+}
+body.sig-extras .fmt-mini-input,
+body.sig-extras .fmt-value-label,
+body.sig-extras .zoom-label,
+body.sig-extras #slide-count,
+body.sig-extras #stat-slides {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "zero" 1;
+}
+body.sig-extras .file-name-indicator {
+    display: inline-block; padding: 1px 9px; margin: 0 3px;
+    border: 1px solid currentColor; outline: 1px solid currentColor; outline-offset: 2px;
+    border-radius: 2px; color: var(--on-surface-muted); font-weight: 600; background: transparent;
+}
+body.sig-extras .sl-thumb-wrap.active .sl-thumb-outer { outline: 2px solid var(--primary); outline-offset: 2px; }

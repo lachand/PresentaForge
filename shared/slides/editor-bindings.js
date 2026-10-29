@@ -840,9 +840,9 @@ function initInsertionGroupFilter() {
         { id: 'diagram', label: 'Diagrammes', icon: 'diagram' },
         { id: 'maths', label: 'Maths', icon: 'book' },
         { id: 'code', label: 'Code', icon: 'code' },
-        { id: 'assessment', label: 'Assessment', icon: 'poll' },
+        { id: 'assessment', label: 'Évaluation', icon: 'poll' },
         { id: 'activity', label: 'Activités', icon: 'activity' },
-        { id: 'facilitation', label: 'Facilitation', icon: 'facilitation' },
+        { id: 'facilitation', label: 'Animation', icon: 'facilitation' },
         { id: 'integration', label: 'Intégrations', icon: 'integration' },
     ];
     const byElType = {

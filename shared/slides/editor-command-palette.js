@@ -48,11 +48,38 @@ const COMMANDS = [
     { id: 'ai', label: 'Générer avec l\'IA', iconKey: 'sparkles', words: 'intelligence artificielle pipeline', action: () => document.getElementById('btn-ai-tuning')?.click() },
     { id: 'hide', label: 'Masquer ou afficher le slide', iconKey: 'eye', action: () => document.getElementById('btn-hide-slide')?.click() },
     { id: 'convert-canvas', label: 'Convertir le slide en canvas', iconKey: 'grid', words: 'libre gabarit', action: () => document.getElementById('btn-convert-canvas')?.click() },
-    { id: 'theme-dark', label: 'Thème slide : Sombre', iconKey: 'moon', action: () => { editor.setTheme('dark'); buildThemeSelect(); } },
-    { id: 'theme-light', label: 'Thème slide : Clair', iconKey: 'sun', action: () => { editor.setTheme('light'); buildThemeSelect(); } },
-    { id: 'theme-academic', label: 'Thème slide : Académique', iconKey: 'bookmark_star', action: () => { editor.setTheme('academic'); buildThemeSelect(); } },
-    { id: 'toggle-editor-theme', label: 'Basculer thème éditeur clair/sombre', iconKey: 'palette', action: () => toggleEditorTheme() },
+    { id: 'toggle-editor-theme', label: 'Thème de l\'éditeur : basculer clair ou sombre', iconKey: 'palette', action: () => toggleEditorTheme() },
 ];
+
+// Regroupement affiché dans la palette quand aucune recherche n'est saisie.
+const COMMAND_GROUPS = [
+    ['Diapositive', /^(add-|dup$|del$|copy-to-slide$|hide$|convert-canvas$)/],
+    ['Édition', /^(undo$|redo$|search$)/],
+    ['Fichier', /^(save$|new$|open-json$|import-|export-|history$|ai$)/],
+    ['Présentation et aide', /^(present$|checker$|help$)/],
+    ['Thème', /^(theme-|toggle-editor-theme$)/],
+];
+function commandGroupOf(c) {
+    const hit = COMMAND_GROUPS.find(([, re]) => re.test(c.id));
+    return hit ? hit[0] : 'Autres';
+}
+
+// Un thème de diapositive = une commande, générée depuis SlidesThemes.list() : plus de liste figée,
+// les thèmes personnalisés et les thèmes Signature apparaissent d'eux-mêmes.
+function themeCommands() {
+    let themes = {};
+    try { themes = (typeof SlidesThemes !== 'undefined' && SlidesThemes.list) ? SlidesThemes.list() : {}; } catch (_) { themes = {}; }
+    return Object.values(themes).filter(t => t && t.id).map(t => ({
+        id: 'theme-' + t.id,
+        label: 'Thème de la présentation : ' + (t.name || t.id),
+        iconKey: 'palette',
+        words: 'theme couleurs apparence ' + t.id,
+        action: () => { editor.setTheme(t.id); if (typeof buildThemeSelect === 'function') buildThemeSelect(); },
+    }));
+}
+function allCommands() { return COMMANDS.concat(themeCommands()); }
+
+let _releaseCommandPaletteTrap = null;
 
 function openCommandPalette() {
     // cmd-overlay has display:none in CSS class — needs inline override
@@ -61,12 +88,21 @@ function openCommandPalette() {
     document.getElementById('command-palette').classList.remove('is-hidden');
     const input = document.getElementById('cmd-input');
     input.value = '';
+    input.setAttribute('aria-expanded', 'true');
+    // Piège de focus : Tab reste dans la palette, Échap la ferme et rend le focus au bouton d'origine.
+    const trap = window.OEIDialog && window.OEIDialog.trapFocus;
+    if (typeof trap === 'function' && !_releaseCommandPaletteTrap) {
+        _releaseCommandPaletteTrap = trap(document.getElementById('command-palette'), { onEscape: () => closeCommandPalette() });
+    }
     input.focus();
     renderCommandResults('');
 }
 function closeCommandPalette() {
     document.getElementById('cmd-overlay').style.display = '';
     document.getElementById('command-palette').classList.add('is-hidden');
+    const input = document.getElementById('cmd-input');
+    if (input) { input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); }
+    if (_releaseCommandPaletteTrap) { const release = _releaseCommandPaletteTrap; _releaseCommandPaletteTrap = null; release(); }
 }
 function renderCommandResults(query) {
     const container = document.getElementById('cmd-results');
@@ -75,10 +111,12 @@ function renderCommandResults(query) {
     // et des mots-clés (« powerpoint », « sauvegarder »).
     const norm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
     const terms = norm(query).split(/\s+/).filter(Boolean);
+    const everything = allCommands();
     const filtered = terms.length
-        ? COMMANDS.filter(c => { const hay = norm(c.label + ' ' + (c.words || '')); return terms.every(t => hay.includes(t)); })
-        : COMMANDS;
+        ? everything.filter(c => { const hay = norm(c.label + ' ' + (c.words || '')); return terms.every(t => hay.includes(t)); })
+        : everything;
     container.textContent = '';
+    const input = document.getElementById('cmd-input');
     if (!filtered.length) {
         const empty = document.createElement('div');
         empty.className = 'command-palette-empty';
@@ -87,11 +125,27 @@ function renderCommandResults(query) {
         container.appendChild(empty);
         return;
     }
+    let lastGroup = null;
     filtered.forEach((c, i) => {
+        if (!terms.length) {
+            const group = commandGroupOf(c);
+            if (group !== lastGroup) {
+                lastGroup = group;
+                const head = document.createElement('div');
+                head.className = 'command-palette-group';
+                head.setAttribute('role', 'presentation');
+                head.textContent = group;
+                container.appendChild(head);
+            }
+        }
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'command-palette-item' + (i === 0 ? ' active' : '');
         btn.dataset.cmdIdx = String(i);
+        btn.id = 'cmd-opt-' + i;
+        btn.setAttribute('role', 'option');
+        btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+        btn.tabIndex = -1;
         const icon = document.createElement('span');
         icon.className = 'cmd-icon';
         const svg = iconHtml(c.iconKey);
@@ -109,4 +163,7 @@ function renderCommandResults(query) {
         btn.addEventListener('click', () => { closeCommandPalette(); c.action(); });
         container.appendChild(btn);
     });
+    if (input) input.setAttribute('aria-activedescendant', 'cmd-opt-0');
+    // Annonce du nombre de résultats pour les lecteurs d'écran.
+    container.setAttribute('aria-label', filtered.length + (filtered.length > 1 ? ' commandes' : ' commande'));
 }
