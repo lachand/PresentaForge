@@ -368,9 +368,9 @@ function renderThemeGrid() {
             </div>
             <div class="theme-name">${t.name}</div>
             ${!isBuiltIn(t.id) ? `<div style="display:flex;gap:4px;justify-content:center;margin-top:4px">
-                <button class="tb-btn ui-btn" style="padding:2px 6px;font-size:0.65rem" data-theme-edit="${t.id}">✏️</button>
+                <button class="tb-btn ui-btn" style="padding:2px 6px;font-size:0.65rem" data-theme-edit="${t.id}" aria-label="Modifier le thème">${window.oeiIcon ? window.oeiIcon('pencil') : ''}</button>
                 <button class="tb-btn ui-btn" style="padding:2px 6px;font-size:0.65rem" data-theme-export="${t.id}">↓</button>
-                <button class="tb-btn ui-btn" style="padding:2px 6px;font-size:0.65rem;color:var(--danger)" data-theme-del="${t.id}">✕</button>
+                <button class="tb-btn ui-btn" style="padding:2px 6px;font-size:0.65rem;color:var(--danger)" data-theme-del="${t.id}" aria-label="Supprimer le thème">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </div>` : ''}
         </div>`;
     }).join('');

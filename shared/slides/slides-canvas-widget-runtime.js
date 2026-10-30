@@ -52,7 +52,7 @@
             cls.mount(mountTarget, Object.assign({}, el?.data?.config || {}, { type: wid }));
             return true;
         } catch (_) {
-            inner.innerHTML = `<div class="cel-widget-placeholder"><span style="font-size:1.5rem">⚠️</span><span>${esc(wid)}</span></div>`;
+            inner.innerHTML = `<div class="cel-widget-placeholder"><span style="font-size:1.5rem">${window.oeiIcon ? window.oeiIcon('warning') : ''}</span><span>${esc(wid)}</span></div>`;
             return false;
         }
     };

@@ -186,7 +186,7 @@ function openAssetsManager() {
         modal.innerHTML = `<div class="modal" style="max-width:980px;max-height:86vh;display:flex;flex-direction:column;gap:10px">
             <div style="display:flex;align-items:center;gap:8px">
                 <span class="modal-title" style="margin:0;flex:1">Gestionnaire d’assets</span>
-                <button class="modal-close" data-ee-close>✕</button>
+                <button class="modal-close" data-ee-close aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <input id="assets-search" type="text" placeholder="Filtrer URL/type/slide" style="flex:1;min-width:240px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:0.8rem">
@@ -436,7 +436,7 @@ function openDesignTokensManager() {
         modal.innerHTML = `<div class="modal" style="max-width:760px;max-height:86vh;display:flex;flex-direction:column;gap:10px">
             <div style="display:flex;align-items:center;gap:8px">
                 <span class="modal-title" style="margin:0;flex:1">Design Tokens Globaux</span>
-                <button class="modal-close" data-dt-close>✕</button>
+                <button class="modal-close" data-dt-close aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </div>
             <div id="dt-form" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px"></div>
             <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
@@ -524,7 +524,7 @@ function openWidgetPluginsManager() {
         modal.innerHTML = `<div class="modal" style="max-width:900px;max-height:86vh;display:flex;flex-direction:column;gap:10px">
             <div style="display:flex;align-items:center;gap:8px">
                 <span class="modal-title" style="margin:0;flex:1">Plugins Widgets</span>
-                <button class="modal-close" data-plug-close>✕</button>
+                <button class="modal-close" data-plug-close aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0">
                 <div style="border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px">

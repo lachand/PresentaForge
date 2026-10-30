@@ -5,7 +5,7 @@ class GitFilterRepoWidget {
             cmd: 'git log --oneline',
             output: `a7f3b21 Ajouter la validation des formulaires
 c9d4e82 Mettre à jour le README
-<span style="background:#fef2f2;color:#dc2626;border-radius:3px;padding:0 3px">3f8a1c5 Ajouter la configuration API  ← ⚠ .env commité ici</span>
+<span style="background:var(--critique-fond);color:var(--critique);border-radius:3px;padding:0 3px">3f8a1c5 Ajouter la configuration API  ← .env commité ici</span>
 b2e9f17 Initialisation du projet`,
             note: 'Le commit <code>3f8a1c5</code> a ajouté un fichier <code>.env</code> contenant des clés API. Même si ce fichier a été supprimé dans un commit ultérieur, il reste accessible dans l\'historique Git complet.',
         },
@@ -25,13 +25,13 @@ Date:   Thu Jan 15 14:32:07 2024
             note: 'Cette commande révèle <strong>tous</strong> les commits qui ont créé, modifié ou supprimé le fichier — y compris si celui-ci a été supprimé par la suite. Les secrets sont toujours dans l\'historique.',
         },
         {
-            title: '🚨 PRIORITÉ : Révoquer le secret immédiatement',
+            title: 'PRIORITÉ : Révoquer le secret immédiatement',
             isRevoke: true,
             checklist: [
-                { icon: '🔑', text: 'GitHub → Settings → Developer Settings → Personal access tokens → Révoquer le token compromis' },
-                { icon: '🗄️', text: 'Changer le mot de passe de la base de données dans votre console d\'hébergement' },
-                { icon: '💳', text: 'Révoquer toutes les autres credentials exposées (Stripe, AWS, SendGrid, etc.)' },
-                { icon: '👥', text: 'Informer votre équipe : la fenêtre de compromission est ouverte' },
+                { icon: 'key', text: 'GitHub → Settings → Developer Settings → Personal access tokens → Révoquer le token compromis' },
+                { icon: 'database', text: 'Changer le mot de passe de la base de données dans votre console d\'hébergement' },
+                { icon: 'credit-card', text: 'Révoquer toutes les autres credentials exposées (Stripe, AWS, SendGrid, etc.)' },
+                { icon: 'users', text: 'Informer votre équipe : la fenêtre de compromission est ouverte' },
             ],
             note: 'Ne commencez pas la réécriture de l\'historique avant d\'avoir révoqué le secret. La suppression du commit ne rend pas le secret inutilisable — des bots ont déjà pu le capturer.',
         },
@@ -77,7 +77,7 @@ Writing objects: 100% (12/12), 1.23 KiB | 1.23 MiB/s, done.
 To github.com:monorg/monrepo.git
 <span style="color:#f38ba8"> + a7f3b21...f2e9c14 main -> main (forced update)</span>`,
             note: null,
-            forceWarn: '⚠️ Le <code>--force</code> réécrit l\'historique distant. <strong>Toute l\'équipe doit supprimer son clone local et re-cloner</strong> (<code>git clone</code>). Les branches et PRs en cours seront désynchronisées. Coordonnez impérativement avant de pousser.',
+            forceWarn: OEIIcons.render('warning') + ' Le <code>--force</code> réécrit l\'historique distant. <strong>Toute l\'équipe doit supprimer son clone local et re-cloner</strong> (<code>git clone</code>). Les branches et PRs en cours seront désynchronisées. Coordonnez impérativement avant de pousser.',
         },
     ];
 
@@ -109,9 +109,9 @@ To github.com:monorg/monrepo.git
             </div>` : '';
 
             const revokeHtml = s.isRevoke ? `<div class="gfr-warning">
-                <div class="gfr-warning-title">🚨 Faites ceci AVANT toute manipulation Git</div>
+                <div class="gfr-warning-title">${OEIIcons.render('siren')} Faites ceci AVANT toute manipulation Git</div>
                 <div class="gfr-checklist">
-                    ${s.checklist.map(item => `<div class="gfr-check-item"><span>${item.icon}</span><span>${item.text}</span></div>`).join('')}
+                    ${s.checklist.map(item => `<div class="gfr-check-item"><span>${OEIIcons.render(item.icon)}</span><span>${item.text}</span></div>`).join('')}
                 </div>
             </div>` : '';
 

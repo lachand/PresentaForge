@@ -6,7 +6,7 @@ class CICDPipelineWidget {
     static mount(container, config = {}) {
         const STAGES = [
             {
-                id: 'checkout', icon: '📥', name: 'Checkout', duration: 600,
+                id: 'checkout', icon: 'download', name: 'Checkout', duration: 600,
                 subdesc: 'Clone & setup',
                 desc: 'Clone le dépôt et checkout le commit cible. Prépare l\'environnement du runner CI (variables, cache…).',
                 errors: [
@@ -16,7 +16,7 @@ class CICDPipelineWidget {
                 ]
             },
             {
-                id: 'lint', icon: '🔍', name: 'Lint', duration: 1200,
+                id: 'lint', icon: 'search', name: 'Lint', duration: 1200,
                 subdesc: 'ESLint / Flake8…',
                 desc: 'Analyse statique du code : respect des conventions de style, détection des erreurs communes, formatage (ESLint, Flake8, Prettier…).',
                 errors: [
@@ -24,12 +24,12 @@ class CICDPipelineWidget {
                     { t: '',    v: 'src/api/auth.js' },
                     { t: 'err', v: '  42:5  error  \'result\' is defined but never used  no-unused-vars' },
                     { t: 'err', v: '  67:3  error  Expected \'===\' instead of \'==\'    eqeqeq' },
-                    { t: 'warn', v: '✖ 2 problems (2 errors, 0 warnings)' },
+                    { t: 'warn', v: '2 problems (2 errors, 0 warnings)' },
                     { t: 'err', v: 'Error: Process completed with exit code 1.' }
                 ]
             },
             {
-                id: 'tests', icon: '🧪', name: 'Tests', duration: 1800,
+                id: 'tests', icon: 'flask', name: 'Tests', duration: 1800,
                 subdesc: 'Jest / pytest…',
                 desc: 'Exécute les tests unitaires et d\'intégration. Un seul test qui échoue fait échouer l\'étape et bloque les suivantes.',
                 errors: [
@@ -43,7 +43,7 @@ class CICDPipelineWidget {
                 ]
             },
             {
-                id: 'build', icon: '🏗️', name: 'Build', duration: 1400,
+                id: 'build', icon: 'blocks', name: 'Build', duration: 1400,
                 subdesc: 'webpack / tsc…',
                 desc: 'Compile et bundle l\'application (TypeScript, webpack, Gradle…). Génère les artefacts déployables (image Docker, .jar, bundle JS…).',
                 errors: [
@@ -57,7 +57,7 @@ class CICDPipelineWidget {
                 ]
             },
             {
-                id: 'deploy', icon: '🚀', name: 'Deploy staging', duration: 1000,
+                id: 'deploy', icon: 'rocket', name: 'Deploy staging', duration: 1000,
                 subdesc: 'Docker / K8s…',
                 desc: 'Déploie l\'artefact sur l\'environnement de staging (Kubernetes, Heroku, Fly.io…). Si les tests de smoke passent, la PR est prête pour review.',
                 errors: [
@@ -110,7 +110,7 @@ class CICDPipelineWidget {
             const detailPanel = detailStage ? `
 <div class="cicd-detail">
   <div class="cicd-detail-head ${isFailed ? 'failure' : 'running'}">
-    ${detailStage.icon} <strong>${detailStage.name}</strong> — ${isFailed ? '❌ Échec' : '⏳ En cours…'}
+    ${OEIIcons.render(detailStage.icon)} <strong>${detailStage.name}</strong> - ${isFailed ? OEIIcons.render('ko') + ' Échec' : OEIIcons.render('hourglass') + ' En cours…'}
   </div>
   <div class="cicd-detail-desc">${detailStage.desc}</div>
   ${isFailed ? `<div class="cicd-error-term">${detailStage.errors.map(l =>
@@ -126,21 +126,21 @@ class CICDPipelineWidget {
       <option value="none">Aucune (tout réussit)</option>
       ${STAGES.map(s => `<option value="${s.id}" ${failAt === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
     </select>
-    <button class="btn btn-primary" id="cicd-run" ${running ? 'disabled' : ''}>▶ Déclencher</button>
+    <button class="btn btn-primary" id="cicd-run" ${running ? 'disabled' : ''}>${OEIIcons.render('play')} Déclencher</button>
     <button class="btn btn-secondary" id="cicd-reset">Réinitialiser</button>
     <label style="margin-left:0.25rem">Vitesse :</label>
     <input type="range" id="cicd-speed" min="1" max="5" value="${speedLevel}" style="width:70px;accent-color:var(--primary);cursor:pointer;vertical-align:middle;">
     <span id="cicd-speed-label" style="font-size:0.75rem;color:var(--muted);min-width:5rem">${SPEED_MAP[speedLevel].label}</span>
-    ${running ? `<button class="btn btn-secondary" id="cicd-pause" style="min-width:7.5rem">${paused ? '▶ Reprendre' : '⏸ Pause'}</button>` : ''}
+    ${running ? `<button class="btn btn-secondary" id="cicd-pause" style="min-width:7.5rem">${paused ? OEIIcons.render('play') + ' Reprendre' : OEIIcons.render('pause') + ' Pause'}</button>` : ''}
   </div>
   <div class="widget-fit-body">
     <div class="cicd-pipeline">
       ${STAGES.map((s, i) => `
         <div class="cicd-stage ${stageStates[s.id]}" id="cicd-stage-${s.id}">
-          <div class="cicd-stage-icon">${stageStates[s.id] === 'running' ? '⏳' : stageStates[s.id] === 'success' ? '✅' : stageStates[s.id] === 'failure' ? '❌' : stageStates[s.id] === 'blocked' ? '⛔' : s.icon}</div>
+          <div class="cicd-stage-icon">${OEIIcons.render(stageStates[s.id] === 'running' ? 'hourglass' : stageStates[s.id] === 'success' ? 'ok' : stageStates[s.id] === 'failure' ? 'ko' : stageStates[s.id] === 'blocked' ? 'ban' : s.icon)}</div>
           <div class="cicd-stage-name">${s.name}</div>
           <div class="cicd-stage-subdesc">${s.subdesc}</div>
-          <div class="cicd-stage-status">${stageStates[s.id] === 'running' ? 'En cours…' : stageStates[s.id] === 'success' ? 'Passé ✓' : stageStates[s.id] === 'failure' ? 'Échec' : stageStates[s.id] === 'blocked' ? 'Bloqué' : '—'}</div>
+          <div class="cicd-stage-status">${stageStates[s.id] === 'running' ? 'En cours…' : stageStates[s.id] === 'success' ? 'Passé' : stageStates[s.id] === 'failure' ? 'Échec' : stageStates[s.id] === 'blocked' ? 'Bloqué' : '—'}</div>
         </div>
         ${i < STAGES.length - 1 ? '<div class="cicd-arrow">→</div>' : ''}
       `).join('')}
@@ -150,11 +150,11 @@ class CICDPipelineWidget {
   <div class="widget-fit-footer">
     <div class="cicd-result ${running ? 'running' : stageStates[STAGES[STAGES.length-1].id] === 'success' ? 'success' : Object.values(stageStates).includes('failure') ? 'failure' : 'idle'}" id="cicd-result">
       ${running
-        ? (paused ? '⏸ Pipeline en pause — cliquez sur Reprendre.' : '⏳ Pipeline en cours d\'exécution…')
+        ? (paused ? OEIIcons.render('pause') + ' Pipeline en pause : cliquez sur Reprendre.' : OEIIcons.render('hourglass') + ' Pipeline en cours d\'exécution…')
         : Object.values(stageStates).includes('failure')
-          ? `❌ Pipeline échoué à l'étape <strong>${STAGES.find(s => stageStates[s.id] === 'failure')?.name}</strong>. Les étapes suivantes sont bloquées — la PR ne peut pas être mergée.`
+          ? `${OEIIcons.render('ko')} Pipeline échoué à l'étape <strong>${STAGES.find(s => stageStates[s.id] === 'failure')?.name}</strong>. Les étapes suivantes sont bloquées — la PR ne peut pas être mergée.`
           : stageStates[STAGES[STAGES.length-1].id] === 'success'
-            ? '✅ Tous les checks sont passés. La PR peut être mergée.'
+            ? OEIIcons.render('ok') + ' Tous les checks sont passés. La PR peut être mergée.'
             : 'Cliquez sur "Déclencher" pour simuler un push.'}
     </div>
     <div class="cicd-info">

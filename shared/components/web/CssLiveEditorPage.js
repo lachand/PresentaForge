@@ -245,7 +245,7 @@ class CssLiveEditorPage extends ConceptPage {
         propertySelect?.addEventListener('change', updateCascadePanel);
 
         htmlEditor.value = '<div class="box">Une boîte</div>\n<ul>\n    <li>Élément 1</li>\n    <li>Élément 2</li>\n</ul>';
-        cssEditor.value = '.box {\n    background-color: #4f46e5;\n    color: white;\n    padding: 1rem;\n}\n\nul li:nth-child(2) {\n    color: red;\n}';
+        cssEditor.value = '.box {\n    background-color: var(--accent);\n    color: white;\n    padding: 1rem;\n}\n\nul li:nth-child(2) {\n    color: red;\n}';
 
         updateViewer();
         updateCascadePanel();

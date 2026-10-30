@@ -91,7 +91,7 @@ function openShortcutsHelp() {
         <div class="ui-modal ui-modal--wide shortcuts-modal">
             <div class="ui-modal-header">
                 <h2 class="ui-modal-title" id="shortcuts-title">Raccourcis clavier et premiers pas</h2>
-                <button type="button" class="ui-modal-close" aria-label="Fermer" data-close>✕</button>
+                <button type="button" class="ui-modal-close" aria-label="Fermer" data-close>${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </div>
             <div class="ui-modal-body shortcuts-body">
                 <section class="shortcuts-tips">

@@ -1,15 +1,14 @@
 /**
  * slides-course.css — slides/course.html (catalogue public d'un cours, lien Moodle stable).
- * Page minimale, autonome (pas de design-tokens.js) : palette claire alignée sur le thème
- * "light" du reste de PresentaForge (cf. SlidesThemes.BUILT_IN.light dans slides-themes.js —
- * bg #f8fafc, heading #0f172a, text #334155, primary #3b82f6, border #e2e8f0).
+ * Page minimale, autonome (pas de design-tokens.js). Toutes les couleurs viennent des jetons Signature
+ * (signature-base.css, chargé avant) : aucune couleur en dur, thèmes clair / sombre / contraste par data-theme.
  */
 html, body {
     height: 100%;
     margin: 0;
-    background: #f8fafc;
-    color: #334155;
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
 }
 .course-status {
     height: 100vh;
@@ -28,8 +27,8 @@ html, body {
 .course-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(15,23,42,0.12);
-    border-top-color: #334155;
+    border: 3px solid color-mix(in srgb, var(--ink) 12%, transparent);
+    border-top-color: var(--ink);
     border-radius: 50%;
     animation: course-spin 0.8s linear infinite;
 }
@@ -38,10 +37,10 @@ html, body {
     max-width: 420px;
     font-size: 0.95rem;
     line-height: 1.5;
-    color: #64748b;
+    color: var(--ink-muted);
 }
 .course-status--error .course-status-text {
-    color: #dc2626;
+    color: var(--critique);
 }
 .course-catalog {
     max-width: 640px;
@@ -52,10 +51,10 @@ html, body {
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0 0 6px;
-    color: #0f172a;
+    color: var(--ink);
 }
 .course-catalog-hint {
-    color: #64748b;
+    color: var(--ink-muted);
     font-size: 0.9rem;
     margin: 0 0 24px;
 }
@@ -71,18 +70,18 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    border-radius: 10px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1px solid var(--line-subtle);
     padding: 14px 16px;
-    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    box-shadow: var(--shadow-paper);
 }
 .course-catalog-item {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 0;
-    color: #0f172a;
+    color: var(--ink);
 }
 .course-catalog-actions {
     display: flex;
@@ -98,48 +97,47 @@ html, body {
     display: inline-flex;
     align-items: center;
     border-radius: 999px;
-    border: 1px solid #e2e8f0;
-    background: #f1f5f9;
-    color: #334155;
+    border: 1px solid var(--control-border);
+    background: var(--surface-sunken);
+    color: var(--ink);
     cursor: pointer;
     text-decoration: none;
     transition: background 0.15s, border-color 0.15s;
 }
 .course-catalog-action:hover:not(:disabled) {
-    background: #e2e8f0;
-    border-color: #cbd5e1;
+    background: color-mix(in srgb, var(--ink) 8%, var(--surface-sunken));
+    border-color: var(--line);
 }
 .course-catalog-action:disabled {
     opacity: 0.5;
     cursor: default;
 }
 .course-catalog-action--primary {
-    /* #1d4ed8 sur blanc ≈ 6,7:1 (l'ancien #3b82f6 ≈ 3,7:1, sous le seuil AA — audit UX C5). */
-    background: #1d4ed8;
-    border-color: #1d4ed8;
-    color: #ffffff;
+    /* --accent sur --on-accent : contraste AA contrôlé par tools/check_tokens.py (audit UX C5). */
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
 }
 .course-catalog-action--primary:hover:not(:disabled) {
-    background: #1e40af;
-    border-color: #1e40af;
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
 }
-.course-catalog-action--quiet { background: transparent; color: #475569; }
-.course-catalog-action:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+.course-catalog-action--quiet { background: transparent; color: var(--ink-muted); }
+.course-catalog-action:focus-visible { outline: 3px solid var(--cote); outline-offset: 2px; }
 .course-catalog-action--live {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #b91c1c;
+    background: var(--critique-fond);
+    border-color: var(--critique);
+    color: var(--critique);
 }
 .course-catalog-action--live:hover {
-    background: #fee2e2;
-    border-color: #fca5a5;
+    background: color-mix(in srgb, var(--critique) 14%, var(--critique-fond));
 }
 .course-catalog-action-status {
-    font-size: 0.76rem;
-    color: #64748b;
+    font-size: var(--text-xs);
+    color: var(--ink-muted);
 }
 .course-catalog-action-status--error {
-    color: #dc2626;
+    color: var(--critique);
 }
 .course-catalog-item-title {
     font-size: 0.95rem;
@@ -147,34 +145,34 @@ html, body {
 }
 .course-catalog-badge {
     flex-shrink: 0;
-    font-size: 0.72rem;
+    font-size: var(--text-xs);
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
     padding: 3px 8px;
     border-radius: 999px;
-    background: rgba(59,130,246,0.12);
-    color: #3b82f6;
+    background: var(--accent-fond);
+    color: var(--accent-strong);
 }
 .course-catalog-empty {
-    color: #64748b;
+    color: var(--ink-muted);
     font-size: 0.9rem;
     padding: 16px 0;
 }
 .course-revision-help {
     margin: 0 0 24px;
-    border-radius: 10px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1px solid var(--line-subtle);
     padding: 2px 16px;
-    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    box-shadow: var(--shadow-paper);
 }
 .course-revision-help summary {
     cursor: pointer;
     padding: 12px 4px 12px 22px;
     font-size: 0.88rem;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--ink);
     list-style: none;
     position: relative;
 }
@@ -183,7 +181,7 @@ html, body {
     content: '▸';
     position: absolute;
     left: 0;
-    color: #3b82f6;
+    color: var(--accent);
     transition: transform 0.15s ease;
 }
 .course-revision-help[open] summary::before {
@@ -193,7 +191,7 @@ html, body {
     padding: 0 4px 16px;
     font-size: 0.85rem;
     line-height: 1.6;
-    color: #334155;
+    color: var(--ink);
 }
 .course-revision-help-body p { margin: 0 0 10px; }
 .course-revision-help-body ol {
@@ -202,15 +200,15 @@ html, body {
 }
 .course-revision-help-body li { margin-bottom: 6px; }
 .course-revision-help-body code {
-    background: #f1f5f9;
-    border-radius: 4px;
+    background: var(--surface-sunken);
+    border-radius: var(--radius-md);
     padding: 1px 5px;
     font-size: 0.82em;
 }
-.course-revision-help-body a { color: #3b82f6; }
+.course-revision-help-body a { color: var(--accent); }
 .course-revision-help-note {
-    font-size: 0.8rem;
-    color: #64748b;
+    font-size: var(--text-xs);
+    color: var(--ink-muted);
     font-style: italic;
     margin-top: 4px;
 }
@@ -219,20 +217,20 @@ html, body {
     max-width: 100%;
     height: auto;
     margin: 8px 0 4px;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line-subtle);
 }
 .course-revision-help-warning {
     margin: 14px 0 0;
     padding: 10px 12px;
     border-radius: 8px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #78350f;
+    background: var(--attention-fond);
+    border: 1px solid var(--attention);
+    color: var(--ink);
     font-size: 0.82rem;
     line-height: 1.55;
 }
-.course-revision-help-warning strong { color: #b45309; }
+.course-revision-help-warning strong { color: var(--attention); }
 
 /* Cibles tactiles confortables sur mobile (audit UX 2026-10, C5) */
 @media (max-width: 640px) {

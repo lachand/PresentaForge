@@ -177,7 +177,7 @@
             H.render.markCheckpointCompleted(st.currentIndex, 'quiz');
 
             const resultDiv = document.getElementById('qt-result');
-            if (resultDiv) resultDiv.innerHTML = '<div class="quiz-result-banner sent">✓ Réponse envoyée ! En attente des résultats…</div>';
+            if (resultDiv) resultDiv.innerHTML = `<div class="quiz-result-banner sent">${window.oeiIcon ? window.oeiIcon('check') : ''} Réponse envoyée ! En attente des résultats…</div>`;
         }
 
         function timeoutQuiz(optsDiv) {
@@ -188,7 +188,7 @@
                 o.setAttribute('aria-disabled', 'true');
             });
             const resultDiv = document.getElementById('qt-result');
-            if (resultDiv) resultDiv.innerHTML = '<div class="quiz-result-banner timeout">⏰ Temps écoulé</div>';
+            if (resultDiv) resultDiv.innerHTML = `<div class="quiz-result-banner timeout">${window.oeiIcon ? window.oeiIcon('timer') : ''} Temps écoulé</div>`;
         }
 
         function endQuiz(data) {
@@ -215,10 +215,10 @@
                 if (isCorrect) {
                     quizCorrect++;
                     score += quizEarnedPoints;
-                    if (resultDiv) resultDiv.innerHTML = `<div class="quiz-result-banner correct">✅ Correct ! +${quizEarnedPoints.toLocaleString()} pts</div>`;
+                    if (resultDiv) resultDiv.innerHTML = `<div class="quiz-result-banner correct">${window.oeiIcon ? window.oeiIcon('ok') : ''} Correct ! +${quizEarnedPoints.toLocaleString()} pts</div>`;
                 } else {
                     if (resultDiv) {
-                        resultDiv.innerHTML = `<div class="quiz-result-banner wrong">❌ Incorrect - bonne réponse : ${esc(correctLabel)}</div>`;
+                        resultDiv.innerHTML = `<div class="quiz-result-banner wrong">${window.oeiIcon ? window.oeiIcon('ko') : ''} Incorrect - bonne réponse : ${esc(correctLabel)}</div>`;
                     }
                 }
             } else {
@@ -335,7 +335,7 @@
             const msg = document.createElement('div');
             if (broadcast) {
                 msg.className = 'dp-broadcast';
-                msg.innerHTML = `<span class="dp-broadcast-icon">📢</span><span>${_escHtml(text)}</span>`;
+                msg.innerHTML = `<span class="dp-broadcast-icon">${window.oeiIcon ? window.oeiIcon('megaphone') : ''}</span><span>${_escHtml(text)}</span>`;
             } else {
                 const initials = (from || '?').slice(0, 2).toUpperCase();
                 msg.className = 'dp-msg';
@@ -403,7 +403,7 @@
                 buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
                 if (sentEl) {
                     sentEl.style.display = '';
-                    sentEl.textContent = Array.isArray(value) ? 'Réponses envoyées ✓' : 'Réponse envoyée ✓';
+                    sentEl.textContent = Array.isArray(value) ? 'Réponses envoyées' : 'Réponse envoyée';
                 }
             };
 
@@ -451,7 +451,7 @@
             const sendBtn = document.getElementById('wc-send');
             const sentMsg = document.getElementById('wc-sent-msg');
             sendBtn.disabled = true;
-            if (sentMsg) sentMsg.textContent = 'Mot envoyé ✓';
+            if (sentMsg) sentMsg.textContent = 'Mot envoyé';
             setTimeout(() => {
                 sendBtn.disabled = false;
                 if (sentMsg) sentMsg.textContent = '';
@@ -565,7 +565,7 @@
             }, { maxRetries: 3, retryDelay: 1300 });
             H.render.markCheckpointCompleted(st.currentIndex, 'exit-ticket');
             sendBtn.disabled = true;
-            if (sentEl) sentEl.textContent = 'Réponses envoyées ✓';
+            if (sentEl) sentEl.textContent = 'Réponses envoyées';
             setTimeout(() => {
                 sendBtn.disabled = false;
                 if (sentEl?.textContent?.includes('envoy')) sentEl.textContent = '';
@@ -586,7 +586,7 @@
             }, { maxRetries: 3, retryDelay: 1300 });
             H.render.markCheckpointCompleted(st.currentIndex, 'rank-order');
             sendBtn.disabled = true;
-            if (sentEl) sentEl.textContent = 'Classement envoyé ✓';
+            if (sentEl) sentEl.textContent = 'Classement envoyé';
             setTimeout(() => {
                 sendBtn.disabled = false;
                 if (sentEl?.textContent?.includes('envoy')) sentEl.textContent = '';
@@ -691,7 +691,7 @@
                 document.getElementById('question-overlay').style.display = 'none';
                 // Confirmation visible : la question part sur un autre onglet (« Échanges ») et
                 // l'envoi pouvait sembler n'avoir rien fait (audit UX 2026-10, S-X1).
-                H.render.showNotice('Question envoyée anonymement à l\'enseignant. ✓');
+                H.render.showNotice('Question envoyée anonymement à l\'enseignant.');
                 const qc = document.getElementById('question-count'); if (qc) qc.textContent = '0 / 300 · Ctrl+Entrée pour envoyer';
                 document.getElementById('question-btn')?.focus();
             });

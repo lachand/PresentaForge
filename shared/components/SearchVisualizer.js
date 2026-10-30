@@ -419,9 +419,9 @@ class SearchWidget {
             <div class="widget-fit-footer">
                 <div class="srw-info-bar"><span class="srw-action"></span></div>
                 <div class="srw-controls">
-                    <button class="srw-btn srw-btn-play">▶ Lancer</button>
+                    <button class="srw-btn srw-btn-play">${OEIIcons.render('play')} Lancer</button>
                     <button class="srw-btn srw-btn-step srw-btn-secondary">Étape</button>
-                    <button class="srw-btn srw-btn-reset srw-btn-secondary">↺ Reset</button>
+                    <button class="srw-btn srw-btn-reset srw-btn-secondary">${OEIIcons.render('refresh')} Reset</button>
                 </div>
             </div>
         </div>`;
@@ -538,7 +538,7 @@ class SearchWidget {
     _syncButtons(state) {
         const btn = this.root.querySelector('.srw-btn-play');
         if (!btn) return;
-        btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
+        OEIIcons.setLabel(btn, state.playing ? ['pause', 'Pause'] : (state.atEnd ? ['refresh', 'Rejouer'] : ['play', 'Lancer']));
         btn.setAttribute('aria-pressed', String(!!state.playing));
     }
 

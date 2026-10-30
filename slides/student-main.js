@@ -12,6 +12,7 @@
                 target: 'body-dark',
                 bodyElement: document.body,
                 darkClass: 'dark',
+                cycleContrast: true,
             })
             : null;
         if (controller) {
@@ -404,7 +405,7 @@
                     const store = window.OEIStudentStorage.create({ roomId: '' });
                     const res = await store.importReviseFile(parsed);
                     if (res.ok) {
-                        setJoinStatus(res.count > 1 ? `${res.count} cours importés ✓` : 'Révision importée ✓', 'info');
+                        setJoinStatus(res.count > 1 ? `${res.count} cours importés` : 'Révision importée', 'info');
                         renderReviseHome();
                     } else {
                         const msg = {

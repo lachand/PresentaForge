@@ -404,8 +404,8 @@ class PipelineWidget {
     </div>
     <div class="plw-btns">
       <button class="plw-btn" data-step>Cycle suivant</button>
-      <button class="plw-btn primary" data-run>▶ Exécuter</button>
-      <button class="plw-btn" data-reset>↺ Reset</button>
+      <button class="plw-btn primary" data-run>${OEIIcons.render('play')} Exécuter</button>
+      <button class="plw-btn" data-reset>${OEIIcons.render('refresh')} Reset</button>
     </div>
   </div>
   <div class="widget-fit-body">
@@ -449,7 +449,7 @@ class PipelineWidget {
 
     _reset() {
         this.running = false;
-        this._q('[data-run]').textContent = '▶ Exécuter';
+        OEIIcons.setLabel(this._q('[data-run]'), 'play', 'Exécuter');
         this.cycle = 0;
         this._recompute();
         this._renderGrid();
@@ -462,9 +462,9 @@ class PipelineWidget {
     }
 
     async _toggleRun() {
-        if (this.running) { this.running = false; this._q('[data-run]').textContent = '▶ Exécuter'; return; }
+        if (this.running) { this.running = false; OEIIcons.setLabel(this._q('[data-run]'), 'play', 'Exécuter'); return; }
         this.running = true;
-        this._q('[data-run]').textContent = '⏸ Pause';
+        OEIIcons.setLabel(this._q('[data-run]'), 'pause', 'Pause');
         while (this.running && this.cycle < this.maxCycles) {
             this.cycle++;
             this._renderGrid();
@@ -472,7 +472,7 @@ class PipelineWidget {
             await new Promise(r => setTimeout(r, 500));
         }
         this.running = false;
-        this._q('[data-run]').textContent = '▶ Exécuter';
+        OEIIcons.setLabel(this._q('[data-run]'), 'play', 'Exécuter');
     }
 
     _renderGrid() {

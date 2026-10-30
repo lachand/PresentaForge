@@ -124,10 +124,87 @@ body.dark {
     --cat-integration: #7DC3E0;
 }
 
+/* Contraste fort (AAA) : mêmes rôles, valeurs de la palette contraste de Signature. Sélectionné par
+   <html data-theme="contrast"> (theme-runtime.js, ou `prefers-contrast: more` sans choix enregistré). */
+:root[data-theme="contrast"],
+[data-theme="contrast"] {
+    --surface: #FFFFFF;
+    --surface-bright: #FFFFFF;
+    --surface-dim: #F0F0F0;
+    --surface-container-lowest: #FFFFFF;
+    --surface-container-low: #FFFFFF;
+    --surface-container: #F0F0F0;
+    --surface-container-high: #E6E6E6;
+    --surface-container-highest: #DCDCDC;
+    --on-surface: #000000;
+    --on-surface-variant: #1A1A1A;
+    --on-surface-muted: #333333;
+    --inverse-surface: #000000;
+    --inverse-on-surface: #FFFFFF;
+    --primary: #8A2800;
+    --primary-hover: #5E1A00;
+    --primary-container: #8A2800;
+    --primary-fixed: #FFE4D6;
+    --primary-fixed-dim: #E6BFA3;
+    --inverse-primary: #FFB59A;
+    --on-primary: #FFFFFF;
+    --on-primary-fixed: #3A0E00;
+    --on-primary-fixed-variant: #5E1A00;
+    --secondary: #6B4300;
+    --secondary-container: #F6E7C2;
+    --on-secondary: #FFFFFF;
+    --on-secondary-container: #3A2400;
+    --success: #004D3A;
+    --success-light: #E3F2EC;
+    --danger: #8A0016;
+    --danger-light: #F7D9DC;
+    --warning: #6B4300;
+    --error: #8A0016;
+    --error-container: #F7D9DC;
+    --on-error-container: #4A000C;
+    --outline: #000000;
+    --outline-variant: #767676;
+
+    --shadow-sm: none;
+    --shadow-ambient: none;
+    --shadow-md: none;
+    --shadow-overlay: 0 0 0 2px #000000;
+    --ui-overlay: rgba(0, 0, 0, 0.70);
+    --cat-facilitation: #6B1F58;
+    --cat-integration: #003D7A;
+}
+
+/* ───────────── Lisibilité : focus et cibles ─────────────
+   Anneau de focus clavier OPAQUE sur tout contrôle, même quand une feuille a posé `outline: none`
+   (le `!important` l'emporte sur toutes les règles locales ; seul :focus-visible est concerné, la souris ne le déclenche
+   pas sur un bouton). 2 px de --cote, 3 px en contraste fort. */
+:is(button, a[href], input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]):focus-visible {
+    outline: var(--focus-ring, 2px solid var(--cote)) !important;
+    outline-offset: var(--focus-ring-offset, 2px) !important;
+}
+[data-theme="contrast"] :is(button, a[href], input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]):focus-visible {
+    outline-width: 3px !important;
+}
+@media (forced-colors: active) {
+    :is(button, a[href], input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]):focus-visible {
+        outline-color: Highlight !important;
+    }
+}
+/* L'éditeur reste dense au pointeur fin ; sur écran tactile, ses boutons de ruban passent à 40 px. */
+@media (pointer: coarse) {
+    body.sig-extras .tb-btn { min-height: var(--control-h-md, 40px); min-width: var(--control-h-md, 40px); }
+}
+/* Écrans tactiles (élève, télécommande, accueil) : cible de 40 px au moins (DESIGN.md). L'éditeur (sig-extras) reste dense. */
+@media (pointer: coarse) {
+    body:not(.sig-extras) :is(button, select, summary, [role="button"], input:not([type="range"], [type="checkbox"], [type="radio"], [type="color"], [type="file"])) {
+        min-height: var(--control-h-md, 40px);
+    }
+}
+
 /* ───────────── Niveau 2 : body.sig-extras ───────────── */
 body.sig-extras .ribbon-group-label {
     position: relative; text-transform: none; letter-spacing: 0;
-    font-family: var(--font-ui); font-size: 0.72rem; font-weight: 500;
+    font-family: var(--font-ui); font-size: var(--text-xs); font-weight: 500;
     color: var(--on-surface-variant); padding-top: 9px;
 }
 body.sig-extras .ribbon-group-label::before {

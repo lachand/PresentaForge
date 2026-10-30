@@ -622,7 +622,7 @@ function updatePropsPanel() {
                 <div id="sp-card-items">
                     ${cardItems.map((item, idx) => `<div class="props-row props-row-tight">
                         <input type="text" value="${escAttr(item)}" data-card-idx="${idx}" class="sp-elstyle-input">
-                        <button class="tb-btn ui-btn sp-del-btn" data-del-card="${idx}">✕</button>
+                        <button class="tb-btn ui-btn sp-del-btn" data-del-card="${idx}" aria-label="Supprimer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
                     </div>`).join('')}
                 </div>
                 <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced sp-block-btn-dashed" id="sp-card-add">+ Ajouter</button>
@@ -819,7 +819,7 @@ function updatePropsPanel() {
                     ${hls.map((h, i) => `<div class="props-row props-row-tight">
                         <input type="text" value="${escAttr(h.lines||'')}" data-hl-lines="${i}" placeholder="1-3" style="width:50px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:3px 6px;font-size:0.72rem">
                         <input type="text" value="${escAttr(h.label||'')}" data-hl-label="${i}" placeholder="Label" class="sp-elstyle-input">
-                        <button class="tb-btn ui-btn sp-del-btn" data-del-hl="${i}">✕</button>
+                        <button class="tb-btn ui-btn sp-del-btn" data-del-hl="${i}" aria-label="Supprimer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
                     </div>`).join('')}
                 </div>
                 <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced sp-block-btn-dashed" id="sp-hl-add">+ Zone</button>
@@ -847,7 +847,7 @@ function updatePropsPanel() {
                 <div id="sp-sa-items">
                     ${saItems.map((item, i) => `<div class="props-row props-row-tight">
                         <input type="text" value="${escAttr(item)}" data-sa-idx="${i}" class="sp-elstyle-input">
-                        <button class="tb-btn ui-btn sp-del-btn" data-del-sa="${i}">✕</button>
+                        <button class="tb-btn ui-btn sp-del-btn" data-del-sa="${i}" aria-label="Supprimer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
                     </div>`).join('')}
                 </div>
                 <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced sp-block-btn-dashed" id="sp-sa-add">+ Ajouter</button>
@@ -888,7 +888,7 @@ function updatePropsPanel() {
                     ${qlOpts.map((item, i) => `<div class="props-row props-row-tight">
                         <span style="min-width:18px;font-weight:700;font-size:0.7rem;color:var(--primary)">${String.fromCharCode(65 + i)}</span>
                         <input type="text" value="${escAttr(item)}" data-ql-idx="${i}" class="sp-elstyle-input">
-                        <button class="tb-btn ui-btn sp-del-btn" data-del-ql="${i}">✕</button>
+                        <button class="tb-btn ui-btn sp-del-btn" data-del-ql="${i}" aria-label="Supprimer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
                     </div>`).join('')}
                 </div>
                 <button class="tb-btn ui-btn sp-block-btn sp-block-btn-spaced sp-block-btn-dashed" id="sp-ql-add">+ Option</button>

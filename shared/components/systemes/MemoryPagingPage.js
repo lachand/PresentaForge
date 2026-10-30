@@ -495,8 +495,8 @@ class MemoryWidget {
     </div>
     <div class="mpw-btns">
       <button class="mpw-btn" data-step>Étape</button>
-      <button class="mpw-btn primary" data-run>▶ Simuler</button>
-      <button class="mpw-btn" data-reset>↺ Reset</button>
+      <button class="mpw-btn primary" data-run>${OEIIcons.render('play')} Simuler</button>
+      <button class="mpw-btn" data-reset>${OEIIcons.render('refresh')} Reset</button>
     </div>
   </div>
   <div class="widget-fit-body">
@@ -538,7 +538,7 @@ class MemoryWidget {
 
     _reset() {
         this.running = false;
-        this._q('[data-run]').textContent = '▶ Simuler';
+        OEIIcons.setLabel(this._q('[data-run]'), 'play', 'Simuler');
         this.numFrames = Math.max(1, parseInt(this._q('[data-frames]').value) || 3);
         this.seq = this._q('[data-seq]').value.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
         this.step = -1;
@@ -564,9 +564,9 @@ class MemoryWidget {
     }
 
     async _toggleRun() {
-        if (this.running) { this.running = false; this._q('[data-run]').textContent = '▶ Simuler'; return; }
+        if (this.running) { this.running = false; OEIIcons.setLabel(this._q('[data-run]'), 'play', 'Simuler'); return; }
         this.running = true;
-        this._q('[data-run]').textContent = '⏸ Pause';
+        OEIIcons.setLabel(this._q('[data-run]'), 'pause', 'Pause');
         while (this.running && this.step < this.seq.length - 1) {
             this.step++;
             this._processStep(this.step);
@@ -576,7 +576,7 @@ class MemoryWidget {
             await new Promise(r => setTimeout(r, 600));
         }
         this.running = false;
-        this._q('[data-run]').textContent = '▶ Simuler';
+        OEIIcons.setLabel(this._q('[data-run]'), 'play', 'Simuler');
     }
 
     _processStep(s) {

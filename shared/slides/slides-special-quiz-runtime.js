@@ -67,8 +67,8 @@
                             statusEl.style.color = isRight ? '#34d399' : '#f87171';
                             statusEl.style.fontWeight = '600';
                             statusEl.textContent = isRight
-                                ? '✓ Bonne réponse'
-                                : `✗ La bonne réponse était ${String.fromCharCode(65 + correctAnswer)}`;
+                                ? 'Bonne réponse'
+                                : `La bonne réponse était ${String.fromCharCode(65 + correctAnswer)}`;
                         }
                         const expl = el.dataset.explanation || '';
                         if (expl && resultsEl) {
@@ -158,7 +158,7 @@
                     if (!resultsEl) return;
                     if (active && sync.ended !== true) {
                         resultsEl.style.display = '';
-                        resultsEl.innerHTML = `<div style="font-size:0.85rem;color:var(--sl-muted,#94a3b8);text-align:center;padding:12px 0;">⏳ Collecte des réponses…</div>`;
+                        resultsEl.innerHTML = `<div style="font-size:0.85rem;color:var(--sl-muted,#94a3b8);text-align:center;padding:12px 0;">Collecte des réponses…</div>`;
                         return;
                     }
                     const shouldShow = total > 0 || sync.ended === true;
@@ -213,7 +213,7 @@
                 if (global._studentRoom?.active && global._studentRoomBroadcast) {
                     quizActive = true;
                     btnStart.disabled = true;
-                    btnStart.textContent = '⏳';
+                    btnStart.textContent = '…';
                     statusEl.textContent = 'Diffusion via la salle étudiants…';
                     responses = {};
 
@@ -249,7 +249,7 @@
                     remaining = duration;
                     _updateTimerDisplay(remaining);
                     statusEl.textContent = `0 réponse(s) — ${remaining}s restantes`;
-                    btnStart.textContent = '⏹ Arrêter';
+                    btnStart.textContent = 'Arrêter';
                     btnStart.disabled = false;
                     publishQuizState();
 
@@ -268,12 +268,12 @@
 
                 quizActive = true;
                 btnStart.disabled = true;
-                btnStart.textContent = '⏳';
+                btnStart.textContent = '…';
                 statusEl.textContent = 'Connexion P2P en cours…';
 
                 try {
                     // Chargement PeerJS DANS le try : un échec (réseau, CSP) laissait sinon le
-                    // bouton bloqué sur « ⏳ » sans message ni nouvel essai possible.
+                    // bouton bloqué sur « … » sans message ni nouvel essai possible.
                     // Drapeau posé seulement après un chargement réussi : un échec permet un nouvel essai.
                     if (typeof global.Peer !== 'function') {
                         await new Promise((resolve, reject) => {
@@ -300,7 +300,7 @@
                         setTimeout(() => reject(new Error('Timeout PeerJS')), 10000);
                     });
                 } catch(e) {
-                    statusEl.textContent = '❌ Erreur: ' + (e.message || e);
+                    statusEl.textContent = 'Erreur: ' + (e.message || e);
                     btnStart.textContent = 'Réessayer';
                     btnStart.disabled = false;
                     quizActive = false;
@@ -340,7 +340,7 @@
                 remaining = duration;
                 timerEl.textContent = remaining + 's';
                 statusEl.textContent = `0 réponse(s) — ${remaining}s restantes`;
-                btnStart.textContent = '⏹ Arrêter';
+                btnStart.textContent = 'Arrêter';
                 btnStart.disabled = false;
                 publishQuizState();
 

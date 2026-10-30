@@ -10,7 +10,7 @@ class GitHubRoadmapWidget {
             id: 'v1.0',
             label: 'v1.0',
             status: 'closed',
-            color: '#10b981',
+            color: 'var(--ok)',
             startMonth: 0,  // Jan 2025
             endMonth: 1,    // Feb 2025
             pct: 100,
@@ -28,7 +28,7 @@ class GitHubRoadmapWidget {
             id: 'v1.1',
             label: 'v1.1',
             status: 'in_progress',
-            color: '#4f46e5',
+            color: 'var(--accent)',
             startMonth: 2,  // Mar 2025
             endMonth: 3,    // Apr 2025
             pct: 60,
@@ -46,7 +46,7 @@ class GitHubRoadmapWidget {
             id: 'v2.0',
             label: 'v2.0',
             status: 'planned',
-            color: '#f59e0b',
+            color: 'var(--attention)',
             startMonth: 4,  // May 2025
             endMonth: 7,    // Aug 2025
             pct: 10,
@@ -67,7 +67,7 @@ class GitHubRoadmapWidget {
             id: 'v3.0',
             label: 'v3.0',
             status: 'future',
-            color: '#9ca3af',
+            color: 'var(--ink-muted)',
             startMonth: 8,  // Sep 2025
             endMonth: 12,   // Jan 2026
             pct: 0,
@@ -129,8 +129,8 @@ class GitHubRoadmapWidget {
 
             // Today marker (clamped)
             const todayX = monthToX(Math.min(TODAY_MONTH, 12));
-            axisHtml += `<line x1="${todayX.toFixed(1)}" y1="${MARGIN_TOP - 8}" x2="${todayX.toFixed(1)}" y2="${SVG_H - 10}" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/>`;
-            axisHtml += `<text x="${todayX.toFixed(1)}" y="${MARGIN_TOP - 10}" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="700">Aujourd'hui</text>`;
+            axisHtml += `<line x1="${todayX.toFixed(1)}" y1="${MARGIN_TOP - 8}" x2="${todayX.toFixed(1)}" y2="${SVG_H - 10}" stroke="var(--critique)" stroke-width="2" stroke-dasharray="4,3"/>`;
+            axisHtml += `<text x="${todayX.toFixed(1)}" y="${MARGIN_TOP - 10}" text-anchor="middle" font-size="9" fill="var(--critique)" font-weight="700">Aujourd'hui</text>`;
 
             // Milestone bars
             let barsHtml = '';
@@ -154,7 +154,7 @@ class GitHubRoadmapWidget {
                 // Label
                 const labelX = x1 + barW / 2;
                 const labelY = y + BAR_H / 2 + 4;
-                barsHtml += `<text x="${labelX.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" pointer-events="none">${ms.label} — ${ms.pct}%</text>`;
+                barsHtml += `<text x="${labelX.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--surface)" pointer-events="none">${ms.label} — ${ms.pct}%</text>`;
 
                 barsHtml += `</g>`;
             });
@@ -189,10 +189,10 @@ ${barsHtml}
         function render() {
             const MS = GitHubRoadmapWidget.MILESTONES;
             const legendHtml = [
-                { color: '#10b981', label: 'Fermé' },
-                { color: '#4f46e5', label: 'En cours' },
-                { color: '#f59e0b', label: 'Planifié' },
-                { color: '#9ca3af', label: 'Futur' },
+                { color: 'var(--ok)', label: 'Fermé' },
+                { color: 'var(--accent)', label: 'En cours' },
+                { color: 'var(--attention)', label: 'Planifié' },
+                { color: 'var(--ink-muted)', label: 'Futur' },
             ].map(l => `<div class="grw-legend-item">
                 <div class="grw-legend-dot" style="background:${l.color}"></div>
                 <span>${l.label}</span>

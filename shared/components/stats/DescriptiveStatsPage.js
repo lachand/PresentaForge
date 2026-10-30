@@ -290,19 +290,19 @@ class DescriptiveStatsPage extends SimulationPage {
             <line x1="${xMedian}" y1="${y - 20}" x2="${xMedian}" y2="${y + 20}" stroke="var(--ok)" stroke-width="3"></line>
             <line x1="${xMin}" y1="${y - 12}" x2="${xMin}" y2="${y + 12}" stroke="var(--border)" stroke-width="2"></line>
             <line x1="${xMax}" y1="${y - 12}" x2="${xMax}" y2="${y + 12}" stroke="var(--border)" stroke-width="2"></line>
-            <circle cx="${xMean}" cy="${y}" r="5" fill="#f59e0b"></circle>
+            <circle cx="${xMean}" cy="${y}" r="5" fill="var(--attention)"></circle>
         `;
 
         this.summary.outliers.forEach((value) => {
             const ox = project(value);
-            html += `<circle cx="${ox}" cy="${y}" r="4.2" fill="#ef4444"></circle>`;
+            html += `<circle cx="${ox}" cy="${y}" r="4.2" fill="var(--critique)"></circle>`;
         });
 
         html += `
             <text x="${padding.left}" y="${height - 10}" text-anchor="start" font-size="11" fill="var(--muted)">min ${this.format(min)}</text>
             <text x="${width - padding.right}" y="${height - 10}" text-anchor="end" font-size="11" fill="var(--muted)">max ${this.format(max)}</text>
             <text x="${xMedian}" y="${y - 26}" text-anchor="middle" font-size="11" fill="var(--ok)">mediane ${this.format(this.summary.median)}</text>
-            <text x="${xMean}" y="${y + 30}" text-anchor="middle" font-size="11" fill="#b45309">moyenne ${this.format(this.summary.mean)}</text>
+            <text x="${xMean}" y="${y + 30}" text-anchor="middle" font-size="11" fill="var(--attention)">moyenne ${this.format(this.summary.mean)}</text>
         `;
 
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);

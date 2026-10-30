@@ -268,8 +268,8 @@ class ConfidenceIntervalPage extends SimulationPage {
         `;
 
         const trueMeanX = xToPx(this.params.trueMean);
-        html += `<line x1="${trueMeanX}" y1="${padding.top}" x2="${trueMeanX}" y2="${height - padding.bottom}" stroke="#dc2626" stroke-width="2"></line>`;
-        html += `<text x="${trueMeanX + 6}" y="${padding.top + 12}" font-size="11" fill="#b91c1c">mu reel</text>`;
+        html += `<line x1="${trueMeanX}" y1="${padding.top}" x2="${trueMeanX}" y2="${height - padding.bottom}" stroke="var(--critique)" stroke-width="2"></line>`;
+        html += `<text x="${trueMeanX + 6}" y="${padding.top + 12}" font-size="11" fill="var(--critique)">mu reel</text>`;
 
         rows.forEach((interval, idx) => {
             const y = padding.top + (idx + 0.5) * rowHeight;
@@ -358,7 +358,7 @@ class ConfidenceIntervalWidget {
                     <button class="ciw-btn ciw-btn-secondary" data-run="25">+25</button>
                     <button class="ciw-btn ciw-btn-secondary" data-run="100">+100</button>
                     <button class="ciw-btn ciw-btn-secondary" data-clear>Vider</button>
-                    <button class="ciw-btn ciw-btn-secondary" data-reset>↺ Reset</button>
+                    <button class="ciw-btn ciw-btn-secondary" data-reset>${OEIIcons.render('refresh')} Reset</button>
                 </div>
             </div>
             <div class="widget-fit-body">
@@ -496,7 +496,7 @@ class ConfidenceIntervalWidget {
         }
 
         const trueMeanX = xToPx(this.params.trueMean);
-        let html = `<line x1="${trueMeanX}" y1="${padding.top}" x2="${trueMeanX}" y2="${height - padding.bottom}" stroke="#dc2626" stroke-width="1.6"></line>`;
+        let html = `<line x1="${trueMeanX}" y1="${padding.top}" x2="${trueMeanX}" y2="${height - padding.bottom}" stroke="var(--critique)" stroke-width="1.6"></line>`;
         rows.forEach((it, idx) => {
             const y = padding.top + (idx + 0.5) * rowHeight;
             const stroke = it.covers ? '#0f766e' : '#b91c1c';

@@ -261,10 +261,10 @@ class ConditionalIndependencePage extends SimulationPage {
         const html = `
             <rect x="0" y="0" width="${width}" height="${height}" fill="var(--card)"></rect>
 
-            <rect x="${gridX}" y="${gridY}" width="${xB - gridX}" height="${yAB - gridY}" fill="#1d4ed8" opacity="0.78"></rect>
-            <rect x="${gridX}" y="${yAB}" width="${xB - gridX}" height="${gridY + gridH - yAB}" fill="#bfdbfe" opacity="0.88"></rect>
-            <rect x="${xB}" y="${gridY}" width="${gridX + gridW - xB}" height="${yAOnly - gridY}" fill="#f59e0b" opacity="0.72"></rect>
-            <rect x="${xB}" y="${yAOnly}" width="${gridX + gridW - xB}" height="${gridY + gridH - yAOnly}" fill="#fde68a" opacity="0.9"></rect>
+            <rect x="${gridX}" y="${gridY}" width="${xB - gridX}" height="${yAB - gridY}" fill="var(--production)" opacity="0.78"></rect>
+            <rect x="${gridX}" y="${yAB}" width="${xB - gridX}" height="${gridY + gridH - yAB}" fill="color-mix(in srgb, var(--production) 14%, var(--surface))" opacity="0.88"></rect>
+            <rect x="${xB}" y="${gridY}" width="${gridX + gridW - xB}" height="${yAOnly - gridY}" fill="var(--attention)" opacity="0.72"></rect>
+            <rect x="${xB}" y="${yAOnly}" width="${gridX + gridW - xB}" height="${gridY + gridH - yAOnly}" fill="var(--attention)" opacity="0.9"></rect>
 
             <rect x="${gridX}" y="${gridY}" width="${gridW}" height="${gridH}" fill="none" stroke="var(--border)" stroke-width="1.5"></rect>
             <line x1="${xB}" y1="${gridY}" x2="${xB}" y2="${gridY + gridH}" stroke="var(--border)" stroke-width="1.5"></line>

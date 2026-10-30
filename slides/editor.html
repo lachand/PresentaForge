@@ -13,12 +13,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../shared/slides/signature-base.css?v=1">
-    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=9">
-    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=53">
+    <link rel="stylesheet" href="../shared/slides/signature-base.css?v=3">
+    <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=10">
+    <link rel="stylesheet" href="../shared/slides/slides-editor.css?v=54">
     <link rel="stylesheet" href="../shared/components/widgets.css">
-    <link rel="stylesheet" href="../shared/slides/signature-presentaforge.css?v=1">
+    <link rel="stylesheet" href="../shared/slides/signature-presentaforge.css?v=2">
     <style id="sl-preview-theme"></style>
     <style id="sl-thumb-css"></style>
 </head>
@@ -48,21 +47,21 @@
                 <span id="file-name-indicator" class="file-name-indicator" title="Aucun fichier lié — Ctrl+S pour sauvegarder">Brouillon</span>
                 <span id="save-text" class="save-text-offset"></span>
                 <span class="fb-cloud-badge" id="fb-cloud-badge" style="display:none" title="Firebase non connecté">
-                    <span class="ms" aria-hidden="true">cloud_off</span>
+                    <span class="ms" aria-hidden="true" data-oei-icon-in="cloud-off"></span>
                 </span>
             </div>
             <button class="tb-btn ui-btn cmdk-trigger" id="btn-command-palette" title="Palette de commandes (Ctrl+K)" aria-label="Palette de commandes">
-                <span class="ms" aria-hidden="true">terminal</span><kbd>⌘K</kbd>
+                <span class="ms" aria-hidden="true" data-oei-icon-in="terminal"></span><kbd>⌘K</kbd>
             </button>
             <button class="tb-btn ui-btn tb-btn-compact-history" id="btn-revision-history" title="Historique des révisions" aria-label="Historique des révisions">
-                <span class="ms" aria-hidden="true">history</span>
+                <span class="ms" aria-hidden="true" data-oei-icon-in="history"></span>
             </button>
             <button class="tb-btn ui-btn tb-btn-compact-history" id="btn-review-comments" title="Commentaires de relecture" aria-label="Commentaires de relecture">
-                <span class="ms" aria-hidden="true">rate_review</span>
+                <span class="ms" aria-hidden="true" data-oei-icon-in="message"></span>
             </button>
             <!-- Présenter : action la plus fréquente, toujours visible (audit UX 2026-10, E-I1) -->
             <button class="ui-btn ui-btn--primary ribbon-present-btn" id="btn-present-quick" type="button" title="Présenter (F5) - Maj+clic ou Maj+F5 : mode présentateur">
-                <span class="ms" aria-hidden="true">play_arrow</span><span>Présenter</span>
+                <span class="ms" aria-hidden="true" data-oei-icon-in="play"></span><span>Présenter</span>
             </button>
             <!-- Hidden theme toggle — kept for JS compatibility (editor-ui.js references icon-sun/icon-moon) -->
             <button class="tb-btn ui-btn tb-icon-hidden" id="btn-toggle-theme" aria-hidden="true">
@@ -81,24 +80,24 @@
                 <div class="ribbon-group-content">
                     <div class="split-btn" id="split-add-slide">
                         <button class="split-btn-main ui-btn" id="btn-add-slide" data-tooltip="Ajouter un slide|Insère un nouveau slide après le slide actuel">
-                            <span class="tb-icon ms" aria-hidden="true">add_box</span>
+                            <span class="tb-icon ms" aria-hidden="true" data-oei-icon-in="plus-square"></span>
                             <span class="tb-label">Nouvelle</span>
                         </button>
                         <button class="split-btn-arrow ui-btn" id="split-add-arrow" aria-label="Options d'ajout de slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
                         <div class="split-dropdown hidden" id="split-add-menu"></div>
                     </div>
                     <button class="tb-btn-lg ui-btn" id="btn-dup-slide" data-tooltip="Dupliquer|Crée une copie du slide actuel">
-                        <span class="tb-icon ms" aria-hidden="true">content_copy</span>
+                        <span class="tb-icon ms" aria-hidden="true" data-oei-icon-in="copy"></span>
                         <span class="tb-label">Dupliquer</span>
                     </button>
                     <button class="tb-btn-lg ui-btn" id="btn-del-slide" data-tooltip="Supprimer|Supprime le slide sélectionné" data-shortcut="Maj+Suppr">
-                        <span class="tb-icon ms" aria-hidden="true">delete</span>
+                        <span class="tb-icon ms" aria-hidden="true" data-oei-icon-in="trash"></span>
                         <span class="tb-label">Supprimer</span>
                     </button>
                                     <span class="ribbon-inline-sep" aria-hidden="true"></span>
-                    <button class="tb-btn ui-btn" id="btn-slide-up" aria-label="Monter le slide (Ctrl+Maj+↑)" data-tooltip="Monter|Déplacer le slide vers le haut" data-shortcut="Ctrl+Maj+↑"><span class="ms" aria-hidden="true">arrow_upward</span></button>
-                    <button class="tb-btn ui-btn" id="btn-slide-down" aria-label="Descendre le slide (Ctrl+Maj+↓)" data-tooltip="Descendre|Déplacer le slide vers le bas" data-shortcut="Ctrl+Maj+↓"><span class="ms" aria-hidden="true">arrow_downward</span></button>
-                    <button class="tb-btn ui-btn" id="btn-hide-slide" aria-label="Masquer le slide" data-tooltip="Masquer|Le slide est sauté en présentation"><span class="ms" aria-hidden="true">visibility_off</span></button>
+                    <button class="tb-btn ui-btn" id="btn-slide-up" aria-label="Monter le slide (Ctrl+Maj+↑)" data-tooltip="Monter|Déplacer le slide vers le haut" data-shortcut="Ctrl+Maj+↑"><span class="ms" aria-hidden="true" data-oei-icon-in="arrow-up"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-slide-down" aria-label="Descendre le slide (Ctrl+Maj+↓)" data-tooltip="Descendre|Déplacer le slide vers le bas" data-shortcut="Ctrl+Maj+↓"><span class="ms" aria-hidden="true" data-oei-icon-in="arrow-down"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-hide-slide" aria-label="Masquer le slide" data-tooltip="Masquer|Le slide est sauté en présentation"><span class="ms" aria-hidden="true" data-oei-icon-in="eye-off"></span></button>
                 </div>
                 <span class="ribbon-group-label">Diapositive</span>
             </div>
@@ -106,20 +105,20 @@
             <!-- A1: Clipboard -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-cut" aria-label="Couper (Ctrl+X)" data-tooltip="Couper|Couper l'élément canvas" data-shortcut="Ctrl+X"><span class="ms" aria-hidden="true">content_cut</span></button>
-                    <button class="tb-btn ui-btn" id="btn-copy" aria-label="Copier (Ctrl+C)" data-tooltip="Copier|Copier l'élément canvas" data-shortcut="Ctrl+C"><span class="ms" aria-hidden="true">content_copy</span></button>
-                    <button class="tb-btn ui-btn" id="btn-paste" aria-label="Coller (Ctrl+V)" data-tooltip="Coller|Coller l'élément copié" data-shortcut="Ctrl+V"><span class="ms" aria-hidden="true">content_paste</span></button>
+                    <button class="tb-btn ui-btn" id="btn-cut" aria-label="Couper (Ctrl+X)" data-tooltip="Couper|Couper l'élément canvas" data-shortcut="Ctrl+X"><span class="ms" aria-hidden="true" data-oei-icon-in="scissors"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-copy" aria-label="Copier (Ctrl+C)" data-tooltip="Copier|Copier l'élément canvas" data-shortcut="Ctrl+C"><span class="ms" aria-hidden="true" data-oei-icon-in="copy"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-paste" aria-label="Coller (Ctrl+V)" data-tooltip="Coller|Coller l'élément copié" data-shortcut="Ctrl+V"><span class="ms" aria-hidden="true" data-oei-icon-in="clipboard"></span></button>
                     <!-- A2: Paste format -->
-                    <button class="tb-btn ui-btn" id="btn-paste-format" aria-label="Reproduire la mise en forme" data-tooltip="Reproduire la mise en forme|Copie le style d'un élément"><span class="ms" aria-hidden="true">format_paint</span></button>
+                    <button class="tb-btn ui-btn" id="btn-paste-format" aria-label="Reproduire la mise en forme" data-tooltip="Reproduire la mise en forme|Copie le style d'un élément"><span class="ms" aria-hidden="true" data-oei-icon-in="paint"></span></button>
                 </div>
                 <span class="ribbon-group-label">Presse-papier</span>
             </div>
             <div class="ribbon-sep"></div>
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-undo" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler|Revenir à l'état précédent" data-shortcut="Ctrl+Z"><span class="ms" aria-hidden="true">undo</span></button>
-                    <button class="tb-btn ui-btn" id="btn-redo" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir|Restaurer l'action annulée" data-shortcut="Ctrl+Y"><span class="ms" aria-hidden="true">redo</span></button>
-                    <button class="tb-btn ui-btn" id="btn-search" data-tooltip="Rechercher et remplacer|Chercher du texte dans toute la présentation" data-shortcut="Ctrl+F"><span class="ms" aria-hidden="true">search</span> Rechercher</button>
+                    <button class="tb-btn ui-btn" id="btn-undo" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler|Revenir à l'état précédent" data-shortcut="Ctrl+Z"><span class="ms" aria-hidden="true" data-oei-icon-in="undo"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-redo" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir|Restaurer l'action annulée" data-shortcut="Ctrl+Y"><span class="ms" aria-hidden="true" data-oei-icon-in="redo"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-search" data-tooltip="Rechercher et remplacer|Chercher du texte dans toute la présentation" data-shortcut="Ctrl+F"><span class="ms" aria-hidden="true" data-oei-icon-in="search"></span> Rechercher</button>
                 </div>
                 <span class="ribbon-group-label">Édition</span>
             </div>
@@ -127,9 +126,9 @@
             <!-- A7/A8: Selection -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-select-all" aria-label="Tout sélectionner (Ctrl+A)" data-tooltip="Tout sélectionner|Sélectionne tous les éléments canvas" data-shortcut="Ctrl+A"><span class="ms" aria-hidden="true">select_all</span></button>
-                    <button class="tb-btn ui-btn" id="btn-group" aria-label="Grouper (Ctrl+G)" data-tooltip="Grouper|Groupe les éléments sélectionnés" data-shortcut="Ctrl+G"><span class="ms" aria-hidden="true">group_work</span></button>
-                    <button class="tb-btn ui-btn" id="btn-ungroup" aria-label="Dégrouper (Ctrl+Shift+G)" data-tooltip="Dégrouper|Sépare les éléments groupés" data-shortcut="Ctrl+Shift+G"><span class="ms" aria-hidden="true">ungroup</span></button>
+                    <button class="tb-btn ui-btn" id="btn-select-all" aria-label="Tout sélectionner (Ctrl+A)" data-tooltip="Tout sélectionner|Sélectionne tous les éléments canvas" data-shortcut="Ctrl+A"><span class="ms" aria-hidden="true" data-oei-icon-in="select-all"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-group" aria-label="Grouper (Ctrl+G)" data-tooltip="Grouper|Groupe les éléments sélectionnés" data-shortcut="Ctrl+G"><span class="ms" aria-hidden="true" data-oei-icon-in="network"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-ungroup" aria-label="Dégrouper (Ctrl+Shift+G)" data-tooltip="Dégrouper|Sépare les éléments groupés" data-shortcut="Ctrl+Shift+G"><span class="ms" aria-hidden="true" data-oei-icon-in="ungroup"></span></button>
                 </div>
                 <span class="ribbon-group-label">Sélection</span>
             </div>
@@ -138,55 +137,55 @@
                 <div class="ribbon-group-content">
                     <div class="split-btn" id="split-open">
                         <button class="split-btn-main ui-btn" id="btn-import" data-tooltip="Ouvrir|Charger un fichier JSON">
-                            <span class="tb-icon ms" aria-hidden="true">folder_open</span>
+                            <span class="tb-icon ms" aria-hidden="true" data-oei-icon-in="folder-open"></span>
                             <span class="tb-label">Ouvrir</span>
                         </button>
                         <button class="split-btn-arrow ui-btn" id="split-open-arrow" aria-label="Options d'ouverture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
                         <div class="split-dropdown hidden" id="split-open-menu">
-                            <button class="tb-dropdown-item" id="btn-open-new"><span class="ms" aria-hidden="true">note_add</span> Nouvelle présentation</button>
-                            <button class="tb-dropdown-item" id="btn-open-clipboard"><span class="ms" aria-hidden="true">content_paste</span> Depuis le presse-papier</button>
-                            <button class="tb-dropdown-item" id="btn-import-pptx"><span class="ms" aria-hidden="true">slideshow</span> Importer PowerPoint (.pptx)</button>
-                            <button class="tb-dropdown-item" id="btn-import-pdf"><span class="ms" aria-hidden="true">picture_as_pdf</span> Importer PDF (.pdf)</button>
-                            <button class="tb-dropdown-item" id="btn-open-firebase"><span class="ms" aria-hidden="true">bolt</span> Depuis Firebase</button>
+                            <button class="tb-dropdown-item" id="btn-open-new"><span class="ms" aria-hidden="true" data-oei-icon-in="file-plus"></span> Nouvelle présentation</button>
+                            <button class="tb-dropdown-item" id="btn-open-clipboard"><span class="ms" aria-hidden="true" data-oei-icon-in="clipboard"></span> Depuis le presse-papier</button>
+                            <button class="tb-dropdown-item" id="btn-import-pptx"><span class="ms" aria-hidden="true" data-oei-icon-in="presentation"></span> Importer PowerPoint (.pptx)</button>
+                            <button class="tb-dropdown-item" id="btn-import-pdf"><span class="ms" aria-hidden="true" data-oei-icon-in="file-text"></span> Importer PDF (.pdf)</button>
+                            <button class="tb-dropdown-item" id="btn-open-firebase"><span class="ms" aria-hidden="true" data-oei-icon-in="bolt"></span> Depuis Firebase</button>
                             <div class="tb-dropdown-sep"></div>
                             <div id="recent-files-list"><div class="recent-empty">Aucun fichier récent</div></div>
                         </div>
                     </div>
                     <div class="split-btn" id="split-export">
                         <button class="split-btn-main ui-btn" id="btn-export-json" data-tooltip="Enregistrer|Télécharge le projet en JSON. La flèche propose les autres formats : PDF, HTML, PowerPoint, images, notes." data-shortcut="Ctrl+S">
-                            <span class="tb-icon ms" aria-hidden="true">save</span>
+                            <span class="tb-icon ms" aria-hidden="true" data-oei-icon-in="save"></span>
                             <span class="tb-label">Enregistrer</span>
                         </button>
                         <button class="split-btn-arrow ui-btn" id="split-export-arrow" aria-label="Options d'export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
                         <div class="split-dropdown hidden" id="split-export-menu">
-                            <button class="tb-dropdown-item" id="btn-export-pdf"><span class="ms" aria-hidden="true">picture_as_pdf</span> PDF</button>
-                            <button class="tb-dropdown-item" id="btn-export-html"><span class="ms" aria-hidden="true">code</span> HTML autonome</button>
-                            <button class="tb-dropdown-item" id="btn-export-html-offline"><span class="ms" aria-hidden="true">offline_bolt</span> HTML offline (tout intégré)</button>
-                            <button class="tb-dropdown-item" id="btn-export-png"><span class="ms" aria-hidden="true">image</span> PNG (slide actuel)</button>
-                            <button class="tb-dropdown-item" id="btn-export-png-batch"><span class="ms" aria-hidden="true">photo_library</span> PNG batch (ZIP)</button>
-                            <button class="tb-dropdown-item" id="btn-export-pptx"><span class="ms" aria-hidden="true">slideshow</span> PowerPoint (PPTX)</button>
-                            <button class="tb-dropdown-item" id="btn-export-md"><span class="ms" aria-hidden="true">description</span> Markdown</button>
-                            <button class="tb-dropdown-item" id="btn-optimize-media"><span class="ms" aria-hidden="true">compress</span> Optimiser les médias</button>
+                            <button class="tb-dropdown-item" id="btn-export-pdf"><span class="ms" aria-hidden="true" data-oei-icon-in="file-text"></span> PDF</button>
+                            <button class="tb-dropdown-item" id="btn-export-html"><span class="ms" aria-hidden="true" data-oei-icon-in="code"></span> HTML autonome</button>
+                            <button class="tb-dropdown-item" id="btn-export-html-offline"><span class="ms" aria-hidden="true" data-oei-icon-in="bolt"></span> HTML offline (tout intégré)</button>
+                            <button class="tb-dropdown-item" id="btn-export-png"><span class="ms" aria-hidden="true" data-oei-icon-in="image"></span> PNG (slide actuel)</button>
+                            <button class="tb-dropdown-item" id="btn-export-png-batch"><span class="ms" aria-hidden="true" data-oei-icon-in="image"></span> PNG batch (ZIP)</button>
+                            <button class="tb-dropdown-item" id="btn-export-pptx"><span class="ms" aria-hidden="true" data-oei-icon-in="presentation"></span> PowerPoint (PPTX)</button>
+                            <button class="tb-dropdown-item" id="btn-export-md"><span class="ms" aria-hidden="true" data-oei-icon-in="file-text"></span> Markdown</button>
+                            <button class="tb-dropdown-item" id="btn-optimize-media"><span class="ms" aria-hidden="true" data-oei-icon-in="compress"></span> Optimiser les médias</button>
                             <div class="tb-dropdown-sep"></div>
-                            <button class="tb-dropdown-item" id="btn-print-notes"><span class="ms" aria-hidden="true">print</span> Imprimer les notes orateur</button>
-                            <button class="tb-dropdown-item" id="btn-export-notes-md"><span class="ms" aria-hidden="true">speaker_notes</span> Notes orateur → Markdown</button>
+                            <button class="tb-dropdown-item" id="btn-print-notes"><span class="ms" aria-hidden="true" data-oei-icon-in="print"></span> Imprimer les notes orateur</button>
+                            <button class="tb-dropdown-item" id="btn-export-notes-md"><span class="ms" aria-hidden="true" data-oei-icon-in="message-lines"></span> Notes orateur → Markdown</button>
                             <div class="tb-dropdown-sep"></div>
-                            <button class="tb-dropdown-item" id="btn-qr-slide"><span class="ms" aria-hidden="true">qr_code_2</span> Slide QR code</button>
-                            <button class="tb-dropdown-item" id="btn-save-firebase"><span class="ms" aria-hidden="true">bolt</span> Sauvegarder sur Firebase</button>
-                            <button class="tb-dropdown-item" id="btn-export-student"><span class="ms" aria-hidden="true">school</span> Export étudiant (HTML)</button>
-                            <button class="tb-dropdown-item" id="btn-export-course-pack"><span class="ms" aria-hidden="true">folder_zip</span> Pack cours (ZIP)</button>
+                            <button class="tb-dropdown-item" id="btn-qr-slide"><span class="ms" aria-hidden="true" data-oei-icon-in="qr"></span> Slide QR code</button>
+                            <button class="tb-dropdown-item" id="btn-save-firebase"><span class="ms" aria-hidden="true" data-oei-icon-in="bolt"></span> Sauvegarder sur Firebase</button>
+                            <button class="tb-dropdown-item" id="btn-export-student"><span class="ms" aria-hidden="true" data-oei-icon-in="graduation"></span> Export étudiant (HTML)</button>
+                            <button class="tb-dropdown-item" id="btn-export-course-pack"><span class="ms" aria-hidden="true" data-oei-icon-in="folder"></span> Pack cours (ZIP)</button>
                         </div>
                     </div>
                     <button class="tb-btn ui-btn" id="btn-edit-metadata" data-tooltip="Métadonnées|Configurer titre, auteur, description, format…">
-                        <span class="ms" aria-hidden="true">article</span>
+                        <span class="ms" aria-hidden="true" data-oei-icon-in="file-text"></span>
                         Métadonnées
                     </button>
                                     <span class="ribbon-inline-sep" aria-hidden="true"></span>
                     <button class="tb-btn ui-btn" id="btn-ai-prompt" data-tooltip="Copier le prompt IA|Copie dans le presse-papier le prompt qui génère une présentation">
-                        <span class="ms" aria-hidden="true">auto_awesome</span> Prompt IA
+                        <span class="ms" aria-hidden="true" data-oei-icon-in="sparkles"></span> Prompt IA
                     </button>
                     <button class="tb-btn ui-btn" id="btn-ai-tuning" data-tooltip="Réglages de l'assistant IA|Configurer les passes IA, le style visuel et la génération base64">
-                        <span class="ms" aria-hidden="true">tune</span>
+                        <span class="ms" aria-hidden="true" data-oei-icon-in="sliders"></span>
                         Réglages
                     </button>
                 </div>
@@ -197,85 +196,85 @@
         <div class="ribbon-panel" id="ribbon-insertion" role="tabpanel" aria-labelledby="ribbontab-insertion" tabindex="0">
             <div class="ribbon-group" id="ribbon-insert-elements">
                 <div class="ribbon-group-content">
-                    <button class="el-type-btn" data-el="heading" data-tooltip="Titre|Élément titre"><span class="el-icon"><span class="ms" aria-hidden="true">title</span></span>Titre</button>
-                    <button class="el-type-btn" data-el="text" data-tooltip="Texte|Bloc de texte libre"><span class="el-icon"><span class="ms" aria-hidden="true">notes</span></span>Texte</button>
-                    <button class="el-type-btn" data-el="highlight" data-tooltip="Code|Bloc de code / terminal avec mise en évidence optionnelle"><span class="el-icon"><span class="ms" aria-hidden="true">code</span></span>Code/Terminal</button>
-                    <button class="el-type-btn" data-el="image" data-tooltip="Image|Insérer une image"><span class="el-icon"><span class="ms" aria-hidden="true">image</span></span>Image</button>
+                    <button class="el-type-btn" data-el="heading" data-tooltip="Titre|Élément titre"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="type"></span></span>Titre</button>
+                    <button class="el-type-btn" data-el="text" data-tooltip="Texte|Bloc de texte libre"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="text"></span></span>Texte</button>
+                    <button class="el-type-btn" data-el="highlight" data-tooltip="Code|Bloc de code / terminal avec mise en évidence optionnelle"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="code"></span></span>Code/Terminal</button>
+                    <button class="el-type-btn" data-el="image" data-tooltip="Image|Insérer une image"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="image"></span></span>Image</button>
                     <!-- B1: Shape gallery -->
                     <div class="el-inline-wrap">
-                        <button class="el-type-btn" id="btn-shape-gallery" data-tooltip="Formes|Galerie de formes géométriques"><span class="el-icon"><span class="ms" aria-hidden="true">shapes</span></span>Forme ▾</button>
+                        <button class="el-type-btn" id="btn-shape-gallery" data-tooltip="Formes|Galerie de formes géométriques"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="shapes"></span></span>Forme ▾</button>
                         <div class="shape-picker hidden" id="shape-picker"></div>
                     </div>
-                    <button class="el-type-btn" data-el="widget" data-tooltip="Widget|Composant interactif"><span class="el-icon"><span class="ms" aria-hidden="true">widgets</span></span>Widget</button>
-                    <button class="el-type-btn" data-el="definition" data-tooltip="Définition|Terme + définition"><span class="el-icon"><span class="ms" aria-hidden="true">book</span></span>Définition</button>
-                    <button class="el-type-btn el-color-activity" data-el="exercise-block" data-tooltip="Exercice|Objectif, consignes, indices, correction"><span class="el-icon"><span class="ms" aria-hidden="true">assignment</span></span>Exercice</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="before-after" data-tooltip="Avant / Après|Comparer un état avant et un état après"><span class="el-icon"><span class="ms" aria-hidden="true">compare</span></span>Avant/Après</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="mistake-fix" data-tooltip="Erreur / Correction|Comparer un mauvais et un bon exemple"><span class="el-icon"><span class="ms" aria-hidden="true">fact_check</span></span>Erreur/Correction</button>
-                    <button class="el-type-btn el-color-assessment" data-el="rubric-block" data-tooltip="Grille d'évaluation|Grille d'évaluation par critères"><span class="el-icon"><span class="ms" aria-hidden="true">grading</span></span>Grille d'évaluation</button>
-                    <button class="el-type-btn" data-el="code-example" data-tooltip="Exemple de code|Bloc exemple avec widget terminal/live/stepper"><span class="el-icon"><span class="ms" aria-hidden="true">code_blocks</span></span>Exemple de code</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="terminal-session" data-tooltip="Session terminal|Commandes + sorties shell"><span class="el-icon"><span class="ms" aria-hidden="true">terminal</span></span>Session terminal</button>
-                    <button class="el-type-btn" data-el="quote" data-tooltip="Citation|Bloc citation"><span class="el-icon"><span class="ms" aria-hidden="true">format_quote</span></span>Citation</button>
-                    <button class="el-type-btn" data-el="card" data-tooltip="Carte|Carte avec titre"><span class="el-icon"><span class="ms" aria-hidden="true">web_asset</span></span>Carte</button>
-                    <button class="el-type-btn el-color-connector" id="btn-add-connector" data-tooltip="Connecteur|Cliquer puis relier deux éléments"><span class="el-icon"><span class="ms" aria-hidden="true">call_made</span></span>Flèche</button>
+                    <button class="el-type-btn" data-el="widget" data-tooltip="Widget|Composant interactif"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="blocks"></span></span>Widget</button>
+                    <button class="el-type-btn" data-el="definition" data-tooltip="Définition|Terme + définition"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="book"></span></span>Définition</button>
+                    <button class="el-type-btn el-color-activity" data-el="exercise-block" data-tooltip="Exercice|Objectif, consignes, indices, correction"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="clipboard"></span></span>Exercice</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="before-after" data-tooltip="Avant / Après|Comparer un état avant et un état après"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="compare"></span></span>Avant/Après</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="mistake-fix" data-tooltip="Erreur / Correction|Comparer un mauvais et un bon exemple"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="clipboard-check"></span></span>Erreur/Correction</button>
+                    <button class="el-type-btn el-color-assessment" data-el="rubric-block" data-tooltip="Grille d'évaluation|Grille d'évaluation par critères"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="clipboard-check"></span></span>Grille d'évaluation</button>
+                    <button class="el-type-btn" data-el="code-example" data-tooltip="Exemple de code|Bloc exemple avec widget terminal/live/stepper"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="code"></span></span>Exemple de code</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="terminal-session" data-tooltip="Session terminal|Commandes + sorties shell"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="terminal"></span></span>Session terminal</button>
+                    <button class="el-type-btn" data-el="quote" data-tooltip="Citation|Bloc citation"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="quote"></span></span>Citation</button>
+                    <button class="el-type-btn" data-el="card" data-tooltip="Carte|Carte avec titre"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="window"></span></span>Carte</button>
+                    <button class="el-type-btn el-color-connector" id="btn-add-connector" data-tooltip="Connecteur|Cliquer puis relier deux éléments"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="arrow-up-right"></span></span>Flèche</button>
                     <div class="el-inline-wrap">
-                        <button class="el-type-btn el-color-table" id="btn-insert-table" data-tooltip="Tableau|Grille de données"><span class="el-icon"><span class="ms" aria-hidden="true">table_chart</span></span>Tableau ▾</button>
+                        <button class="el-type-btn el-color-table" id="btn-insert-table" data-tooltip="Tableau|Grille de données"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="table"></span></span>Tableau ▾</button>
                         <div class="table-grid-picker hidden" id="table-grid-picker">
                             <div class="table-grid" id="table-grid"></div>
                             <div class="table-grid-label" id="table-grid-label">0 × 0</div>
                         </div>
                     </div>
-                    <button class="el-type-btn el-color-video" id="btn-insert-video" data-tooltip="Vidéo|Intégrer YouTube/Vimeo"><span class="el-icon"><span class="ms" aria-hidden="true">movie</span></span>Vidéo</button>
-                    <button class="el-type-btn el-color-callout" id="btn-insert-callout" data-tooltip="Encadré|Information, attention, succès ou danger"><span class="el-icon"><span class="ms" aria-hidden="true">info</span></span>Encadré</button>
-<button class="el-type-btn el-color-mermaid" data-el="mermaid" data-tooltip="Diagramme Mermaid|Graphes et organigrammes à partir de texte"><span class="el-icon"><span class="ms" aria-hidden="true">hub</span></span>Mermaid</button>
-                    <button class="el-type-btn el-color-diagram" data-el="diagramme" data-tooltip="Graphique|Diagramme à partir d'un tableau de données"><span class="el-icon"><span class="ms" aria-hidden="true">bar_chart</span></span>Graphique</button>
-                    <button class="el-type-btn el-color-drawio" data-el="drawio" data-tooltip="Diagramme UML|Dessiné avec draw.io (diagrams.net)"><span class="el-icon"><span class="ms" aria-hidden="true">schema</span></span>UML</button>
-                    <button class="el-type-btn el-color-latex" data-el="latex" data-tooltip="Équation|LaTeX / KaTeX"><span class="el-icon"><span class="ms" aria-hidden="true">functions</span></span>LaTeX</button>
-                    <button class="el-type-btn el-color-timer" data-el="timer" data-tooltip="Minuteur|Compte à rebours interactif"><span class="el-icon"><span class="ms" aria-hidden="true">timer</span></span>Minuteur</button>
-                    <button class="el-type-btn el-color-iframe" data-el="iframe" data-tooltip="Page web|Contenu web embarqué"><span class="el-icon"><span class="ms" aria-hidden="true">web</span></span>Page web</button>
-                    <button class="el-type-btn el-color-qrcode" data-el="qrcode" data-tooltip="Code QR|Générer un code QR"><span class="el-icon"><span class="ms" aria-hidden="true">qr_code</span></span>Code QR</button>
-                    <button class="el-type-btn el-color-smartart" data-el="smartart" data-tooltip="SmartArt|Diagrammes processus, cycle…"><span class="el-icon"><span class="ms" aria-hidden="true">account_tree</span></span>SmartArt</button>
-                    <button class="el-type-btn el-color-code-live" data-el="code-live" data-tooltip="Code en direct|Éditeur + exécution Python/JS en direct"><span class="el-icon"><span class="ms" aria-hidden="true">play_circle</span></span>Code en direct</button>
-                    <button class="el-type-btn el-color-quiz-live" data-el="quiz-live" data-tooltip="Quiz|Quiz interactif en temps réel avec la salle"><span class="el-icon"><span class="ms" aria-hidden="true">quiz</span></span>Quiz</button>
-                    <button class="el-type-btn el-color-assessment" data-el="cloze" data-tooltip="Texte à trous|Compléter des mots manquants"><span class="el-icon"><span class="ms" aria-hidden="true">format_underlined</span></span>Texte à trous</button>
-                    <button class="el-type-btn el-color-assessment" data-el="mcq-single" data-tooltip="QCM simple|Une seule bonne réponse"><span class="el-icon"><span class="ms" aria-hidden="true">radio_button_checked</span></span>QCM simple</button>
-                    <button class="el-type-btn el-color-assessment" data-el="mcq-multi" data-tooltip="QCM multi|Plusieurs bonnes réponses"><span class="el-icon"><span class="ms" aria-hidden="true">check_box</span></span>QCM multi</button>
-                    <button class="el-type-btn el-color-assessment" data-el="poll-likert" data-tooltip="Échelle live|Vote de 1 à 5 en direct"><span class="el-icon"><span class="ms" aria-hidden="true">poll</span></span>Échelle live</button>
-                    <button class="el-type-btn el-color-assessment" data-el="debate-mode" data-tooltip="Débat live|Pour / Contre"><span class="el-icon"><span class="ms" aria-hidden="true">compare_arrows</span></span>Débat</button>
-                    <button class="el-type-btn el-color-assessment" data-el="exit-ticket" data-tooltip="Bilan de séance|Bilan de fin de séance"><span class="el-icon"><span class="ms" aria-hidden="true">assignment_turned_in</span></span>Bilan de séance</button>
-                    <button class="el-type-btn el-color-activity" data-el="drag-drop" data-tooltip="Glisser-déposer|Classer des cartes"><span class="el-icon"><span class="ms" aria-hidden="true">open_with</span></span>Glisser-déposer</button>
-                    <button class="el-type-btn el-color-activity" data-el="rank-order" data-tooltip="Classement|Ordonner des éléments"><span class="el-icon"><span class="ms" aria-hidden="true">sort</span></span>Classement</button>
-                    <button class="el-type-btn el-color-activity" data-el="kanban-mini" data-tooltip="Kanban mini|Colonnes et cartes"><span class="el-icon"><span class="ms" aria-hidden="true">view_column</span></span>Kanban</button>
-                    <button class="el-type-btn el-color-activity" data-el="myth-reality" data-tooltip="Mythe ou réalité|Carte recto/verso"><span class="el-icon"><span class="ms" aria-hidden="true">flip</span></span>Mythe/Réalité</button>
-                    <button class="el-type-btn el-color-activity" data-el="flashcards-auto" data-tooltip="Cartes mémo|Mode révision intégré"><span class="el-icon"><span class="ms" aria-hidden="true">style</span></span>Flashcards</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="postit-wall" data-tooltip="Mur de post-it en direct|Collecte d'idées de la salle"><span class="el-icon"><span class="ms" aria-hidden="true">sticky_note_2</span></span>Post-it en direct</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="audience-roulette" data-tooltip="Roulette|Tirer un étudiant au hasard"><span class="el-icon"><span class="ms" aria-hidden="true">donut_small</span></span>Roulette</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="room-stats" data-tooltip="Stats en direct|Indicateurs de la salle en direct"><span class="el-icon"><span class="ms" aria-hidden="true">monitoring</span></span>Stats en direct</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="leaderboard-live" data-tooltip="Podium en direct|Classement dynamique de la salle"><span class="el-icon"><span class="ms" aria-hidden="true">leaderboard</span></span>Podium</button>
-                    <button class="el-type-btn el-color-facilitation" data-el="swot-grid" data-tooltip="SWOT|Forces faiblesses opportunités menaces"><span class="el-icon"><span class="ms" aria-hidden="true">grid_view</span></span>SWOT</button>
-                    <button class="el-type-btn el-color-diagram" data-el="decision-tree" data-tooltip="Arbre de décision|Branches cliquables"><span class="el-icon"><span class="ms" aria-hidden="true">alt_route</span></span>Arbre de décision</button>
-                    <button class="el-type-btn el-color-diagram" data-el="timeline-vertical" data-tooltip="Chronologie verticale|Jalons de progression"><span class="el-icon"><span class="ms" aria-hidden="true">timeline</span></span>Chronologie</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="code-compare" data-tooltip="Comparer du code|Avant / Après"><span class="el-icon"><span class="ms" aria-hidden="true">compare</span></span>Comparer du code</button>
-                    <button class="el-type-btn el-color-codeplus" data-el="algo-stepper" data-tooltip="Pas à pas|Exécution d'un algorithme étape par étape"><span class="el-icon"><span class="ms" aria-hidden="true">format_list_numbered</span></span>Pas à pas</button>
-                    <button class="el-type-btn el-color-mediax" data-el="gallery-annotable" data-tooltip="Image annotée|Image + points annotés"><span class="el-icon"><span class="ms" aria-hidden="true">image_search</span></span>Image annotée</button>
+                    <button class="el-type-btn el-color-video" id="btn-insert-video" data-tooltip="Vidéo|Intégrer YouTube/Vimeo"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="film"></span></span>Vidéo</button>
+                    <button class="el-type-btn el-color-callout" id="btn-insert-callout" data-tooltip="Encadré|Information, attention, succès ou danger"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="info"></span></span>Encadré</button>
+<button class="el-type-btn el-color-mermaid" data-el="mermaid" data-tooltip="Diagramme Mermaid|Graphes et organigrammes à partir de texte"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="network"></span></span>Mermaid</button>
+                    <button class="el-type-btn el-color-diagram" data-el="diagramme" data-tooltip="Graphique|Diagramme à partir d'un tableau de données"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="chart-bar"></span></span>Graphique</button>
+                    <button class="el-type-btn el-color-drawio" data-el="drawio" data-tooltip="Diagramme UML|Dessiné avec draw.io (diagrams.net)"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="network"></span></span>UML</button>
+                    <button class="el-type-btn el-color-latex" data-el="latex" data-tooltip="Équation|LaTeX / KaTeX"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="sigma"></span></span>LaTeX</button>
+                    <button class="el-type-btn el-color-timer" data-el="timer" data-tooltip="Minuteur|Compte à rebours interactif"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="timer"></span></span>Minuteur</button>
+                    <button class="el-type-btn el-color-iframe" data-el="iframe" data-tooltip="Page web|Contenu web embarqué"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="window"></span></span>Page web</button>
+                    <button class="el-type-btn el-color-qrcode" data-el="qrcode" data-tooltip="Code QR|Générer un code QR"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="qr"></span></span>Code QR</button>
+                    <button class="el-type-btn el-color-smartart" data-el="smartart" data-tooltip="SmartArt|Diagrammes processus, cycle…"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="hierarchy"></span></span>SmartArt</button>
+                    <button class="el-type-btn el-color-code-live" data-el="code-live" data-tooltip="Code en direct|Éditeur + exécution Python/JS en direct"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="play-circle"></span></span>Code en direct</button>
+                    <button class="el-type-btn el-color-quiz-live" data-el="quiz-live" data-tooltip="Quiz|Quiz interactif en temps réel avec la salle"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="help"></span></span>Quiz</button>
+                    <button class="el-type-btn el-color-assessment" data-el="cloze" data-tooltip="Texte à trous|Compléter des mots manquants"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="underline"></span></span>Texte à trous</button>
+                    <button class="el-type-btn el-color-assessment" data-el="mcq-single" data-tooltip="QCM simple|Une seule bonne réponse"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="pending"></span></span>QCM simple</button>
+                    <button class="el-type-btn el-color-assessment" data-el="mcq-multi" data-tooltip="QCM multi|Plusieurs bonnes réponses"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="check-square"></span></span>QCM multi</button>
+                    <button class="el-type-btn el-color-assessment" data-el="poll-likert" data-tooltip="Échelle live|Vote de 1 à 5 en direct"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="chart-bar"></span></span>Échelle live</button>
+                    <button class="el-type-btn el-color-assessment" data-el="debate-mode" data-tooltip="Débat live|Pour / Contre"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="arrows-horizontal"></span></span>Débat</button>
+                    <button class="el-type-btn el-color-assessment" data-el="exit-ticket" data-tooltip="Bilan de séance|Bilan de fin de séance"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="clipboard-check"></span></span>Bilan de séance</button>
+                    <button class="el-type-btn el-color-activity" data-el="drag-drop" data-tooltip="Glisser-déposer|Classer des cartes"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="move"></span></span>Glisser-déposer</button>
+                    <button class="el-type-btn el-color-activity" data-el="rank-order" data-tooltip="Classement|Ordonner des éléments"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="sort"></span></span>Classement</button>
+                    <button class="el-type-btn el-color-activity" data-el="kanban-mini" data-tooltip="Kanban mini|Colonnes et cartes"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="columns"></span></span>Kanban</button>
+                    <button class="el-type-btn el-color-activity" data-el="myth-reality" data-tooltip="Mythe ou réalité|Carte recto/verso"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="flip"></span></span>Mythe/Réalité</button>
+                    <button class="el-type-btn el-color-activity" data-el="flashcards-auto" data-tooltip="Cartes mémo|Mode révision intégré"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="flashcards"></span></span>Flashcards</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="postit-wall" data-tooltip="Mur de post-it en direct|Collecte d'idées de la salle"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="sticky"></span></span>Post-it en direct</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="audience-roulette" data-tooltip="Roulette|Tirer un étudiant au hasard"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="pie"></span></span>Roulette</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="room-stats" data-tooltip="Stats en direct|Indicateurs de la salle en direct"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="activity"></span></span>Stats en direct</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="leaderboard-live" data-tooltip="Podium en direct|Classement dynamique de la salle"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="podium"></span></span>Podium</button>
+                    <button class="el-type-btn el-color-facilitation" data-el="swot-grid" data-tooltip="SWOT|Forces faiblesses opportunités menaces"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="grid"></span></span>SWOT</button>
+                    <button class="el-type-btn el-color-diagram" data-el="decision-tree" data-tooltip="Arbre de décision|Branches cliquables"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="git-branch"></span></span>Arbre de décision</button>
+                    <button class="el-type-btn el-color-diagram" data-el="timeline-vertical" data-tooltip="Chronologie verticale|Jalons de progression"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="trending-up"></span></span>Chronologie</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="code-compare" data-tooltip="Comparer du code|Avant / Après"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="compare"></span></span>Comparer du code</button>
+                    <button class="el-type-btn el-color-codeplus" data-el="algo-stepper" data-tooltip="Pas à pas|Exécution d'un algorithme étape par étape"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="list-numbered"></span></span>Pas à pas</button>
+                    <button class="el-type-btn el-color-mediax" data-el="gallery-annotable" data-tooltip="Image annotée|Image + points annotés"><span class="el-icon"><span class="ms" aria-hidden="true" data-oei-icon-in="image"></span></span>Image annotée</button>
                 </div>
                 <span class="ribbon-group-label">Éléments</span>
             </div>
             <div class="ribbon-sep"></div>
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-slide-number" data-tooltip="N° de slide|Numérotation automatique"><span class="ms" aria-hidden="true">numbers</span> Numéro</button>
-                    <button class="tb-btn ui-btn" id="btn-auto-chapter" data-tooltip="N° chapitres auto|Numéroter les slides chapitre automatiquement (01, 02…)"><span class="ms" aria-hidden="true">format_list_numbered</span> Chapitres</button>
-                    <button class="tb-btn ui-btn" id="btn-footer" data-tooltip="Pied de page|Texte récurrent en bas"><span class="ms" aria-hidden="true">border_bottom</span> Pied de page</button>
-                    <button class="tb-btn ui-btn" id="btn-layout-preset" data-tooltip="Dispositions|Choisir une disposition ou un modèle réutilisable"><span class="ms" aria-hidden="true">dashboard_customize</span> Dispositions</button>
-                    <button class="tb-btn ui-btn" id="btn-block-presets" data-tooltip="Blocs pédagogiques|Insérer une séquence de slides prête à l'emploi"><span class="ms" aria-hidden="true">auto_awesome_motion</span> Blocs</button>
+                    <button class="tb-btn ui-btn" id="btn-slide-number" data-tooltip="N° de slide|Numérotation automatique"><span class="ms" aria-hidden="true" data-oei-icon-in="hash"></span> Numéro</button>
+                    <button class="tb-btn ui-btn" id="btn-auto-chapter" data-tooltip="N° chapitres auto|Numéroter les slides chapitre automatiquement (01, 02…)"><span class="ms" aria-hidden="true" data-oei-icon-in="list-numbered"></span> Chapitres</button>
+                    <button class="tb-btn ui-btn" id="btn-footer" data-tooltip="Pied de page|Texte récurrent en bas"><span class="ms" aria-hidden="true" data-oei-icon-in="border-bottom"></span> Pied de page</button>
+                    <button class="tb-btn ui-btn" id="btn-layout-preset" data-tooltip="Dispositions|Choisir une disposition ou un modèle réutilisable"><span class="ms" aria-hidden="true" data-oei-icon-in="dashboard"></span> Dispositions</button>
+                    <button class="tb-btn ui-btn" id="btn-block-presets" data-tooltip="Blocs pédagogiques|Insérer une séquence de slides prête à l'emploi"><span class="ms" aria-hidden="true" data-oei-icon-in="layers"></span> Blocs</button>
                 </div>
                 <span class="ribbon-group-label">En-tête et pied</span>
             </div>
             <div class="ribbon-sep" id="ribbon-insert-sep"></div>
             <div class="ribbon-group" id="ribbon-insert-actions">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-del-element" data-tooltip="Supprimer l'élément" data-shortcut="Suppr" aria-label="Supprimer l'élément"><span class="ms" aria-hidden="true">delete</span></button>
-                    <button class="tb-btn ui-btn" id="btn-convert-canvas" data-tooltip="Convertir en canvas" aria-label="Convertir en canvas"><span class="ms" aria-hidden="true">edit_square</span></button>
+                    <button class="tb-btn ui-btn" id="btn-del-element" data-tooltip="Supprimer l'élément" data-shortcut="Suppr" aria-label="Supprimer l'élément"><span class="ms" aria-hidden="true" data-oei-icon-in="trash"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-convert-canvas" data-tooltip="Convertir en canvas" aria-label="Convertir en canvas"><span class="ms" aria-hidden="true" data-oei-icon-in="edit-square"></span></button>
                 </div>
                 <span class="ribbon-group-label">Actions</span>
             </div>
@@ -305,10 +304,10 @@
             <!-- C5: BG Image + C6: Gradient -->
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-bg-image" data-tooltip="Image de fond|URL ou upload" aria-label="Image de fond"><span class="ms" aria-hidden="true">wallpaper</span></button>
-                    <button class="tb-btn ui-btn" id="btn-gradient" data-tooltip="Dégradé|Fond en dégradé linéaire" aria-label="Dégradé"><span class="ms" aria-hidden="true">gradient</span></button>
+                    <button class="tb-btn ui-btn" id="btn-bg-image" data-tooltip="Image de fond|URL ou upload" aria-label="Image de fond"><span class="ms" aria-hidden="true" data-oei-icon-in="image"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-gradient" data-tooltip="Dégradé|Fond en dégradé linéaire" aria-label="Dégradé"><span class="ms" aria-hidden="true" data-oei-icon-in="gradient"></span></button>
                     <!-- C7: Apply to all -->
-                    <button class="tb-btn ui-btn" id="btn-apply-all-bg" data-tooltip="Appliquer à tous|Applique fond + transition à tous les slides" aria-label="Appliquer à tous"><span class="ms" aria-hidden="true">layers</span></button>
+                    <button class="tb-btn ui-btn" id="btn-apply-all-bg" data-tooltip="Appliquer à tous|Applique fond + transition à tous les slides" aria-label="Appliquer à tous"><span class="ms" aria-hidden="true" data-oei-icon-in="layers"></span></button>
                 </div>
                 <span class="ribbon-group-label">Arrière-plan</span>
             </div>
@@ -329,7 +328,7 @@
                         <label class="ribbon-label">Durée</label>
                         <input type="range" id="transition-duration" class="fmt-range" min="200" max="2000" value="500">
                         <span id="transition-duration-label" class="fmt-value-label">500ms</span>
-                        <button class="tb-btn ui-btn tb-btn-xs" id="btn-preview-transition" data-tooltip="Aperçu" aria-label="Aperçu"><span class="ms" aria-hidden="true">play_arrow</span></button>
+                        <button class="tb-btn ui-btn tb-btn-xs" id="btn-preview-transition" data-tooltip="Aperçu" aria-label="Aperçu"><span class="ms" aria-hidden="true" data-oei-icon-in="play"></span></button>
                     </div>
                 </div>
                 <span class="ribbon-group-label">Transition</span>
@@ -341,7 +340,7 @@
                     <div class="fmt-field"><label class="fmt-label-micro">Titre</label><input type="color" id="override-heading" value="#000000" class="fmt-color-input-compact"></div>
                     <div class="fmt-field"><label class="fmt-label-micro">Texte</label><input type="color" id="override-text" value="#000000" class="fmt-color-input-compact"></div>
                     <div class="fmt-field"><label class="fmt-label-micro">Accent</label><input type="color" id="override-primary" value="#000000" class="fmt-color-input-compact"></div>
-                    <button class="tb-btn ui-btn tb-btn-mini-text" id="btn-clear-override" data-tooltip="Réinitialiser|Supprimer les surcharges de ce slide" aria-label="Réinitialiser"><span class="ms" aria-hidden="true">restart_alt</span></button>
+                    <button class="tb-btn ui-btn tb-btn-mini-text" id="btn-clear-override" data-tooltip="Réinitialiser|Supprimer les surcharges de ce slide" aria-label="Réinitialiser"><span class="ms" aria-hidden="true" data-oei-icon-in="refresh"></span></button>
                 </div>
                 <span class="ribbon-group-label">Couleurs du slide</span>
             </div>
@@ -411,21 +410,21 @@
                 <div class="ribbon-group-content">
                     <div class="split-btn" id="split-presenter">
                         <button class="split-btn-main ui-btn" id="btn-presenter" data-tooltip="Présenter|Lancer le diaporama" data-shortcut="F5">
-                            <span class="tb-icon ms" aria-hidden="true">slideshow</span>
+                            <span class="tb-icon ms" aria-hidden="true" data-oei-icon-in="presentation"></span>
                             <span class="tb-label">Présenter</span>
                         </button>
                         <button class="split-btn-arrow ui-btn" id="split-presenter-arrow" aria-label="Options de présentation" data-tooltip="Options de présentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
                         <div class="split-dropdown hidden" id="split-presenter-menu">
                             <button class="tb-dropdown-item" id="menu-present-normal">
-                                <span class="ms" aria-hidden="true">play_arrow</span>
+                                <span class="ms" aria-hidden="true" data-oei-icon-in="play"></span>
                                 <div>Depuis le début<div class="menu-desc">Diaporama plein écran (F5)</div></div>
                             </button>
                             <button class="tb-dropdown-item" id="menu-present-current">
-                                <span class="ms" aria-hidden="true">skip_next</span>
+                                <span class="ms" aria-hidden="true" data-oei-icon-in="step-forward"></span>
                                 <div>Depuis la slide actuelle<div class="menu-desc">Reprendre à la slide sélectionnée</div></div>
                             </button>
                             <button class="tb-dropdown-item" id="menu-present-speaker">
-                                <span class="ms" aria-hidden="true">co_present</span>
+                                <span class="ms" aria-hidden="true" data-oei-icon-in="presentation"></span>
                                 <div>Mode présentateur<div class="menu-desc">Avec notes, slide suivant et minuteur</div></div>
                             </button>
                         </div>
@@ -437,11 +436,11 @@
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
                     <div class="zoom-controls" id="zoom-controls">
-                        <button class="tb-btn ui-btn" id="zoom-out" data-tooltip="Dézoomer" aria-label="Dézoomer"><span class="ms" aria-hidden="true">zoom_out</span></button>
+                        <button class="tb-btn ui-btn" id="zoom-out" data-tooltip="Dézoomer" aria-label="Dézoomer"><span class="ms" aria-hidden="true" data-oei-icon-in="zoom-out"></span></button>
                         <input type="range" id="zoom-slider" min="25" max="200" value="100">
                         <span class="zoom-label" id="zoom-label">100%</span>
-                        <button class="tb-btn ui-btn" id="zoom-in" data-tooltip="Zoomer" aria-label="Zoomer"><span class="ms" aria-hidden="true">zoom_in</span></button>
-                        <button class="tb-btn ui-btn" id="zoom-fit" data-tooltip="Ajuster" aria-label="Ajuster"><span class="ms" aria-hidden="true">fit_screen</span></button>
+                        <button class="tb-btn ui-btn" id="zoom-in" data-tooltip="Zoomer" aria-label="Zoomer"><span class="ms" aria-hidden="true" data-oei-icon-in="zoom-in"></span></button>
+                        <button class="tb-btn ui-btn" id="zoom-fit" data-tooltip="Ajuster" aria-label="Ajuster"><span class="ms" aria-hidden="true" data-oei-icon-in="fit-screen"></span></button>
                     </div>
                 </div>
                 <span class="ribbon-group-label">Zoom</span>
@@ -449,21 +448,21 @@
             <div class="ribbon-sep"></div>
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-toggle-outline" data-tooltip="Mode plan|Afficher le plan de la présentation"><span class="ms" aria-hidden="true">list</span> Plan</button>
-                    <button class="tb-btn ui-btn" id="btn-sorter" data-tooltip="Trieuse|Vue en grille de toutes les diapositives"><span class="ms" aria-hidden="true">grid_view</span> Trieuse</button>
-                    <button class="tb-btn ui-btn" id="btn-markdown-mode" data-tooltip="Brouillon Markdown|Écrire les diapositives en Markdown"><span class="ms" aria-hidden="true">edit_note</span> Markdown</button>
-                    <button class="tb-btn ui-btn" id="btn-toggle-grid" data-tooltip="Grille magnétique|Afficher ou masquer la grille d'accrochage"><span class="ms" aria-hidden="true">grid_on</span> Grille</button>
-                    <button class="tb-btn ui-btn" id="btn-ribbon-theme-toggle" data-tooltip="Thème de l'éditeur|Basculer entre clair et sombre"><span class="ms" aria-hidden="true">light_mode</span> Thème</button>
+                    <button class="tb-btn ui-btn" id="btn-toggle-outline" data-tooltip="Mode plan|Afficher le plan de la présentation"><span class="ms" aria-hidden="true" data-oei-icon-in="list"></span> Plan</button>
+                    <button class="tb-btn ui-btn" id="btn-sorter" data-tooltip="Trieuse|Vue en grille de toutes les diapositives"><span class="ms" aria-hidden="true" data-oei-icon-in="grid"></span> Trieuse</button>
+                    <button class="tb-btn ui-btn" id="btn-markdown-mode" data-tooltip="Brouillon Markdown|Écrire les diapositives en Markdown"><span class="ms" aria-hidden="true" data-oei-icon-in="edit-square"></span> Markdown</button>
+                    <button class="tb-btn ui-btn" id="btn-toggle-grid" data-tooltip="Grille magnétique|Afficher ou masquer la grille d'accrochage"><span class="ms" aria-hidden="true" data-oei-icon-in="grid"></span> Grille</button>
+                    <button class="tb-btn ui-btn" id="btn-ribbon-theme-toggle" data-tooltip="Thème de l'éditeur|Basculer entre clair et sombre"><span class="ms" aria-hidden="true" data-oei-icon-in="sun"></span> Thème</button>
                 </div>
                 <span class="ribbon-group-label">Vue</span>
             </div>
             <div class="ribbon-sep"></div>
             <div class="ribbon-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="btn-checker" data-tooltip="Vérifier la présentation|Détecte les problèmes courants"><span class="ms" aria-hidden="true">fact_check</span> Vérifier</button>
-                    <button class="tb-btn ui-btn" id="btn-assets-manager" data-tooltip="Ressources|Inventaire et remplacement des médias"><span class="ms" aria-hidden="true">perm_media</span> Ressources</button>
-                    <button class="tb-btn ui-btn" id="btn-design-tokens" data-tooltip="Styles globaux|Couleurs, typographie et mise en page communes"><span class="ms" aria-hidden="true">palette</span> Styles</button>
-                    <button class="tb-btn ui-btn" id="btn-widget-plugins" data-tooltip="Extensions|Installer des widgets via un manifeste JSON"><span class="ms" aria-hidden="true">extension</span> Extensions</button>
+                    <button class="tb-btn ui-btn" id="btn-checker" data-tooltip="Vérifier la présentation|Détecte les problèmes courants"><span class="ms" aria-hidden="true" data-oei-icon-in="clipboard-check"></span> Vérifier</button>
+                    <button class="tb-btn ui-btn" id="btn-assets-manager" data-tooltip="Ressources|Inventaire et remplacement des médias"><span class="ms" aria-hidden="true" data-oei-icon-in="image"></span> Ressources</button>
+                    <button class="tb-btn ui-btn" id="btn-design-tokens" data-tooltip="Styles globaux|Couleurs, typographie et mise en page communes"><span class="ms" aria-hidden="true" data-oei-icon-in="palette"></span> Styles</button>
+                    <button class="tb-btn ui-btn" id="btn-widget-plugins" data-tooltip="Extensions|Installer des widgets via un manifeste JSON"><span class="ms" aria-hidden="true" data-oei-icon-in="puzzle"></span> Extensions</button>
                 </div>
                 <span class="ribbon-group-label">Panneaux</span>
             </div>
@@ -484,8 +483,8 @@
             <!-- Apparence -->
             <div class="ribbon-group" id="fmt-appearance-group">
                 <div class="ribbon-group-content">
-                    <div class="fmt-section"><span class="ms" aria-hidden="true">rotate_right</span><input type="range" id="fmt-rotation" class="fmt-range" min="0" max="360" value="0"><span id="fmt-rotation-label" class="fmt-value-label">0°</span></div>
-                    <div class="fmt-section"><span class="ms" aria-hidden="true">opacity</span><input type="range" id="fmt-opacity" class="fmt-range" min="0" max="100" value="100"><span id="fmt-opacity-label" class="fmt-value-label">100%</span></div>
+                    <div class="fmt-section"><span class="ms" aria-hidden="true" data-oei-icon-in="refresh"></span><input type="range" id="fmt-rotation" class="fmt-range" min="0" max="360" value="0"><span id="fmt-rotation-label" class="fmt-value-label">0°</span></div>
+                    <div class="fmt-section"><span class="ms" aria-hidden="true" data-oei-icon-in="opacity"></span><input type="range" id="fmt-opacity" class="fmt-range" min="0" max="100" value="100"><span id="fmt-opacity-label" class="fmt-value-label">100%</span></div>
                     <input type="color" id="fmt-fill-color" value="#818cf8" data-tooltip="Couleur de fond / remplissage">
                     <input type="color" id="fmt-border-color" value="#666666">
                     <div class="fmt-section"><input type="range" id="fmt-border-width" class="fmt-range" min="0" max="10" value="0"><span id="fmt-border-width-label" class="fmt-value-label">0px</span></div>
@@ -514,11 +513,11 @@
             <!-- Paragraphe -->
             <div class="ribbon-group" id="fmt-paragraph-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="fmt-align-left" data-tooltip="Gauche" aria-label="Gauche"><span class="ms" aria-hidden="true">format_align_left</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-align-center" data-tooltip="Centrer" aria-label="Centrer"><span class="ms" aria-hidden="true">format_align_center</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-align-right" data-tooltip="Droite" aria-label="Droite"><span class="ms" aria-hidden="true">format_align_right</span></button>
-                    <div class="fmt-section" data-tooltip="Interligne"><span class="ms" aria-hidden="true">format_line_spacing</span><input type="range" id="fmt-line-height" class="fmt-range" min="10" max="24" value="14"><span id="fmt-line-height-label" class="fmt-value-label">1.4</span></div>
-                    <div class="fmt-section" data-tooltip="Interlettrage"><span class="ms" aria-hidden="true">format_letter_spacing</span><input type="range" id="fmt-letter-spacing" class="fmt-range" min="-2" max="12" value="0"><span id="fmt-letter-spacing-label" class="fmt-value-label">0</span></div>
+                    <button class="tb-btn ui-btn" id="fmt-align-left" data-tooltip="Gauche" aria-label="Gauche"><span class="ms" aria-hidden="true" data-oei-icon-in="align-text-left"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-align-center" data-tooltip="Centrer" aria-label="Centrer"><span class="ms" aria-hidden="true" data-oei-icon-in="align-text-center"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-align-right" data-tooltip="Droite" aria-label="Droite"><span class="ms" aria-hidden="true" data-oei-icon-in="align-text-right"></span></button>
+                    <div class="fmt-section" data-tooltip="Interligne"><span class="ms" aria-hidden="true" data-oei-icon-in="line-spacing"></span><input type="range" id="fmt-line-height" class="fmt-range" min="10" max="24" value="14"><span id="fmt-line-height-label" class="fmt-value-label">1.4</span></div>
+                    <div class="fmt-section" data-tooltip="Interlettrage"><span class="ms" aria-hidden="true" data-oei-icon-in="letter-spacing"></span><input type="range" id="fmt-letter-spacing" class="fmt-range" min="-2" max="12" value="0"><span id="fmt-letter-spacing-label" class="fmt-value-label">0</span></div>
                 </div>
                 <span class="ribbon-group-label">Paragraphe</span>
             </div>
@@ -526,15 +525,15 @@
             <!-- Organiser -->
             <div class="ribbon-group" id="fmt-organize-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="fmt-z-up" data-tooltip="Avancer" aria-label="Avancer"><span class="ms" aria-hidden="true">flip_to_front</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-z-down" data-tooltip="Reculer" aria-label="Reculer"><span class="ms" aria-hidden="true">flip_to_back</span></button>
-                    <button class="fmt-toggle" id="fmt-lock" data-tooltip="Verrouiller" aria-label="Verrouiller"><span class="ms" aria-hidden="true">lock</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-group" data-tooltip="Grouper" aria-label="Grouper"><span class="ms" aria-hidden="true">group_work</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-ungroup" data-tooltip="Dégrouper" aria-label="Dégrouper"><span class="ms" aria-hidden="true">ungroup</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-duplicate" data-tooltip="Dupliquer" data-shortcut="Ctrl+D" aria-label="Dupliquer"><span class="ms" aria-hidden="true">content_copy</span></button>
-                    <button class="tb-btn ui-btn" id="btn-pipette" data-tooltip="Pipette de style|Copie le style d'un élément et l'applique à un autre" aria-label="Pipette de style"><span class="ms" aria-hidden="true">colorize</span></button>
-                    <button class="tb-btn ui-btn" id="btn-fit-content" data-tooltip="Ajuster à la taille du contenu|Redimensionne la hauteur automatiquement" aria-label="Ajuster à la taille du contenu"><span class="ms" aria-hidden="true">unfold_more</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-delete" data-tooltip="Supprimer" data-shortcut="Suppr" aria-label="Supprimer"><span class="ms" aria-hidden="true">delete</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-z-up" data-tooltip="Avancer" aria-label="Avancer"><span class="ms" aria-hidden="true" data-oei-icon-in="bring-front"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-z-down" data-tooltip="Reculer" aria-label="Reculer"><span class="ms" aria-hidden="true" data-oei-icon-in="send-back"></span></button>
+                    <button class="fmt-toggle" id="fmt-lock" data-tooltip="Verrouiller" aria-label="Verrouiller"><span class="ms" aria-hidden="true" data-oei-icon-in="lock"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-group" data-tooltip="Grouper" aria-label="Grouper"><span class="ms" aria-hidden="true" data-oei-icon-in="network"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-ungroup" data-tooltip="Dégrouper" aria-label="Dégrouper"><span class="ms" aria-hidden="true" data-oei-icon-in="ungroup"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-duplicate" data-tooltip="Dupliquer" data-shortcut="Ctrl+D" aria-label="Dupliquer"><span class="ms" aria-hidden="true" data-oei-icon-in="copy"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-pipette" data-tooltip="Pipette de style|Copie le style d'un élément et l'applique à un autre" aria-label="Pipette de style"><span class="ms" aria-hidden="true" data-oei-icon-in="eyedropper"></span></button>
+                    <button class="tb-btn ui-btn" id="btn-fit-content" data-tooltip="Ajuster à la taille du contenu|Redimensionne la hauteur automatiquement" aria-label="Ajuster à la taille du contenu"><span class="ms" aria-hidden="true" data-oei-icon-in="unfold-more"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-delete" data-tooltip="Supprimer" data-shortcut="Suppr" aria-label="Supprimer"><span class="ms" aria-hidden="true" data-oei-icon-in="trash"></span></button>
                 </div>
                 <span class="ribbon-group-label">Organiser</span>
             </div>
@@ -542,15 +541,15 @@
             <!-- Align/Distribute (multi-select) -->
             <div class="ribbon-group" id="fmt-align-group">
                 <div class="ribbon-group-content">
-                    <button class="tb-btn ui-btn" id="fmt-el-align-left" data-tooltip="Aligner gauche" aria-label="Aligner gauche"><span class="ms" aria-hidden="true">align_horizontal_left</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-ch" data-tooltip="Centrer H" aria-label="Centrer H"><span class="ms" aria-hidden="true">align_horizontal_center</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-right" data-tooltip="Aligner droite" aria-label="Aligner droite"><span class="ms" aria-hidden="true">align_horizontal_right</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-top" data-tooltip="Aligner haut" aria-label="Aligner haut"><span class="ms" aria-hidden="true">align_vertical_top</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-cv" data-tooltip="Centrer V" aria-label="Centrer V"><span class="ms" aria-hidden="true">align_vertical_center</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-align-bottom" data-tooltip="Aligner bas" aria-label="Aligner bas"><span class="ms" aria-hidden="true">align_vertical_bottom</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-dist-h" data-tooltip="Distribuer H" aria-label="Distribuer H"><span class="ms" aria-hidden="true">horizontal_distribute</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-dist-v" data-tooltip="Distribuer V" aria-label="Distribuer V"><span class="ms" aria-hidden="true">vertical_distribute</span></button>
-                    <button class="tb-btn ui-btn" id="fmt-el-auto-layout" data-tooltip="Auto-layout intelligent|Réorganiser la sélection en grille lisible" aria-label="Auto-layout intelligent"><span class="ms" aria-hidden="true">grid_view</span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-left" data-tooltip="Aligner gauche" aria-label="Aligner gauche"><span class="ms" aria-hidden="true" data-oei-icon-in="align-start"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-ch" data-tooltip="Centrer H" aria-label="Centrer H"><span class="ms" aria-hidden="true" data-oei-icon-in="align-center-h"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-right" data-tooltip="Aligner droite" aria-label="Aligner droite"><span class="ms" aria-hidden="true" data-oei-icon-in="align-end"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-top" data-tooltip="Aligner haut" aria-label="Aligner haut"><span class="ms" aria-hidden="true" data-oei-icon-in="align-top"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-cv" data-tooltip="Centrer V" aria-label="Centrer V"><span class="ms" aria-hidden="true" data-oei-icon-in="align-middle"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-align-bottom" data-tooltip="Aligner bas" aria-label="Aligner bas"><span class="ms" aria-hidden="true" data-oei-icon-in="align-bottom"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-dist-h" data-tooltip="Distribuer H" aria-label="Distribuer H"><span class="ms" aria-hidden="true" data-oei-icon-in="distribute-h"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-dist-v" data-tooltip="Distribuer V" aria-label="Distribuer V"><span class="ms" aria-hidden="true" data-oei-icon-in="distribute-v"></span></button>
+                    <button class="tb-btn ui-btn" id="fmt-el-auto-layout" data-tooltip="Auto-layout intelligent|Réorganiser la sélection en grille lisible" aria-label="Auto-layout intelligent"><span class="ms" aria-hidden="true" data-oei-icon-in="grid"></span></button>
                 </div>
                 <span class="ribbon-group-label">Aligner</span>
             </div>
@@ -633,7 +632,7 @@
         <!-- Sidebar footer -->
         <div class="sn-footer">
             <button class="sn-footer-item" id="btn-help" type="button" title="Raccourcis clavier et premiers pas (?)">
-                <span class="ms" style="font-size:15px;" aria-hidden="true">help</span>
+                <span class="ms" style="font-size:15px;" aria-hidden="true" data-oei-icon-in="help"></span>
                 Aide
             </button>
         </div>
@@ -823,6 +822,6 @@
 <!-- ═══════ SCRIPTS ═══════ -->
 <script src="../shared/slides/firebase-storage.js?v=13"></script>
 <script src="../shared/slides/firebase-modal.js?v=4"></script>
-<script type="module" src="editor-bootstrap.js?v=41"></script>
+<script type="module" src="editor-bootstrap.js?v=44"></script>
 </body>
 </html>

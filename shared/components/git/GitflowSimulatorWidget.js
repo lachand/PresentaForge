@@ -6,12 +6,12 @@ class GitflowSimulatorWidget {
     static mount(container, config = {}) {
         // Coordonnées fixes par branche
         const BRANCHES = {
-            main:     { y: 30,  color: '#4f46e5', label: 'main' },
-            develop:  { y: 80,  color: '#0ea5e9', label: 'develop' },
-            feature1: { y: 130, color: '#10b981', label: 'feature/login' },
-            feature2: { y: 180, color: '#14b8a6', label: 'feature/cart' },
-            release:  { y: 230, color: '#f59e0b', label: 'release/1.0' },
-            hotfix:   { y: 280, color: '#ef4444', label: 'hotfix/fix' }
+            main:     { y: 30,  color: 'var(--accent)', label: 'main' },
+            develop:  { y: 80,  color: 'var(--cote)', label: 'develop' },
+            feature1: { y: 130, color: 'var(--ok)', label: 'feature/login' },
+            feature2: { y: 180, color: 'var(--cote)', label: 'feature/cart' },
+            release:  { y: 230, color: 'var(--attention)', label: 'release/1.0' },
+            hotfix:   { y: 280, color: 'var(--critique)', label: 'hotfix/fix' }
         };
 
         // Définition des étapes
@@ -133,7 +133,7 @@ class GitflowSimulatorWidget {
             // Merge lines (diagonal)
             allElements.filter(e => e.type === 'merge-line').forEach(e => {
                 const from = BRANCHES[e.from], to = BRANCHES[e.to];
-                svg += `<line x1="${e.x}" y1="${from.y}" x2="${e.x}" y2="${to.y}" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4,2"/>`;
+                svg += `<line x1="${e.x}" y1="${from.y}" x2="${e.x}" y2="${to.y}" stroke="var(--line-subtle)" stroke-width="1.5" stroke-dasharray="4,2"/>`;
             });
 
             // Commits

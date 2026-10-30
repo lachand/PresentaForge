@@ -61,7 +61,7 @@ class BranchProtectionWidget {
   <div class="bpw-rules widget-fit-body">
     ${rules.map(r => `
       <div class="bpw-rule ${r.running ? 'running' : r.status}">
-        <div class="bpw-rule-icon">${r.running ? '⏳' : r.status === 'ok' ? '✅' : '❌'}</div>
+        <div class="bpw-rule-icon">${r.running ? OEIIcons.render('hourglass', { label: 'En cours' }) : r.status === 'ok' ? OEIIcons.render('ok', { label: 'Validée' }) : OEIIcons.render('ko', { label: 'Non satisfaite' })}</div>
         <div class="bpw-rule-body">
           <div class="bpw-rule-name">${r.name}</div>
           <div class="bpw-rule-detail">${r.actionDetail || r.detail}</div>
@@ -69,13 +69,13 @@ class BranchProtectionWidget {
         <div class="bpw-rule-action">
           ${r.status !== 'ok' && r.actionLabel && !r.running
             ? `<button class="btn btn-secondary" style="font-size:0.75rem;padding:0.3rem 0.6rem" data-rule="${r.id}">${r.actionLabel}</button>`
-            : r.running ? '<span style="font-size:0.75rem;color:#92400e">En cours…</span>' : ''}
+            : r.running ? '<span style="font-size:0.75rem;color:var(--attention)">En cours…</span>' : ''}
         </div>
       </div>`).join('')}
   </div>
   <div class="widget-fit-footer">
     <button class="bpw-merge-btn ${allOk ? 'unlocked' : 'locked'}" id="bpw-merge" ${allOk ? '' : 'disabled'}>
-      ${allOk ? '✅ Merge pull request' : '🔒 Merge bloqué — ' + rules.filter(r => r.status !== 'ok').length + ' règle(s) non satisfaite(s)'}
+      ${allOk ? OEIIcons.render('ok') + ' Merge pull request' : OEIIcons.render('lock') + ' Merge bloqué - ' + rules.filter(r => r.status !== 'ok').length + ' règle(s) non satisfaite(s)'}
     </button>
     ${allOk ? `<div class="bpw-info"><strong>Toutes les règles sont satisfaites.</strong> Ces protections garantissent que seul du code relu, testé et synchronisé atteint la branche principale.</div>` : `<div class="bpw-info">Les <strong>branch protection rules</strong> sont configurées dans Settings → Branches de votre dépôt GitHub. Elles automatisent la qualité sans dépendre de la discipline individuelle.</div>`}
   </div>
@@ -93,9 +93,9 @@ class BranchProtectionWidget {
                         rule.running = false;
                         rule.status = 'ok';
                         const msgs = {
-                            approvals: '✅ 1/1 approbation reçue (Alice)',
-                            ci: '✅ lint · tests · build — tous les checks passent',
-                            uptodate: '✅ Branche rebasée sur main (ahead by 2, behind by 0)'
+                            approvals: '1/1 approbation reçue (Alice)',
+                            ci: 'lint · tests · build : tous les checks passent',
+                            uptodate: 'Branche rebasée sur main (ahead by 2, behind by 0)'
                         };
                         rule.actionDetail = msgs[id] || null;
                         render();
@@ -105,8 +105,8 @@ class BranchProtectionWidget {
 
             container.querySelector('#bpw-merge')?.addEventListener('click', () => {
                 if (!isAllOk()) return;
-                container.querySelector('.bpw-merge-btn').textContent = '🎉 Mergé avec succès !';
-                container.querySelector('.bpw-merge-btn').style.background = '#7c3aed';
+                OEIIcons.setLabel(container.querySelector('.bpw-merge-btn'), 'ok', 'Mergé avec succès !');
+                container.querySelector('.bpw-merge-btn').style.background = 'var(--accent)';
             });
         };
 

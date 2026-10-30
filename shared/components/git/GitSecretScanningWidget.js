@@ -38,7 +38,7 @@ class GitSecretScanningWidget {
         const RESULTS = {
             'remove': {
                 cls: 'good',
-                title: '✅ Bonne pratique — secret supprimé et révoqué',
+                title: OEIIcons.render('ok') + ' Bonne pratique : secret supprimé et révoqué',
                 body: `<strong>Étapes suivies :</strong>
 <ol style="margin:0.4rem 0 0 1.2rem;line-height:1.7">
 <li>Révocation immédiate de la clé AWS dans la console IAM</li>
@@ -51,9 +51,9 @@ class GitSecretScanningWidget {
             },
             'manager': {
                 cls: 'good',
-                title: '✅ Bonne pratique — gestionnaire de secrets',
+                title: OEIIcons.render('ok') + ' Bonne pratique : gestionnaire de secrets',
                 body: `<strong>Refactoring vers un gestionnaire de secrets :</strong>
-<pre style="background:#1e293b;color:#e2e8f0;padding:0.6rem;border-radius:6px;font-size:0.74rem;margin:0.5rem 0">
+<pre style="background:var(--production);color:var(--production);padding:0.6rem;border-radius:6px;font-size:0.74rem;margin:0.5rem 0">
 # Avant (dangereux)
 AWS_KEY = "AKIAIOSFODNN7EXAMPLE"
 
@@ -67,7 +67,7 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
             },
             'bypass': {
                 cls: 'bad',
-                title: '⛔ Action dangereuse — bypass activé',
+                title: OEIIcons.render('ban') + ' Action dangereuse : bypass activé',
                 body: `Le bypass de la push protection est autorisé pour les propriétaires du dépôt dans des cas <em>exceptionnels</em> (faux positif avéré, clé de test sans valeur réelle).<br><br>
 <strong>Dans ce cas-ci, la clé AWS est réelle — le bypass est une faute grave :</strong>
 <ul style="margin:0.4rem 0 0 1.2rem;line-height:1.7">
@@ -80,7 +80,7 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
         };
 
         const renderInitial = () => ({
-            header: `<div class="gssw-phase initial">🔄 Prêt à pousser</div>`,
+            header: `<div class="gssw-phase initial">${OEIIcons.render('refresh')} Prêt à pousser</div>`,
             body: `
 <div class="gssw-terminal">
     <div class="gssw-terminal-bar">
@@ -102,12 +102,12 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
     </div>
 </div>`,
             footer: `<div style="text-align:center">
-    <button class="btn btn-primary" id="gssw-push-btn">▶ git push origin main</button>
+    <button class="btn btn-primary" id="gssw-push-btn">${OEIIcons.render('play')} git push origin main</button>
 </div>`
         });
 
         const renderPushing = (lines) => ({
-            header: `<div class="gssw-phase blocked">⛔ Push bloqué par GitHub Push Protection</div>`,
+            header: `<div class="gssw-phase blocked">${OEIIcons.render('ban')} Push bloqué par GitHub Push Protection</div>`,
             body: `
 <div class="gssw-terminal">
     <div class="gssw-terminal-bar">
@@ -127,7 +127,7 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
         // dans une petite boîte, le footer lui-même déborderait sans pouvoir défiler
         // (mesuré : footer seul > hauteur de boîte type slide 800×440).
         const renderChoice = () => ({
-            header: `<div class="gssw-phase blocked">⛔ Push bloqué — que faites-vous ?</div>`,
+            header: `<div class="gssw-phase blocked">${OEIIcons.render('ban')} Push bloqué : que faites-vous ?</div>`,
             body: `
 <div class="gssw-terminal">
     <div class="gssw-terminal-bar">
@@ -142,21 +142,21 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
 </div>
 <div class="gssw-choices">
     <button class="gssw-choice-btn" data-choice="remove">
-        <span class="gssw-choice-icon">🗑️</span>
+        <span class="gssw-choice-icon">${OEIIcons.render('trash')}</span>
         <div class="gssw-choice-body">
             <div class="gssw-choice-title">Supprimer le secret et réécrire l'historique</div>
             <div class="gssw-choice-desc">Révoquer la clé chez AWS, retirer le fichier, réécrire l'historique git avec filter-repo, puis forcer le push.</div>
         </div>
     </button>
     <button class="gssw-choice-btn" data-choice="manager">
-        <span class="gssw-choice-icon">🔐</span>
+        <span class="gssw-choice-icon">${OEIIcons.render('lock')}</span>
         <div class="gssw-choice-body">
             <div class="gssw-choice-title">Passer à un gestionnaire de secrets</div>
             <div class="gssw-choice-desc">Remplacer la valeur en dur par une variable d'environnement ou AWS Secrets Manager. Ne jamais commiter de secrets.</div>
         </div>
     </button>
     <button class="gssw-choice-btn danger" data-choice="bypass">
-        <span class="gssw-choice-icon">⚠️</span>
+        <span class="gssw-choice-icon">${OEIIcons.render('warning')}</span>
         <div class="gssw-choice-body">
             <div class="gssw-choice-title">Demander un bypass (ignorer l'alerte)</div>
             <div class="gssw-choice-desc">Justifier à GitHub que c'est un faux positif et forcer le push malgré la détection.</div>
@@ -168,13 +168,13 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
         const renderResult = (key) => {
             const r = RESULTS[key];
             return {
-                header: `<div class="gssw-phase ${key === 'bypass' ? 'warning' : 'resolved'}">${key === 'bypass' ? '⚠️ Bypass activé' : '✅ Résolu correctement'}</div>`,
+                header: `<div class="gssw-phase ${key === 'bypass' ? 'warning' : 'resolved'}">${key === 'bypass' ? OEIIcons.render('warning') + ' Bypass activé' : OEIIcons.render('ok') + ' Résolu correctement'}</div>`,
                 body: `
 <div class="gssw-result ${r.cls}">
     <div class="gssw-result-title">${r.title}</div>
     ${r.body}
 </div>`,
-                footer: `<button class="gssw-restart-btn" id="gssw-restart">↺ Recommencer</button>`
+                footer: `<button class="gssw-restart-btn" id="gssw-restart">${OEIIcons.render('refresh')} Recommencer</button>`
             };
         };
 

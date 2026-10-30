@@ -267,7 +267,7 @@ class RoutingSimulatorPage extends ConceptPage {
                     } else if (n.id === dest) {
                         el.classList.add('router-dest');
                         ring.classList.add('visible');
-                        ring.style.stroke = '#be185d';
+                        ring.style.stroke = 'var(--stockage)';
                     } else {
                         el.classList.add('router-default');
                     }
@@ -835,7 +835,7 @@ class RoutingSimulatorWidget {
                 <div class="rsw-controls">
                     <button class="rsw-btn rsw-btn-primary" data-btn-step disabled>Étape suivante</button>
                     <button class="rsw-btn rsw-btn-secondary" data-btn-auto disabled>Auto</button>
-                    <button class="rsw-btn rsw-btn-secondary" data-btn-reset>↺ Réinitialiser</button>
+                    <button class="rsw-btn rsw-btn-secondary" data-btn-reset>${OEIIcons.render('refresh')} Réinitialiser</button>
                 </div>
             </div>
         </div>`;

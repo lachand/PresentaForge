@@ -27,7 +27,7 @@ class EventDelegationStandardisteWidget {
                         <div class="deleg-windows" data-role="windows"></div>
                         <div class="deleg-guards" data-role="guards"></div>
                         <div class="deleg-entrance">
-                            <div class="deleg-main-guard" data-role="main-guard">🧑‍💼 Standardiste (entrée)</div>
+                            <div class="deleg-main-guard" data-role="main-guard">${OEIIcons.render('user')} Standardiste (entrée)</div>
                             <div class="deleg-bubble" data-role="bubble">D'où vient ce signal ?</div>
                         </div>
                     </div>

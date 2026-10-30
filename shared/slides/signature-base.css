@@ -250,3 +250,83 @@
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
+/* Extension de jetons du site : ce que vendor/signature/tokens.css ne définit pas (typographie, contrôles, couches,
+   dataviz, icônes). Assemblée dans shared/signature.css et shared/slides/signature-base.css par
+   tools/build-signature-css.mjs (ne pas lier directement). vendor/signature/ reste une copie fidèle.
+
+   Règles :
+   - Aucune couleur en dur : les jetons dataviz renvoient aux jetons de thème, ils suivent donc clair, sombre et contraste.
+   - Tailles en rem : elles suivent le réglage de taille de texte du navigateur. Plancher : 12px pour le texte
+     informatif (--text-xs), 11px pour un libellé de contrôle ou un compteur (--text-2xs). Rien en dessous. */
+:root {
+    /* Échelle typographique */
+    --text-2xs: 0.6875rem;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.375rem;
+    --text-2xl: 1.75rem;
+    --leading-tight: 1.25;
+    --leading-base: 1.5;
+    --leading-prose: 1.7;
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-strong: 600;
+    /* Longueur de ligne de la prose : 60 à 75 caractères. */
+    --measure: 68ch;
+
+    /* Contrôles : 40px au moins pour une cible tactile (DESIGN.md, accessibilité). */
+    --control-h-sm: 32px;
+    --control-h-md: 40px;
+    --control-h-lg: 48px;
+    /* Bordure de champ : --line (porte du sens, 3:1 au moins) et non --line-subtle (filet décoratif, 1,5:1). */
+    --control-border: var(--line);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --focus-ring: var(--focus-ring-width) solid var(--cote);
+
+    /* Couches */
+    --z-base: 1;
+    --z-sticky: 10;
+    --z-nav: 100;
+    --z-dropdown: 500;
+    --z-modal: 1000;
+    --z-toast: 2000;
+
+    /* Dataviz : huit séries. Elles se distinguent aussi par le trait et le marqueur (DESIGN.md, principe 2). */
+    --viz-1: var(--production);
+    --viz-2: var(--consommation);
+    --viz-3: var(--stockage);
+    --viz-4: var(--ok);
+    --viz-5: var(--critique);
+    --viz-6: var(--accent);
+    --viz-7: var(--attention);
+    --viz-8: var(--inactif);
+    --viz-grid: var(--line-subtle);
+    --viz-axis: var(--line);
+
+    /* Points de rupture (documentaires : une media query ne lit pas var()). */
+    --bp-sm: 640px;
+    --bp-md: 900px;
+    --bp-lg: 1200px;
+}
+
+/* Éléments natifs (barres de défilement, champs, cases) dans le bon schéma de couleur. */
+:root { color-scheme: light; }
+[data-theme="dark"] { color-scheme: dark; }
+[data-theme="contrast"] { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) { color-scheme: dark; }
+}
+
+/* Icônes (shared/icons.js) : 1em, couleur du texte voisin. */
+.oei-icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    flex: none;
+    vertical-align: -0.125em;
+    overflow: visible;
+}
+

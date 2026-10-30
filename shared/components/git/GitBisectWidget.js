@@ -76,7 +76,7 @@ class GitBisectWidget {
                 found = true;
                 current = null;
                 commitStates[CULPRIT] = 'culprit';
-                log.push(`# 🎯 ${CULPRIT === badBound ? badBound : CULPRIT} est le premier commit mauvais !`);
+                log.push(`# ${CULPRIT === badBound ? badBound : CULPRIT} est le premier commit mauvais !`);
                 log.push(`# Author: Bob <bob@example.com>`);
                 log.push(`# refactor: optimisation de la boucle principale`);
                 log.push(`$ git bisect reset`);
@@ -94,7 +94,7 @@ class GitBisectWidget {
             return `
 <div class="gbw-test-output ${bad ? 'bad' : 'good'}">
   <div class="gbw-test-cmd">$ python -c "from app import calculate_sum; print(calculate_sum([1, 2, 3]))"</div>
-  <div class="gbw-test-result-line">${bad ? '7   ← résultat incorrect (attendu : 6) ❌' : '6   ← résultat correct ✓'}</div>
+  <div class="gbw-test-result-line">${bad ? '7   ← résultat incorrect (attendu : 6) ' + OEIIcons.render('ko', { label: 'Incorrect' }) : '6   ← résultat correct ' + OEIIcons.render('ok', { label: 'Correct' })}</div>
   ${bad ? '<div style="margin-top:0.2rem;font-size:0.72rem;opacity:0.8">Ce commit contient le bug → marquer <strong>bad</strong></div>'
          : '<div style="margin-top:0.2rem;font-size:0.72rem;opacity:0.8">Ce commit fonctionne correctement → marquer <strong>good</strong></div>'}
 </div>`;
@@ -104,14 +104,14 @@ class GitBisectWidget {
             container.innerHTML = `
 <div class="gbw-root widget-fit">
   <div class="gbw-scenario widget-fit-header">
-    🐛 <strong>Scénario :</strong> La fonction <code>calculate_sum([1, 2, 3])</code> retourne <code>7</code> au lieu de <code>6</code>.
+    ${OEIIcons.render('bug')} <strong>Scénario :</strong> La fonction <code>calculate_sum([1, 2, 3])</code> retourne <code>7</code> au lieu de <code>6</code>.
     Le bug n'existait pas dans la version <strong>#1 (v1.0)</strong> mais est présent dans <strong>#${N} (HEAD)</strong>.
     Utilisez <code>git bisect</code> pour trouver le commit coupable en testant la fonction à chaque étape.
   </div>
   <div class="widget-fit-body">
     <div class="gbw-info ${found ? 'found' : 'neutral'}">
       ${found
-        ? `🎯 <strong>Commit coupable : #${CULPRIT} — "refactor: optimisation de la boucle principale"</strong> par Bob. Trouvé en <strong>${steps} étape(s)</strong> au lieu de ${N-1} tests manuels. <code>git bisect reset</code> restaure HEAD.`
+        ? `${OEIIcons.render('target')} <strong>Commit coupable : #${CULPRIT} — "refactor: optimisation de la boucle principale"</strong> par Bob. Trouvé en <strong>${steps} étape(s)</strong> au lieu de ${N-1} tests manuels. <code>git bisect reset</code> restaure HEAD.`
         : current !== null
           ? `Commit <strong>#${current}</strong> en cours de test. Exécutez la fonction, observez le résultat ci-dessous et marquez le commit. Espace de recherche : #${goodBound}–#${badBound} (~${stepsLeft()} étape(s) restante(s)).`
           : `Cliquez sur <strong>Démarrer git bisect</strong>. Git va checkout automatiquement le commit du milieu pour que vous le testiez.`}
@@ -126,12 +126,12 @@ class GitBisectWidget {
           return `
           ${n > 1 ? `<div class="gbw-connector ${isActive ? 'active' : ''}"></div>` : ''}
           <div class="gbw-commit ${state}">
-            <div class="gbw-circle">${state === 'culprit' ? '🎯' : state === 'good' ? '✓' : state === 'bad' ? '✗' : state === 'current' ? '?' : n}</div>
+            <div class="gbw-circle">${state === 'culprit' ? OEIIcons.render('target') : state === 'good' ? OEIIcons.render('check') : state === 'bad' ? OEIIcons.render('close') : state === 'current' ? '?' : n}</div>
             <div class="gbw-label">${state === 'culprit' ? 'coupable' : state === 'good' ? 'bon' : state === 'bad' ? 'mauvais' : state === 'current' ? 'test?' : lbl}</div>
           </div>`;
       }).join('')}
     </div>
-    <div class="gbw-log">${log.map(l => `<div class="${l.startsWith('$ git bisect good') ? 'good-line' : l.startsWith('$ git bisect bad') ? 'bad-line' : l.includes('🎯') ? 'found-line' : ''}">${l}</div>`).join('')}</div>
+    <div class="gbw-log">${log.map(l => `<div class="${l.startsWith('$ git bisect good') ? 'good-line' : l.startsWith('$ git bisect bad') ? 'bad-line' : l.includes('premier commit mauvais') ? 'found-line' : ''}">${l}</div>`).join('')}</div>
     <div class="gbw-caption">
       git bisect utilise une recherche dichotomique : pour ${N} commits, ⌈log₂(${N})⌉ = <strong>4 étapes maximum</strong> au lieu de ${N-1} tests manuels.
     </div>
@@ -141,8 +141,8 @@ class GitBisectWidget {
       ? `<button class="btn btn-primary" id="gbw-start">Démarrer git bisect</button>`
       : found
         ? `<button class="btn btn-secondary" id="gbw-restart">Recommencer</button>`
-        : `<button class="btn btn-secondary" id="gbw-good" style="border-color:#10b981;color:#065f46">✅ Bon — good</button>
-           <button class="btn btn-secondary" id="gbw-bad" style="border-color:#ef4444;color:#991b1b">❌ Mauvais — bad</button>
+        : `<button class="btn btn-secondary" id="gbw-good" style="border-color:var(--ok);color:var(--ok)">${OEIIcons.render('ok')} Bon : good</button>
+           <button class="btn btn-secondary" id="gbw-bad" style="border-color:var(--critique);color:var(--critique)">${OEIIcons.render('ko')} Mauvais : bad</button>
            <span class="gbw-step-info">Étape ${steps + 1} — ~${stepsLeft()} restante(s)</span>`}
   </div>
 </div>`;

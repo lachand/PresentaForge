@@ -36,7 +36,7 @@ class GitCommitSigningWidget {
 
             const stepsHtml = STEPS.map((step, i) => {
                 const state = allDone || i < currentStep ? 'done' : i === currentStep ? 'active' : 'pending';
-                const icon = state === 'done' ? '✓' : i + 1;
+                const icon = state === 'done' ? OEIIcons.render('check') : i + 1;
                 const showBtn = state === 'active';
                 return `
 <div class="gcsw-step ${state}">
@@ -54,7 +54,7 @@ class GitCommitSigningWidget {
   <div class="widget-fit-body">
     <div class="gcsw-compare">
         <div class="gcsw-commit-card unsigned">
-            <div class="gcsw-card-header">❌ Sans signature</div>
+            <div class="gcsw-card-header">${OEIIcons.render('ko')} Sans signature</div>
             <div class="gcsw-card-body">
                 <div class="gcsw-commit-row">
                     <div class="gcsw-avatar">B</div>
@@ -70,10 +70,10 @@ class GitCommitSigningWidget {
             </div>
         </div>
         <div class="gcsw-commit-card signed">
-            <div class="gcsw-card-header">✅ Avec signature SSH</div>
+            <div class="gcsw-card-header">${OEIIcons.render('ok')} Avec signature SSH</div>
             <div class="gcsw-card-body">
                 <div class="gcsw-commit-row">
-                    <div class="gcsw-avatar" style="background:#16a34a">A</div>
+                    <div class="gcsw-avatar" style="background:var(--ok)">A</div>
                     <div class="gcsw-commit-info">
                         <div class="gcsw-commit-msg">feat: add user settings</div>
                         <div class="gcsw-commit-meta">alice · il y a 2h · <span class="gcsw-hash">d4e5f6a</span></div>
@@ -81,10 +81,10 @@ class GitCommitSigningWidget {
                 </div>
                 <div class="gcsw-badge-row">
                     <span class="gcsw-badge-verified">
-                        ✓ Verified
+                        ${OEIIcons.render('check')} Verified
                         <span class="gcsw-badge-tooltip">Ce commit a été signé avec la clé SSH d'alice. GitHub a vérifié que la clé privée correspondant à la clé publique enregistrée a été utilisée pour signer.</span>
                     </span>
-                    <span style="font-size:0.72rem;color:#16a34a">Authenticité cryptographiquement prouvée</span>
+                    <span style="font-size:0.72rem;color:var(--ok)">Authenticité cryptographiquement prouvée</span>
                 </div>
             </div>
         </div>
@@ -94,12 +94,12 @@ class GitCommitSigningWidget {
     <div class="gcsw-steps">${stepsHtml}</div>
 
     <div class="gcsw-result-box ${allDone ? 'visible' : ''}">
-        <div class="gcsw-result-title">✅ Configuration complète</div>
+        <div class="gcsw-result-title">${OEIIcons.render('ok')} Configuration complète</div>
         Tous vos prochains commits seront automatiquement signés. Le badge <strong>Verified</strong> apparaîtra sur GitHub dès que la clé publique SSH est enregistrée comme Signing Key sur votre compte.
         <br><br>
         <strong>Vérifier un commit signé :</strong> <code>git log --show-signature -1</code>
         <br>
-        <button class="gcsw-restart-btn" id="gcsw-restart">↺ Recommencer</button>
+        <button class="gcsw-restart-btn" id="gcsw-restart">${OEIIcons.render('refresh')} Recommencer</button>
     </div>
   </div>
 </div>`;

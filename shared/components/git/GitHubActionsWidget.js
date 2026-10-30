@@ -59,14 +59,14 @@ jobs:
             id: 'name',
             lines: [0],
             title: 'name: — Nom du workflow',
-            color: '#8b5cf6',
+            color: 'var(--accent)',
             explain: `Le champ <code>name:</code> définit le nom affiché dans l'onglet <em>Actions</em> de GitHub. Sans ce champ, GitHub utilise le chemin du fichier (<code>.github/workflows/ci.yml</code>). Choisissez un nom clair : <em>CI</em>, <em>Tests &amp; Lint</em>, <em>Deploy to Production</em>.`
         },
         {
             id: 'on',
             lines: [2, 3, 4, 5, 6],
             title: 'on: — Déclencheurs (events)',
-            color: '#0ea5e9',
+            color: 'var(--cote)',
             explain: `Le bloc <code>on:</code> liste les événements qui déclenchent le workflow.<br><br>
 <b>push → branches: [main]</b> : se déclenche à chaque push sur main.<br>
 <b>pull_request → branches: [main]</b> : se déclenche quand une PR cible main (ouverture, mise à jour, réouverture).<br><br>
@@ -76,7 +76,7 @@ Autres déclencheurs utiles : <code>schedule</code> (cron), <code>workflow_dispa
             id: 'job-test',
             lines: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
             title: 'jobs.test — Job de tests',
-            color: '#22c55e',
+            color: 'var(--ok)',
             explain: `Ce job <code>test</code> s'exécute en premier. Il installe Python, les dépendances, puis lance pytest.<br><br>
 <b>runs-on: ubuntu-latest</b> — runner Ubuntu hébergé par GitHub (gratuit pour les dépôts publics).<br>
 <b>actions/checkout@v4</b> — clone le dépôt sur le runner. Toujours la première step.<br>
@@ -87,7 +87,7 @@ Autres déclencheurs utiles : <code>schedule</code> (cron), <code>workflow_dispa
             id: 'job-lint',
             lines: [25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
             title: 'jobs.lint — Job de linting',
-            color: '#f59e0b',
+            color: 'var(--attention)',
             explain: `Le job <code>lint</code> vérifie la qualité du code avec flake8.<br><br>
 <b>needs: test</b> — ce job ne démarre que si le job <code>test</code> a réussi. Sans <code>needs:</code>, tous les jobs s'exécutent en parallèle.<br><br>
 Si <code>test</code> échoue, <code>lint</code> est automatiquement annulé (statut <em>Skipped</em>), ce qui économise des minutes de runner.`
@@ -96,7 +96,7 @@ Si <code>test</code> échoue, <code>lint</code> est automatiquement annulé (sta
             id: 'job-deploy',
             lines: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
             title: 'jobs.deploy — Job de déploiement',
-            color: '#ef4444',
+            color: 'var(--critique)',
             explain: `Le job <code>deploy</code> ne s'exécute que si <code>test</code> ET <code>lint</code> ont réussi, ET seulement sur la branche main.<br><br>
 <b>needs: [test, lint]</b> — attend les deux jobs.<br>
 <b>if: github.ref == 'refs/heads/main'</b> — condition d'exécution. Sur une branche de feature, ce job est ignoré.<br>

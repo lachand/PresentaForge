@@ -143,7 +143,7 @@ class GitDAGWidget {
                 <circle class="gdw-commit-circle"
                     cx="${pos.x}" cy="${pos.y}" r="${R}"
                     stroke="${color}"
-                    ${isHead ? `fill="#fef2f2"` : ''}/>
+                    ${isHead ? `fill="var(--critique-fond)"` : ''}/>
                 <text class="gdw-commit-hash" x="${pos.x}" y="${pos.y + 4}">${c.id.substring(0, 6)}</text>
             </g>`;
 

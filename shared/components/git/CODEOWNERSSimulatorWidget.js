@@ -45,14 +45,14 @@ class CODEOWNERSSimulatorWidget {
     static renderResult(matched, allMatches, filePath) {
         if (!matched) {
             return `<div class="codeow-no-match">
-                <span style="font-size:1.1rem">❌</span>
+                <span style="font-size:1.1rem">${OEIIcons.render('ko', { label: 'Aucune règle' })}</span>
                 <div><strong>Aucune règle</strong> ne correspond à <code>${filePath}</code>.<br>
-                <span style="color:#6b7280;font-size:0.8rem">Ce fichier n'a pas de reviewer défini (ni de règle globale <code>*</code>).</span></div>
+                <span style="color:var(--ink-muted);font-size:0.8rem">Ce fichier n'a pas de reviewer défini (ni de règle globale <code>*</code>).</span></div>
             </div>`;
         }
         const ownerBadges = matched.owners.length
             ? matched.owners.map(o => `<span class="codeow-owner-badge">${o}</span>`).join('')
-            : `<span style="color:#9ca3af;font-size:0.8rem">aucun owner défini</span>`;
+            : `<span style="color:var(--ink-muted);font-size:0.8rem">aucun owner défini</span>`;
         let allMatchesHtml = '';
         if (allMatches.length > 1) {
             allMatchesHtml = `<div class="codeow-all-matches">
@@ -60,16 +60,16 @@ class CODEOWNERSSimulatorWidget {
                 ${allMatches.map(r => `<div class="codeow-match-row ${r === matched ? 'winner' : ''}">
                     <code style="white-space:nowrap">${r.pattern}</code>
                     <span class="codeow-match-owners">${r.owners.join(' ') || '—'}</span>
-                    ${r === matched ? '<span class="codeow-winner-badge">✓ gagnante</span>' : ''}
+                    ${r === matched ? '<span class="codeow-winner-badge">' + OEIIcons.render('check') + ' gagnante</span>' : ''}
                 </div>`).join('')}
             </div>`;
         }
         return `<div class="codeow-match">
             <div class="codeow-match-header">
-                <span style="font-size:1.1rem">✅</span>
+                <span style="font-size:1.1rem">${OEIIcons.render('ok', { label: 'Règle trouvée' })}</span>
                 <div>Règle correspondante : <code>${matched.pattern}</code></div>
             </div>
-            <div class="codeow-reviewers">👥 Reviewers requis : ${ownerBadges}</div>
+            <div class="codeow-reviewers">${OEIIcons.render('users')} Reviewers requis : ${ownerBadges}</div>
             ${allMatchesHtml}
         </div>`;
     }
@@ -102,11 +102,11 @@ package-lock.json   @monorg/devops`;
         container.innerHTML = `<div class="codeow-widget widget-fit">
             <div class="codeow-main widget-fit-body">
                 <div class="codeow-editor">
-                    <div class="codeow-file-header">📄 .github/CODEOWNERS</div>
+                    <div class="codeow-file-header">${OEIIcons.render('file-text')} .github/CODEOWNERS</div>
                     <textarea class="codeow-textarea" spellcheck="false">${DEFAULT}</textarea>
                 </div>
                 <div class="codeow-tester">
-                    <h4>🔍 Tester un chemin de fichier</h4>
+                    <h4>${OEIIcons.render('search')} Tester un chemin de fichier</h4>
                     <div class="codeow-input-row">
                         <span class="codeow-slash">/</span>
                         <input type="text" class="codeow-path-input" placeholder="src/api/users.py" value="src/api/users.py">

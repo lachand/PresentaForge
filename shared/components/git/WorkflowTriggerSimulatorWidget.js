@@ -8,12 +8,12 @@ class WorkflowTriggerSimulatorWidget {
         ];
 
         const EVENTS = [
-            { id: 'push_branch',      label: '📤 push (branche)' },
-            { id: 'push_tag',         label: '🏷️ push (tag)' },
-            { id: 'pull_request',     label: '🔀 pull_request' },
-            { id: 'schedule',         label: '⏰ schedule' },
-            { id: 'workflow_dispatch',label: '▶️ dispatch' },
-            { id: 'workflow_call',    label: '🔗 call' }
+            { id: 'push_branch',      icon: 'upload', label: 'push (branche)' },
+            { id: 'push_tag',         icon: 'tag', label: 'push (tag)' },
+            { id: 'pull_request',     icon: 'git-pull-request', label: 'pull_request' },
+            { id: 'schedule',         icon: 'clock', label: 'schedule' },
+            { id: 'workflow_dispatch',icon: 'play', label: 'dispatch' },
+            { id: 'workflow_call',    icon: 'link', label: 'call' }
         ];
 
         let state = { event: 'push_branch', branch: 'feature/my-feature', tag: 'v1.0.0' };
@@ -90,7 +90,7 @@ class WorkflowTriggerSimulatorWidget {
                 return `<div class="wts-wf ${ok ? 'triggered' : 'blocked'}">
                     <div class="wts-wf-top">
                         <span class="wts-wf-name">${wf.name}</span>
-                        <span class="wts-badge ${ok ? 'yes' : 'no'}">${ok ? '✓ déclenché' : '✗ ignoré'}</span>
+                        <span class="wts-badge ${ok ? 'yes' : 'no'}">${ok ? OEIIcons.render('check') + ' déclenché' : OEIIcons.render('close') + ' ignoré'}</span>
                     </div>
                     <div class="wts-wf-on">${formatOn(wf, match)}</div>
                     ${ok && match ? `<div class="wts-wf-reason">→ correspondance : ${match}</div>` : ''}
@@ -103,7 +103,7 @@ class WorkflowTriggerSimulatorWidget {
                 <div class="wts-panel">
                     <p class="wts-panel-title">Événement git</p>
                     <div class="wts-event-btns">${EVENTS.map(e =>
-                        `<button class="wts-event-btn${e.id === state.event ? ' active' : ''}" data-ev="${e.id}">${e.label}</button>`
+                        `<button class="wts-event-btn${e.id === state.event ? ' active' : ''}" data-ev="${e.id}">${OEIIcons.render(e.icon)} ${e.label}</button>`
                     ).join('')}</div>
                     <div class="wts-details"></div>
                 </div>

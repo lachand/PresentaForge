@@ -18,31 +18,31 @@ class JobDependencyGraphWidget {
             {
                 name: 'CI basique (1 job)',
                 jobs: [
-                    { id: 'test', label: '🧪 test', needs: [], runner: 'ubuntu-latest' }
+                    { id: 'test', icon: 'flask', label: 'test', needs: [], runner: 'ubuntu-latest' }
                 ]
             },
             {
                 name: 'Test → Déploiement',
                 jobs: [
-                    { id: 'test',   label: '🧪 test',   needs: [],       runner: 'ubuntu-latest' },
-                    { id: 'deploy', label: '🚀 deploy', needs: ['test'], runner: 'ubuntu-latest', cond: "ref == 'main'" }
+                    { id: 'test',   icon: 'flask', label: 'test',   needs: [],       runner: 'ubuntu-latest' },
+                    { id: 'deploy', icon: 'rocket', label: 'deploy', needs: ['test'], runner: 'ubuntu-latest', cond: "ref == 'main'" }
                 ]
             },
             {
                 name: 'Pipeline CI/CD complet',
                 jobs: [
-                    { id: 'lint',   label: '✅ lint',   needs: [],              runner: 'ubuntu-latest' },
-                    { id: 'test',   label: '🧪 test',   needs: [],              runner: 'ubuntu-latest' },
-                    { id: 'build',  label: '🏗️ build',  needs: ['lint','test'], runner: 'ubuntu-latest' },
-                    { id: 'deploy', label: '🚀 deploy', needs: ['build'],        runner: 'ubuntu-latest', cond: "ref == 'main'" }
+                    { id: 'lint',   icon: 'check', label: 'lint',   needs: [],              runner: 'ubuntu-latest' },
+                    { id: 'test',   icon: 'flask', label: 'test',   needs: [],              runner: 'ubuntu-latest' },
+                    { id: 'build',  icon: 'blocks', label: 'build',  needs: ['lint','test'], runner: 'ubuntu-latest' },
+                    { id: 'deploy', icon: 'rocket', label: 'deploy', needs: ['build'],        runner: 'ubuntu-latest', cond: "ref == 'main'" }
                 ]
             },
             {
                 name: 'Multi-environnement',
                 jobs: [
-                    { id: 'test',    label: '🧪 test',         needs: [],         runner: 'ubuntu-latest' },
-                    { id: 'staging', label: '🟡 deploy-staging', needs: ['test'],    runner: 'ubuntu-latest' },
-                    { id: 'prod',    label: '🟢 deploy-prod',    needs: ['staging'], runner: 'ubuntu-latest', cond: 'approval requis' }
+                    { id: 'test',    icon: 'flask', label: 'test',         needs: [],         runner: 'ubuntu-latest' },
+                    { id: 'staging', icon: 'upload', label: 'deploy-staging', needs: ['test'],    runner: 'ubuntu-latest' },
+                    { id: 'prod',    icon: 'rocket', label: 'deploy-prod',    needs: ['staging'], runner: 'ubuntu-latest', cond: 'approval requis' }
                 ]
             }
         ];
@@ -57,8 +57,13 @@ class JobDependencyGraphWidget {
             jobs.forEach(j => jobStates[j.id] = 'waiting');
         }
 
+        const STATE_LABELS = { running: ['refresh', 'en cours...'], success: ['check', 'réussi'], failed: ['close', 'échoué'], blocked: ['ban', 'bloqué'] };
         function stateLabel(state) {
-            return { waiting: '', running: '⟳ en cours...', success: '✓ réussi', failed: '✗ échoué', blocked: '⊘ bloqué' }[state] || '';
+            return STATE_LABELS[state] || [null, ''];
+        }
+        function stateLabelHtml(state) {
+            const [icon, text] = stateLabel(state);
+            return (icon ? OEIIcons.render(icon) + ' ' : '') + text;
         }
 
         function updateJobEl(id) {
@@ -68,15 +73,15 @@ class JobDependencyGraphWidget {
             const wfClass = (!simRunning && willFail.has(id)) ? ' will-fail' : '';
             el.className = `jdg-job state-${state}${wfClass}`;
             const statusEl = el.querySelector('.jdg-job-status');
-            if (statusEl) statusEl.textContent = stateLabel(state);
+            if (statusEl) OEIIcons.setLabel(statusEl, stateLabel(state));
         }
 
-        function appendLog(msg, cls = '') {
+        function appendLog(msg, cls = '', icon = null) {
             const logEl = container.querySelector('.jdg-log');
             if (!logEl) return;
             const line = document.createElement('div');
             line.className = `jdg-log-line ${cls}`;
-            line.textContent = msg;
+            OEIIcons.setLabel(line, icon, msg);
             logEl.appendChild(line);
             logEl.scrollTop = logEl.scrollHeight;
         }
@@ -96,7 +101,7 @@ class JobDependencyGraphWidget {
                 canvas.insertBefore(svg, canvas.firstChild);
             }
             const canvasRect = canvas.getBoundingClientRect();
-            const defs = `<defs><marker id="jdg-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#64748b"/></marker></defs>`;
+            const defs = `<defs><marker id="jdg-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="var(--ink-muted)"/></marker></defs>`;
             const paths = connections.map(({ from, to }) => {
                 const fromEl = canvas.querySelector(`[data-job="${from}"]`);
                 const toEl   = canvas.querySelector(`[data-job="${to}"]`);
@@ -108,7 +113,7 @@ class JobDependencyGraphWidget {
                 const x2 = tr.left   - canvasRect.left;
                 const y2 = tr.top    + tr.height / 2 - canvasRect.top;
                 const cx = (x1 + x2) / 2;
-                return `<path d="M${x1} ${y1} C${cx} ${y1} ${cx} ${y2} ${x2} ${y2}" stroke="#64748b" stroke-width="1.5" fill="none" marker-end="url(#jdg-arrow)" stroke-dasharray="4 2"/>`;
+                return `<path d="M${x1} ${y1} C${cx} ${y1} ${cx} ${y2} ${x2} ${y2}" stroke="var(--ink-muted)" stroke-width="1.5" fill="none" marker-end="url(#jdg-arrow)" stroke-dasharray="4 2"/>`;
             }).filter(Boolean).join('');
             svg.innerHTML = defs + paths;
         }
@@ -129,22 +134,22 @@ class JobDependencyGraphWidget {
                     <select class="jdg-select">${SCENARIOS.map((s, i) =>
                         `<option value="${i}"${i === scenarioIdx ? ' selected' : ''}>${s.name}</option>`
                     ).join('')}</select>
-                    <button class="jdg-btn jdg-btn-play">▶ Simuler</button>
-                    <button class="jdg-btn jdg-btn-reset">↺ Réinitialiser</button>
+                    <button class="jdg-btn jdg-btn-play">${OEIIcons.render('play')} Simuler</button>
+                    <button class="jdg-btn jdg-btn-reset">${OEIIcons.render('refresh')} Réinitialiser</button>
                 </div>
                 <div class="widget-fit-body">
                     <div class="jdg-canvas">
                         ${cols.map(colJobs => `<div class="jdg-col">${colJobs.map(j => `
                             <div class="jdg-job state-${jobStates[j.id] || 'waiting'}${willFail.has(j.id) ? ' will-fail' : ''}" data-job="${j.id}">
-                                <div class="jdg-job-name">${j.label}</div>
+                                <div class="jdg-job-name">${OEIIcons.render(j.icon)} ${j.label}</div>
                                 <div class="jdg-job-runner">${j.runner}</div>
                                 ${j.cond ? `<div class="jdg-job-cond">if: ${j.cond}</div>` : ''}
-                                <div class="jdg-job-status">${stateLabel(jobStates[j.id] || 'waiting')}</div>
+                                <div class="jdg-job-status">${stateLabelHtml(jobStates[j.id] || 'waiting')}</div>
                             </div>`).join('')}</div>`).join('')}
                     </div>
-                    <div class="jdg-log"><div class="jdg-log-line">En attente — cliquez sur ▶ Simuler pour lancer le pipeline.</div></div>
+                    <div class="jdg-log"><div class="jdg-log-line">En attente : cliquez sur Simuler pour lancer le pipeline.</div></div>
                 </div>
-                <p class="jdg-hint widget-fit-footer">💡 Cliquez sur un job avant de simuler pour le forcer à échouer et observer les effets en cascade.</p>
+                <p class="jdg-hint widget-fit-footer">${OEIIcons.render('lightbulb')} Cliquez sur un job avant de simuler pour le forcer à échouer et observer les effets en cascade.</p>
             </div>`;
 
             requestAnimationFrame(() => drawConnections(connections));
@@ -168,7 +173,7 @@ class JobDependencyGraphWidget {
                 jobs.forEach(j => updateJobEl(j.id));
                 clearLog();
                 container.querySelector('.jdg-log').innerHTML =
-                    '<div class="jdg-log-line">En attente — cliquez sur ▶ Simuler pour lancer le pipeline.</div>';
+                    '<div class="jdg-log-line">En attente : cliquez sur Simuler pour lancer le pipeline.</div>';
                 const playBtn = container.querySelector('.jdg-btn-play');
                 if (playBtn) playBtn.disabled = false;
             });
@@ -180,11 +185,11 @@ class JobDependencyGraphWidget {
                     if (willFail.has(id)) willFail.delete(id);
                     else willFail.add(id);
                     updateJobEl(id);
-                    const status = willFail.has(id)
-                        ? `⚠️ "${id}" forcé en échec — les jobs dépendants seront bloqués.`
-                        : `✓ "${id}" remis en réussite.`;
+                    const forced = willFail.has(id);
                     clearLog();
-                    appendLog(status);
+                    appendLog(forced
+                        ? `"${id}" forcé en échec : les jobs dépendants seront bloqués.`
+                        : `"${id}" remis en réussite.`, '', forced ? 'warning' : 'check');
                 });
             });
         }
@@ -211,7 +216,7 @@ class JobDependencyGraphWidget {
                         blocked.add(j.id);
                         jobStates[j.id] = 'blocked';
                         updateJobEl(j.id);
-                        appendLog(`⊘ "${j.id}" bloqué — une dépendance a échoué.`, 'skip');
+                        appendLog(`"${j.id}" bloqué : une dépendance a échoué.`, 'skip', 'ban');
                     } else {
                         toRun.push(j);
                     }
@@ -222,7 +227,7 @@ class JobDependencyGraphWidget {
                 toRun.forEach(j => {
                     jobStates[j.id] = 'running';
                     updateJobEl(j.id);
-                    appendLog(`⟳ Démarrage de "${j.id}"…`, 'run');
+                    appendLog(`Démarrage de "${j.id}"…`, 'run', 'refresh');
                 });
                 await new Promise(r => setTimeout(r, 1100));
 
@@ -231,9 +236,9 @@ class JobDependencyGraphWidget {
                     jobStates[j.id] = state;
                     if (state === 'failed') {
                         failed.add(j.id);
-                        appendLog(`✗ "${j.id}" a échoué !`, 'fail');
+                        appendLog(`"${j.id}" a échoué !`, 'fail', 'close');
                     } else {
-                        appendLog(`✓ "${j.id}" réussi`, 'ok');
+                        appendLog(`"${j.id}" réussi`, 'ok', 'check');
                     }
                     updateJobEl(j.id);
                 }
@@ -243,9 +248,10 @@ class JobDependencyGraphWidget {
             const anyFailed = failed.size > 0;
             appendLog(
                 anyFailed
-                    ? `✗ Pipeline terminé avec ${failed.size} erreur(s). Les jobs bloqués n'ont pas été exécutés.`
-                    : '✓ Pipeline complet — tous les jobs ont réussi !',
-                anyFailed ? 'fail' : 'ok'
+                    ? `Pipeline terminé avec ${failed.size} erreur(s). Les jobs bloqués n'ont pas été exécutés.`
+                    : 'Pipeline complet : tous les jobs ont réussi !',
+                anyFailed ? 'fail' : 'ok',
+                anyFailed ? 'close' : 'check'
             );
 
             simRunning = false;

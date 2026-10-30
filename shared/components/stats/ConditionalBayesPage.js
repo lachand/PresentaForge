@@ -214,7 +214,7 @@ class ConditionalBayesPage extends SimulationPage {
             ${node(outcomeX, negativeYTop, '-')}
             ${node(outcomeX, positiveYBottom, '+')}
             ${node(outcomeX, negativeYBottom, '-')}
-            <text x="${width - 16}" y="20" text-anchor="end" font-size="12" fill="#b45309">P(D|+) = ${this.formatPercent(this.metrics.pDiseaseGivenPositive)}</text>
+            <text x="${width - 16}" y="20" text-anchor="end" font-size="12" fill="var(--attention)">P(D|+) = ${this.formatPercent(this.metrics.pDiseaseGivenPositive)}</text>
         `;
 
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -318,7 +318,7 @@ class ConditionalBayesWidget {
             </div>
             <div class="bayw-controls-row">
                 <button class="bayw-btn bayw-btn-primary" data-simulate>Simuler échantillon</button>
-                <button class="bayw-btn bayw-btn-secondary" data-reset>↺ Reset</button>
+                <button class="bayw-btn bayw-btn-secondary" data-reset>${OEIIcons.render('refresh')} Reset</button>
             </div>
             <svg class="bayw-svg" data-tree viewBox="0 0 400 190" role="img" aria-label="Arbre de probabilités"></svg>
             <div class="bayw-metrics">
@@ -440,7 +440,7 @@ class ConditionalBayesWidget {
             ${node(outcomeX, negTopY, '-')}
             ${node(outcomeX, posBotY, '+')}
             ${node(outcomeX, negBotY, '-')}
-            <text x="${width - 8}" y="14" text-anchor="end" font-size="10" fill="#b45309">P(D|+)=${this._formatPercent(this.metrics.pDiseaseGivenPositive)}</text>
+            <text x="${width - 8}" y="14" text-anchor="end" font-size="10" fill="var(--attention)">P(D|+)=${this._formatPercent(this.metrics.pDiseaseGivenPositive)}</text>
         `;
     }
 

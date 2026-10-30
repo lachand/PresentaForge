@@ -1064,7 +1064,7 @@ class SqlPlaygroundWidget {
                 <div class="sqlw-controls">
                     <button class="sqlw-btn sqlw-btn-primary" data-run>Exécuter</button>
                     <button class="sqlw-btn sqlw-btn-secondary" data-clear>Effacer</button>
-                    <button class="sqlw-btn sqlw-btn-secondary" data-reset>↺ Reset BDD</button>
+                    <button class="sqlw-btn sqlw-btn-secondary" data-reset>${OEIIcons.render('refresh')} Reset BDD</button>
                 </div>
             </div>
             <div class="sqlw-result widget-fit-body" data-result></div>

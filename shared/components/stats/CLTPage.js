@@ -337,7 +337,7 @@ class CLTPage extends SimulationPage {
             const density = this.normalPdf(xValue, mu, sigmaMean);
             pathPoints.push(`${xToPx(xValue)},${yToPx(density)}`);
         }
-        html += `<polyline points="${pathPoints.join(' ')}" fill="none" stroke="#f59e0b" stroke-width="2.4"></polyline>`;
+        html += `<polyline points="${pathPoints.join(' ')}" fill="none" stroke="var(--attention)" stroke-width="2.4"></polyline>`;
 
         const muX = xToPx(mu);
         html += `<line x1="${muX}" y1="${padding.top}" x2="${muX}" y2="${height - padding.bottom}" stroke="var(--ok)" stroke-dasharray="6 4" stroke-width="2"></line>`;
@@ -400,7 +400,7 @@ class CLTWidget {
                 <button class="cltw-btn cltw-btn-primary" data-run="100">+100</button>
                 <button class="cltw-btn cltw-btn-secondary" data-run="1000">+1000</button>
                 <button class="cltw-btn cltw-btn-secondary" data-clear>Effacer</button>
-                <button class="cltw-btn cltw-btn-secondary" data-reset>↺ Reset</button>
+                <button class="cltw-btn cltw-btn-secondary" data-reset>${OEIIcons.render('refresh')} Reset</button>
             </div>
             <div class="cltw-charts">
                 <div class="cltw-chart-box">
@@ -632,9 +632,9 @@ class CLTWidget {
             const xValue = minX + (i / 80) * span;
             pathPoints.push(`${xToPx(xValue)},${yToPx(this._normalPdf(xValue, mu, sigmaMean))}`);
         }
-        html += `<polyline points="${pathPoints.join(' ')}" fill="none" stroke="#f59e0b" stroke-width="2"></polyline>`;
+        html += `<polyline points="${pathPoints.join(' ')}" fill="none" stroke="var(--attention)" stroke-width="2"></polyline>`;
         const muX = xToPx(mu);
-        html += `<line x1="${muX}" y1="${padding.top}" x2="${muX}" y2="${height - padding.bottom}" stroke="#22c55e" stroke-dasharray="5 3" stroke-width="1.6"></line>`;
+        html += `<line x1="${muX}" y1="${padding.top}" x2="${muX}" y2="${height - padding.bottom}" stroke="var(--ok)" stroke-dasharray="5 3" stroke-width="1.6"></line>`;
         svg.innerHTML = html;
     }
 

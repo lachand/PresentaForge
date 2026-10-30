@@ -394,7 +394,8 @@ async function _buildWidgetRuntimeInline(data) {
     }
     const css = await _fetchWidgetCss();
 
-    const scriptSet = new Set();
+    // Registre d'icônes SVG (shared/icons.js) : les widgets rendent leurs pictogrammes par OEIIcons, inliné en premier.
+    const scriptSet = new Set(['../icons.js']);
     const registry = {};
     for (const wid of usedWidgets) {
         const entry = CanvasEditor.WIDGET_REGISTRY[wid];
@@ -521,7 +522,7 @@ function _injectStaticFallbacks(container) {
                 return;
             } catch (_) {}
         }
-        slot.innerHTML = `<div class="sl-widget-static"><div class="sl-widget-static-icon">⚙️</div><div class="sl-widget-static-name">${wid || 'Widget'}</div><div class="sl-widget-static-desc">Simulation interactive — disponible en présentation</div></div>`;
+        slot.innerHTML = `<div class="sl-widget-static"><div class="sl-widget-static-name">${wid || 'Widget'}</div><div class="sl-widget-static-desc">Simulation interactive — disponible en présentation</div></div>`;
     });
 }
 
@@ -1533,8 +1534,8 @@ h1 { font-size: 1.3rem; border-bottom: 2px solid #6366f1; padding-bottom: 8px; m
 .summary { font-size: 0.8rem; color: #6b7280; margin-bottom: 20px; }
 </style>
 </head><body>
-<button class="print-btn no-print" onclick="window.print()">🖨 Imprimer</button>
-<h1>📝 Notes — ${titleEsc}</h1>
+<button class="print-btn no-print" onclick="window.print()">Imprimer</button>
+<h1>Notes : ${titleEsc}</h1>
 <div class="summary">${slides.length} slides · ${slidesWithNotes.filter(s => s.notes).length} avec notes · ${new Date().toLocaleDateString('fr-FR')}</div>
 ${slidesWithNotes.map(s => `
 <div class="slide-notes-card">
@@ -1811,8 +1812,8 @@ ${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n
     <div class="pv-toolbar">
         <span class="pv-toolbar-title" id="pv-title">${titleEsc}</span>
         <button class="pv-toolbar-btn" id="pv-btn-black" title="Écran noir (B)">◼ Noir</button>
-        <button class="pv-toolbar-btn" id="pv-btn-fullscreen" title="Plein écran (F)">⛶ Plein écran</button>
-        <button class="pv-toolbar-btn" id="pv-btn-exit" title="Quitter le mode présentateur">✕ Quitter</button>
+        <button class="pv-toolbar-btn" id="pv-btn-fullscreen" title="Plein écran (F)">Plein écran</button>
+        <button class="pv-toolbar-btn" id="pv-btn-exit" title="Quitter le mode présentateur">Quitter</button>
     </div>
     <div class="pv-slides-col" id="pv-slides-col">
         <div class="pv-current" id="pv-current-panel">
@@ -1832,7 +1833,7 @@ ${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n
     <div class="pv-splitter-v" id="pv-splitter-v" title="Glisser pour redimensionner"></div>
     <div class="pv-notes-col" id="pv-notes-col">
         <div class="pv-notes-header">
-            <span class="pv-notes-label">📝 Notes</span>
+            <span class="pv-notes-label">Notes</span>
             <div class="pv-font-controls">
                 <button class="pv-font-btn" id="pv-font-down" title="Réduire la taille (−)">−</button>
                 <span class="pv-font-size-label" id="pv-font-size-label">110%</span>
@@ -1847,7 +1848,7 @@ ${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n
             <div class="pv-progress-badge" id="pv-progress"></div>
             <div class="pv-nav-btns">
                 <button class="pv-nav-btn" id="pv-prev" title="Précédent (←)">◀</button>
-                <button class="pv-nav-btn" id="pv-next-btn" title="Suivant (→)">▶</button>
+                <button class="pv-nav-btn" id="pv-next-btn" title="Suivant (→)" aria-label="Suivant">&rarr;</button>
             </div>
         </div>
     </div>
@@ -1856,7 +1857,7 @@ ${widgetCss ? '/* ── Widgets OEI (shared/components/widgets.css) ── */\n
 
 <!-- Toggle bar -->
 <div id="pv-toggle-bar">
-    <button class="pvt-btn" id="pvt-presenter" title="Mode présentateur (P)">🎤 Présentateur</button>
+    <button class="pvt-btn" id="pvt-presenter" title="Mode présentateur (P)">Présentateur</button>
 </div>
 
 ${inlineWidgetScripts}

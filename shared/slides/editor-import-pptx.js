@@ -694,7 +694,7 @@ function _pptxParseGraphicFrame(frame, ctx, offsetX, offsetY) {
         || graphicData?.getElementsByTagName('cx:chart')[0];
     if (chartRef) {
         // Determine chart type hint from relationship
-        const chartLabel = '📊 Chart (non importé)';
+        const chartLabel = 'Graphique (non importé)';
         return {
             id: _pptxUid(), type: 'shape',
             x, y, w, h, z: 1,

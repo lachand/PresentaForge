@@ -110,7 +110,7 @@ function togglePipetteMode() {
     if (_pipetteMode) {
         btn?.classList.add('active');
         frame?.classList.add('pipette-mode');
-        _clipboardNotify('🎨 Pipette : cliquez sur un élément source', 'warning');
+        _clipboardNotify('Pipette : cliquez sur un élément source', 'warning');
     } else {
         btn?.classList.remove('active');
         frame?.classList.remove('pipette-mode');
@@ -125,12 +125,12 @@ function handlePipetteClick(elementId) {
     if (!_pipetteSource) {
         // Step 1: pick source style
         _pipetteSource = { ...(el.style || {}) };
-        _clipboardNotify('🎨 Style capturé — cliquez sur la cible', 'success');
+        _clipboardNotify('Style capturé : cliquez sur la cible', 'success');
         return true;
     } else {
         // Step 2: apply to target
         runtimeCanvas.updateData(el.id, { style: { ..._pipetteSource } });
-        _clipboardNotify('🎨 Style appliqué !', 'success');
+        _clipboardNotify('Style appliqué !', 'success');
         // Stay in pipette mode to allow multiple pastes (shift behavior)
         // Exit on next toggle or Escape
         _pipetteSource = null;

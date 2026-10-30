@@ -8,7 +8,7 @@ export function formatToolbarTimer(seconds) {
     const safe = Number.isFinite(seconds) ? Math.max(0, Math.trunc(seconds)) : 0;
     const m = String(Math.floor(safe / 60)).padStart(2, '0');
     const sec = String(safe % 60).padStart(2, '0');
-    return `⏱ ${m}:${sec}`;
+    return `${m}:${sec}`;
 }
 
 /**
@@ -95,13 +95,13 @@ export function initNormalModeToolbar(context = {}) {
 
         if (!roomId) {
             panel.innerHTML = `
-                <div style="font-size:1.5rem;margin-bottom:8px;">📱</div>
+                <div style="font-size:1.5rem;margin-bottom:8px;">${window.oeiIcon ? window.oeiIcon('smartphone') : ''}</div>
                 <div style="font-weight:700;font-size:1rem;margin-bottom:8px;">Clicker mobile</div>
                 <p style="font-size:0.82rem;color:#94a3b8;margin:0 0 16px">Pour utiliser votre téléphone comme télécommande, démarrez d'abord une <strong>Salle étudiants</strong> (bouton Salle dans la toolbar).</p>
                 <button id="sl-clicker-close" style="padding:8px 20px;border-radius:6px;background:#3b82f6;border:none;color:#fff;font-weight:600;cursor:pointer">Compris</button>`;
         } else {
             panel.innerHTML = `
-                <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">📱 Clicker mobile</div>
+                <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">${window.oeiIcon ? window.oeiIcon('smartphone') : ''} Clicker mobile</div>
                 <p style="font-size:0.78rem;color:#94a3b8;margin:0 0 12px">Scannez le QR code avec votre téléphone pour contrôler la présentation.</p>
                 <div id="sl-clicker-qr" style="margin:0 auto 12px;width:160px;height:160px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;"></div>
                 <a href="${remoteUrl}" target="_blank" style="display:block;font-size:0.72rem;color:#60a5fa;word-break:break-all;margin-bottom:14px;text-decoration:underline">Ouvrir le lien manuellement</a>

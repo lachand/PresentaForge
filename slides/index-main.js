@@ -84,7 +84,9 @@
             count: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="6" x2="21" y2="6"/><line x1="7" y1="12" x2="21" y2="12"/><line x1="7" y1="18" x2="21" y2="18"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
             draft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>',
         };
-        return icons[name] || icons.slide;
+        if (icons[name]) return icons[name];
+        // Autres pictogrammes : jeu Signature (shared/icons.js)
+        return (window.OEIIcons && window.OEIIcons.has(name)) ? window.OEIIcons.render(name) : icons.slide;
     }
 
     function themeColor(id) {
@@ -433,10 +435,10 @@
     }
 
     const TEMPLATES = [
-        { file: '../data/slides/templates/cours-magistral.json', name: 'Cours magistral', desc: 'Titre, chapitres, bullets, code + quiz', emoji: '📖', color: '#00508d' },
-        { file: '../data/slides/templates/tp-guide.json',        name: 'TP guidé',        desc: 'Étapes numérotées, code, quiz', emoji: '🔬', color: '#1a7a40' },
-        { file: '../data/slides/templates/projet.json',          name: 'Présentation projet', desc: 'Intro, plan, architecture, bilan', emoji: '🚀', color: '#5c35a8' },
-        { file: '../data/slides/templates/quiz-rapide.json',     name: 'Quiz rapide',     desc: '5 questions live en 5 slides', emoji: '❓', color: '#c0680a' },
+        { file: '../data/slides/templates/cours-magistral.json', name: 'Cours magistral', desc: 'Titre, chapitres, bullets, code + quiz', icon: 'book', color: '#00508d' },
+        { file: '../data/slides/templates/tp-guide.json',        name: 'TP guidé',        desc: 'Étapes numérotées, code, quiz', icon: 'flask', color: '#1a7a40' },
+        { file: '../data/slides/templates/projet.json',          name: 'Présentation projet', desc: 'Intro, plan, architecture, bilan', icon: 'rocket', color: '#5c35a8' },
+        { file: '../data/slides/templates/quiz-rapide.json',     name: 'Quiz rapide',     desc: '5 questions live en 5 slides', icon: 'help', color: '#c0680a' },
     ];
 
     function renderTemplates() {
@@ -444,7 +446,7 @@
         if (!grid) return;
         grid.innerHTML = TEMPLATES.map((t, idx) => `
             <button type="button" class="template-card" data-action="open-template" data-template-index="${idx}" aria-label="Démarrer avec le modèle : ${t.name}">
-                <div class="template-card-cover" style="background:${t.color};">${t.emoji}</div>
+                <div class="template-card-cover" style="background:${t.color};">${icon(t.icon)}</div>
                 <div class="template-card-body">
                     <div class="template-card-name">${t.name}</div>
                     <div class="template-card-desc">${t.desc}</div>
@@ -910,7 +912,7 @@
         }
         if (target) {
             const orig = target.textContent;
-            target.textContent = '✓ Copié !';
+            target.textContent = 'Copié !';
             setTimeout(() => { target.textContent = orig; }, 2000);
         }
     }
@@ -941,7 +943,7 @@
         }
         if (target) {
             const orig = target.textContent;
-            target.textContent = '✓ Copié !';
+            target.textContent = 'Copié !';
             setTimeout(() => { target.textContent = orig; }, 2000);
         }
     }
@@ -1036,7 +1038,7 @@
             <article class="pres-card"${draggableAttr}>
                 <div class="pres-cover" style="${escAttr(coverStyle)}">
                     ${selectBoxHtml}
-                    <button type="button" class="cover-kicker cover-kicker--btn ${p.public ? 'cover-kicker--public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public). Cliquer pour la rendre privée.' : 'Privée : seul vous la voyez. Cliquer pour la rendre visible des étudiants.'}" aria-pressed="${p.public ? 'true' : 'false'}">${p.public ? '👁 Visible étudiants' : '🔒 Privé'}</button>
+                    <button type="button" class="cover-kicker cover-kicker--btn ${p.public ? 'cover-kicker--public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public). Cliquer pour la rendre privée.' : 'Privée : seul vous la voyez. Cliquer pour la rendre visible des étudiants.'}" aria-pressed="${p.public ? 'true' : 'false'}">${p.public ? icon('eye') + ' Visible étudiants' : icon('lock') + ' Privé'}</button>
                     ${coverInner}
                 </div>
                 <div class="pres-content">
@@ -1050,9 +1052,9 @@
                     </div>
                     <div class="pres-actions">
                         <button type="button" class="card-btn primary" data-action="present-firebase" data-fb-idx="${idx}">${icon('play')} Présenter</button>
-                        <button type="button" class="card-btn" data-action="present-presenter-firebase" data-fb-idx="${idx}" title="Ouvrir directement en mode présentateur (notes, salle, minuteur)">🎤 Mode présentateur</button>
+                        <button type="button" class="card-btn" data-action="present-presenter-firebase" data-fb-idx="${idx}" title="Ouvrir directement en mode présentateur (notes, salle, minuteur)">${icon('presentation')} Mode présentateur</button>
                         <button type="button" class="card-btn" data-action="edit-firebase" data-fb-idx="${idx}">${icon('edit')} Éditer</button>
-                        ${p.public && uid ? `<button type="button" class="card-btn" data-action="copy-link-firebase" data-fb-uid="${esc(uid)}" data-fb-id="${esc(p.id)}" title="Copier le lien de partage">🔗 Lien</button>` : ''}
+                        ${p.public && uid ? `<button type="button" class="card-btn" data-action="copy-link-firebase" data-fb-uid="${esc(uid)}" data-fb-id="${esc(p.id)}" title="Copier le lien de partage">${icon('link')} Lien</button>` : ''}
                     </div>
                     <div class="pres-actions pres-actions-single">
                         <button type="button" class="card-btn warn" data-action="delete-firebase" data-fb-idx="${idx}">${icon('trash')} Supprimer</button>
@@ -1065,8 +1067,8 @@
             <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${escAttr(key)}">renommer</button>
             <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${escAttr(key)}">bandeau</button>
             <button type="button" class="firebase-course-rename-btn" data-action="export-course-firebase" data-course="${escAttr(key)}">exporter</button>
-            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : la liste des présentations de ce cours rendues visibles des étudiants, chacun choisit celle à consulter">🔗 Lien Moodle du catalogue</button>` : ''}
-            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-room-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : les étudiants rejoignent toujours la même salle en direct, quelle que soit la présentation projetée pour ce cours">🚪 Lien de la salle en direct</button>` : ''}
+            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : la liste des présentations de ce cours rendues visibles des étudiants, chacun choisit celle à consulter">${icon('link')} Lien Moodle du catalogue</button>` : ''}
+            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-room-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : les étudiants rejoignent toujours la même salle en direct, quelle que soit la présentation projetée pour ce cours">${icon('radio')} Lien de la salle en direct</button>` : ''}
         ` : '';
 
         // Drill-down actif : en-tête « Retour » + grille à plat des seules présentations de
@@ -1413,7 +1415,7 @@
             const url = _buildShareUrl(uid, id);
             navigator.clipboard?.writeText(url).then(() => {
                 const orig = target.textContent;
-                target.textContent = '✓ Copié !';
+                target.textContent = 'Copié !';
                 setTimeout(() => { target.textContent = orig; }, 2000);
             }).catch(() => OEIDialog.prompt('Copiez ce lien (Ctrl+C) :', { title: 'Lien de partage', value: url, confirmLabel: 'Fermer' }));
         }

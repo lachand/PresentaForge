@@ -135,7 +135,7 @@ export function updateRoomPanelRuntime(context = {}) {
         } else {
             const sorted = [...students].sort((a, b) => (b.score || 0) - (a.score || 0));
             const hasScores = sorted.some(s => s.score > 0);
-            const medals = ['🥇','🥈','🥉'];
+            const medals = ['1.', '2.', '3.'];
             const summary = el('div', { className: 'rm-students-summary' });
             const dot = el('span');
             dot.innerHTML = UI_ICONS.dot;

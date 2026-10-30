@@ -1,8 +1,8 @@
 class DependabotAlertWidget {
     static ALERTS = [
         {
-            severity: 'critical', severityLabel: 'Critique', severityColor: '#dc2626',
-            ecosystem: 'npm', ecosystemIcon: '📦', package: 'minimist',
+            severity: 'critical', severityLabel: 'Critique', severityColor: 'var(--critique)',
+            ecosystem: 'npm', ecosystemIcon: 'package', package: 'minimist',
             affected: '< 1.2.6', fixed: '1.2.6',
             cve: 'CVE-2021-44906', cvss: 9.8, cvssLabel: 'Critique',
             title: 'Prototype Pollution in minimist',
@@ -10,11 +10,11 @@ class DependabotAlertWidget {
             impact: 'Exécution de code arbitraire, contournement de la logique applicative, élévation de privilèges.',
             prTitle: 'Bump minimist from 1.2.5 to 1.2.6',
             prFiles: 'package.json, package-lock.json',
-            prChecks: ['✅ Tests : 142 passed', '✅ Security scan : clean', '✅ Lint : no issues'],
+            prChecks: [['ok', 'Tests : 142 passed'], ['ok', 'Security scan : clean'], ['ok', 'Lint : no issues']],
         },
         {
-            severity: 'high', severityLabel: 'Élevé', severityColor: '#ea580c',
-            ecosystem: 'npm', ecosystemIcon: '📦', package: 'lodash',
+            severity: 'high', severityLabel: 'Élevé', severityColor: 'var(--attention)',
+            ecosystem: 'npm', ecosystemIcon: 'package', package: 'lodash',
             affected: '< 4.17.21', fixed: '4.17.21',
             cve: 'CVE-2021-23337', cvss: 7.2, cvssLabel: 'Élevé',
             title: 'Command Injection via _.template()',
@@ -22,11 +22,11 @@ class DependabotAlertWidget {
             impact: 'Exécution de code côté serveur si des données utilisateur atteignent _.template().',
             prTitle: 'Bump lodash from 4.17.20 to 4.17.21',
             prFiles: 'package.json, package-lock.json',
-            prChecks: ['✅ Tests : 318 passed', '✅ Lint : passed', '⚠ 1 minor deprecation warning'],
+            prChecks: [['ok', 'Tests : 318 passed'], ['ok', 'Lint : passed'], ['warning', '1 minor deprecation warning']],
         },
         {
-            severity: 'medium', severityLabel: 'Moyen', severityColor: '#d97706',
-            ecosystem: 'pip', ecosystemIcon: '🐍', package: 'Pillow',
+            severity: 'medium', severityLabel: 'Moyen', severityColor: 'var(--attention)',
+            ecosystem: 'pip', ecosystemIcon: 'code', package: 'Pillow',
             affected: '< 10.0.1', fixed: '10.0.1',
             cve: 'CVE-2023-44271', cvss: 5.5, cvssLabel: 'Moyen',
             title: 'Uncontrolled Resource Consumption (DoS)',
@@ -34,7 +34,7 @@ class DependabotAlertWidget {
             impact: 'Un attaquant peut crasher votre service en envoyant une image TIFF spécialement forgée.',
             prTitle: 'Bump Pillow from 9.5.0 to 10.0.1',
             prFiles: 'requirements.txt',
-            prChecks: ['✅ Tests : 94 passed', '⚠ 2 breaking changes dans le changelog (voir CHANGES.rst)'],
+            prChecks: [['ok', 'Tests : 94 passed'], ['warning', '2 breaking changes dans le changelog (voir CHANGES.rst)']],
         },
     ];
 
@@ -55,10 +55,10 @@ class DependabotAlertWidget {
                 <div class="dep-card widget-fit-body">
                     <div class="dep-card-header">
                         <div class="dep-severity-badge" style="background:${a.severityColor}18;color:${a.severityColor};border:1px solid ${a.severityColor}50">
-                            ⚠ Sévérité ${a.severityLabel}
+                            ${OEIIcons.render('warning')} Sévérité ${a.severityLabel}
                         </div>
                         <div class="dep-card-title">${a.title}</div>
-                        <div class="dep-card-sub">${a.ecosystemIcon} ${a.ecosystem} · <strong>${a.package}</strong> · versions affectées : <code>${a.affected}</code></div>
+                        <div class="dep-card-sub">${OEIIcons.render(a.ecosystemIcon)} ${a.ecosystem} · <strong>${a.package}</strong> · versions affectées : <code>${a.affected}</code></div>
                     </div>
                     <div class="dep-card-body">
                         <div class="dep-meta">
@@ -77,9 +77,9 @@ class DependabotAlertWidget {
                         </div>
                         <p class="dep-desc">${a.desc}</p>
                         <div class="dep-actions">
-                            <button class="dep-action-btn ${currentAction === 'merge' ? 'active' : ''}" data-action="merge">🔀 Voir la PR Dependabot</button>
-                            <button class="dep-action-btn ${currentAction === 'dismiss' ? 'active' : ''}" data-action="dismiss">🚫 Ignorer l'alerte</button>
-                            <button class="dep-action-btn ${currentAction === 'cve' ? 'active' : ''}" data-action="cve">📋 Détails CVE</button>
+                            <button class="dep-action-btn ${currentAction === 'merge' ? 'active' : ''}" data-action="merge">${OEIIcons.render('git-pull-request')} Voir la PR Dependabot</button>
+                            <button class="dep-action-btn ${currentAction === 'dismiss' ? 'active' : ''}" data-action="dismiss">${OEIIcons.render('ban')} Ignorer l'alerte</button>
+                            <button class="dep-action-btn ${currentAction === 'cve' ? 'active' : ''}" data-action="cve">${OEIIcons.render('clipboard')} Détails CVE</button>
                         </div>
                         <div class="dep-result-panel">
                             ${currentAction === 'merge' ? DependabotAlertWidget.renderMergePanel(a) : ''}
@@ -111,36 +111,36 @@ class DependabotAlertWidget {
 
     static renderMergePanel(a) {
         return `<div class="dep-panel dep-panel-merge">
-            <div class="dep-panel-title">🔀 PR créée automatiquement par Dependabot</div>
+            <div class="dep-panel-title">${OEIIcons.render('git-pull-request')} PR créée automatiquement par Dependabot</div>
             <div class="dep-pr-card">
                 <div class="dep-pr-header">
-                    <span class="dep-pr-icon">🟢</span>
+                    <span class="dep-pr-icon">${OEIIcons.render('ok', { label: 'Prête' })}</span>
                     <div>
                         <div class="dep-pr-title">${a.prTitle}</div>
                         <div class="dep-pr-sub">by dependabot[bot] · Fichiers : ${a.prFiles}</div>
                     </div>
                 </div>
-                <div class="dep-pr-checks">${a.prChecks.map(c => `<div class="dep-pr-check">${c}</div>`).join('')}</div>
+                <div class="dep-pr-checks">${a.prChecks.map(c => `<div class="dep-pr-check">${OEIIcons.render(c[0])} ${c[1]}</div>`).join('')}</div>
             </div>
-            <div class="dep-panel-tip">✅ <strong>Bonne pratique :</strong> Lisez le changelog avant de merger. Si la mise à jour est majeure, testez localement et vérifiez les breaking changes signalés.</div>
+            <div class="dep-panel-tip">${OEIIcons.render('ok')} <strong>Bonne pratique :</strong> Lisez le changelog avant de merger. Si la mise à jour est majeure, testez localement et vérifiez les breaking changes signalés.</div>
         </div>`;
     }
 
     static renderDismissPanel(a) {
         return `<div class="dep-panel dep-panel-dismiss">
-            <div class="dep-panel-title">⚠️ Ignorer cette alerte — êtes-vous sûr ?</div>
-            <p style="font-size:0.8rem;margin:0;color:#374151">GitHub vous demandera une justification. Voici les 3 options :</p>
+            <div class="dep-panel-title">${OEIIcons.render('warning')} Ignorer cette alerte : êtes-vous sûr ?</div>
+            <p style="font-size:0.8rem;margin:0;color:var(--ink)">GitHub vous demandera une justification. Voici les 3 options :</p>
             <div class="dep-dismiss-options">
                 <div class="dep-dismiss-opt">
-                    <span>🔍</span>
+                    <span>${OEIIcons.render('search')}</span>
                     <div><strong>Fausse détection</strong> — le code vulnérable n'est pas accessible dans votre contexte d'exécution. Justifiable et acceptable si vous avez analysé l'impact réel.</div>
                 </div>
                 <div class="dep-dismiss-opt dep-dismiss-opt-warn">
-                    <span>⏳</span>
+                    <span>${OEIIcons.render('hourglass')}</span>
                     <div><strong>Reporter</strong> — vous avez conscience de la vulnérabilité et planifiez une correction. Risqué si la CVE est exploitée activement (CVSS ${a.cvss}/10).</div>
                 </div>
                 <div class="dep-dismiss-opt dep-dismiss-opt-danger">
-                    <span>❌</span>
+                    <span>${OEIIcons.render('ko')}</span>
                     <div><strong>Ignorer sans raison valable</strong> — avec un score CVSS de ${a.cvss}/10, cette vulnérabilité représente un risque réel. Fortement déconseillé.</div>
                 </div>
             </div>
@@ -149,7 +149,7 @@ class DependabotAlertWidget {
 
     static renderCVEPanel(a) {
         return `<div class="dep-panel dep-panel-cve">
-            <div class="dep-panel-title">📋 Fiche ${a.cve}</div>
+            <div class="dep-panel-title">${OEIIcons.render('clipboard')} Fiche ${a.cve}</div>
             <table class="dep-cve-table">
                 <tr><td>Identifiant</td><td><code>${a.cve}</code></td></tr>
                 <tr><td>Score CVSS v3</td><td><span class="dep-cvss" style="background:${a.severityColor}">${a.cvss} / 10 — ${a.cvssLabel}</span></td></tr>

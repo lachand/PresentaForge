@@ -329,18 +329,18 @@ class HypothesisTestingPage extends SimulationPage {
         const shadeRect = (from, to) => {
             const x1 = xToPx(Math.max(xMin, from));
             const x2 = xToPx(Math.min(xMax, to));
-            html += `<rect x="${Math.min(x1, x2)}" y="${padding.top}" width="${Math.abs(x2 - x1)}" height="${plotHeight}" fill="#fee2e2" opacity="0.75"></rect>`;
+            html += `<rect x="${Math.min(x1, x2)}" y="${padding.top}" width="${Math.abs(x2 - x1)}" height="${plotHeight}" fill="var(--critique-fond)" opacity="0.75"></rect>`;
         };
         if (critical.left != null) shadeRect(xMin, critical.left);
         if (critical.right != null) shadeRect(critical.right, xMax);
 
         if (critical.left != null) {
             const x = xToPx(critical.left);
-            html += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="#b91c1c" stroke-dasharray="4 3"></line>`;
+            html += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="var(--critique)" stroke-dasharray="4 3"></line>`;
         }
         if (critical.right != null) {
             const x = xToPx(critical.right);
-            html += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="#b91c1c" stroke-dasharray="4 3"></line>`;
+            html += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="var(--critique)" stroke-dasharray="4 3"></line>`;
         }
 
         let path = '';
@@ -356,8 +356,8 @@ class HypothesisTestingPage extends SimulationPage {
 
         if (last) {
             const xObs = xToPx(Math.max(xMin, Math.min(xMax, last.z)));
-            html += `<line x1="${xObs}" y1="${padding.top}" x2="${xObs}" y2="${height - padding.bottom}" stroke="#0f766e" stroke-width="2"></line>`;
-            html += `<text x="${xObs + 6}" y="${padding.top + 14}" font-size="11" fill="#0f766e">z observe</text>`;
+            html += `<line x1="${xObs}" y1="${padding.top}" x2="${xObs}" y2="${height - padding.bottom}" stroke="var(--cote)" stroke-width="2"></line>`;
+            html += `<text x="${xObs + 6}" y="${padding.top + 14}" font-size="11" fill="var(--cote)">z observe</text>`;
         }
 
         [-4, -3, -2, -1, 0, 1, 2, 3, 4].forEach((tick) => {

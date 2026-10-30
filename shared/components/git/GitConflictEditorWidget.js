@@ -27,7 +27,7 @@ class GitConflictEditorWidget {
             label: 'utils.py — conflit lors d\'un rebase',
             filename: 'utils.py',
             context: 'rebase',
-            contextNote: '⚡ Contexte rebase — HEAD = commit de main, "theirs" = votre commit rejoué. Attention : dans un rebase, la terminologie est inversée par rapport à un merge !',
+            contextNote: 'Contexte rebase : HEAD = commit de main, "theirs" = votre commit rejoué. Attention : dans un rebase, la terminologie est inversée par rapport à un merge !',
             conflicts: [
                 {
                     id: 'format-date',
@@ -137,7 +137,7 @@ class GitConflictEditorWidget {
             return `
 <div class="gcew-conflict-block" data-conflict="${idx}">
     <div class="gcew-conflict-header${isResolved ? ' resolved' : ''}">
-        ${isResolved ? '✓ Conflit résolu' : '⚠ Conflit à résoudre'}
+        ${isResolved ? OEIIcons.render('check') + ' Conflit résolu' : OEIIcons.render('warning') + ' Conflit à résoudre'}
         <span class="gcew-conflict-id">section ${idx + 1}/${getScenario().conflicts.length}</span>
     </div>
     <div class="gcew-raw-view">${linesHtml}</div>
@@ -169,7 +169,7 @@ class GitConflictEditorWidget {
             <select class="gcew-select" id="gcew-scenario">${scenarioOptions}</select>
             <span class="gcew-filename">${sc.filename}</span>
         </div>
-        ${sc.contextNote ? `<div style="background:#fefce8;border:1.5px solid #fbbf24;border-radius:var(--radius-sm);padding:0.55rem 0.85rem;margin-bottom:0.75rem;font-size:0.8rem;color:#92400e;line-height:1.4">${sc.contextNote}</div>` : ''}
+        ${sc.contextNote ? `<div style="background:var(--attention-fond);border:1.5px solid var(--attention);border-radius:var(--radius-sm);padding:0.55rem 0.85rem;margin-bottom:0.75rem;font-size:0.8rem;color:var(--attention);line-height:1.4">${sc.contextNote}</div>` : ''}
     </div>
 
     <div class="widget-fit-body">

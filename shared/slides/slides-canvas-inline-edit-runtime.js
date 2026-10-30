@@ -66,7 +66,7 @@
             <button class="cel-rich-btn" data-cmd="foreColor" data-value="#22c55e" title="Couleur vert" style="color:#22c55e;">A</button>
             <span style="width:1px;height:18px;background:var(--border,#2d3347);margin:0 2px;"></span>
             <button class="cel-rich-btn" data-cmd="createLink" title="Insérer un lien"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L10 5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 1 0 7.07 7.07L14 19"/></svg></button>
-            <button class="cel-rich-btn" data-cmd="removeFormat" title="Effacer mise en forme">✕</button>
+            <button class="cel-rich-btn" data-cmd="removeFormat" title="Effacer mise en forme" aria-label="Effacer la mise en forme">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
         `;
         toolbar.addEventListener('mousedown', e => {
             e.preventDefault(); // Don't steal focus from editable

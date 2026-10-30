@@ -70,7 +70,7 @@
         function renderPvaLeaderboardHtml(students) {
             var sorted = students.slice().sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
             var rows = sorted.map(function(s, i) {
-                var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
+                var medal = (i + 1) + '.';
                 var acc = (s.quizCount || 0) > 0 ? ' · ' + Math.round((s.quizCorrect || 0) / s.quizCount * 100) + '% quiz' : '';
                 return '<div class="pva-row"><span class="pva-rank">' + _pvaEsc(medal) + '</span>'
                     + '<span class="pva-name">' + _pvaEsc(s.pseudo || 'Anonyme') + '</span>'

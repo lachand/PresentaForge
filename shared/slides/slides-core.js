@@ -938,7 +938,7 @@ class SlidesRenderer {
             } catch (_) {}
         }
         const safeWid = SlidesRenderer.esc(wid || 'Widget');
-        return `<div class="sl-widget-static"><div class="sl-widget-static-icon">⚙️</div><div class="sl-widget-static-name">${safeWid}</div><div class="sl-widget-static-desc">Simulation interactive — disponible en présentation</div></div>`;
+        return `<div class="sl-widget-static"><div class="sl-widget-static-name">${safeWid}</div><div class="sl-widget-static-desc">Simulation interactive — disponible en présentation</div></div>`;
     }
 
     /**

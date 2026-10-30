@@ -36,7 +36,7 @@ function openSearchDialog() {
             <button id="btn-search-next" style="padding:4px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--primary);color:white;cursor:pointer;font-size:0.7rem">Suivant</button>
             <button id="btn-replace-one" style="padding:4px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:0.7rem">Remplacer</button>
             <button id="btn-replace-all" style="padding:4px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:0.7rem">Tout</button>
-            <button id="btn-search-close" style="padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:1rem">✕</button>`;
+            <button id="btn-search-close" style="padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:1rem" aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>`;
         document.body.appendChild(dlg);
         document.getElementById('btn-search-close').addEventListener('click', () => dlg.style.display = 'none');
         document.getElementById('btn-search-next').addEventListener('click', searchNext);

@@ -38,6 +38,7 @@ const _editorThemeController = window.OEIThemeRuntime?.createController
         defaultMode: 'light',
         target: 'data-theme',
         rootElement: document.documentElement,
+        cycleContrast: true,
     })
     : null;
 const _readTheme = () => {
@@ -72,7 +73,7 @@ function toggleEditorTheme() {
     updateThemeToggleIcon(next);
 }
 function updateThemeToggleIcon(theme) {
-    document.getElementById('icon-sun').style.display = theme === 'dark' ? 'block' : 'none';
+    document.getElementById('icon-sun').style.display = theme !== 'light' ? 'block' : 'none';
     document.getElementById('icon-moon').style.display = theme === 'light' ? 'block' : 'none';
 }
 
@@ -162,8 +163,19 @@ function linkFormLabels(container) {
         if (!control.id) control.id = `oei-auto-label-${++_autoLabelIdCounter}`;
         label.setAttribute('for', control.id);
     });
+    syncIconButtonTitles(container);
 }
 window.OEILinkFormLabels = linkFormLabels;
+
+/** Un bouton icône seul porte un `aria-label` mais pas d'infobulle : on recopie le nom accessible dans `title`
+ *  pour que le survol (et le toucher long) l'affiche aussi. Ne touche pas aux boutons qui ont déjà un `title`. */
+function syncIconButtonTitles(container) {
+    if (!container) return;
+    container.querySelectorAll('button[aria-label]:not([title]), [role="button"][aria-label]:not([title])').forEach(btn => {
+        const label = btn.getAttribute('aria-label');
+        if (label) btn.setAttribute('title', label);
+    });
+}
 
 
 const _editorAiPipeline = window.OEIEditorAIPipeline || null;

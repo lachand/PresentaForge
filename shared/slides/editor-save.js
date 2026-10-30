@@ -428,7 +428,7 @@ async function openRevisionHistory() {
         return fallback;
     };
     const icons = {
-        close: getIcon('close', '✕'),
+        close: getIcon('close', ''),
         save: getIcon('save'),
         open: getIcon('open'),
         auto: getIcon('clock'),

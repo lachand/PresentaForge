@@ -5,7 +5,7 @@
  * {
  *   "sections": [
  *     {
- *       "emoji": "📚",
+ *       "icon": "definition",
  *       "title": "Définition",
  *       "content": [
  *         { "type": "paragraph", "text": "..." },
@@ -28,9 +28,14 @@ class CourseRenderer {
         this.cacheSignature = '';
     }
 
-    /** HTML riche assaini (formatage de cours). Repli : tout échapper. */
+    /**
+     * HTML riche assaini (formatage de cours). Repli : tout échapper.
+     * Les jetons {{icon:nom}} sont résolus APRES l'assainissement : le sanitizer interdit <svg>, le jeton est la seule
+     * voie d'insertion d'une icône dans un texte libre.
+     */
     safe(html) {
-        return (typeof HtmlSafe !== 'undefined') ? HtmlSafe.rich(html) : this.escapeHtml(html);
+        const clean = (typeof HtmlSafe !== 'undefined') ? HtmlSafe.rich(html) : this.escapeHtml(html);
+        return (typeof OEIIcons !== 'undefined') ? OEIIcons.renderText(clean) : clean;
     }
 
     /** URL au schéma vérifié, échappée pour un attribut. */
@@ -54,7 +59,7 @@ class CourseRenderer {
 
         if (this.collapsible) {
             html += '<details class="course-section"' + (this.open ? ' open' : '') + '>';
-            html += '<summary class="course-title">📖 Cours : ' + this.escapeHtml(this.courseData.title || 'Contenu') + '</summary>';
+            html += '<summary class="course-title">' + this.renderIcon('book-open', true) + 'Cours : ' + this.escapeHtml(this.courseData.title || 'Contenu') + '</summary>';
             html += '<div>';
         } else {
             html += '<div class="course-section course-section--open">';
@@ -228,6 +233,18 @@ class CourseRenderer {
     }
 
     /**
+     * Icône SVG du jeu Signature (shared/icons.js). Chaîne vide si le registre n'est pas chargé ou le nom inconnu.
+     * @param {string} name - Nom de glyphe ou alias sémantique
+     * @param {boolean} [withGap] - Ajoute un espace après l'icône (titre de bloc)
+     * @returns {string}
+     */
+    renderIcon(name, withGap = false) {
+        if (!name || typeof OEIIcons === 'undefined') return '';
+        const svg = OEIIcons.render(name);
+        return svg && withGap ? `${svg} ` : svg;
+    }
+
+    /**
      * Génère le HTML d'une section
      * @param {Object} section - Données de la section
      * @returns {string} HTML de la section
@@ -236,12 +253,12 @@ class CourseRenderer {
         if (!section || typeof section !== 'object') return '';
         let html = '';
 
-        // Titre de la section avec emoji
+        // Titre de la section, avec son icône (nom de glyphe ou alias de shared/icons.js)
         if (section.title) {
-            const emoji = section.emoji || '';
+            const icon = this.renderIcon(section.icon);
             // h2 : le titre de page est le h1 ; l'ancre alimente le plan de la page (ConceptPage.buildPageToc).
             html += `<h2 class="course-heading" id="${this.escapeHtml(this.idPrefix)}-s${sectionIndex}">`;
-            if (emoji) html += `<span class="course-heading-emoji" aria-hidden="true">${emoji}</span> `;
+            if (icon) html += `<span class="course-heading-icon">${icon}</span> `;
             html += `${section.title}</h2>`;
         }
 
@@ -270,8 +287,8 @@ class CourseRenderer {
 
             case 'heading': {
                 const level = Math.min(6, Math.max(1, parseInt(item.level, 10) || 3));
-                const style = level === 3 ? 'style="color:var(--primary);margin-top:1.5rem;"' : '';
-                return `<h${level} ${style}>${this.safe(item.text)}</h${level}>`;
+                const cls = level === 3 ? ' class="course-subheading"' : '';
+                return `<h${level}${cls}>${this.safe(item.text)}</h${level}>`;
             }
 
             case 'code':
@@ -296,7 +313,7 @@ class CourseRenderer {
      */
     renderList(item) {
         const tag = item.ordered ? 'ol' : 'ul';
-        let html = `<${tag} style="text-align:left; margin-bottom:1.2rem; line-height:1.8; padding-left: 3em;">`;
+        let html = `<${tag} class="course-list">`;
 
         item.items.forEach(listItem => {
             html += `<li>${this.safe(listItem)}</li>`;
@@ -322,10 +339,10 @@ class CourseRenderer {
      * @returns {string} HTML de l'exemple
      */
     renderExample(item) {
-        let html = '<div class="example-box" style="background:var(--bg);padding:1rem;border-left:3px solid var(--primary);margin:1rem 0;">';
+        let html = '<div class="example-box">';
 
         if (item.title) {
-            html += `<strong>${item.title}</strong><br>`;
+            html += `<strong>${this.safe(item.title)}</strong><br>`;
         }
 
         html += this.safe(item.content);

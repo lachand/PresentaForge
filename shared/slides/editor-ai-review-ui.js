@@ -717,7 +717,7 @@ function _openAIPromptTuningModal() {
                     <h3 class="ai-tuning-title">Réglages IA</h3>
                     <p class="ai-tuning-subtitle">Tune les 5 passes (plan, placeholders visuels, JSON, base64, validation).</p>
                 </div>
-                <button type="button" class="ai-tuning-close" data-ai-close>✕</button>
+                <button type="button" class="ai-tuning-close" data-ai-close aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </div>
             <div class="ai-tuning-grid">
                 <div class="ai-tuning-field">

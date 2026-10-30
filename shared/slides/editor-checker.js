@@ -395,7 +395,7 @@ function showCheckerResults(findings) {
     modal.innerHTML = `<div class="checker-modal-panel">
         <div class="checker-modal-head">
             <h3 class="checker-modal-title">Vérification de la présentation</h3>
-            <button id="checker-close" class="checker-close-btn">✕</button>
+            <button id="checker-close" class="checker-close-btn" aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
         </div>
         <div class="checker-toolbar">
             <div class="checker-stats">

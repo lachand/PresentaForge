@@ -377,7 +377,7 @@ class StructureWidget {
                     <input type="text" class="stw-input" placeholder="Valeur…" value="">
                     <button class="stw-btn stw-btn-add">${addLabel}</button>
                     <button class="stw-btn stw-btn-danger stw-btn-remove">${removeLabel}</button>
-                    <button class="stw-btn stw-btn-secondary stw-btn-reset" aria-label="Réinitialiser">↺</button>
+                    <button class="stw-btn stw-btn-secondary stw-btn-reset" aria-label="Réinitialiser">${OEIIcons.render('refresh')}</button>
                 </div>
             </div>
             <div class="stw-viz widget-fit-body">
@@ -436,7 +436,7 @@ class StructureWidget {
         const doAdd = () => {
             const val = inp.value.trim() || String(Math.floor(Math.random() * 99) + 1);
             if (this.items.length >= this.maxItems) {
-                this.lastAction = `⚠️ Structure pleine (max ${this.maxItems})`;
+                this.lastAction = `Attention : structure pleine (max ${this.maxItems})`;
                 this._render(); return;
             }
             const trace = window.OEITrace.buildAddTrace(this.items, val, { structureType: this.structureType, maxElements: this.maxItems });
@@ -450,7 +450,7 @@ class StructureWidget {
         };
         const doRemove = () => {
             if (this.items.length === 0) {
-                this.lastAction = '⚠️ Structure vide';
+                this.lastAction = 'Attention : structure vide';
                 this._render(); return;
             }
             const trace = window.OEITrace.buildRemoveTrace(this.items, { structureType: this.structureType });

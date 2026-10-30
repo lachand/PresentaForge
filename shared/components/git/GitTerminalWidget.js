@@ -198,7 +198,7 @@ ${outLines}`;
         </div>
         <div class="gtw-terminal-body" id="gtw-body">
             ${currentStep === 0
-                ? '<span style="color:#475569;font-size:0.8rem;font-family:var(--font-mono)">Appuyez sur "Étape suivante" pour démarrer le scénario...</span>'
+                ? '<span style="color:var(--ink);font-size:0.8rem;font-family:var(--font-mono)">Appuyez sur "Étape suivante" pour démarrer le scénario...</span>'
                 : terminalLines}
         </div>
     </div>

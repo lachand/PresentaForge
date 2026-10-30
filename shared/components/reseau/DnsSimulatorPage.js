@@ -597,7 +597,7 @@ class DnsWidget {
         ${['A','AAAA','CNAME','MX','NS'].map(t => `<button class="dnw-type${t==='A'?' active':''}" data-type="${t}">${t}</button>`).join('')}
       </div>
       <button class="dnw-btn" data-resolve>Résoudre</button>
-      <button class="dnw-btn sec" data-reset-btn>↺</button>
+      <button class="dnw-btn sec" data-reset-btn>${OEIIcons.render('refresh')}</button>
     </div>
     <div class="dnw-chips">
       ${domains.map(d => `<button class="dnw-chip" data-chip="${d}">${d}</button>`).join('')}
@@ -606,11 +606,11 @@ class DnsWidget {
   <div class="widget-fit-body">
     <div class="dnw-section-lbl">Serveurs</div>
     <div class="dnw-diagram">
-      <div class="dnw-srv" data-srv="client"><div class="dnw-srv-icon">💻</div>CLIENT<div class="dnw-srv-name">Votre machine</div></div>
-      <div class="dnw-srv" data-srv="resolver"><div class="dnw-srv-icon">🔄</div>RÉSOLVEUR<div class="dnw-srv-name">FAI / local</div></div>
-      <div class="dnw-srv" data-srv="root"><div class="dnw-srv-icon">🌍</div>RACINE<div class="dnw-srv-name">Root (.)</div></div>
-      <div class="dnw-srv" data-srv="tld"><div class="dnw-srv-icon">🏷️</div>TLD<div class="dnw-srv-name" data-tld-lbl>.com/.org…</div></div>
-      <div class="dnw-srv" data-srv="auth"><div class="dnw-srv-icon">📋</div>AUTORITAIRE<div class="dnw-srv-name" data-auth-lbl>domaine</div></div>
+      <div class="dnw-srv" data-srv="client"><div class="dnw-srv-icon">${OEIIcons.render('laptop')}</div>CLIENT<div class="dnw-srv-name">Votre machine</div></div>
+      <div class="dnw-srv" data-srv="resolver"><div class="dnw-srv-icon">${OEIIcons.render('refresh')}</div>RÉSOLVEUR<div class="dnw-srv-name">FAI / local</div></div>
+      <div class="dnw-srv" data-srv="root"><div class="dnw-srv-icon">${OEIIcons.render('globe')}</div>RACINE<div class="dnw-srv-name">Root (.)</div></div>
+      <div class="dnw-srv" data-srv="tld"><div class="dnw-srv-icon">${OEIIcons.render('tag')}</div>TLD<div class="dnw-srv-name" data-tld-lbl>.com/.org…</div></div>
+      <div class="dnw-srv" data-srv="auth"><div class="dnw-srv-icon">${OEIIcons.render('clipboard')}</div>AUTORITAIRE<div class="dnw-srv-name" data-auth-lbl>domaine</div></div>
     </div>
     <div class="dnw-feedback" data-fb></div>
     <div class="dnw-section-lbl">Étapes de résolution</div>

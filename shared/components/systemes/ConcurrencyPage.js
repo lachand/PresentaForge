@@ -352,8 +352,8 @@ class ConcurrencyWidget {
     init() {
         this.root.innerHTML = `<div class="cnw widget-fit">
   <div class="cnw-tabs widget-fit-header">
-    <button class="cnw-tab active" data-tab="mutex">🔒 Mutex</button>
-    <button class="cnw-tab" data-tab="deadlock">⛔ Deadlock</button>
+    <button class="cnw-tab active" data-tab="mutex">${OEIIcons.render('lock')} Mutex</button>
+    <button class="cnw-tab" data-tab="deadlock">${OEIIcons.render('ban')} Deadlock</button>
   </div>
   <div class="widget-fit-body">
 
@@ -363,8 +363,8 @@ class ConcurrencyWidget {
       <label class="cnw-opt"><input type="checkbox" data-mx-lock checked> Avec mutex</label>
       <div class="cnw-btns">
         <button class="cnw-btn" data-mx-step>Étape</button>
-        <button class="cnw-btn primary" data-mx-run>▶ Auto</button>
-        <button class="cnw-btn" data-mx-reset>↺ Reset</button>
+        <button class="cnw-btn primary" data-mx-run>${OEIIcons.render('play')} Auto</button>
+        <button class="cnw-btn" data-mx-reset>${OEIIcons.render('refresh')} Reset</button>
       </div>
     </div>
     <div class="widget-fit-body">
@@ -401,8 +401,8 @@ class ConcurrencyWidget {
       <label class="cnw-opt"><input type="checkbox" data-dl-order> Ordre global (T1 et T2 acquièrent R1 avant R2)</label>
       <div class="cnw-btns">
         <button class="cnw-btn" data-dl-step>Étape</button>
-        <button class="cnw-btn primary" data-dl-run>▶ Auto</button>
-        <button class="cnw-btn" data-dl-reset>↺ Reset</button>
+        <button class="cnw-btn primary" data-dl-run>${OEIIcons.render('play')} Auto</button>
+        <button class="cnw-btn" data-dl-reset>${OEIIcons.render('refresh')} Reset</button>
       </div>
     </div>
     <div class="widget-fit-body">
@@ -468,8 +468,8 @@ class ConcurrencyWidget {
 
     _stopAuto() {
         if (this.autoTimer) { clearInterval(this.autoTimer); this.autoTimer = null; }
-        this._q('[data-mx-run]').textContent = '▶ Auto';
-        this._q('[data-dl-run]').textContent = '▶ Auto';
+        OEIIcons.setLabel(this._q('[data-mx-run]'), 'play', 'Auto');
+        OEIIcons.setLabel(this._q('[data-dl-run]'), 'play', 'Auto');
     }
 
     // ── Mutex ──
@@ -523,7 +523,7 @@ class ConcurrencyWidget {
 
     _toggleMutexAuto() {
         if (this.autoTimer) { this._stopAuto(); return; }
-        this._q('[data-mx-run]').textContent = '⏸ Pause';
+        OEIIcons.setLabel(this._q('[data-mx-run]'), 'pause', 'Pause');
         this.autoTimer = setInterval(() => {
             if (this.mutex.done) { this._stopAuto(); return; }
             this._stepMutex();
@@ -598,7 +598,7 @@ class ConcurrencyWidget {
 
     _toggleDeadlockAuto() {
         if (this.autoTimer) { this._stopAuto(); return; }
-        this._q('[data-dl-run]').textContent = '⏸ Pause';
+        OEIIcons.setLabel(this._q('[data-dl-run]'), 'pause', 'Pause');
         this.autoTimer = setInterval(() => {
             if (this.deadlock.done || this.deadlock.deadlocked) { this._stopAuto(); return; }
             this._stepDeadlock();
@@ -623,8 +623,8 @@ class ConcurrencyWidget {
             this._q(`[data-dl-${lc}-order]`).textContent = `${t.order[0]} → ${t.order[1]}`;
         });
         const st = this._q('[data-dl-status]');
-        if (this.deadlock.deadlocked) { st.className = 'cnw-status bad'; st.textContent = '⛔ Deadlock détecté'; }
-        else if (this.deadlock.done) { st.className = 'cnw-status ok'; st.textContent = '✓ Terminé sans deadlock'; }
+        if (this.deadlock.deadlocked) { st.className = 'cnw-status bad'; OEIIcons.setLabel(st, 'ban', 'Deadlock détecté'); }
+        else if (this.deadlock.done) { st.className = 'cnw-status ok'; OEIIcons.setLabel(st, 'check', 'Terminé sans deadlock'); }
         else { st.className = 'cnw-status pending'; st.textContent = 'En exécution…'; }
         this._q('[data-dl-log]').innerHTML = this.deadlock.logs.map(l => `<li class="cnw-log-item">${l}</li>`).join('');
     }

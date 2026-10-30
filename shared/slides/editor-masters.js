@@ -178,8 +178,8 @@ const BUILT_IN_LAYOUTS = [
             type: 'canvas',
             elements: [
                 { id: 'm1', type: 'heading', x: 60, y: 40, w: 1160, h: 70, z: 1, data: { text: 'Comparaison' }, style: { fontSize: 36, fontWeight: 700, color: 'var(--sl-text)', textAlign: 'center', fontFamily: 'var(--sl-font-heading)' } },
-                { id: 'm2', type: 'card', x: 60, y: 140, w: 560, h: 520, z: 2, data: { title: '✅ Option A', text: 'Avantages…' }, style: { fill: 'rgba(52,211,153,0.1)', borderLeft: '4px solid #34d399', borderRadius: '0 12px 12px 0' } },
-                { id: 'm3', type: 'card', x: 660, y: 140, w: 560, h: 520, z: 3, data: { title: '❌ Option B', text: 'Inconvénients…' }, style: { fill: 'rgba(248,113,113,0.1)', borderLeft: '4px solid #f87171', borderRadius: '0 12px 12px 0' } },
+                { id: 'm2', type: 'card', x: 60, y: 140, w: 560, h: 520, z: 2, data: { title: 'Option A', text: 'Avantages…' }, style: { fill: 'rgba(52,211,153,0.1)', borderLeft: '4px solid #34d399', borderRadius: '0 12px 12px 0' } },
+                { id: 'm3', type: 'card', x: 660, y: 140, w: 560, h: 520, z: 3, data: { title: 'Option B', text: 'Inconvénients…' }, style: { fill: 'rgba(248,113,113,0.1)', borderLeft: '4px solid #f87171', borderRadius: '0 12px 12px 0' } },
             ]
         }
     },
@@ -757,7 +757,7 @@ function _renderMastersContent() {
 function _renderMasterCard(m, isCustom) {
     return `<div class="master-card" data-master-id="${m.id}" title="${esc(m.name)}">
         <div class="master-preview">${_renderPreviewSVG(m.slide.elements)}</div>
-        <div class="master-label">${esc(m.name)}${isCustom ? `<button class="master-del" data-id="${m.id}" title="Supprimer">✕</button>` : ''}</div>
+        <div class="master-label">${esc(m.name)}${isCustom ? `<button class="master-del" data-id="${m.id}" title="Supprimer" aria-label="Supprimer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>` : ''}</div>
     </div>`;
 }
 
@@ -771,8 +771,8 @@ function openMastersModal(tab) {
             <div style="display:flex;align-items:center;margin-bottom:12px;gap:8px;flex-shrink:0">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="opacity:0.6"><rect x="1" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="11" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
                 <span class="modal-title" style="margin:0;flex:1">Dispositions &amp; Masters</span>
-                <button class="tb-btn ui-btn" id="btn-save-master" style="font-size:0.72rem;padding:4px 12px" title="Sauvegarder le slide actuel comme master">💾 Sauver comme master</button>
-                <button class="modal-close" id="masters-modal-close">✕</button>
+                <button class="tb-btn ui-btn" id="btn-save-master" style="font-size:0.72rem;padding:4px 12px" title="Sauvegarder le slide actuel comme master">${window.oeiIcon ? window.oeiIcon('save') : ''} Sauver comme master</button>
+                <button class="modal-close" id="masters-modal-close" aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 10px;flex-shrink:0">
                 <label class="tb-btn ui-btn" style="height:30px;padding:0 10px;gap:6px;cursor:pointer">

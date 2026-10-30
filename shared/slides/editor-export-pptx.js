@@ -265,7 +265,7 @@ function _pptxExportCanvasSlide(pptSlide, slideData, dims, tc) {
             case 'video': {
                 // Video as a placeholder text
                 const url = el.data?.url || '';
-                pptSlide.addText(`🎬 ${url}`, { x, y, w, h, fontSize: 14, color: '888888', align: 'center', valign: 'middle', fill: { color: 'F0F0F0' } });
+                pptSlide.addText(`${url}`, { x, y, w, h, fontSize: 14, color: '888888', align: 'center', valign: 'middle', fill: { color: 'F0F0F0' } });
                 break;
             }
             default:

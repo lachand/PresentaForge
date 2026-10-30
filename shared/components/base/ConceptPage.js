@@ -215,8 +215,7 @@ class ConceptPage {
             const li = document.createElement('li');
             const a = document.createElement('a');
             a.href = `#${h.id}`;
-            const emoji = h.querySelector('.course-heading-emoji');
-            a.textContent = h.textContent.replace(emoji ? emoji.textContent : '', '').trim();
+            a.textContent = h.textContent.trim();
             a.addEventListener('click', (event) => {
                 event.preventDefault();
                 for (let node = h.parentElement; node; node = node.parentElement) {
@@ -248,7 +247,7 @@ class ConceptPage {
         const panel = document.createElement('div');
         panel.className = 'course-section course-section--open learning-goals-panel';
 
-        let html = '<h3 class="course-title">Objectifs d\'apprentissage</h3>';
+        let html = '<h2 class="course-title">Objectifs d\'apprentissage</h2>';
         if (objectives.length) {
             html += `<ul class="learning-goals-list">${objectives.map((item) => `<li>${this.escapeHtml(item)}</li>`).join('')}</ul>`;
         }
@@ -395,7 +394,9 @@ class ConceptPage {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'content-tab-btn' + (i === 0 ? ' active' : '');
-            btn.textContent = panel.tab || `Onglet ${i + 1}`;
+            const tabIcon = panel.icon && typeof OEIIcons !== 'undefined' ? OEIIcons.element(panel.icon) : null;
+            if (tabIcon) btn.append(tabIcon, ' ');
+            btn.append(panel.tab || `Onglet ${i + 1}`);
             btn.dataset.tabIdx = i;
             btn.id = `${uid}-tab-${i}`;
             btn.setAttribute('role', 'tab');
@@ -499,7 +500,7 @@ class ConceptPage {
             mount.className = 'exercise-auto-mount';
         } else {
             mount.className = 'course-section exercise-auto-mount';
-            mount.innerHTML = `<summary class="course-title">📝 ${this.escapeHtml(block.title || 'Exercices')}</summary>`;
+            mount.innerHTML = `<summary class="course-title">${typeof OEIIcons !== 'undefined' ? OEIIcons.render('pencil') + ' ' : ''}${this.escapeHtml(block.title || 'Exercices')}</summary>`;
         }
 
         const panel = document.createElement('div');

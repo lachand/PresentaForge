@@ -107,7 +107,7 @@ ${i < commits.length - 1 ? '<div class="grv-arrow"></div>' : ''}`;
 
             const chipHtml = (files, kind) => {
                 if (!files.length) return '<span class="grv-zone-empty">— aucune modification</span>';
-                return files.map(f => `<span class="grv-file-chip ${kind} grv-pop">📄 ${f}</span>`).join('');
+                return files.map(f => `<span class="grv-file-chip ${kind} grv-pop">${OEIIcons.render('file')} ${f}</span>`).join('');
             };
 
             container.innerHTML = `
@@ -117,25 +117,25 @@ ${i < commits.length - 1 ? '<div class="grv-arrow"></div>' : ''}`;
         <div class="grv-zones">
             <div class="grv-zone ${zoneClass('wd')}">
                 <div class="grv-zone-header">
-                    <span class="grv-zone-icon">📁</span>
+                    <span class="grv-zone-icon">${OEIIcons.render('folder')}</span>
                     <span class="grv-zone-title">Working Directory</span>
                 </div>
                 <div class="grv-zone-items">${chipHtml(workingFiles, 'modified')}</div>
             </div>
             <div class="grv-zone ${zoneClass('stage')}">
                 <div class="grv-zone-header">
-                    <span class="grv-zone-icon">📋</span>
+                    <span class="grv-zone-icon">${OEIIcons.render('clipboard')}</span>
                     <span class="grv-zone-title">Staging Area (Index)</span>
                 </div>
                 <div class="grv-zone-items">${chipHtml(stagingFiles, 'staged')}</div>
             </div>
             <div class="grv-zone ${zoneClass('head')}">
                 <div class="grv-zone-header">
-                    <span class="grv-zone-icon">💾</span>
+                    <span class="grv-zone-icon">${OEIIcons.render('save')}</span>
                     <span class="grv-zone-title">HEAD (Repository)</span>
                 </div>
                 <div class="grv-zone-items">
-                    <span class="grv-file-chip committed grv-pop">🔖 ${headHash} — ${commits[headIdx].msg}</span>
+                    <span class="grv-file-chip committed grv-pop">${OEIIcons.render('bookmark')} ${headHash} - ${commits[headIdx].msg}</span>
                 </div>
             </div>
         </div>
@@ -149,7 +149,7 @@ ${i < commits.length - 1 ? '<div class="grv-arrow"></div>' : ''}`;
         <button class="grv-btn grv-btn-mixed" id="grv-mixed">reset --mixed HEAD~1</button>
         <button class="grv-btn grv-btn-hard"  id="grv-hard">reset --hard HEAD~1</button>
         <button class="grv-btn grv-btn-revert" id="grv-revert">revert ${BASE_COMMITS[3].hash.slice(0,6)}</button>
-        <button class="grv-btn grv-btn-reset-ui" id="grv-init">↺ Reset</button>
+        <button class="grv-btn grv-btn-reset-ui" id="grv-init">${OEIIcons.render('refresh')} Reset</button>
     </div>
 </div>`;
 

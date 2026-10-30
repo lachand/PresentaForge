@@ -16,12 +16,14 @@
 
     if (!global || global.OEIThemeRuntime) return;
 
-    const MODES = Object.freeze(['light', 'dark']);
+    // `contrast` : thème à contraste fort (jetons Signature, AAA). Choisi par l'utilisateur ou, sans choix enregistré,
+    // par la préférence système `prefers-contrast: more`.
+    const MODES = Object.freeze(['light', 'dark', 'contrast']);
 
     function normalizeMode(value, fallback = 'light') {
         const base = MODES.includes(String(fallback || '').toLowerCase()) ? String(fallback).toLowerCase() : 'light';
         const raw = String(value || '').trim().toLowerCase();
-        if (raw === 'light' || raw === 'dark') return raw;
+        if (MODES.includes(raw)) return raw;
         return base;
     }
 
@@ -67,6 +69,7 @@
         const storageKey = options.storageKey || resolveScopeKey(scope);
         const fallback = normalizeMode(options.defaultMode || 'light', 'light');
         const raw = readRaw(storageKey);
+        if (!raw && global.matchMedia?.('(prefers-contrast: more)')?.matches) return 'contrast';
         return normalizeMode(raw, fallback);
     }
 
@@ -92,6 +95,10 @@
                 bodyEl.classList.toggle(String(options.darkClass || 'dark'), normalized === 'dark');
                 if (options.lightClass) bodyEl.classList.toggle(String(options.lightClass), normalized === 'light');
             }
+            // Le thème contraste vit sur <html data-theme> (jetons Signature) même quand le sombre est une classe de <body>.
+            const docEl = global.document?.documentElement;
+            if (normalized === 'contrast') docEl?.setAttribute?.('data-theme', 'contrast');
+            else docEl?.removeAttribute?.('data-theme');
             return normalized;
         }
         if (target === 'body-light') {
@@ -120,7 +127,9 @@
             applyMode(mode, applyOptions);
             return mode;
         };
-        const toggleMode = () => setMode(getMode() === 'dark' ? 'light' : 'dark');
+        // Par défaut clair <-> sombre ; avec `cycleContrast` : clair -> sombre -> contraste -> clair.
+        const NEXT = options.cycleContrast ? { light: 'dark', dark: 'contrast', contrast: 'light' } : { light: 'dark', dark: 'light', contrast: 'light' };
+        const toggleMode = () => setMode(NEXT[getMode()] || 'light');
         const applyCurrent = () => {
             const mode = getMode();
             applyMode(mode, applyOptions);

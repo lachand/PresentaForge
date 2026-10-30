@@ -197,7 +197,7 @@
                 consoleEl.textContent = '';
                 _outputText = '';
                 if (typeof Worker === 'undefined' || typeof Blob === 'undefined' || !URL?.createObjectURL) {
-                    appendOutput('❌ Sandbox JavaScript indisponible dans ce navigateur\n', '#f87171');
+                    appendOutput('Erreur : Sandbox JavaScript indisponible dans ce navigateur\n', '#f87171');
                     return;
                 }
                 // Le code utilisateur est *inliné* dans la source du worker (chargée via blob:),
@@ -223,7 +223,7 @@
                     worker = new Worker(workerUrl);
                 } catch (e) {
                     URL.revokeObjectURL(workerUrl);
-                    appendOutput(`❌ ${String(e?.message || e)}\n`, '#f87171');
+                    appendOutput(`Erreur : ${String(e?.message || e)}\n`, '#f87171');
                     emitOutput();
                     return;
                 }
@@ -236,7 +236,7 @@
                 };
                 const timeout = setTimeout(() => {
                     closeWorker();
-                    appendOutput('❌ Exécution interrompue (timeout 2.5 s — boucle infinie ?)\n', '#f87171');
+                    appendOutput('Erreur : Exécution interrompue (timeout 2.5 s — boucle infinie ?)\n', '#f87171');
                     emitOutput();
                 }, 2500);
                 const colorForType = (type) => {
@@ -252,7 +252,7 @@
                     if (payload.ok) {
                         if (!_outputText) appendOutput('(aucune sortie — utilise console.log(...) pour afficher une valeur)\n', 'var(--sl-muted,#64748b)');
                     } else {
-                        appendOutput(`❌ ${String(payload.error || 'Erreur JavaScript')}\n`, '#f87171');
+                        appendOutput(`Erreur : ${String(payload.error || 'Erreur JavaScript')}\n`, '#f87171');
                     }
                     closeWorker();
                     emitOutput();
@@ -262,7 +262,7 @@
                     closeWorker();
                     event?.preventDefault?.();
                     const line = (event && Number.isFinite(event.lineno) && event.lineno > 1) ? ` (ligne ${event.lineno - 1})` : '';
-                    appendOutput(`❌ ${String(event?.message || 'Erreur — vérifie la syntaxe')}${line}\n`, '#f87171');
+                    appendOutput(`Erreur : ${String(event?.message || 'Erreur — vérifie la syntaxe')}${line}\n`, '#f87171');
                     emitOutput();
                 };
             };
@@ -271,7 +271,7 @@
             const runPythonMainThread = async (code) => {
                 consoleEl.textContent = '';
                 _outputText = '';
-                appendOutput('⏳ Chargement de Python…\n', 'var(--sl-muted)');
+                appendOutput('Chargement de Python…\n', 'var(--sl-muted)');
                 if (!global._slPyodideLoaded) {
                     try {
                         await new Promise((resolve, reject) => {
@@ -283,7 +283,7 @@
                         global._slPyodide = await loadPyodide();
                         global._slPyodideLoaded = true;
                     } catch(e) {
-                        appendOutput('❌ Impossible de charger Python: ' + e.message + '\n', '#f87171');
+                        appendOutput('Erreur : Impossible de charger Python: ' + e.message + '\n', '#f87171');
                         emitOutput();
                         return;
                     }
@@ -295,7 +295,7 @@
                     const result = await global._slPyodide.runPythonAsync(code);
                     if (result !== undefined && result !== null) appendOutput('→ ' + String(result) + '\n', '#a5b4fc');
                 } catch(err) {
-                    appendOutput('❌ ' + (err.message || String(err)) + '\n', '#f87171');
+                    appendOutput('Erreur : ' + (err.message || String(err)) + '\n', '#f87171');
                 }
                 emitOutput();
             };
@@ -316,13 +316,13 @@
                 let loadingShown = false;
                 try {
                     activePyRun = runner.run(code, {
-                        onLoading: () => { if (!loadingShown) { loadingShown = true; appendOutput('⏳ Chargement de Python (première exécution)…\n', 'var(--sl-muted)'); } },
+                        onLoading: () => { if (!loadingShown) { loadingShown = true; appendOutput('Chargement de Python (première exécution)…\n', 'var(--sl-muted)'); } },
                         onStdout: (t) => appendOutput(t + '\n', 'var(--sl-code-text,#e2e8f0)'),
                         onStderr: (t) => appendOutput(t + '\n', '#f87171'),
                         onDone: (result) => { if (result !== null) appendOutput('→ ' + result + '\n', '#a5b4fc'); endPyRun(); },
-                        onError: (message) => { appendOutput('❌ ' + message + '\n', '#f87171'); endPyRun(); },
-                        onLoadError: (message) => { appendOutput('❌ Impossible de charger Python : ' + message + '\n', '#f87171'); endPyRun(); },
-                        onTimeout: (ms) => { appendOutput('❌ Exécution interrompue après ' + Math.round(ms / 1000) + ' s (boucle infinie ?). Python sera rechargé au prochain essai.\n', '#f87171'); endPyRun(); },
+                        onError: (message) => { appendOutput('Erreur : ' + message + '\n', '#f87171'); endPyRun(); },
+                        onLoadError: (message) => { appendOutput('Erreur : Impossible de charger Python : ' + message + '\n', '#f87171'); endPyRun(); },
+                        onTimeout: (ms) => { appendOutput('Erreur : Exécution interrompue après ' + Math.round(ms / 1000) + ' s (boucle infinie ?). Python sera rechargé au prochain essai.\n', '#f87171'); endPyRun(); },
                         onCancel: () => { appendOutput('■ Exécution arrêtée.\n', '#fbbf24'); endPyRun(); },
                     });
                     setRunning(true);

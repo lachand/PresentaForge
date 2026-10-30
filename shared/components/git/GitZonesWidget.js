@@ -57,19 +57,19 @@ class GitZonesWidget {
   </div>
   <div class="gzw-zones widget-fit-body">
     <div class="gzw-zone" id="gzw-zone-wd">
-      <div class="gzw-zone-title">📁 Répertoire de travail <span class="gzw-zone-subtitle">(working directory)</span></div>
+      <div class="gzw-zone-title">${OEIIcons.render('folder')} Répertoire de travail <span class="gzw-zone-subtitle">(working directory)</span></div>
       <div class="gzw-files" id="gzw-wd">${state.wd.map(f => mkFile(f, 'wd')).join('')}</div>
     </div>
     <div class="gzw-zone" id="gzw-zone-staging">
-      <div class="gzw-zone-title">📋 Staging area <span class="gzw-zone-subtitle">(index)</span></div>
+      <div class="gzw-zone-title">${OEIIcons.render('clipboard')} Staging area <span class="gzw-zone-subtitle">(index)</span></div>
       <div class="gzw-files" id="gzw-staging">${state.staging.map(f => mkFile(f, 'staging')).join('')}</div>
     </div>
     <div class="gzw-zone" id="gzw-zone-repo">
-      <div class="gzw-zone-title">🗄️ Dépôt local <span class="gzw-zone-subtitle">(.git/)</span></div>
+      <div class="gzw-zone-title">${OEIIcons.render('database')} Dépôt local <span class="gzw-zone-subtitle">(.git/)</span></div>
       <div class="gzw-commits" id="gzw-commits">${state.commits.map(mkCommit).join('')}</div>
     </div>
     <div class="gzw-zone gzw-zone-remote" id="gzw-zone-remote">
-      <div class="gzw-zone-title">🌐 Dépôt distant <span class="gzw-zone-subtitle">(origin)</span></div>
+      <div class="gzw-zone-title">${OEIIcons.render('globe')} Dépôt distant <span class="gzw-zone-subtitle">(origin)</span></div>
       <div class="gzw-commits" id="gzw-remote">${state.remote.map(mkCommit).join('')}</div>
     </div>
   </div>

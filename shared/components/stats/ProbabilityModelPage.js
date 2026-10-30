@@ -432,16 +432,16 @@ class ProbabilityModelPage extends SimulationPage {
             <rect x="0" y="0" width="${width}" height="${height}" fill="var(--card)"></rect>
             <rect x="16" y="16" width="${width - 32}" height="${height - 48}" fill="none" stroke="var(--border)" stroke-width="1.5"></rect>
             <text x="24" y="30" font-size="12" fill="var(--muted)">Omega</text>
-            <circle cx="${cxA}" cy="${cy}" r="${r}" fill="rgba(59, 130, 246, 0.20)" stroke="#2563eb" stroke-width="2"></circle>
-            <circle cx="${cxB}" cy="${cy}" r="${r}" fill="rgba(245, 158, 11, 0.22)" stroke="#d97706" stroke-width="2"></circle>
+            <circle cx="${cxA}" cy="${cy}" r="${r}" fill="rgba(59, 130, 246, 0.20)" stroke="var(--production)" stroke-width="2"></circle>
+            <circle cx="${cxB}" cy="${cy}" r="${r}" fill="rgba(245, 158, 11, 0.22)" stroke="var(--attention)" stroke-width="2"></circle>
 
             <text x="${cxA - r * 0.45}" y="${cy + 5}" text-anchor="middle" font-size="14" fill="var(--text)">${onlyA}</text>
             <text x="${(cxA + cxB) / 2}" y="${cy + 5}" text-anchor="middle" font-size="14" fill="var(--text)">${both}</text>
             <text x="${cxB + r * 0.45}" y="${cy + 5}" text-anchor="middle" font-size="14" fill="var(--text)">${onlyB}</text>
             <text x="${width - 54}" y="${height - 66}" text-anchor="middle" font-size="14" fill="var(--text)">${outside}</text>
 
-            <text x="${cxA - 34}" y="${cy - r - 10}" text-anchor="middle" font-size="12" fill="#1d4ed8">${this.escapeHtml(sets.eventA.label)}</text>
-            <text x="${cxB + 34}" y="${cy - r - 10}" text-anchor="middle" font-size="12" fill="#b45309">${this.escapeHtml(sets.eventB.label)}</text>
+            <text x="${cxA - 34}" y="${cy - r - 10}" text-anchor="middle" font-size="12" fill="var(--production)">${this.escapeHtml(sets.eventA.label)}</text>
+            <text x="${cxB + 34}" y="${cy - r - 10}" text-anchor="middle" font-size="12" fill="var(--attention)">${this.escapeHtml(sets.eventB.label)}</text>
         `;
 
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);

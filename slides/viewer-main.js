@@ -904,7 +904,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                     _relayClose();
                 }
                 roomUpdateNetworkDiagnostics();
-                applyBtn.textContent = '✓';
+                applyBtn.textContent = 'OK';
                 setTimeout(() => { applyBtn.textContent = 'Appliquer'; }, 1500);
             });
             // Appliquer aussi sur Entrée
@@ -1125,7 +1125,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 <div class="rm-stat-card"><div class="rm-stat-val">${n}</div><div class="rm-stat-lbl">Connectés</div></div>
                 <div class="rm-stat-card"><div class="rm-stat-val">${avgScore > 0 ? avgScore.toLocaleString() : '—'}</div><div class="rm-stat-lbl">Score moy.</div></div>
             </div>
-            ${top && top.score > 0 ? `<div class="rm-dashboard-top">🥇 ${_roomEsc(top.pseudo)} — ${(top.score||0).toLocaleString()} pts</div>` : ''}
+            ${top && top.score > 0 ? `<div class="rm-dashboard-top">1. ${_roomEsc(top.pseudo)} — ${(top.score||0).toLocaleString()} pts</div>` : ''}
             ${feedbackHtml}
             ${quizHtml}`;
         }
@@ -2271,7 +2271,7 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
 
             const slides = (data.slides || []).filter(s => !s.hidden);
             const title = data.metadata?.title || 'Présentation';
-            document.title = `🎤 ${title} — Présentateur`;
+            document.title = `${title} - Présentateur`;
             document.getElementById('pv-title').textContent = title;
 
             const opts = {

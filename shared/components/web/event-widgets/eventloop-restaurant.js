@@ -39,13 +39,13 @@ class EventLoopRestaurantWidget {
                             <div class="zone server">
                                 <h4>Serveur (Main Thread)</h4>
                                 <div class="waiter-area">
-                                    <div class="waiter at-center" data-role="waiter">🧑‍🍳</div>
+                                    <div class="waiter at-center" data-role="waiter">${OEIIcons.render('user', { label: 'Serveur' })}</div>
                                 </div>
                             </div>
                             <div class="zone kitchen">
                                 <h4>Cuisine (Web APIs)</h4>
                                 <div class="chips" data-role="kitchen"></div>
-                                <div style="margin-top:.35rem;" class="kitchen-bell" data-role="bell">🔔 Cloche</div>
+                                <div style="margin-top:.35rem;" class="kitchen-bell" data-role="bell">${OEIIcons.render('bell')} Cloche</div>
                             </div>
                             <div class="zone pass">
                                 <h4>Passe-plat (Callback Queue)</h4>

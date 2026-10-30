@@ -164,10 +164,10 @@ class WidgetPickerModal {
 
     _iconOf(id) {
         const r = this._reg()[id];
-        if (!r?.staticFallback) return '⚙️';
+        if (!r?.staticFallback) return '';
         // staticFallback peut être une fonction (cfg) => html ou une string
         const html = typeof r.staticFallback === 'function' ? r.staticFallback({}) : String(r.staticFallback);
-        return html.match(/<span class="sl-sim-icon">([^<]+)<\/span>/)?.[1] || '⚙️';
+        return html.match(/<span class="sl-sim-icon">([^<]+)<\/span>/)?.[1] || '';
     }
 
     _e(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -183,13 +183,13 @@ class WidgetPickerModal {
         modal.className = 'wpm-modal';
         modal.innerHTML = `
 <div class="wpm-header">
-  <span class="wpm-header-title">🧩 Choisir un widget</span>
-  <button class="wpm-close" data-close>✕</button>
+  <span class="wpm-header-title">${window.oeiIcon ? window.oeiIcon('puzzle') : ''} Choisir un widget</span>
+  <button class="wpm-close" data-close aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
 </div>
 <div class="wpm-body">
   <div class="wpm-left">
     <div class="wpm-filters">
-      <input class="wpm-search" data-search placeholder="🔍 Rechercher…" autocomplete="off">
+      <input class="wpm-search" data-search placeholder="Rechercher…" aria-label="Rechercher un widget" autocomplete="off">
       <div class="wpm-cats">
         <button class="wpm-cat active" data-cat="all">Tous</button>
         ${cats.map(c => `<button class="wpm-cat" data-cat="${this._e(c)}">${this._e(c)}</button>`).join('')}
@@ -203,7 +203,7 @@ class WidgetPickerModal {
       <div class="wpm-preview-lbl">Aperçu</div>
       <div class="wpm-preview-box" data-preview>
         <div class="wpm-preview-ph">
-          <div class="wpm-preview-ph-ico">🧩</div>
+          <div class="wpm-preview-ph-ico">${window.oeiIcon ? window.oeiIcon('puzzle') : ''}</div>
           <div class="wpm-preview-ph-txt">Sélectionnez un widget pour voir l'aperçu</div>
         </div>
       </div>
@@ -429,7 +429,7 @@ class WidgetPickerModal {
             box.appendChild(mountEl);
             Cls.mount(mountEl, cfg);
         } catch (err) {
-            box.innerHTML = `<div class="wpm-preview-err">⚠️ ${this._e(err.message)}</div>`;
+            box.innerHTML = `<div class="wpm-preview-err">${window.oeiIcon ? window.oeiIcon('warning') : ''} ${this._e(err.message)}</div>`;
         }
     }
 

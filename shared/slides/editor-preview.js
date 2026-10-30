@@ -94,7 +94,7 @@ function renderSlideList() {
             </div>
             <div class="sl-thumb-actions">
                 <button class="sl-thumb-action-btn" data-action="dup" title="Dupliquer">⧉</button>
-                <button class="sl-thumb-action-btn danger" data-action="del" title="Supprimer (Maj+Suppr)">✕</button>
+                <button class="sl-thumb-action-btn danger" data-action="del" title="Supprimer (Maj+Suppr)" aria-label="Supprimer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </div>
         </div>`;
     }).join('');
@@ -497,7 +497,7 @@ function openTemplatePopover(slide, refEvent) {
 
     let html = `<div class="content-popover-header">
         <span>${typeMeta.icon} ${typeMeta.label} — Contenu</span>
-        <button class="popover-close" id="popover-close-btn">✕</button>
+        <button class="popover-close" id="popover-close-btn" aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
     </div>`;
 
     html += `<div class="field"><label>Type de slide</label>
@@ -531,7 +531,7 @@ function openTemplatePopover(slide, refEvent) {
                 ${items.map((item, idx) => {
                     const txt = typeof item === 'string' ? item : item.text || '';
                     return `<div class="item-row"><input type="text" value="${escAttr(txt)}" data-item-idx="${idx}">
-                        <button class="icon-btn" data-del-item="${idx}" title="Supprimer">✕</button>
+                        <button class="icon-btn" data-del-item="${idx}" title="Supprimer" aria-label="Supprimer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
                     </div>`;
                 }).join('')}
                 <button class="add-item-btn" data-add-items>+ Ajouter un point</button>
@@ -915,7 +915,7 @@ function openConnectorPopover(conn, event) {
     popover.innerHTML = `
         <div class="content-popover-header">
             <span>↗ Connecteur — Propriétés</span>
-            <button class="popover-close" id="popover-close-btn">✕</button>
+            <button class="popover-close" id="popover-close-btn" aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
         </div>
         <div class="field"><label>Type de ligne</label><select id="cp-lineType">${ltOpts}</select></div>
         <div class="field" style="display:flex;gap:1rem;">

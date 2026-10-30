@@ -190,7 +190,7 @@ function openSlideSorter() {
         overlay.innerHTML = `<div class="slide-sorter">
             <h2 style="margin:0 0 16px;font-size:1.1rem;color:var(--text);display:flex;justify-content:space-between;align-items:center">
                 Trieuse de diapositives
-                <button id="sorter-close" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer">✕</button>
+                <button id="sorter-close" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer" aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
             </h2>
             <div class="slide-sorter-grid" id="sorter-grid"></div>
         </div>`;
@@ -212,7 +212,7 @@ function renderSorterGrid() {
         const thumbHtml = SlidesRenderer.renderSlide(slide, i, _slideRenderOpts());
         const active = i === editor.selectedIndex ? ' style="outline:2px solid var(--primary)"' : '';
         const hiddenStyle = slide.hidden ? ' opacity:0.4;' : '';
-        const hiddenLabel = slide.hidden ? ' 👁' : '';
+        const hiddenLabel = slide.hidden ? ' (masquée)' : '';
         return `<div class="sorter-thumb${slide.hidden ? ' hidden-slide' : ''}" data-idx="${i}"${active} draggable="true">
             <div class="sorter-thumb-stage" style="width:${thumbWidth}px;height:${thumbHeight}px;background:${slide.bg || 'var(--thumb-bg)'};${hiddenStyle}">
                 <div class="sl-thumb-inner sorter-thumb-inner" style="transform:scale(${thumbScale})">${thumbHtml}</div>

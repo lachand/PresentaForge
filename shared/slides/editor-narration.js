@@ -10,6 +10,13 @@
  * // Chargement navigateur:
  * // <script src="../shared/slides/editor-narration.js"></script>
  */
+
+// Libellé de bouton « icône + texte » sans innerHTML ; repli texte si le registre d'icônes est absent.
+function _setBtnLabel(el, icon, text) {
+    if (window.OEIIcons) window.OEIIcons.setLabel(el, icon, text);
+    else el.textContent = text;
+}
+
 /* editor-narration.js - Per-slide audio narration recording using MediaRecorder API */
 
 const Storage = window.OEIStorage || null;
@@ -199,7 +206,7 @@ function initNarration() {
     controls.className = 'narration-controls';
     controls.innerHTML = `
         <div class="narration-header">
-            <span class="narration-label">🎙 Narration</span>
+            <span class="narration-label">Narration</span>
             <span class="narration-timer" id="narration-timer">00:00</span>
         </div>
         <div class="narration-buttons">
@@ -207,13 +214,13 @@ function initNarration() {
                 <span class="narration-rec-dot"></span> Enregistrer
             </button>
             <button class="tb-btn ui-btn narration-btn" id="btn-narration-stop" title="Arrêter l'enregistrement" style="display:none">
-                ⏹ Arrêter
+                ${window.oeiIcon ? window.oeiIcon('stop') : ''} Arrêter
             </button>
             <button class="tb-btn ui-btn narration-btn" id="btn-narration-play" title="Écouter la narration" style="display:none">
-                ▶ Écouter
+                ${window.oeiIcon ? window.oeiIcon('play') : ''} Écouter
             </button>
-            <button class="tb-btn ui-btn narration-btn" id="btn-narration-delete" title="Supprimer la narration" style="display:none">
-                🗑
+            <button class="tb-btn ui-btn narration-btn" id="btn-narration-delete" title="Supprimer la narration" aria-label="Supprimer la narration" style="display:none">
+                ${window.oeiIcon ? window.oeiIcon('trash') : ''}
             </button>
         </div>
         <div class="narration-encoding">
@@ -374,7 +381,7 @@ function playNarration() {
 
     if (audio.src && !audio.paused && audio.currentTime > 0) {
         audio.pause();
-        playBtn.textContent = '▶ Écouter';
+        _setBtnLabel(playBtn, 'play', 'Écouter');
         return;
     }
 
@@ -385,9 +392,9 @@ function playNarration() {
         notify('Erreur de lecture : ' + err.message, 'error');
     });
 
-    playBtn.textContent = '⏸ Pause';
+    _setBtnLabel(playBtn, 'pause', 'Pause');
     audio.onended = () => {
-        playBtn.textContent = '▶ Écouter';
+        _setBtnLabel(playBtn, 'play', 'Écouter');
     };
 }
 

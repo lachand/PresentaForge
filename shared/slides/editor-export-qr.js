@@ -37,7 +37,7 @@ async function insertQRCodeSlide() {
             {
                 id: 'el_qr_title', type: 'text',
                 x: 140, y: 40, w: 1000, h: 60, z: 2,
-                data: { text: '📱 Scannez pour accéder à la présentation' },
+                data: { text: 'Scannez pour accéder à la présentation' },
                 style: { fontSize: 32, fontWeight: 700, color: '#1e293b', textAlign: 'center' }
             },
             {

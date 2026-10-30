@@ -191,7 +191,7 @@ function openReviewCommentsModal() {
             <div class="modal review-comments-modal">
                 <div class="modal-header">
                     <h3 class="modal-title" style="margin:0;flex:1">Commentaires de relecture</h3>
-                    <button class="modal-close" id="review-comments-close" aria-label="Fermer">✕</button>
+                    <button class="modal-close" id="review-comments-close" aria-label="Fermer">${window.oeiIcon ? window.oeiIcon('close') : ''}</button>
                 </div>
                 <div class="review-comments-toolbar">
                     <label class="review-check"><input type="checkbox" id="review-only-current" checked> Slide courant</label>

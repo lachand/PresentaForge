@@ -154,7 +154,7 @@
             a.click();
             a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 4000);
-            setRowStatus(li, 'Téléchargé ✓', false);
+            setRowStatus(li, 'Téléchargé', false);
         } catch (e) {
             setRowStatus(li, friendlyError(e), true);
         } finally {

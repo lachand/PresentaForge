@@ -411,7 +411,7 @@ export function createSessionRecordingRuntime(params = {}) {
                 ? `Enregistrement en pause · ${formatClock(elapsed)}`
                 : `Enregistrement en cours · ${formatClock(elapsed)}`);
             if (state.audioError) {
-                parts.push(`⚠ SANS SON (${state.audioError})`);
+                parts.push(`SANS SON (${state.audioError})`);
             } else {
                 const codecLabel = state.audioCodecLabel || 'audio auto';
                 const bitrateLabel = audioBitrateLabel(state.audioBitsPerSecond || state.audioTargetBitsPerSecond);

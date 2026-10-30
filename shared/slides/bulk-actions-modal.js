@@ -328,11 +328,11 @@
                     if (win) {
                         opened++;
                         if (rowEl) rowEl.classList.add('ok');
-                        if (statusEl) statusEl.textContent = 'Ouvert ✓';
+                        if (statusEl) statusEl.textContent = 'Ouvert';
                     } else {
                         blocked++;
                         if (rowEl) rowEl.classList.add('err');
-                        if (statusEl) statusEl.textContent = '✗ Bloqué (pop-up)';
+                        if (statusEl) statusEl.textContent = 'Bloqué (pop-up)';
                     }
                 });
                 finish(opened, blocked);
@@ -348,8 +348,8 @@
                     completed += 1;
                     if (progressEl) progressEl.textContent = `${completed} / ${n}`;
                     if (rowEl) {
-                        if (res.ok) { rowEl.classList.add('ok'); if (statusEl) statusEl.textContent = '✓'; }
-                        else { rowEl.classList.add('err'); if (statusEl) statusEl.textContent = '✗ ' + res.error; }
+                        if (res.ok) { rowEl.classList.add('ok'); if (statusEl) statusEl.textContent = 'OK'; }
+                        else { rowEl.classList.add('err'); if (statusEl) statusEl.textContent = 'Échec : ' + res.error; }
                     }
                     return res;
                 });

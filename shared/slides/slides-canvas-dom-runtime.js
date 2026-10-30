@@ -95,7 +95,7 @@
             }
             if (badge) {
                 const orderStr = el.animation.order != null ? ` #${el.animation.order}` : '';
-                badge.textContent = '⚡' + orderStr;
+                badge.textContent = String(orderStr).trim();
             }
         } else if (badge && typeof badge.remove === 'function') {
             badge.remove();

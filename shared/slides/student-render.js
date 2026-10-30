@@ -825,7 +825,7 @@
                     if (lang === 'javascript' || lang === 'js') {
                         runJS(textarea.value, consoleEl);
                     } else {
-                        consoleEl.textContent = '⚠️ Exécution Python non disponible en mode étudiant';
+                        consoleEl.textContent = 'Exécution Python non disponible en mode étudiant';
                     }
                 });
             });
@@ -903,7 +903,7 @@
                 consoleEl.appendChild(span);
             };
             if (typeof Worker === 'undefined' || typeof Blob === 'undefined' || !URL?.createObjectURL) {
-                appendOut('❌ Sandbox JavaScript indisponible');
+                appendOut('Erreur : Sandbox JavaScript indisponible');
                 return;
             }
             const workerSource = [
@@ -940,7 +940,7 @@
             };
             const timeout = setTimeout(() => {
                 closeWorker();
-                appendOut('❌ Exécution interrompue (timeout)', '#f87171');
+                appendOut('Erreur : Exécution interrompue (timeout)', '#f87171');
             }, 2500);
             worker.onmessage = (event) => {
                 clearTimeout(timeout);
@@ -950,14 +950,14 @@
                 if (payload.ok) {
                     if (payload.result !== '__oei_undefined__') appendOut(`→ ${String(payload.result)}`, '#a5b4fc');
                 } else {
-                    appendOut(`❌ ${String(payload.error || 'Erreur JavaScript')}`, '#f87171');
+                    appendOut(`Erreur : ${String(payload.error || 'Erreur JavaScript')}`, '#f87171');
                 }
                 closeWorker();
             };
             worker.onerror = (event) => {
                 clearTimeout(timeout);
                 closeWorker();
-                appendOut(`❌ Sandbox JavaScript: ${String(event?.message || 'Erreur worker')}`, '#f87171');
+                appendOut(`Erreur : Sandbox JavaScript: ${String(event?.message || 'Erreur worker')}`, '#f87171');
             };
             worker.postMessage({ code: String(code || '') });
         }
@@ -1218,7 +1218,7 @@
                     if (_noteTimer) clearTimeout(_noteTimer);
                     _noteTimer = setTimeout(() => {
                         _saveSlideNotes();
-                        if (indicator) { indicator.textContent = 'Sauvegardé ✓'; setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1500); }
+                        if (indicator) { indicator.textContent = 'Sauvegardé'; setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1500); }
                     }, 600);
                 });
                 const areaSide = document.getElementById('notes-area-side');
@@ -1369,7 +1369,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 ${printThemeCSS}
 </style></head><body>
 <div class="cover-page">
-  <div class="cover-title">📝 ${esc(title)}</div>
+  <div class="cover-title">${esc(title)}</div>
   <div class="cover-meta">${esc(st.pseudo || 'Étudiant')} · ${dateStr}</div>
   ${scoreLine}
 </div>

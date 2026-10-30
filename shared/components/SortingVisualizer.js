@@ -385,9 +385,9 @@ class SortingWidget {
             <div class="widget-fit-footer">
                 <div class="sw-info-bar"><span class="sw-action"></span></div>
                 <div class="sw-controls">
-                    <button class="sw-btn sw-btn-play">▶ Lancer</button>
+                    <button class="sw-btn sw-btn-play">${OEIIcons.render('play')} Lancer</button>
                     <button class="sw-btn sw-btn-step sw-btn-secondary">Étape</button>
-                    <button class="sw-btn sw-btn-reset sw-btn-secondary">↺ Reset</button>
+                    <button class="sw-btn sw-btn-reset sw-btn-secondary">${OEIIcons.render('refresh')} Reset</button>
                 </div>
             </div>
         </div>`;
@@ -458,7 +458,7 @@ class SortingWidget {
     _syncButtons(state) {
         const btn = this.root.querySelector('.sw-btn-play');
         if (!btn) return;
-        btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
+        OEIIcons.setLabel(btn, state.playing ? ['pause', 'Pause'] : (state.atEnd ? ['refresh', 'Rejouer'] : ['play', 'Lancer']));
         btn.setAttribute('aria-pressed', String(!!state.playing));
     }
 

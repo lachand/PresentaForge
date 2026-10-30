@@ -602,7 +602,7 @@ class HeapWidget {
                     const { x, y } = positions[i];
                     const fill = i === 0 ? 'var(--sl-accent,#f97316)' : 'var(--sl-primary,#6366f1)';
                     svgContent += `<circle cx="${x}" cy="${y}" r="12" fill="${fill}"/>`;
-                    svgContent += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="10" font-weight="600">${v}</text>`;
+                    svgContent += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" fill="var(--surface)" font-size="10" font-weight="600">${v}</text>`;
                 });
 
                 svg.innerHTML = svgContent;

@@ -114,13 +114,13 @@ class MatrixBuilderWidget {
                 <div class="mbw-dim" data-di="${di}">
                     <div class="mbw-dim-header">
                         <input class="mbw-dim-key" type="text" value="${dim.key}" placeholder="clé" data-di="${di}"/>
-                        ${dims.length > 1 ? `<button class="mbw-dim-remove" data-di="${di}" title="Supprimer cette dimension">✕</button>` : ''}
+                        ${dims.length > 1 ? `<button class="mbw-dim-remove" data-di="${di}" title="Supprimer cette dimension" aria-label="Supprimer cette dimension">${OEIIcons.render('close')}</button>` : ''}
                     </div>
                     <div class="mbw-tags">
                         ${dim.values.map((v, vi) => `
                             <span class="mbw-tag">
                                 ${v}
-                                <button class="mbw-tag-remove" data-di="${di}" data-vi="${vi}">✕</button>
+                                <button class="mbw-tag-remove" data-di="${di}" data-vi="${vi}" aria-label="Retirer la valeur">${OEIIcons.render('close')}</button>
                             </span>`).join('')}
                         <input class="mbw-tag-input" type="text" placeholder="+ valeur" data-di="${di}"/>
                     </div>

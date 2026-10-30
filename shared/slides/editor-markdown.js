@@ -39,11 +39,11 @@ function _openMarkdownEditor() {
     overlay.id = 'md-editor-overlay';
     overlay.innerHTML = `
         <div class="md-editor-header">
-            <span class="md-title">📝 Brouillon Markdown</span>
+            <span class="md-title">Brouillon Markdown</span>
             <span class="md-hint">Séparez les slides par <code>---</code> · Syntaxe Markdown standard</span>
             <div style="flex:1"></div>
             <button class="tb-btn ui-btn md-apply-btn" id="md-apply">Appliquer aux slides</button>
-            <button class="tb-btn ui-btn" id="md-close">✕ Fermer</button>
+            <button class="tb-btn ui-btn" id="md-close">${window.oeiIcon ? window.oeiIcon('close') : ''} Fermer</button>
         </div>
         <div class="md-editor-body">
             <textarea id="md-textarea" spellcheck="false" placeholder="# Titre du slide\n\nContenu...\n\n---\n\n# Slide suivant\n\n- Point 1\n- Point 2"></textarea>

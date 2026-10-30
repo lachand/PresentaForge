@@ -73,7 +73,7 @@ class GitFileLifecycleWidget {
 <div class="gflw-root widget-fit">
     <div class="widget-fit-header">
         <div class="gflw-file-card state-${currentState}">
-            <div class="gflw-file-icon">📄</div>
+            <div class="gflw-file-icon">${OEIIcons.render('file')}</div>
             <div class="gflw-file-info">
                 <div class="gflw-file-name">${filename}</div>
                 <span class="gflw-state-badge">${st.badge}</span>
@@ -137,11 +137,11 @@ class GitFileLifecycleWidget {
         const BB = BY + BH;                 // y=106 : bas des boîtes
 
         const states = [
-            { id: 'untracked', label: 'Non suivi',  cx: 55,  color: '#9ca3af', bg: '#f9fafb', dashBorder: false },
-            { id: 'modified',  label: 'Modifié',    cx: 200, color: '#f59e0b', bg: '#fffbeb', dashBorder: false },
-            { id: 'staged',    label: 'Indexé',     cx: 345, color: '#4f46e5', bg: '#eef2ff', dashBorder: false },
-            { id: 'committed', label: 'Commis',     cx: 490, color: '#10b981', bg: '#ecfdf5', dashBorder: false },
-            { id: 'pushed',    label: 'Distant',    cx: 635, color: '#0ea5e9', bg: '#f0f9ff', dashBorder: true  },
+            { id: 'untracked', label: 'Non suivi',  cx: 55,  color: 'var(--ink-muted)', bg: 'var(--surface-sunken)', dashBorder: false },
+            { id: 'modified',  label: 'Modifié',    cx: 200, color: 'var(--attention)', bg: 'var(--attention-fond)', dashBorder: false },
+            { id: 'staged',    label: 'Indexé',     cx: 345, color: 'var(--accent)', bg: 'color-mix(in srgb, var(--production) 14%, var(--surface))', dashBorder: false },
+            { id: 'committed', label: 'Commis',     cx: 490, color: 'var(--ok)', bg: 'var(--ok-fond)', dashBorder: false },
+            { id: 'pushed',    label: 'Distant',    cx: 635, color: 'var(--cote)', bg: 'color-mix(in srgb, var(--production) 14%, var(--surface))', dashBorder: true  },
         ];
         // Extents : 10-100 | 155-245 | 300-390 | 445-535 | 590-680  (55px de gap)
 
@@ -167,9 +167,9 @@ class GitFileLifecycleWidget {
             const isActive = s.id === activeState;
             const bx = s.cx - BW / 2;
             const stroke = isActive ? s.color : '#d1d5db';
-            const fill   = isActive ? s.bg    : '#fafafa';
+            const fill   = isActive ? s.bg    : 'var(--surface-sunken)';
             const sw     = isActive ? 2.5 : 1.5;
-            const textColor = isActive ? s.color : '#6b7280';
+            const textColor = isActive ? s.color : 'var(--ink-muted)';
             const dashAttr = s.dashBorder ? ' stroke-dasharray="6,3"' : '';
             return `
   <rect x="${bx}" y="${BY}" width="${BW}" height="${BH}" rx="7" ry="7"

@@ -501,7 +501,7 @@ body.dark {
     border: none;
     background: var(--surface-container-highest);
     color: var(--on-surface-variant);
-    font-size: 0.68rem;
+    font-size: var(--text-2xs);
     line-height: 1.55;
     font-weight: 600;
 }
@@ -587,7 +587,7 @@ body.dark {
 }
 .fbm-field { display: flex; flex-direction: column; gap: 4px; }
 .fbm-label {
-    font-size: 0.6875rem;
+    font-size: var(--text-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -718,7 +718,7 @@ body.dark {
 .fbm-group-header::-webkit-details-marker { display: none; }
 .fbm-group-header::before {
     content: '▸';
-    font-size: 0.7rem;
+    font-size: var(--text-xs);
     transition: transform 0.12s;
 }
 .fbm-group[open] > .fbm-group-header::before { transform: rotate(90deg); }
@@ -756,7 +756,7 @@ body.dark {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.6875rem;
+    font-size: var(--text-xs);
     line-height: 1;
 }
 .fbm-pres-title {
@@ -767,7 +767,7 @@ body.dark {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.fbm-pres-date { font-size: 0.6875rem; color: var(--on-surface-muted, #8a9099); }
+.fbm-pres-date { font-size: var(--text-xs); color: var(--on-surface-muted, #8a9099); }
 .fbm-pres-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .fbm-save-bar {
     display: flex;
@@ -809,25 +809,17 @@ body.dark {
    bottom nav, bento, contrôle segmenté, FAB, état vide, icônes.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── Icône Material Symbols ─────────────────────────────── */
+/* ── Icône (jeu Signature, shared/icons.js) ─────────────────
+   `.ms` est le conteneur d'icône historique : il reçoit un <svg class="oei-icon"> de 1em (taille = font-size). */
 .ms {
-    font-family: 'Material Symbols Outlined';
-    font-weight: normal;
-    font-style: normal;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
-    letter-spacing: normal;
-    text-transform: none;
-    display: inline-block;
-    white-space: nowrap;
-    word-wrap: normal;
-    direction: ltr;
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    -webkit-font-feature-settings: 'liga';
-    -webkit-font-smoothing: antialiased;
     user-select: none;
     flex-shrink: 0;
 }
-.ms--fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.ms > .oei-icon { width: 1em; height: 1em; }
 
 /* ── Carte ──────────────────────────────────────────────── */
 .ui-card {
@@ -873,7 +865,7 @@ body.dark {
     letter-spacing: 0.01em;
     white-space: nowrap;
 }
-.ui-badge { height: 22px; padding: 0 9px; font-size: 0.6875rem; }
+.ui-badge { height: 22px; padding: 0 9px; font-size: var(--text-xs); }
 .ui-chip--primary,
 .ui-badge--primary { background: var(--primary-fixed); color: var(--on-primary-fixed-variant); }
 .ui-chip--project,
@@ -926,7 +918,7 @@ body.dark {
 }
 .ui-navrail-label {
     padding: 0 16px 6px;
-    font-size: 0.6875rem;
+    font-size: var(--text-xs);
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -981,7 +973,7 @@ body.dark {
     background: transparent;
     color: var(--on-surface-variant);
     font-family: var(--font-ui);
-    font-size: 0.65rem;
+    font-size: var(--text-2xs);
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;

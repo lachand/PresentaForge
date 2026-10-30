@@ -594,8 +594,8 @@
                     ${label ? `<div style="font-size:${Math.round(base * 0.4)}px;color:var(--sl-muted);font-weight:600;text-transform:uppercase;">${esc(label)}</div>` : ''}
                     <div class="${P}-timer-display" style="font-size:${base}px;color:${s.color||'var(--sl-heading)'};font-variant-numeric:tabular-nums;font-weight:700;font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;">${display}</div>
                     <div style="display:flex;gap:0.5rem;margin-top:0.3rem;">
-                        <button class="${P}-timer-btn ${P}-timer-start" title="Démarrer" style="pointer-events:auto;">▶</button>
-                        <button class="${P}-timer-btn ${P}-timer-pause" title="Pause" style="display:none;pointer-events:auto;">⏸</button>
+                        <button class="${P}-timer-btn ${P}-timer-start" title="Démarrer" aria-label="Démarrer" style="pointer-events:auto;"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg></button>
+                        <button class="${P}-timer-btn ${P}-timer-pause" title="Pause" aria-label="Pause" style="display:none;pointer-events:auto;"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
                         <button class="${P}-timer-btn ${P}-timer-reset" title="Réinitialiser" style="pointer-events:auto;">↺</button>
                     </div>
                 </div>`;
@@ -710,7 +710,7 @@
                     <div class="${P}-codelive-toolbar" style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:color-mix(in srgb,var(--sl-surface,#1e2130) 90%,#000);border-bottom:1px solid var(--sl-border,#2d3347);">
                         <span style="font-size:0.75rem;color:var(--sl-muted,#64748b);font-family:var(--sl-font-mono,monospace);font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0,'dlig' 0;text-transform:uppercase;">${lang}</span>
                         <span style="flex:1"></span>
-                        <button class="${P}-codelive-run" style="pointer-events:auto;padding:4px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;">▶ Exécuter</button>
+                        <button class="${P}-codelive-run" style="pointer-events:auto;padding:4px 14px;border-radius:6px;border:none;background:var(--sl-primary,#818cf8);color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg> Exécuter</button>
                         <button class="${P}-codelive-clear" style="pointer-events:auto;padding:4px 10px;border-radius:6px;border:1px solid var(--sl-border,#2d3347);background:transparent;color:var(--sl-muted,#64748b);font-size:0.7rem;cursor:pointer;">Effacer</button>
                     </div>
                     <div style="display:flex;flex:1;min-height:0;">

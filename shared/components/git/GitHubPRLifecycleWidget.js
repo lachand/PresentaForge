@@ -9,43 +9,43 @@ class GitHubPRLifecycleWidget {
         brouillon: {
             id: 'brouillon',
             label: 'Brouillon',
-            color: '#6b7280',
+            color: 'var(--ink-muted)',
             desc: 'La PR est en cours de rédaction (Draft), pas encore prête pour review.',
         },
         ouverte: {
             id: 'ouverte',
             label: 'Ouverte',
-            color: '#4f46e5',
+            color: 'var(--accent)',
             desc: 'La PR est soumise et attend des reviewers.',
         },
         en_revision: {
             id: 'en_revision',
             label: 'En révision',
-            color: '#f59e0b',
+            color: 'var(--attention)',
             desc: 'Un ou plusieurs reviewers examinent le code.',
         },
         modifs_demandees: {
             id: 'modifs_demandees',
             label: 'Modifications demandées',
-            color: '#ef4444',
+            color: 'var(--critique)',
             desc: 'Le reviewer a demandé des changements. L\'auteur doit modifier le code.',
         },
         approuvee: {
             id: 'approuvee',
             label: 'Approuvée',
-            color: '#10b981',
+            color: 'var(--ok)',
             desc: 'Au moins un reviewer a approuvé. Prête à merger.',
         },
         mergee: {
             id: 'mergee',
             label: 'Mergée',
-            color: '#7c3aed',
+            color: 'var(--accent)',
             desc: 'La branche a été fusionnée. PR fermée avec succès.',
         },
         fermee: {
             id: 'fermee',
             label: 'Fermée',
-            color: '#374151',
+            color: 'var(--ink)',
             desc: 'La PR a été fermée sans merger (abandon, refus).',
         },
     };
@@ -122,7 +122,7 @@ class GitHubPRLifecycleWidget {
 
             const actionsHtml = transitions.length === 0
                 ? (currentState === 'mergee'
-                    ? `<div class="prlw-success-msg">✓ La PR a été fusionnée avec succès. C'est la fin de son cycle de vie.</div>`
+                    ? `<div class="prlw-success-msg">${OEIIcons.render('ok')} La PR a été fusionnée avec succès. C'est la fin de son cycle de vie.</div>`
                     : '')
                 : `<div class="prlw-actions-title">Actions disponibles</div>
                    <div class="prlw-actions-btns">
@@ -154,7 +154,7 @@ class GitHubPRLifecycleWidget {
         ${tlHtml}
       </div>
       <div style="text-align:right;">
-        <button class="prlw-btn prlw-btn-reset" id="prlw-reset">↺ Réinitialiser</button>
+        <button class="prlw-btn prlw-btn-reset" id="prlw-reset">${OEIIcons.render('refresh')} Réinitialiser</button>
       </div>
     </div>
     <div class="prlw-graph-panel">
@@ -215,7 +215,7 @@ class GitHubPRLifecycleWidget {
                 const x2 = t.x - R, y2 = t.y + (up ? -3 : 3);
                 const mx = (x1 + x2) / 2;
                 return `<path d="M ${x1},${y1} Q ${mx},${f.y + offset} ${x2},${y2}"
-                    fill="none" stroke="#d1d5db" stroke-width="1.5"
+                    fill="none" stroke="var(--line-subtle)" stroke-width="1.5"
                     marker-end="url(#prlw-arrow)" opacity="0.9"/>`;
             }
 
@@ -228,7 +228,7 @@ class GitHubPRLifecycleWidget {
             const x2 = t.x - ux * R, y2 = t.y - uy * R;
             return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}"
                 x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-                stroke="#d1d5db" stroke-width="1.5"
+                stroke="var(--line-subtle)" stroke-width="1.5"
                 marker-end="url(#prlw-arrow)" opacity="0.9"/>`;
         }).join('\n');
 
@@ -238,7 +238,7 @@ class GitHubPRLifecycleWidget {
             const strokeW = isCurrent ? 3 : 1.5;
             const strokeColor = isCurrent ? st.color : '#d1d5db';
             const fillColor   = isCurrent ? st.color + '2a' : 'white';
-            const textColor   = isCurrent ? st.color : '#6b7280';
+            const textColor   = isCurrent ? st.color : 'var(--ink-muted)';
             const lines = LABELS[st.id] || [st.label];
 
             // Label : une ou deux lignes centrées
@@ -268,7 +268,7 @@ ${labelHtml}`;
   <defs>
     <marker id="prlw-arrow" markerWidth="8" markerHeight="7"
         refX="6" refY="3.5" orient="auto">
-      <path d="M0,0 L0,7 L8,3.5 Z" fill="#c4c4cc"/>
+      <path d="M0,0 L0,7 L8,3.5 Z" fill="var(--line-subtle)"/>
     </marker>
   </defs>
   ${edgesHtml}

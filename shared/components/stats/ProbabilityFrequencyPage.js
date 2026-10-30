@@ -260,8 +260,8 @@ class ProbabilityFrequencyPage extends SimulationPage {
 
         const expectedY = y(expected);
         html += `
-            <line x1="${padding.left}" y1="${expectedY}" x2="${width - padding.right}" y2="${expectedY}" stroke="#f59e0b" stroke-dasharray="6 4" stroke-width="2"></line>
-            <text x="${width - padding.right - 4}" y="${expectedY - 6}" text-anchor="end" font-size="11" fill="#b45309">p theorique ${this.formatProbability(expected)}</text>
+            <line x1="${padding.left}" y1="${expectedY}" x2="${width - padding.right}" y2="${expectedY}" stroke="var(--attention)" stroke-dasharray="6 4" stroke-width="2"></line>
+            <text x="${width - padding.right - 4}" y="${expectedY - 6}" text-anchor="end" font-size="11" fill="var(--attention)">p theorique ${this.formatProbability(expected)}</text>
         `;
 
         if (this.frequencyHistory.length > 0) {

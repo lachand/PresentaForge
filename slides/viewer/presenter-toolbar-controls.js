@@ -239,7 +239,7 @@ export function bindPresenterToolbarButtons(context = {}) {
                         'aborted':             'Reconnaissance interrompue',
                         'no-speech':           null,
                     }[e.error] ?? `Erreur reconnaissance vocale : ${e.error}`;
-                    if (msg && _subtitleText) _subtitleText.textContent = `⚠ ${msg}`;
+                    if (msg && _subtitleText) _subtitleText.textContent = msg;
                     if (e.error !== 'no-speech') {
                         setTimeout(_stopSubtitle, 4000);
                     }

@@ -414,7 +414,7 @@ class CountingRadixWidget {
     _syncButtons(state) {
         const btn = this.root.querySelector('.crw-btn-play');
         if (!btn) return;
-        btn.textContent = state.playing ? '⏸ Pause' : (state.atEnd ? '↻ Rejouer' : '▶ Lancer');
+        OEIIcons.setLabel(btn, state.playing ? ['pause', 'Pause'] : (state.atEnd ? ['refresh', 'Rejouer'] : ['play', 'Lancer']));
         btn.setAttribute('aria-pressed', String(!!state.playing));
     }
 

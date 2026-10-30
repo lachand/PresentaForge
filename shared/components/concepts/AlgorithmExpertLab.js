@@ -1595,11 +1595,11 @@ class AlgorithmExpertLab {
         const btn = document.getElementById('algoexpert-autoplay');
         if (!btn) return;
         if (this.autoTimer) {
-            btn.textContent = '⏸ Pause';
+            OEIIcons.setLabel(btn, 'pause', 'Pause');
             btn.classList.add('btn-primary');
             btn.classList.remove('btn-secondary');
         } else {
-            btn.textContent = '▶ Lecture';
+            OEIIcons.setLabel(btn, 'play', 'Lecture');
             btn.classList.remove('btn-primary');
             btn.classList.add('btn-secondary');
         }

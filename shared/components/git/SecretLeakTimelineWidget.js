@@ -1,47 +1,47 @@
 class SecretLeakTimelineWidget {
     static STEPS = [
         {
-            timeStr: 'T + 0 s', icon: '💻', label: 'git push origin main',
+            timeStr: 'T + 0 s', icon: 'laptop', label: 'git push origin main',
             desc: 'Vous exécutez git push. Le commit contenant votre clé API est envoyé vers GitHub. Le dépôt est public.',
-            color: '#3b82f6'
+            color: 'var(--production)'
         },
         {
-            timeStr: 'T + 3 s', icon: '☁️', label: 'GitHub reçoit le commit',
+            timeStr: 'T + 3 s', icon: 'cloud', label: 'GitHub reçoit le commit',
             desc: 'Le code est désormais accessible publiquement. GitHub indexe le contenu et déclenche les analyses automatiques de sécurité.',
-            color: '#3b82f6'
+            color: 'var(--production)'
         },
         {
-            timeStr: 'T + 8 s', icon: '🔍', label: 'Secret Scanning détecte la clé',
+            timeStr: 'T + 8 s', icon: 'search', label: 'Secret Scanning détecte la clé',
             desc: 'GitHub Secret Scanning identifie un pattern connu : GITHUB_TOKEN=ghp_... La clé est valide et active. Une alerte interne est générée.',
-            color: '#eab308'
+            color: 'var(--attention)'
         },
         {
-            timeStr: 'T + 15 s', icon: '🤖', label: 'Bot tiers archive le secret',
+            timeStr: 'T + 15 s', icon: 'cpu', label: 'Bot tiers archive le secret',
             desc: 'Des bots spécialisés (GitGuardian, truffleHog, scanners malveillants) scrutent GitHub en temps réel. Votre token est capturé dans leur base — même si vous supprimez le commit ensuite.',
-            color: '#f97316'
+            color: 'var(--attention)'
         },
         {
-            timeStr: 'T + 45 s', icon: '⚠️', label: 'Premier test d\'utilisation',
+            timeStr: 'T + 45 s', icon: 'warning', label: 'Premier test d\'utilisation',
             desc: 'Une requête GET /user est envoyée à l\'API GitHub avec votre token. Réponse : 200 OK. L\'accès est confirmé, les repos privés sont listés.',
-            color: '#ef4444'
+            color: 'var(--critique)'
         },
         {
-            timeStr: 'T + 60 s', icon: '🚨', label: 'Accès non autorisé confirmé',
+            timeStr: 'T + 60 s', icon: 'siren', label: 'Accès non autorisé confirmé',
             desc: 'Le bot peut lire vos dépôts privés, exfiltrer du code source, créer des webhooks ou pousser des commits en votre nom. La compromission est réelle et active.',
-            color: '#dc2626'
+            color: 'var(--critique)'
         },
         {
-            timeStr: 'T + 2 min', icon: '📧', label: 'GitHub vous alerte (trop tard)',
+            timeStr: 'T + 2 min', icon: 'mail', label: 'GitHub vous alerte (trop tard)',
             desc: 'GitHub envoie un email de notification à votre adresse. Mais le secret est compromis depuis 2 minutes. La révocation immédiate reste l\'action prioritaire.',
-            color: '#b91c1c'
+            color: 'var(--critique)'
         },
     ];
 
     static mount(container, config = {}) {
         container.innerHTML = `<div class="slt-widget widget-fit">
             <div class="slt-controls widget-fit-header">
-                <button class="slt-btn slt-btn-play">▶ Lancer la simulation</button>
-                <button class="slt-btn slt-btn-reset">↺ Recommencer</button>
+                <button class="slt-btn slt-btn-play">${OEIIcons.render('play')} Lancer la simulation</button>
+                <button class="slt-btn slt-btn-reset">${OEIIcons.render('refresh')} Recommencer</button>
                 <span class="slt-timer"></span>
             </div>
             <div class="slt-timeline widget-fit-body">
@@ -51,7 +51,7 @@ class SecretLeakTimelineWidget {
                     <div class="slt-connector" style="background:linear-gradient(to bottom,${step.color},${SecretLeakTimelineWidget.STEPS[i + 1]?.color || step.color})"></div>
                     <div class="slt-step-inner" style="border-left-color:${step.color}">
                         <div class="slt-step-header">
-                            <span class="slt-step-icon">${step.icon}</span>
+                            <span class="slt-step-icon">${OEIIcons.render(step.icon)}</span>
                             <span class="slt-step-time" style="background:${step.color}">${step.timeStr}</span>
                             <span class="slt-step-label">${step.label}</span>
                         </div>
@@ -60,7 +60,7 @@ class SecretLeakTimelineWidget {
                 </div>`).join('')}
             </div>
             <div class="slt-moral widget-fit-footer">
-                🔑 <strong>Règle fondamentale :</strong> Si vous exposez un secret, <strong>révoquez-le immédiatement</strong> chez le fournisseur (GitHub, AWS, Stripe…) — <em>avant</em> de supprimer le commit. La suppression de l'historique ne sert à rien si le secret est déjà capturé par un bot.
+                ${OEIIcons.render('key')} <strong>Règle fondamentale :</strong> Si vous exposez un secret, <strong>révoquez-le immédiatement</strong> chez le fournisseur (GitHub, AWS, Stripe…) — <em>avant</em> de supprimer le commit. La suppression de l'historique ne sert à rien si le secret est déjà capturé par un bot.
             </div>
         </div>`;
 
@@ -85,7 +85,7 @@ class SecretLeakTimelineWidget {
             const revealNext = () => {
                 if (idx >= steps.length) {
                     moral.classList.add('visible');
-                    timerEl.textContent = '✓ Simulation terminée';
+                    OEIIcons.setLabel(timerEl, 'check', 'Simulation terminée');
                     return;
                 }
                 steps[idx].classList.add('visible');
