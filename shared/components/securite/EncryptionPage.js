@@ -1,368 +1,340 @@
+/**
+ * EncryptionPage : César, Vigenère, XOR (octets UTF-8), réutilisation d'un flux et ECB contre CBC.
+ * Tout le calcul est dans le moteur pur `algorithms/cipher-engine.js` (relecture 3b, B10, CH-I1) ;
+ * ici, seulement l'affichage. Les chiffrements de flux et de blocs sont des jouets pédagogiques.
+ */
 class EncryptionPage extends ConceptPage {
     async init() {
         await super.init();
-    (() => {
-        const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const FRENCH_FREQ = {
-            A:8.15, B:0.97, C:3.15, D:3.73, E:17.39, F:1.12, G:0.97, H:0.85,
-            I:7.31, J:0.45, K:0.02, L:5.69, M:2.87, N:7.12, O:5.28, P:2.80,
-            Q:1.21, R:6.64, S:8.14, T:7.22, U:6.38, V:1.64, W:0.03, X:0.41,
-            Y:0.28, Z:0.15
-        };
-        let mode = 'encrypt';
-        let activeTab = 'cesar';
+        this.mode = 'encrypt';
+        this.activeTab = 'cesar';
+        this.alpha = OEITrace.CIPHER_ALPHABET;
+        this.$ = (id) => document.getElementById(id);
+        this.bindTabs();
+        this.bindInputs();
+        this.drawWheel();
+        this.buildTabulaRecta();
+        this.update();
+    }
 
-        // --- Tab / Mode switching ---
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+    bindTabs() {
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
-                activeTab = btn.dataset.tab;
-                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-                document.getElementById('panel-' + activeTab).classList.add('active');
-                update();
+                this.activeTab = btn.dataset.tab;
+                document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+                this.$('panel-' + this.activeTab).classList.add('active');
+                document.querySelector('.mode-toggle').style.display = ['cesar', 'vigenere', 'xor'].includes(this.activeTab) ? '' : 'none';
+                this.update();
             });
         });
-
-        document.querySelectorAll('.mode-btn').forEach(btn => {
+        document.querySelectorAll('.mode-btn').forEach((btn) => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.mode-btn').forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
-                mode = btn.dataset.mode;
-                updateLabels();
-                update();
+                this.mode = btn.dataset.mode;
+                this.updateLabels();
+                this.update();
             });
         });
+    }
 
-        function updateLabels() {
-            const encrypt = mode === 'encrypt';
-            document.querySelectorAll('.io-row').forEach(row => {
-                const labels = row.querySelectorAll('label');
-                if (labels.length >= 2) {
-                    labels[0].textContent = encrypt ? 'Texte en clair' : 'Texte chiffré';
-                    labels[1].textContent = encrypt ? 'Texte chiffré' : 'Texte déchiffré';
+    bindInputs() {
+        this.$('cesar-shift').addEventListener('input', () => { this.$('cesar-shift-val').textContent = this.$('cesar-shift').value; this.drawWheel(); this.update(); });
+        this.$('cesar-plain').addEventListener('input', () => this.update());
+        this.$('vigenere-key').addEventListener('input', () => this.update());
+        this.$('vigenere-plain').addEventListener('input', () => this.update());
+        this.$('xor-key').addEventListener('input', () => this.update());
+        this.$('xor-plain').addEventListener('input', () => this.update());
+        ['flux-p1', 'flux-p2', 'flux-key', 'flux-nonce1', 'flux-nonce2', 'flux-known'].forEach((id) => this.$(id).addEventListener('input', () => this.updateFlux()));
+        this.$('flux-same').addEventListener('change', () => this.updateFlux());
+        ['ecb-image', 'ecb-key'].forEach((id) => this.$(id).addEventListener('input', () => this.updateEcb()));
+    }
+
+    updateLabels() {
+        const encrypt = this.mode === 'encrypt';
+        document.querySelectorAll('#panel-cesar .io-row, #panel-vigenere .io-row, #panel-xor .io-row').forEach((row) => {
+            const labels = row.querySelectorAll('label');
+            if (labels.length >= 2) {
+                const isXor = row.closest('#panel-xor');
+                labels[0].textContent = encrypt ? 'Texte en clair' : (isXor ? 'Octets en hexadécimal' : 'Texte chiffré');
+                labels[1].textContent = encrypt ? (isXor ? 'Résultat (hexadécimal)' : 'Texte chiffré') : (isXor ? 'Texte déchiffré' : 'Texte déchiffré');
+            }
+        });
+    }
+
+    update() {
+        if (this.activeTab === 'cesar') this.updateCesar();
+        else if (this.activeTab === 'vigenere') this.updateVigenere();
+        else if (this.activeTab === 'xor') this.updateXor();
+        else if (this.activeTab === 'flux') this.updateFlux();
+        else if (this.activeTab === 'ecb') this.updateEcb();
+    }
+
+    // --- César ---
+    drawWheel() {
+        const svg = this.$('cesar-wheel');
+        const shift = parseInt(this.$('cesar-shift').value, 10);
+        const A = this.alpha;
+        const cx = 140, cy = 140, rOuter = 120, rInner = 85;
+        let html = `<circle cx="${cx}" cy="${cy}" r="${rOuter}" class="wheel-outer"/><circle cx="${cx}" cy="${cy}" r="${rInner}" class="wheel-inner"/>`;
+        for (let i = 0; i < 26; i += 1) {
+            const angle = (i * 360 / 26 - 90) * Math.PI / 180;
+            html += `<text x="${cx + (rOuter - 15) * Math.cos(angle)}" y="${cy + (rOuter - 15) * Math.sin(angle)}" text-anchor="middle" dominant-baseline="central" class="wheel-letter-outer">${A[i]}</text>`;
+            html += `<text x="${cx + (rInner - 15) * Math.cos(angle)}" y="${cy + (rInner - 15) * Math.sin(angle)}" text-anchor="middle" dominant-baseline="central" class="wheel-letter-inner">${A[(i + shift) % 26]}</text>`;
+        }
+        const a = -90 * Math.PI / 180;
+        html += `<line x1="${cx + (rOuter - 28) * Math.cos(a)}" y1="${cy + (rOuter - 28) * Math.sin(a)}" x2="${cx + (rInner + 2) * Math.cos(a)}" y2="${cy + (rInner + 2) * Math.sin(a)}" stroke="var(--warning)" stroke-width="2" marker-end="url(#arrowhead)"/>`;
+        html += '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--warning)"/></marker></defs>';
+        svg.innerHTML = html;
+    }
+
+    updateCesar() {
+        const shift = parseInt(this.$('cesar-shift').value, 10);
+        const input = this.$('cesar-plain').value;
+        const decrypt = this.mode === 'decrypt';
+        const output = OEITrace.caesarShift(input, shift, decrypt);
+        this.$('cesar-cipher').value = output;
+        this.buildTransformVis(this.$('cesar-transform'), OEITrace.cipherNormalize(input), output);
+        const cipherText = decrypt ? input : output;
+        this.buildFreqChart(this.$('cesar-freq'), cipherText);
+        this.renderCesarAttack(cipherText);
+    }
+
+    renderCesarAttack(cipherText) {
+        const list = this.$('cesar-attack-list');
+        list.innerHTML = '';
+        if (OEITrace.cipherLetterFreq(cipherText).total < 8) {
+            const hint = document.createElement('div');
+            hint.className = 'text-muted text-sm';
+            hint.textContent = 'Écris au moins une phrase (une dizaine de lettres) pour que l\'attaque par fréquence ait un sens.';
+            list.appendChild(hint);
+            return;
+        }
+        OEITrace.caesarCandidates(cipherText).slice(0, 5).forEach((attempt, idx) => {
+            const item = document.createElement('div');
+            item.className = 'attack-item';
+            const k = document.createElement('div');
+            k.className = 'k';
+            k.textContent = 'Clé ' + attempt.shift + (idx === 0 ? ' (la plus française)' : '');
+            const p = document.createElement('div');
+            p.className = 'p';
+            p.textContent = attempt.plain;
+            item.append(k, p);
+            list.appendChild(item);
+        });
+    }
+
+    // --- Vigenère ---
+    updateVigenere() {
+        const key = OEITrace.vigenereKey(this.$('vigenere-key').value);
+        const input = this.$('vigenere-plain').value;
+        const decrypt = this.mode === 'decrypt';
+        const output = OEITrace.vigenereProcess(input, key, decrypt);
+        this.$('vigenere-cipher').value = output;
+        this.buildTransformVis(this.$('vigenere-transform'), OEITrace.cipherNormalize(input), output);
+        this.buildFreqChart(this.$('vigenere-freq'), decrypt ? input : output);
+        const first = OEITrace.cipherNormalize(input).split('').find((c) => this.alpha.includes(c));
+        this.highlightTabula(first || null, key[0] || null);
+    }
+
+    buildTabulaRecta() {
+        const A = this.alpha;
+        let html = '<thead><tr><th></th>' + A.split('').map((l) => `<th>${l}</th>`).join('') + '</tr></thead><tbody>';
+        for (let r = 0; r < 26; r += 1) {
+            html += `<tr><th>${A[r]}</th>`;
+            for (let c = 0; c < 26; c += 1) html += `<td data-row="${r}" data-col="${c}">${A[(r + c) % 26]}</td>`;
+            html += '</tr>';
+        }
+        this.$('tabula-recta').innerHTML = html + '</tbody>';
+    }
+
+    highlightTabula(plainChar, keyChar) {
+        const cells = document.querySelectorAll('.tabula-recta td');
+        cells.forEach((td) => td.classList.remove('highlight-row', 'highlight-col', 'highlight-cell'));
+        if (!plainChar || !keyChar) return;
+        const row = this.alpha.indexOf(keyChar);
+        const col = this.alpha.indexOf(plainChar);
+        if (row === -1 || col === -1) return;
+        cells.forEach((td) => {
+            const r = parseInt(td.dataset.row, 10);
+            const c = parseInt(td.dataset.col, 10);
+            if (r === row) td.classList.add('highlight-row');
+            if (c === col) td.classList.add('highlight-col');
+            if (r === row && c === col) td.classList.add('highlight-cell');
+        });
+    }
+
+    // --- XOR sur octets UTF-8 ---
+    updateXor() {
+        const key = this.$('xor-key').value;
+        const input = this.$('xor-plain').value;
+        const out = this.$('xor-cipher');
+        const vis = this.$('xor-vis');
+        vis.innerHTML = '';
+        const note = (text) => { const s = document.createElement('span'); s.style.color = 'var(--muted)'; s.textContent = text; vis.appendChild(s); };
+        if (this.mode === 'encrypt') {
+            const r = OEITrace.xorEncrypt(input, key);
+            if (!r.ok) { out.value = ''; note('Écris du texte et une clé.'); return; }
+            out.value = input ? r.hex : '';
+            this.buildXorVis(Array.from(new TextEncoder().encode(input)), Array.from(new TextEncoder().encode(key)), r.bytes);
+        } else {
+            const r = OEITrace.xorDecryptHex(input, key);
+            if (!r.ok) { out.value = ''; note(r.error); return; }
+            out.value = r.text;
+            const bytes = OEITrace.xorParseHex(input).bytes;
+            const k = Array.from(new TextEncoder().encode(key));
+            this.buildXorVis(bytes, k, Array.from(new TextEncoder().encode(r.text)));
+        }
+    }
+
+    buildXorVis(inBytes, keyBytes, resultBytes) {
+        const vis = this.$('xor-vis');
+        const bits = (v) => v.toString(2).padStart(8, '0');
+        const hex = (v) => '0x' + v.toString(16).toUpperCase().padStart(2, '0');
+        const show = Math.min(inBytes.length, 12);
+        for (let i = 0; i < show; i += 1) {
+            const kb = keyBytes[i % keyBytes.length];
+            const block = document.createElement('div');
+            block.style.marginBottom = '0.75rem';
+            const title = document.createElement('div');
+            title.style.cssText = 'font-size:0.75rem;color:var(--muted);margin-bottom:4px';
+            title.textContent = 'Octet ' + (i + 1) + ' : ' + hex(inBytes[i]) + ' XOR ' + hex(kb);
+            block.appendChild(title);
+            [['Entrée', inBytes[i], null], ['Clé', kb, null], ['Résultat', resultBytes[i], [inBytes[i], kb]]].forEach(([label, value, ops]) => {
+                const row = document.createElement('div');
+                row.className = 'xor-row';
+                const lbl = document.createElement('span');
+                lbl.className = 'label';
+                lbl.textContent = label;
+                row.appendChild(lbl);
+                const b = bits(value);
+                for (let j = 0; j < 8; j += 1) {
+                    const bit = document.createElement('span');
+                    const diff = ops && bits(ops[0])[j] !== bits(ops[1])[j];
+                    bit.className = 'xor-bit ' + (b[j] === '1' ? 'one' : 'zero') + (diff ? ' diff' : '');
+                    bit.textContent = b[j];
+                    row.appendChild(bit);
                 }
+                const h = document.createElement('span');
+                h.style.cssText = 'margin-left:8px;font-size:0.8rem';
+                h.textContent = hex(value);
+                row.appendChild(h);
+                block.appendChild(row);
             });
+            vis.appendChild(block);
         }
-
-        // --- César ---
-        const cesarShift = document.getElementById('cesar-shift');
-        const cesarShiftVal = document.getElementById('cesar-shift-val');
-        const cesarPlain = document.getElementById('cesar-plain');
-        const cesarCipher = document.getElementById('cesar-cipher');
-
-        cesarShift.addEventListener('input', () => { cesarShiftVal.textContent = cesarShift.value; drawWheel(); update(); });
-        cesarPlain.addEventListener('input', update);
-
-        function cesarEncrypt(text, shift) {
-            return text.split('').map(c => {
-                const idx = ALPHA.indexOf(c.toUpperCase());
-                if (idx === -1) return c;
-                return ALPHA[(idx + shift) % 26];
-            }).join('');
+        if (inBytes.length > show) {
+            const more = document.createElement('span');
+            more.style.color = 'var(--muted)';
+            more.textContent = '... et ' + (inBytes.length - show) + ' octets de plus';
+            vis.appendChild(more);
         }
+    }
 
-        function cesarDecrypt(text, shift) {
-            return cesarEncrypt(text, 26 - shift);
-        }
+    // --- Réutilisation d'un flux ---
+    updateFlux() {
+        const same = this.$('flux-same').checked;
+        const n1 = this.$('flux-nonce1').value;
+        const n2Field = this.$('flux-nonce2');
+        n2Field.disabled = same;
+        if (same) n2Field.value = n1;
+        else if (n2Field.value === n1) n2Field.value = n1 + '-bis';
+        const r = OEITrace.streamReuseDemo(this.$('flux-p1').value, this.$('flux-p2').value, this.$('flux-key').value, n1, n2Field.value);
+        const set = (id, bytes) => { this.$(id).textContent = OEITrace.cipherToHex(bytes); };
+        set('flux-c1', r.c1);
+        set('flux-c2', r.c2);
+        set('flux-xc', r.xorCipher);
+        set('flux-xp', r.xorPlain);
+        const verdict = this.$('flux-verdict');
+        verdict.textContent = r.sameNonce
+            ? 'Même clé et même nonce : le XOR des deux chiffrés est égal au XOR des deux clairs. La clé a disparu du calcul : l\'attaquant n\'en a plus besoin.'
+            : 'Nonces différents : le XOR des deux chiffrés ne vaut plus le XOR des clairs, il ne révèle rien d\'exploitable.';
+        verdict.className = 'flux-verdict ' + (r.sameNonce ? 'bad' : 'ok');
+        const known = this.$('flux-known').value;
+        const recovered = r.sameNonce && known ? OEITrace.streamRecoverSecond(r.xorCipher, known) : '';
+        this.$('flux-recovered').textContent = r.sameNonce
+            ? (known ? 'L\'attaquant connaît le début du message 1 (« ' + known + ' ») : il lit le début du message 2 : « ' + recovered + ' ».' : 'Écris le début du message 1 que connaît l\'attaquant pour voir ce qu\'il en déduit du message 2.')
+            : 'Avec des nonces différents, connaître le début du message 1 ne donne rien sur le message 2.';
+    }
 
-        function drawWheel() {
-            const svg = document.getElementById('cesar-wheel');
-            const shift = parseInt(cesarShift.value);
-            const cx = 140, cy = 140, rOuter = 120, rInner = 85;
-            let html = `<circle cx="${cx}" cy="${cy}" r="${rOuter}" class="wheel-outer"/>`;
-            html += `<circle cx="${cx}" cy="${cy}" r="${rInner}" class="wheel-inner"/>`;
+    // --- ECB contre CBC ---
+    updateEcb() {
+        const rows = OEITrace.cipherImageRows(OEITrace.CIPHER_IMAGES[this.$('ecb-image').value]);
+        const key = this.$('ecb-key').value || 'clé';
+        const ecb = OEITrace.ecbEncryptRows(rows, key);
+        const cbc = OEITrace.cbcEncryptRows(rows, key, 'iv');
+        this.drawGrid(this.$('ecb-clear'), rows);
+        this.drawGrid(this.$('ecb-ecb'), ecb);
+        this.drawGrid(this.$('ecb-cbc'), cbc);
+        const rep = (r) => OEITrace.cipherRepeatedRows(r);
+        this.$('ecb-stats').textContent = 'Blocs (lignes) répétés : ' + rep(rows) + ' dans le clair, ' + rep(ecb) + ' en ECB, ' + rep(cbc) + ' en CBC. Allonger la clé ne change rien au motif en ECB : deux blocs clairs égaux donnent deux blocs chiffrés égaux.';
+    }
 
-            for (let i = 0; i < 26; i++) {
-                const angle = (i * 360 / 26 - 90) * Math.PI / 180;
-                const xo = cx + (rOuter - 15) * Math.cos(angle);
-                const yo = cy + (rOuter - 15) * Math.sin(angle);
-                html += `<text x="${xo}" y="${yo}" text-anchor="middle" dominant-baseline="central" class="wheel-letter-outer">${ALPHA[i]}</text>`;
-
-                const xi = cx + (rInner - 15) * Math.cos(angle);
-                const yi = cy + (rInner - 15) * Math.sin(angle);
-                html += `<text x="${xi}" y="${yi}" text-anchor="middle" dominant-baseline="central" class="wheel-letter-inner">${ALPHA[(i + shift) % 26]}</text>`;
-            }
-
-            // Arrow connecting outer A to inner shifted A
-            const arrowAngle = (-90) * Math.PI / 180;
-            const ax1 = cx + (rOuter - 28) * Math.cos(arrowAngle);
-            const ay1 = cy + (rOuter - 28) * Math.sin(arrowAngle);
-            const ax2 = cx + (rInner + 2) * Math.cos(arrowAngle);
-            const ay2 = cy + (rInner + 2) * Math.sin(arrowAngle);
-            html += `<line x1="${ax1}" y1="${ay1}" x2="${ax2}" y2="${ay2}" stroke="var(--warning)" stroke-width="2" marker-end="url(#arrowhead)"/>`;
-            html += `<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--warning)"/></marker></defs>`;
-
-            svg.innerHTML = html;
-        }
-
-        // --- Vigenère ---
-        const vigenereKey = document.getElementById('vigenere-key');
-        const vigenerePlain = document.getElementById('vigenere-plain');
-        const vigenereCipher = document.getElementById('vigenere-cipher');
-
-        vigenereKey.addEventListener('input', () => { vigenereKey.value = vigenereKey.value.toUpperCase().replace(/[^A-Z]/g, ''); update(); });
-        vigenerePlain.addEventListener('input', update);
-
-        function vigenereProcess(text, key, decrypt) {
-            if (!key) return text;
-            let ki = 0;
-            return text.split('').map(c => {
-                const idx = ALPHA.indexOf(c.toUpperCase());
-                if (idx === -1) return c;
-                const shift = ALPHA.indexOf(key[ki % key.length]);
-                ki++;
-                if (decrypt) return ALPHA[(idx - shift + 26) % 26];
-                return ALPHA[(idx + shift) % 26];
-            }).join('');
-        }
-
-        function buildTabulaRecta() {
-            const table = document.getElementById('tabula-recta');
-            let html = '<thead><tr><th></th>';
-            for (let i = 0; i < 26; i++) html += `<th>${ALPHA[i]}</th>`;
-            html += '</tr></thead><tbody>';
-            for (let r = 0; r < 26; r++) {
-                html += `<tr><th>${ALPHA[r]}</th>`;
-                for (let c = 0; c < 26; c++) {
-                    html += `<td data-row="${r}" data-col="${c}">${ALPHA[(r + c) % 26]}</td>`;
-                }
-                html += '</tr>';
-            }
-            html += '</tbody>';
-            table.innerHTML = html;
-        }
-
-        function highlightTabula(plainChar, keyChar) {
-            document.querySelectorAll('.tabula-recta td').forEach(td => {
-                td.classList.remove('highlight-row', 'highlight-col', 'highlight-cell');
+    drawGrid(container, rows) {
+        container.innerHTML = '';
+        rows.forEach((row) => {
+            const line = document.createElement('div');
+            line.className = 'ecb-row';
+            row.forEach((v) => {
+                const cell = document.createElement('span');
+                cell.className = 'ecb-cell';
+                cell.style.background = 'color-mix(in srgb, var(--ink) ' + Math.round((255 - v) / 255 * 100) + '%, var(--surface))';
+                cell.title = String(v);
+                line.appendChild(cell);
             });
-            if (!plainChar || !keyChar) return;
-            const row = ALPHA.indexOf(keyChar);
-            const col = ALPHA.indexOf(plainChar);
-            if (row === -1 || col === -1) return;
-            document.querySelectorAll('.tabula-recta td').forEach(td => {
-                const r = parseInt(td.dataset.row);
-                const c = parseInt(td.dataset.col);
-                if (r === row) td.classList.add('highlight-row');
-                if (c === col) td.classList.add('highlight-col');
-                if (r === row && c === col) td.classList.add('highlight-cell');
-            });
-        }
+            container.appendChild(line);
+        });
+    }
 
-        // --- XOR ---
-        const xorKey = document.getElementById('xor-key');
-        const xorPlain = document.getElementById('xor-plain');
-        const xorCipher = document.getElementById('xor-cipher');
+    // --- Visualisations lettres ---
+    buildTransformVis(container, input, output) {
+        container.innerHTML = '';
+        input.split('').forEach((ch, i) => {
+            const isSpace = ch === ' ';
+            const pair = document.createElement('div');
+            pair.className = 'letter-pair' + (isSpace ? ' space' : '');
+            pair.style.animationDelay = (i * 20) + 'ms';
+            const src = document.createElement('span');
+            src.className = 'src';
+            src.textContent = isSpace ? ' ' : ch;
+            const arrow = document.createElement('span');
+            arrow.className = 'arrow';
+            arrow.textContent = '↓';
+            const dst = document.createElement('span');
+            dst.className = 'dst';
+            dst.textContent = isSpace ? ' ' : (output[i] || '?');
+            pair.append(src, arrow, dst);
+            container.appendChild(pair);
+        });
+    }
 
-        xorKey.addEventListener('input', update);
-        xorPlain.addEventListener('input', update);
-
-        function xorProcess(text, key) {
-            const result = [];
-            for (let i = 0; i < text.length; i++) {
-                const tc = text.charCodeAt(i);
-                const kc = key.charCodeAt(i % key.length);
-                result.push(tc ^ kc);
-            }
-            return result;
-        }
-
-        function buildXorVis(text, key) {
-            const vis = document.getElementById('xor-vis');
-            if (!key || !text) { vis.innerHTML = '<span style="color:var(--muted)">Entrez du texte et une clé</span>'; return; }
-            let html = '';
-            const maxShow = Math.min(text.length, 12);
-            for (let i = 0; i < maxShow; i++) {
-                const tc = text.charCodeAt(i);
-                const kc = key.charCodeAt(i % key.length);
-                const rc = tc ^ kc;
-                const tbits = tc.toString(2).padStart(8, '0');
-                const kbits = kc.toString(2).padStart(8, '0');
-                const rbits = rc.toString(2).padStart(8, '0');
-
-                html += `<div style="margin-bottom:0.75rem">`;
-                html += `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px">Caractère ${i + 1}: '${text[i]}' XOR '${key[i % key.length]}'</div>`;
-                html += buildBitRow('Texte', tbits, null);
-                html += buildBitRow('Clé', kbits, null);
-                html += `<div class="xor-row"><span class="label" style="border-top:1px solid var(--muted);padding-top:2px">Résultat</span>`;
-                for (let b = 0; b < 8; b++) {
-                    const isDiff = tbits[b] !== kbits[b];
-                    html += `<span class="xor-bit ${rbits[b] === '1' ? 'one' : 'zero'} ${isDiff ? 'diff' : ''}">${rbits[b]}</span>`;
-                }
-                html += `<span style="margin-left:8px;font-size:0.8rem">= 0x${rc.toString(16).toUpperCase().padStart(2, '0')}</span></div>`;
-                html += `</div>`;
-            }
-            if (text.length > maxShow) html += `<span style="color:var(--muted)">... et ${text.length - maxShow} caractères de plus</span>`;
-            vis.innerHTML = html;
-        }
-
-        function buildBitRow(label, bits, _) {
-            let html = `<div class="xor-row"><span class="label">${label}</span>`;
-            for (let b = 0; b < 8; b++) {
-                html += `<span class="xor-bit ${bits[b] === '1' ? 'one' : 'zero'}">${bits[b]}</span>`;
-            }
-            html += `</div>`;
-            return html;
-        }
-
-        // --- Transform visualization ---
-        function buildTransformVis(container, input, output) {
-            let html = '';
-            for (let i = 0; i < input.length; i++) {
-                const isSpace = input[i] === ' ';
-                html += `<div class="letter-pair ${isSpace ? 'space' : ''}" style="animation-delay:${i * 20}ms">`;
-                html += `<span class="src">${isSpace ? '&nbsp;' : input[i].toUpperCase()}</span>`;
-                html += `<span class="arrow">&#x2193;</span>`;
-                html += `<span class="dst">${isSpace ? '&nbsp;' : (output[i] || '?').toUpperCase()}</span>`;
-                html += `</div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        // --- Frequency analysis ---
-        function computeFreq(text) {
-            const counts = {};
-            let total = 0;
-            for (const c of text.toUpperCase()) {
-                if (ALPHA.includes(c)) {
-                    counts[c] = (counts[c] || 0) + 1;
-                    total++;
-                }
-            }
-            const freq = {};
-            for (const c of ALPHA) freq[c] = total > 0 ? ((counts[c] || 0) / total) * 100 : 0;
-            return freq;
-        }
-
-        function frenchScore(text) {
-            const freq = computeFreq(text);
-            let score = 0;
-            for (const letter of ALPHA) {
-                const expected = FRENCH_FREQ[letter] || 0.0001;
-                const observed = freq[letter] || 0;
-                const delta = observed - expected;
-                score += (delta * delta) / expected;
-            }
-            return score;
-        }
-
-        function renderCesarAttack(cipherText) {
-            const list = document.getElementById('cesar-attack-list');
-            if (!list) return;
-
-            const letterCount = cipherText.split('').filter(c => ALPHA.includes(c.toUpperCase())).length;
-            if (letterCount < 3) {
-                list.innerHTML = '<div class="text-muted text-sm">Entrez au moins quelques lettres pour tester les clés.</div>';
-                return;
-            }
-
-            const attempts = [];
-            for (let shift = 1; shift < 26; shift++) {
-                const plain = cesarDecrypt(cipherText, shift);
-                attempts.push({
-                    shift: shift,
-                    plain: plain,
-                    score: frenchScore(plain)
-                });
-            }
-            attempts.sort((a, b) => a.score - b.score);
-            const top = attempts.slice(0, 5);
-
-            list.innerHTML = top.map((attempt, idx) => `
-                <div class="attack-item">
-                    <div class="k">Clé ${attempt.shift}${idx === 0 ? ' (top)' : ''}</div>
-                    <div class="p">${attempt.plain.replace(/</g, '&lt;')}</div>
-                </div>
-            `).join('');
-        }
-
-        function buildFreqChart(container, cipherText) {
-            const freq = computeFreq(cipherText);
-            const maxVal = Math.max(...Object.values(freq), ...Object.values(FRENCH_FREQ));
-            let html = '';
-            for (const letter of ALPHA) {
-                const hActual = maxVal > 0 ? (freq[letter] / maxVal) * 140 : 0;
-                const hExpected = maxVal > 0 ? (FRENCH_FREQ[letter] / maxVal) * 140 : 0;
-                html += `<div class="freq-bar-group">`;
-                html += `<div class="freq-bars">`;
-                html += `<div class="freq-bar actual" style="height:${hActual}px" title="${letter}: ${freq[letter].toFixed(1)}%"></div>`;
-                html += `<div class="freq-bar expected" style="height:${hExpected}px" title="${letter} (FR): ${FRENCH_FREQ[letter].toFixed(1)}%"></div>`;
-                html += `</div>`;
-                html += `<span class="freq-label">${letter}</span>`;
-                html += `</div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        // --- Main update ---
-        function update() {
-            if (activeTab === 'cesar') updateCesar();
-            else if (activeTab === 'vigenere') updateVigenere();
-            else if (activeTab === 'xor') updateXor();
-        }
-
-        function updateCesar() {
-            const shift = parseInt(cesarShift.value);
-            const input = cesarPlain.value;
-            const output = mode === 'encrypt' ? cesarEncrypt(input, shift) : cesarDecrypt(input, shift);
-            cesarCipher.value = output;
-            buildTransformVis(document.getElementById('cesar-transform'), input, output);
-            buildFreqChart(document.getElementById('cesar-freq'), mode === 'encrypt' ? output : input);
-            renderCesarAttack(mode === 'encrypt' ? output : input);
-        }
-
-        function updateVigenere() {
-            const key = vigenereKey.value.toUpperCase();
-            const input = vigenerePlain.value;
-            const decrypt = mode === 'decrypt';
-            const output = vigenereProcess(input, key, decrypt);
-            vigenereCipher.value = output;
-            buildTransformVis(document.getElementById('vigenere-transform'), input, output);
-            buildFreqChart(document.getElementById('vigenere-freq'), mode === 'encrypt' ? output : input);
-
-            // Highlight tabula for first letter
-            if (input.length > 0 && key.length > 0) {
-                const firstLetter = input.toUpperCase().split('').find(c => ALPHA.includes(c));
-                if (firstLetter) {
-                    highlightTabula(firstLetter, key[0]);
-                } else {
-                    highlightTabula(null, null);
-                }
-            }
-        }
-
-        function updateXor() {
-            const key = xorKey.value;
-            const input = xorPlain.value;
-            if (!key || !input) { xorCipher.value = ''; return; }
-
-            if (mode === 'encrypt') {
-                const result = xorProcess(input, key);
-                xorCipher.value = result.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
-                buildXorVis(input, key);
-                // For freq, count byte values mapped to A-Z range
-                const mapped = result.map(b => String.fromCharCode(b)).join('');
-                buildFreqChart(document.getElementById('xor-freq'), mapped);
-            } else {
-                // Decrypt: user enters hex in plain field
-                const hexStr = input.replace(/\s/g, '');
-                const bytes = [];
-                for (let i = 0; i < hexStr.length; i += 2) {
-                    bytes.push(parseInt(hexStr.substr(i, 2), 16));
-                }
-                const result = bytes.map((b, i) => String.fromCharCode(b ^ key.charCodeAt(i % key.length))).join('');
-                xorCipher.value = result;
-                buildXorVis(result, key);
-                buildFreqChart(document.getElementById('xor-freq'), input);
-            }
-        }
-
-        // --- Init ---
-        drawWheel();
-        buildTabulaRecta();
-        update();
-    })();
+    buildFreqChart(container, text) {
+        const { freq } = OEITrace.cipherLetterFreq(text);
+        const expected = OEITrace.CIPHER_FRENCH_FREQ;
+        const maxVal = Math.max(...Object.values(freq), ...Object.values(expected));
+        container.innerHTML = '';
+        this.alpha.split('').forEach((letter) => {
+            const group = document.createElement('div');
+            group.className = 'freq-bar-group';
+            const bars = document.createElement('div');
+            bars.className = 'freq-bars';
+            const actual = document.createElement('div');
+            actual.className = 'freq-bar actual';
+            actual.style.height = (maxVal > 0 ? freq[letter] / maxVal * 140 : 0) + 'px';
+            actual.title = letter + ' : ' + freq[letter].toFixed(1) + ' %';
+            const exp = document.createElement('div');
+            exp.className = 'freq-bar expected';
+            exp.style.height = (expected[letter] / maxVal * 140) + 'px';
+            exp.title = letter + ' (français) : ' + expected[letter].toFixed(1) + ' %';
+            bars.append(actual, exp);
+            const lbl = document.createElement('span');
+            lbl.className = 'freq-label';
+            lbl.textContent = letter;
+            group.append(bars, lbl);
+            container.appendChild(group);
+        });
     }
 }
 

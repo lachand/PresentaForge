@@ -1,4 +1,12 @@
+/**
+ * ConcurrencyPage / ConcurrencyWidget : l'état et les pas viennent du modèle pur
+ * `algorithms/mutex-model.js` (relecture 3b, B7, CO-I2) ; ici, seulement de l'affichage et des
+ * commandes. L'ordonnancement est choisi : alternance, un thread après l'autre, ou choix manuel.
+ */
 class ConcurrencyPage extends ConceptPage {
+    static PHASE_LABELS = { acquire: 'prendre le verrou', read: 'lire counter', add: 'ajouter 1', write: 'écrire counter', release: 'libérer le verrou' };
+    static SCHEDULES = { alternate: 'Alternance (un pas chacun)', sequential: 'Un thread après l\'autre', manual: 'Choix manuel' };
+
     constructor(dataPath) {
         super(dataPath);
         this.autoTimer = null;
@@ -9,9 +17,7 @@ class ConcurrencyPage extends ConceptPage {
 
     async init() {
         await super.init();
-        this.mountPseudocodeInspector({
-            lineIdBuilder: (block, idx) => `${block.name}-line${idx}`
-        });
+        this.mountPseudocodeInspector({ lineIdBuilder: (block, idx) => `${block.name}-line${idx}` });
         this.bindTabs();
         this.bindMutexControls();
         this.bindDeadlockControls();
@@ -33,17 +39,24 @@ class ConcurrencyPage extends ConceptPage {
     }
 
     bindMutexControls() {
-        document.getElementById('mutex-step').addEventListener('click', () => this.stepMutex());
-        document.getElementById('mutex-reset').addEventListener('click', () => this.resetMutex());
-        document.getElementById('mutex-run').addEventListener('click', () => this.toggleMutexAuto());
-        document.getElementById('mutex-lock').addEventListener('change', () => this.resetMutex());
+        const el = (id) => document.getElementById(id);
+        el('mutex-step').addEventListener('click', () => this.stepMutex());
+        el('mutex-t1').addEventListener('click', () => this.stepMutex('T1'));
+        el('mutex-t2').addEventListener('click', () => this.stepMutex('T2'));
+        el('mutex-reset').addEventListener('click', () => this.resetMutex());
+        el('mutex-run').addEventListener('click', () => this.toggleAuto('mutex'));
+        el('mutex-quick').addEventListener('click', () => this.quickRun());
+        ['mutex-lock', 'mutex-schedule', 'mutex-increments'].forEach((id) => el(id).addEventListener('change', () => this.resetMutex()));
     }
 
     bindDeadlockControls() {
-        document.getElementById('deadlock-step').addEventListener('click', () => this.stepDeadlock());
-        document.getElementById('deadlock-reset').addEventListener('click', () => this.resetDeadlock());
-        document.getElementById('deadlock-run').addEventListener('click', () => this.toggleDeadlockAuto());
-        document.getElementById('deadlock-order').addEventListener('change', () => this.resetDeadlock());
+        const el = (id) => document.getElementById(id);
+        el('deadlock-step').addEventListener('click', () => this.stepDeadlock());
+        el('deadlock-t1').addEventListener('click', () => this.stepDeadlock('T1'));
+        el('deadlock-t2').addEventListener('click', () => this.stepDeadlock('T2'));
+        el('deadlock-reset').addEventListener('click', () => this.resetDeadlock());
+        el('deadlock-run').addEventListener('click', () => this.toggleAuto('deadlock'));
+        ['deadlock-order', 'deadlock-schedule'].forEach((id) => el(id).addEventListener('change', () => this.resetDeadlock()));
     }
 
     stopAuto() {
@@ -51,282 +64,136 @@ class ConcurrencyPage extends ConceptPage {
             clearInterval(this.autoTimer);
             this.autoTimer = null;
         }
-        const runBtns = ['mutex-run', 'deadlock-run'];
-        runBtns.forEach((id) => {
+        ['mutex-run', 'deadlock-run'].forEach((id) => {
             const btn = document.getElementById(id);
             if (btn) btn.textContent = 'Lecture auto';
         });
     }
 
+    toggleAuto(which) {
+        if (this.autoTimer) { this.stopAuto(); return; }
+        document.getElementById(`${which}-run`).textContent = 'Pause';
+        this.autoTimer = setInterval(() => {
+            if (which === 'mutex') {
+                if (OEITrace.mutexIsDone(this.mutex)) { this.stopAuto(); return; }
+                this.stepMutex();
+            } else {
+                if (this.deadlock.done || this.deadlock.deadlocked) { this.stopAuto(); return; }
+                this.stepDeadlock();
+            }
+        }, this.autoDelay);
+    }
+
+    schedule(which) {
+        return document.getElementById(`${which}-schedule`).value;
+    }
+
+    toggleManual(which) {
+        const manual = this.schedule(which) === 'manual';
+        const show = (id, on) => { document.getElementById(id).style.display = on ? '' : 'none'; };
+        show(`${which}-step`, !manual);
+        show(`${which}-run`, !manual);
+        show(`${which}-t1`, manual);
+        show(`${which}-t2`, manual);
+    }
+
+    // ── Compteur partagé ──
     resetMutex() {
         this.stopAuto();
         const withLock = document.getElementById('mutex-lock').checked;
-        this.mutex = {
-            withLock,
-            counter: 0,
-            lockOwner: null,
-            turn: 'T1',
-            done: false,
-            threads: {
-                T1: { phase: 0, local: null, writes: 0, target: 3 },
-                T2: { phase: 0, local: null, writes: 0, target: 3 }
-            },
-            logs: []
-        };
-        this.addMutexLog(`Réinitialisation. Mode ${withLock ? 'avec mutex' : 'sans mutex'}.`);
+        const increments = Math.min(1000, Math.max(1, parseInt(document.getElementById('mutex-increments').value, 10) || 3));
+        this.mutex = OEITrace.mutexNew({ withLock: withLock, increments: increments });
+        this.toggleManual('mutex');
+        this.mutex.logs.unshift('Réinitialisation : ' + (withLock ? 'avec' : 'sans') + ' mutex, ' + increments + ' incréments par thread.');
+        document.getElementById('mutex-quick-out').textContent = '';
         this.renderMutex();
     }
 
-    phaseLabel(phase) {
-        const map = ['enter', 'read', 'local+1', 'write', 'exit'];
-        return map[phase] || 'done';
-    }
-
-    addMutexLog(msg) {
-        this.mutex.logs.unshift(msg);
-        this.mutex.logs = this.mutex.logs.slice(0, 10);
-    }
-
-    stepMutex() {
-        if (this.mutex.done) return;
-        const id = this.mutex.turn;
-        const other = id === 'T1' ? 'T2' : 'T1';
-        const t = this.mutex.threads[id];
-
-        if (t.writes >= t.target) {
-            this.mutex.turn = other;
-            if (this.mutex.threads[other].writes >= this.mutex.threads[other].target) {
-                this.mutex.done = true;
-            }
-            this.renderMutex();
-            return;
+    stepMutex(id) {
+        if (OEITrace.mutexIsDone(this.mutex)) return;
+        if (id) {
+            OEITrace.mutexStep(this.mutex, id);
+        } else {
+            OEITrace.mutexAdvance(this.mutex, this.schedule('mutex'));
         }
-
-        if (this.mutex.withLock && t.phase === 0 && this.mutex.lockOwner && this.mutex.lockOwner !== id) {
-            this.addMutexLog(`${id} bloqué: mutex détenu par ${this.mutex.lockOwner}.`);
-            this.mutex.turn = other;
-            this.renderMutex();
-            return;
-        }
-
-        switch (t.phase) {
-            case 0:
-                if (this.mutex.withLock) {
-                    this.mutex.lockOwner = id;
-                    this.addMutexLog(`${id} acquiert le mutex.`);
-                } else {
-                    this.addMutexLog(`${id} entre en section critique sans protection.`);
-                }
-                t.phase = 1;
-                break;
-            case 1:
-                t.local = this.mutex.counter;
-                this.addMutexLog(`${id} lit counter=${this.mutex.counter}.`);
-                t.phase = 2;
-                break;
-            case 2:
-                t.local += 1;
-                this.addMutexLog(`${id} calcule local=${t.local}.`);
-                t.phase = 3;
-                break;
-            case 3:
-                this.mutex.counter = t.local;
-                t.writes += 1;
-                this.addMutexLog(`${id} écrit counter=${this.mutex.counter}.`);
-                t.phase = 4;
-                break;
-            case 4:
-                if (this.mutex.withLock && this.mutex.lockOwner === id) {
-                    this.mutex.lockOwner = null;
-                    this.addMutexLog(`${id} libère le mutex.`);
-                } else {
-                    this.addMutexLog(`${id} sort.`);
-                }
-                t.local = null;
-                t.phase = 0;
-                break;
-            default:
-                break;
-        }
-
-        this.mutex.turn = other;
-        if (this.mutex.threads.T1.writes >= this.mutex.threads.T1.target &&
-            this.mutex.threads.T2.writes >= this.mutex.threads.T2.target) {
-            this.mutex.done = true;
-            this.addMutexLog(`Terminé. Résultat final counter=${this.mutex.counter}. Attendu=6.`);
-            this.stopAuto();
-        }
+        if (OEITrace.mutexIsDone(this.mutex)) this.stopAuto();
         this.renderMutex();
     }
 
-    toggleMutexAuto() {
-        const btn = document.getElementById('mutex-run');
-        if (this.autoTimer) {
-            this.stopAuto();
-            return;
-        }
-        btn.textContent = 'Pause';
-        this.autoTimer = setInterval(() => {
-            if (this.mutex.done) {
-                this.stopAuto();
-                return;
-            }
-            this.stepMutex();
-        }, this.autoDelay);
+    quickRun() {
+        const withLock = document.getElementById('mutex-lock').checked;
+        const rows = [['alternate', 'alternance'], ['sequential', 'un thread après l\'autre'], ['random', 'ordonnancement aléatoire']]
+            .map(([schedule, label]) => {
+                const r = OEITrace.mutexRunAll({ withLock: withLock, increments: 1000, schedule: schedule, seed: 7 });
+                return label + ' : counter = ' + r.counter + ' (attendu ' + r.expected + ')';
+            });
+        document.getElementById('mutex-quick-out').textContent = (withLock ? 'Avec mutex, ' : 'Sans mutex, ') + '1000 incréments par thread : ' + rows.join(' ; ') + '.';
     }
 
     renderMutex() {
-        document.getElementById('mutex-counter').textContent = this.mutex.counter;
-        document.getElementById('mutex-owner').textContent = this.mutex.lockOwner || 'libre';
-        document.getElementById('mutex-expected').textContent = '6';
-        document.getElementById('mutex-turn').textContent = this.mutex.turn;
-
-        ['T1', 'T2'].forEach((id) => {
-            const t = this.mutex.threads[id];
-            document.getElementById(`mx-${id}-phase`).textContent = this.phaseLabel(t.phase);
-            document.getElementById(`mx-${id}-local`).textContent = t.local == null ? '-' : String(t.local);
-            document.getElementById(`mx-${id}-writes`).textContent = `${t.writes}/${t.target}`;
+        const m = this.mutex;
+        const set = (id, v) => { document.getElementById(id).textContent = v; };
+        const done = OEITrace.mutexIsDone(m);
+        set('mutex-counter', m.counter);
+        set('mutex-owner', m.owner || 'libre');
+        set('mutex-expected', OEITrace.mutexExpected(m));
+        set('mutex-turn', this.schedule('mutex') === 'manual' ? 'au choix' : OEITrace.mutexPick(m, this.schedule('mutex')));
+        OEITrace.MUTEX_THREADS.forEach((id) => {
+            const t = m.threads[id];
+            const label = OEITrace.mutexThreadDone(m, id) ? 'terminé' : (OEITrace.mutexBlocked(m, id) ? 'bloqué' : ConcurrencyPage.PHASE_LABELS[m.phases[t.phase]]);
+            set(`mx-${id}-phase`, label);
+            set(`mx-${id}-local`, t.local == null ? '-' : String(t.local));
+            set(`mx-${id}-writes`, `${t.done}/${t.target}`);
         });
-
+        const verdict = document.getElementById('mutex-verdict');
+        if (done) {
+            const lost = OEITrace.mutexExpected(m) - m.counter;
+            verdict.textContent = lost === 0 ? 'Terminé : counter = ' + m.counter + ', aucune mise à jour perdue.' : 'Terminé : counter = ' + m.counter + ' au lieu de ' + OEITrace.mutexExpected(m) + ' : ' + lost + ' mises à jour perdues.';
+            verdict.className = 'status ' + (lost === 0 ? 'status-ok' : 'status-bad');
+        } else {
+            verdict.textContent = 'En exécution (' + m.lostTurns + ' tours perdus à attendre le verrou).';
+            verdict.className = 'status status-pending';
+        }
         const ul = document.getElementById('mutex-log');
-        ul.innerHTML = this.mutex.logs.map((line) => `<li>${this.escapeHtml(line)}</li>`).join('');
+        ul.innerHTML = m.logs.map((line) => `<li>${this.escapeHtml(line)}</li>`).join('');
     }
 
+    // ── Deux verrous ──
     resetDeadlock() {
         this.stopAuto();
         const ordered = document.getElementById('deadlock-order').checked;
-        const orderT1 = ['R1', 'R2'];
-        const orderT2 = ordered ? ['R1', 'R2'] : ['R2', 'R1'];
-        this.deadlock = {
-            ordered,
-            owners: { R1: null, R2: null },
-            turn: 'T1',
-            deadlocked: false,
-            done: false,
-            logs: [],
-            threads: {
-                T1: { step: 0, waitingFor: null, order: orderT1 },
-                T2: { step: 0, waitingFor: null, order: orderT2 }
-            }
-        };
-        this.addDeadlockLog(`Réinitialisation. ${ordered ? 'Ordre global activé (pas de deadlock attendu).' : 'Ordres opposés (deadlock possible).'}`);
+        this.deadlock = OEITrace.deadlockNew({ ordered: ordered });
+        this.toggleManual('deadlock');
+        this.deadlock.logs.unshift('Réinitialisation. ' + (ordered ? 'Ordre global : T1 et T2 prennent R1 puis R2.' : 'Ordres opposés : T1 prend R1 puis R2, T2 prend R2 puis R1.'));
         this.renderDeadlock();
     }
 
-    addDeadlockLog(msg) {
-        this.deadlock.logs.unshift(msg);
-        this.deadlock.logs = this.deadlock.logs.slice(0, 12);
-    }
-
-    acquireResource(threadId, resource) {
-        const holder = this.deadlock.owners[resource];
-        const t = this.deadlock.threads[threadId];
-        if (!holder) {
-            this.deadlock.owners[resource] = threadId;
-            t.waitingFor = null;
-            this.addDeadlockLog(`${threadId} acquiert ${resource}.`);
-            return true;
-        }
-        if (holder === threadId) return true;
-        t.waitingFor = resource;
-        this.addDeadlockLog(`${threadId} attend ${resource} (détenu par ${holder}).`);
-        return false;
-    }
-
-    releaseAll(threadId) {
-        ['R1', 'R2'].forEach((r) => {
-            if (this.deadlock.owners[r] === threadId) this.deadlock.owners[r] = null;
-        });
-        this.addDeadlockLog(`${threadId} libère ses ressources.`);
-    }
-
-    checkDeadlock() {
-        const t1 = this.deadlock.threads.T1;
-        const t2 = this.deadlock.threads.T2;
-        if (!t1.waitingFor || !t2.waitingFor) return false;
-        const h1 = this.deadlock.owners[t1.waitingFor];
-        const h2 = this.deadlock.owners[t2.waitingFor];
-        return h1 === 'T2' && h2 === 'T1';
-    }
-
-    stepDeadlock() {
+    stepDeadlock(id) {
         if (this.deadlock.done || this.deadlock.deadlocked) return;
-        const id = this.deadlock.turn;
-        const other = id === 'T1' ? 'T2' : 'T1';
-        const t = this.deadlock.threads[id];
-
-        if (t.step === 0) {
-            const ok = this.acquireResource(id, t.order[0]);
-            if (ok) t.step = 1;
-        } else if (t.step === 1) {
-            const ok = this.acquireResource(id, t.order[1]);
-            if (ok) t.step = 2;
-        } else if (t.step === 2) {
-            this.releaseAll(id);
-            t.step = 3;
-        }
-
-        if (this.checkDeadlock()) {
-            this.deadlock.deadlocked = true;
-            this.addDeadlockLog('Deadlock détecté: attente circulaire T1 <-> T2.');
-            this.stopAuto();
-        }
-
-        if (this.deadlock.threads.T1.step >= 3 && this.deadlock.threads.T2.step >= 3) {
-            this.deadlock.done = true;
-            this.addDeadlockLog('Terminé sans interblocage.');
-            this.stopAuto();
-        }
-
-        this.deadlock.turn = other;
+        if (id) OEITrace.deadlockStep(this.deadlock, id);
+        else OEITrace.deadlockAdvance(this.deadlock, this.schedule('deadlock'));
+        if (this.deadlock.done || this.deadlock.deadlocked) this.stopAuto();
         this.renderDeadlock();
-    }
-
-    toggleDeadlockAuto() {
-        const btn = document.getElementById('deadlock-run');
-        if (this.autoTimer) {
-            this.stopAuto();
-            return;
-        }
-        btn.textContent = 'Pause';
-        this.autoTimer = setInterval(() => {
-            if (this.deadlock.done || this.deadlock.deadlocked) {
-                this.stopAuto();
-                return;
-            }
-            this.stepDeadlock();
-        }, this.autoDelay);
     }
 
     renderDeadlock() {
-        document.getElementById('dl-r1').textContent = this.deadlock.owners.R1 || 'libre';
-        document.getElementById('dl-r2').textContent = this.deadlock.owners.R2 || 'libre';
-        document.getElementById('dl-turn').textContent = this.deadlock.turn;
-
-        ['T1', 'T2'].forEach((id) => {
-            const t = this.deadlock.threads[id];
-            const phase = t.step === 0 ? `acq ${t.order[0]}` :
-                t.step === 1 ? `acq ${t.order[1]}` :
-                    t.step === 2 ? 'release' : 'done';
-            document.getElementById(`dl-${id}-phase`).textContent = phase;
-            document.getElementById(`dl-${id}-wait`).textContent = t.waitingFor || '-';
-            document.getElementById(`dl-${id}-order`).textContent = `${t.order[0]} -> ${t.order[1]}`;
+        const d = this.deadlock;
+        const set = (id, v) => { document.getElementById(id).textContent = v; };
+        set('dl-r1', d.owners.R1 || 'libre');
+        set('dl-r2', d.owners.R2 || 'libre');
+        set('dl-turn', this.schedule('deadlock') === 'manual' ? 'au choix' : OEITrace.deadlockPickLabel(d, this.schedule('deadlock')));
+        OEITrace.MUTEX_THREADS.forEach((id) => {
+            const t = d.threads[id];
+            const phase = t.step === 0 ? `prendre ${t.order[0]}` : t.step === 1 ? `prendre ${t.order[1]}` : t.step === 2 ? 'relâcher' : 'terminé';
+            set(`dl-${id}-phase`, phase);
+            set(`dl-${id}-wait`, t.waitingFor || '-');
+            set(`dl-${id}-order`, `${t.order[0]} puis ${t.order[1]}`);
         });
-
         const status = document.getElementById('deadlock-status');
-        if (this.deadlock.deadlocked) {
-            status.className = 'status status-bad';
-            status.textContent = 'Deadlock détecté';
-        } else if (this.deadlock.done) {
-            status.className = 'status status-ok';
-            status.textContent = 'Terminé sans deadlock';
-        } else {
-            status.className = 'status status-pending';
-            status.textContent = 'En exécution';
-        }
-
-        const ul = document.getElementById('deadlock-log');
-        ul.innerHTML = this.deadlock.logs.map((line) => `<li>${this.escapeHtml(line)}</li>`).join('');
+        if (d.deadlocked) { status.className = 'status status-bad'; status.textContent = 'Interblocage : chaque thread attend ce que l\'autre détient'; }
+        else if (d.done) { status.className = 'status status-ok'; status.textContent = 'Terminé sans interblocage'; }
+        else { status.className = 'status status-pending'; status.textContent = 'En exécution'; }
+        document.getElementById('deadlock-log').innerHTML = d.logs.map((line) => `<li>${this.escapeHtml(line)}</li>`).join('');
     }
 }
 
@@ -344,63 +211,65 @@ class ConcurrencyWidget {
 
     constructor(container, config = {}) {
         this.root = container;
+        this.config = config;
         this.autoTimer = null;
         this.mutex = null;
         this.deadlock = null;
     }
 
     init() {
+        const scheduleOptions = Object.entries(ConcurrencyPage.SCHEDULES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
         this.root.innerHTML = `<div class="cnw widget-fit">
   <div class="cnw-tabs widget-fit-header">
-    <button class="cnw-tab active" data-tab="mutex">${OEIIcons.render('lock')} Mutex</button>
-    <button class="cnw-tab" data-tab="deadlock">${OEIIcons.render('ban')} Deadlock</button>
+    <button class="cnw-tab active" data-tab="mutex">${OEIIcons.render('lock')} Compteur partagé</button>
+    <button class="cnw-tab" data-tab="deadlock">${OEIIcons.render('ban')} Interblocage</button>
   </div>
   <div class="widget-fit-body">
 
-  <!-- MUTEX PANEL -->
   <div class="cnw-panel active widget-fit" data-panel="mutex">
     <div class="cnw-toolbar widget-fit-header">
-      <label class="cnw-opt"><input type="checkbox" data-mx-lock checked> Avec mutex</label>
+      <label class="cnw-opt"><input type="checkbox" data-mx-lock${this.config.withLock === false ? '' : ' checked'}> Avec mutex</label>
+      <label class="cnw-opt">Ordonnancement <select data-mx-schedule>${scheduleOptions}</select></label>
       <div class="cnw-btns">
         <button class="cnw-btn" data-mx-step>Étape</button>
+        <button class="cnw-btn" data-mx-t1 style="display:none">Pas de T1</button>
+        <button class="cnw-btn" data-mx-t2 style="display:none">Pas de T2</button>
         <button class="cnw-btn primary" data-mx-run>${OEIIcons.render('play')} Auto</button>
         <button class="cnw-btn" data-mx-reset>${OEIIcons.render('refresh')} Reset</button>
       </div>
     </div>
     <div class="widget-fit-body">
       <div class="cnw-counter-big" data-mx-counter>0</div>
-      <div class="cnw-expected">Résultat attendu : 6 (T1 et T2 incrémentent 3× chacun)</div>
+      <div class="cnw-expected" data-mx-expected></div>
       <div class="cnw-grid">
         <div class="cnw-card">
-          <div class="cnw-card-title">Fil T1</div>
+          <div class="cnw-card-title">Thread T1</div>
           <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t1-phase>-</span></div>
           <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t1-local>-</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Écritures</span><span class="cnw-kv-val" data-mx-t1-writes>0/3</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Incréments</span><span class="cnw-kv-val" data-mx-t1-writes>0/3</span></div>
         </div>
         <div class="cnw-card">
-          <div class="cnw-card-title">Fil T2</div>
+          <div class="cnw-card-title">Thread T2</div>
           <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t2-phase>-</span></div>
           <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t2-local>-</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Écritures</span><span class="cnw-kv-val" data-mx-t2-writes>0/3</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Incréments</span><span class="cnw-kv-val" data-mx-t2-writes>0/3</span></div>
         </div>
       </div>
-      <div class="cnw-grid">
-        <div class="cnw-card">
-          <div class="cnw-kv"><span class="cnw-kv-key">Tour actuel</span><span class="cnw-kv-val" data-mx-turn>T1</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Détenteur mutex</span><span class="cnw-kv-val" data-mx-owner>libre</span></div>
-        </div>
-      </div>
+      <div class="cnw-kv"><span class="cnw-kv-key">Détenteur du mutex</span><span class="cnw-kv-val" data-mx-owner>libre</span></div>
+      <div class="cnw-status pending" data-mx-verdict></div>
       <div class="cnw-section-lbl">Journal</div>
       <ul class="cnw-log" data-mx-log></ul>
     </div>
   </div>
 
-  <!-- DEADLOCK PANEL -->
   <div class="cnw-panel widget-fit" data-panel="deadlock">
     <div class="cnw-toolbar widget-fit-header">
-      <label class="cnw-opt"><input type="checkbox" data-dl-order> Ordre global (T1 et T2 acquièrent R1 avant R2)</label>
+      <label class="cnw-opt"><input type="checkbox" data-dl-order> Ordre global (R1 puis R2 pour les deux)</label>
+      <label class="cnw-opt">Ordonnancement <select data-dl-schedule>${scheduleOptions}</select></label>
       <div class="cnw-btns">
         <button class="cnw-btn" data-dl-step>Étape</button>
+        <button class="cnw-btn" data-dl-t1 style="display:none">Pas de T1</button>
+        <button class="cnw-btn" data-dl-t2 style="display:none">Pas de T2</button>
         <button class="cnw-btn primary" data-dl-run>${OEIIcons.render('play')} Auto</button>
         <button class="cnw-btn" data-dl-reset>${OEIIcons.render('refresh')} Reset</button>
       </div>
@@ -413,13 +282,13 @@ class ConcurrencyWidget {
       </div>
       <div class="cnw-grid">
         <div class="cnw-card">
-          <div class="cnw-card-title">Fil T1</div>
+          <div class="cnw-card-title">Thread T1</div>
           <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t1-phase>-</span></div>
           <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t1-wait>-</span></div>
           <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t1-order>-</span></div>
         </div>
         <div class="cnw-card">
-          <div class="cnw-card-title">Fil T2</div>
+          <div class="cnw-card-title">Thread T2</div>
           <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t2-phase>-</span></div>
           <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t2-wait>-</span></div>
           <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t2-order>-</span></div>
@@ -431,9 +300,7 @@ class ConcurrencyWidget {
   </div>
   </div>
 </div>`;
-        this._bindTabs();
-        this._bindMutex();
-        this._bindDeadlock();
+        this._bind();
         this._resetMutex();
         this._resetDeadlock();
     }
@@ -441,28 +308,28 @@ class ConcurrencyWidget {
     _q(s) { return this.root.querySelector(s); }
     _qa(s) { return this.root.querySelectorAll(s); }
 
-    _bindTabs() {
-        this._qa('[data-tab]').forEach(btn => {
+    _bind() {
+        this._qa('[data-tab]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                this._qa('[data-tab]').forEach(b => b.classList.remove('active'));
+                this._qa('[data-tab]').forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
                 const t = btn.dataset.tab;
-                this._qa('[data-panel]').forEach(p => p.classList.toggle('active', p.dataset.panel === t));
+                this._qa('[data-panel]').forEach((p) => p.classList.toggle('active', p.dataset.panel === t));
             });
         });
-    }
-
-    _bindMutex() {
         this._q('[data-mx-lock]').addEventListener('change', () => this._resetMutex());
+        this._q('[data-mx-schedule]').addEventListener('change', () => this._resetMutex());
         this._q('[data-mx-step]').addEventListener('click', () => this._stepMutex());
-        this._q('[data-mx-run]').addEventListener('click', () => this._toggleMutexAuto());
+        this._q('[data-mx-t1]').addEventListener('click', () => this._stepMutex('T1'));
+        this._q('[data-mx-t2]').addEventListener('click', () => this._stepMutex('T2'));
+        this._q('[data-mx-run]').addEventListener('click', () => this._toggleAuto('mx'));
         this._q('[data-mx-reset]').addEventListener('click', () => this._resetMutex());
-    }
-
-    _bindDeadlock() {
         this._q('[data-dl-order]').addEventListener('change', () => this._resetDeadlock());
+        this._q('[data-dl-schedule]').addEventListener('change', () => this._resetDeadlock());
         this._q('[data-dl-step]').addEventListener('click', () => this._stepDeadlock());
-        this._q('[data-dl-run]').addEventListener('click', () => this._toggleDeadlockAuto());
+        this._q('[data-dl-t1]').addEventListener('click', () => this._stepDeadlock('T1'));
+        this._q('[data-dl-t2]').addEventListener('click', () => this._stepDeadlock('T2'));
+        this._q('[data-dl-run]').addEventListener('click', () => this._toggleAuto('dl'));
         this._q('[data-dl-reset]').addEventListener('click', () => this._resetDeadlock());
     }
 
@@ -472,161 +339,117 @@ class ConcurrencyWidget {
         OEIIcons.setLabel(this._q('[data-dl-run]'), 'play', 'Auto');
     }
 
-    // ── Mutex ──
+    _toggleAuto(which) {
+        if (this.autoTimer) { this._stopAuto(); return; }
+        OEIIcons.setLabel(this._q(`[data-${which}-run]`), 'pause', 'Pause');
+        this.autoTimer = setInterval(() => {
+            if (which === 'mx') {
+                if (OEITrace.mutexIsDone(this.mutex)) { this._stopAuto(); return; }
+                this._stepMutex();
+            } else {
+                if (this.deadlock.done || this.deadlock.deadlocked) { this._stopAuto(); return; }
+                this._stepDeadlock();
+            }
+        }, 650);
+    }
+
+    _manual(which) {
+        const manual = this._q(`[data-${which}-schedule]`).value === 'manual';
+        this._q(`[data-${which}-step]`).style.display = manual ? 'none' : '';
+        this._q(`[data-${which}-run]`).style.display = manual ? 'none' : '';
+        this._q(`[data-${which}-t1]`).style.display = manual ? '' : 'none';
+        this._q(`[data-${which}-t2]`).style.display = manual ? '' : 'none';
+        return manual;
+    }
+
     _resetMutex() {
         this._stopAuto();
-        const withLock = this._q('[data-mx-lock]').checked;
-        this.mutex = { withLock, counter: 0, lockOwner: null, turn: 'T1', done: false,
-            threads: { T1: { phase: 0, local: null, writes: 0, target: 3 }, T2: { phase: 0, local: null, writes: 0, target: 3 } },
-            logs: [] };
-        this._mxLog(`Reset. Mode ${withLock ? 'avec mutex' : 'sans mutex'}.`);
+        this.mutex = OEITrace.mutexNew({ withLock: this._q('[data-mx-lock]').checked, increments: 3 });
+        this._manual('mx');
         this._renderMutex();
     }
 
-    _mxPhaseLabel(p) { return ['enter', 'read', 'local+1', 'write', 'exit'][p] || 'done'; }
-
-    _mxLog(msg) { this.mutex.logs.unshift(msg); this.mutex.logs = this.mutex.logs.slice(0, 10); }
-
-    _stepMutex() {
-        if (this.mutex.done) return;
-        const id = this.mutex.turn, other = id === 'T1' ? 'T2' : 'T1';
-        const t = this.mutex.threads[id];
-
-        if (t.writes >= t.target) {
-            this.mutex.turn = other;
-            if (this.mutex.threads[other].writes >= this.mutex.threads[other].target) this.mutex.done = true;
-            this._renderMutex(); return;
-        }
-        if (this.mutex.withLock && t.phase === 0 && this.mutex.lockOwner && this.mutex.lockOwner !== id) {
-            this._mxLog(`${id} bloqué : mutex détenu par ${this.mutex.lockOwner}.`);
-            this.mutex.turn = other; this._renderMutex(); return;
-        }
-        switch (t.phase) {
-            case 0: if (this.mutex.withLock) { this.mutex.lockOwner = id; this._mxLog(`${id} acquiert le mutex.`); }
-                    else this._mxLog(`${id} entre en section critique sans protection.`);
-                    t.phase = 1; break;
-            case 1: t.local = this.mutex.counter; this._mxLog(`${id} lit counter=${this.mutex.counter}.`); t.phase = 2; break;
-            case 2: t.local += 1; this._mxLog(`${id} calcule local=${t.local}.`); t.phase = 3; break;
-            case 3: this.mutex.counter = t.local; t.writes++; this._mxLog(`${id} écrit counter=${this.mutex.counter}.`); t.phase = 4; break;
-            case 4: if (this.mutex.withLock && this.mutex.lockOwner === id) { this.mutex.lockOwner = null; this._mxLog(`${id} libère le mutex.`); }
-                    else this._mxLog(`${id} sort.`);
-                    t.local = null; t.phase = 0; break;
-        }
-        this.mutex.turn = other;
-        if (this.mutex.threads.T1.writes >= 3 && this.mutex.threads.T2.writes >= 3) {
-            this.mutex.done = true;
-            this._mxLog(`Terminé. counter=${this.mutex.counter}. Attendu=6.`);
-            this._stopAuto();
-        }
+    _stepMutex(id) {
+        if (OEITrace.mutexIsDone(this.mutex)) return;
+        if (id) OEITrace.mutexStep(this.mutex, id);
+        else OEITrace.mutexAdvance(this.mutex, this._q('[data-mx-schedule]').value);
+        if (OEITrace.mutexIsDone(this.mutex)) this._stopAuto();
         this._renderMutex();
-    }
-
-    _toggleMutexAuto() {
-        if (this.autoTimer) { this._stopAuto(); return; }
-        OEIIcons.setLabel(this._q('[data-mx-run]'), 'pause', 'Pause');
-        this.autoTimer = setInterval(() => {
-            if (this.mutex.done) { this._stopAuto(); return; }
-            this._stepMutex();
-        }, 650);
     }
 
     _renderMutex() {
-        this._q('[data-mx-counter]').textContent = this.mutex.counter;
-        this._q('[data-mx-turn]').textContent = this.mutex.turn;
-        this._q('[data-mx-owner]').textContent = this.mutex.lockOwner || 'libre';
-        ['T1','T2'].forEach(id => {
-            const t = this.mutex.threads[id];
-            this._q(`[data-mx-${id.toLowerCase()}-phase]`).textContent = this._mxPhaseLabel(t.phase);
-            this._q(`[data-mx-${id.toLowerCase()}-local]`).textContent = t.local == null ? '-' : String(t.local);
-            this._q(`[data-mx-${id.toLowerCase()}-writes]`).textContent = `${t.writes}/${t.target}`;
+        const m = this.mutex;
+        const set = (sel, v) => { this._q(sel).textContent = v; };
+        const expected = OEITrace.mutexExpected(m);
+        set('[data-mx-counter]', m.counter);
+        set('[data-mx-expected]', 'Résultat attendu : ' + expected + ' (chaque thread incrémente ' + m.threads.T1.target + ' fois)');
+        set('[data-mx-owner]', m.owner || 'libre');
+        OEITrace.MUTEX_THREADS.forEach((id) => {
+            const t = m.threads[id];
+            const lc = id.toLowerCase();
+            set(`[data-mx-${lc}-phase]`, OEITrace.mutexThreadDone(m, id) ? 'terminé' : (OEITrace.mutexBlocked(m, id) ? 'bloqué' : ConcurrencyPage.PHASE_LABELS[m.phases[t.phase]]));
+            set(`[data-mx-${lc}-local]`, t.local == null ? '-' : String(t.local));
+            set(`[data-mx-${lc}-writes]`, `${t.done}/${t.target}`);
         });
-        this._q('[data-mx-log]').innerHTML = this.mutex.logs.map(l => `<li class="cnw-log-item">${l}</li>`).join('');
+        const verdict = this._q('[data-mx-verdict]');
+        if (OEITrace.mutexIsDone(m)) {
+            const lost = expected - m.counter;
+            verdict.className = 'cnw-status ' + (lost === 0 ? 'ok' : 'bad');
+            verdict.textContent = lost === 0 ? 'Terminé : counter = ' + m.counter + ', aucune mise à jour perdue.' : 'Terminé : counter = ' + m.counter + ' au lieu de ' + expected + ' (' + lost + ' mises à jour perdues).';
+        } else {
+            verdict.className = 'cnw-status pending';
+            verdict.textContent = 'En exécution (' + m.lostTurns + ' tours perdus à attendre le verrou).';
+        }
+        this._fillLog('[data-mx-log]', m.logs);
     }
 
-    // ── Deadlock ──
+    _fillLog(sel, logs) {
+        const ul = this._q(sel);
+        ul.innerHTML = '';
+        logs.forEach((line) => {
+            const li = document.createElement('li');
+            li.className = 'cnw-log-item';
+            li.textContent = line;
+            ul.appendChild(li);
+        });
+    }
+
     _resetDeadlock() {
         this._stopAuto();
-        const ordered = this._q('[data-dl-order]').checked;
-        this.deadlock = {
-            ordered, owners: { R1: null, R2: null }, turn: 'T1', deadlocked: false, done: false, logs: [],
-            threads: {
-                T1: { step: 0, waitingFor: null, order: ['R1','R2'] },
-                T2: { step: 0, waitingFor: null, order: ordered ? ['R1','R2'] : ['R2','R1'] }
-            }
-        };
-        this._dlLog(`Reset. ${ordered ? 'Ordre global : pas de deadlock attendu.' : 'Ordres opposés : deadlock possible.'}`);
+        this.deadlock = OEITrace.deadlockNew({ ordered: this._q('[data-dl-order]').checked });
+        this._manual('dl');
         this._renderDeadlock();
     }
 
-    _dlLog(msg) { this.deadlock.logs.unshift(msg); this.deadlock.logs = this.deadlock.logs.slice(0, 12); }
-
-    _dlAcquire(id, res) {
-        const holder = this.deadlock.owners[res];
-        const t = this.deadlock.threads[id];
-        if (!holder) { this.deadlock.owners[res] = id; t.waitingFor = null; this._dlLog(`${id} acquiert ${res}.`); return true; }
-        if (holder === id) return true;
-        t.waitingFor = res; this._dlLog(`${id} attend ${res} (détenu par ${holder}).`); return false;
-    }
-
-    _dlRelease(id) {
-        ['R1','R2'].forEach(r => { if (this.deadlock.owners[r] === id) this.deadlock.owners[r] = null; });
-        this.deadlock.threads[id].waitingFor = null;
-        this._dlLog(`${id} libère ses ressources.`);
-    }
-
-    _checkDeadlock() {
-        const t1 = this.deadlock.threads.T1, t2 = this.deadlock.threads.T2;
-        if (!t1.waitingFor || !t2.waitingFor) return false;
-        return this.deadlock.owners[t1.waitingFor] === 'T2' && this.deadlock.owners[t2.waitingFor] === 'T1';
-    }
-
-    _stepDeadlock() {
+    _stepDeadlock(id) {
         if (this.deadlock.done || this.deadlock.deadlocked) return;
-        const id = this.deadlock.turn, other = id === 'T1' ? 'T2' : 'T1';
-        const t = this.deadlock.threads[id];
-        if (t.step === 0) { if (this._dlAcquire(id, t.order[0])) t.step = 1; }
-        else if (t.step === 1) { if (this._dlAcquire(id, t.order[1])) t.step = 2; }
-        else if (t.step === 2) { this._dlRelease(id); t.step = 3; }
-
-        if (this._checkDeadlock()) { this.deadlock.deadlocked = true; this._dlLog('Deadlock : attente circulaire T1 ↔ T2.'); this._stopAuto(); }
-        if (this.deadlock.threads.T1.step >= 3 && this.deadlock.threads.T2.step >= 3) {
-            this.deadlock.done = true; this._dlLog('Terminé sans interblocage.'); this._stopAuto();
-        }
-        this.deadlock.turn = other;
+        if (id) OEITrace.deadlockStep(this.deadlock, id);
+        else OEITrace.deadlockAdvance(this.deadlock, this._q('[data-dl-schedule]').value);
+        if (this.deadlock.done || this.deadlock.deadlocked) this._stopAuto();
         this._renderDeadlock();
-    }
-
-    _toggleDeadlockAuto() {
-        if (this.autoTimer) { this._stopAuto(); return; }
-        OEIIcons.setLabel(this._q('[data-dl-run]'), 'pause', 'Pause');
-        this.autoTimer = setInterval(() => {
-            if (this.deadlock.done || this.deadlock.deadlocked) { this._stopAuto(); return; }
-            this._stepDeadlock();
-        }, 650);
     }
 
     _renderDeadlock() {
-        ['R1','R2'].forEach(r => {
-            const owner = this.deadlock.owners[r];
+        const d = this.deadlock;
+        ['R1', 'R2'].forEach((r) => {
+            const owner = d.owners[r];
             this._q(`[data-dl-${r.toLowerCase()}]`).textContent = owner || 'libre';
             const box = this._q(`[data-dl-${r.toLowerCase()}-box]`);
-            box.classList.toggle('owned', !!owner && !this.deadlock.deadlocked);
-            box.classList.toggle('deadlocked', !!owner && this.deadlock.deadlocked);
+            box.classList.toggle('owned', !!owner && !d.deadlocked);
+            box.classList.toggle('deadlocked', !!owner && d.deadlocked);
         });
-        this._q('[data-dl-turn]') && (this._q('[data-dl-turn]').textContent = this.deadlock.turn);
-        ['T1','T2'].forEach(id => {
-            const t = this.deadlock.threads[id];
-            const phase = t.step === 0 ? `acq ${t.order[0]}` : t.step === 1 ? `acq ${t.order[1]}` : t.step === 2 ? 'release' : 'done';
+        OEITrace.MUTEX_THREADS.forEach((id) => {
+            const t = d.threads[id];
             const lc = id.toLowerCase();
-            this._q(`[data-dl-${lc}-phase]`).textContent = phase;
+            this._q(`[data-dl-${lc}-phase]`).textContent = t.step === 0 ? `prendre ${t.order[0]}` : t.step === 1 ? `prendre ${t.order[1]}` : t.step === 2 ? 'relâcher' : 'terminé';
             this._q(`[data-dl-${lc}-wait]`).textContent = t.waitingFor || '-';
-            this._q(`[data-dl-${lc}-order]`).textContent = `${t.order[0]} → ${t.order[1]}`;
+            this._q(`[data-dl-${lc}-order]`).textContent = `${t.order[0]} puis ${t.order[1]}`;
         });
         const st = this._q('[data-dl-status]');
-        if (this.deadlock.deadlocked) { st.className = 'cnw-status bad'; OEIIcons.setLabel(st, 'ban', 'Deadlock détecté'); }
-        else if (this.deadlock.done) { st.className = 'cnw-status ok'; OEIIcons.setLabel(st, 'check', 'Terminé sans deadlock'); }
-        else { st.className = 'cnw-status pending'; st.textContent = 'En exécution…'; }
-        this._q('[data-dl-log]').innerHTML = this.deadlock.logs.map(l => `<li class="cnw-log-item">${l}</li>`).join('');
+        if (d.deadlocked) { st.className = 'cnw-status bad'; OEIIcons.setLabel(st, 'ban', 'Interblocage : chacun attend ce que l\'autre détient'); }
+        else if (d.done) { st.className = 'cnw-status ok'; OEIIcons.setLabel(st, 'check', 'Terminé sans interblocage'); }
+        else { st.className = 'cnw-status pending'; st.textContent = 'En exécution'; }
+        this._fillLog('[data-dl-log]', d.logs);
     }
 }
 

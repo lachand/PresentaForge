@@ -8,6 +8,7 @@
          extraction des scripts inline (plus aucun bloc JS dans le HTML). Voir docs/developer/SECURITY_MODEL.md. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss: blob: data:; worker-src 'self' blob:; child-src 'self' blob: https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com; frame-src 'self' blob: https://*.firebaseapp.com https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com https://embed.diagrams.net; base-uri 'self'; form-action 'self'; object-src 'none'">
     <title>presentaForge — Éditeur</title>
+    <link rel="icon" type="image/svg+xml" href="assets/brand/presentaforge_favico.svg">
     <link rel="icon" type="image/png" href="assets/brand/presentaforge_favico.png">
     <link rel="apple-touch-icon" href="assets/brand/presentaforge_favico.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,8 +32,8 @@
         <!-- Ribbon tabs + title + controls -->
         <div class="ribbon-tabs ui-tabs" id="ribbon-tabs" role="tablist" aria-label="Onglets du ruban">
             <a class="ribbon-brand" aria-label="Retour à l’index des présentations" href="index.html" title="Retour à l’index des présentations">
-                <img class="ribbon-brand-logo ribbon-brand-logo-dark" src="assets/brand/presentaforge_text_dark.png" alt="slideForge">
-                <img class="ribbon-brand-logo ribbon-brand-logo-light" src="assets/brand/presentaforge_text_light.png" alt="slideForge">
+                <img class="ribbon-brand-logo ribbon-brand-logo-dark" src="assets/brand/presentaforge_text_dark.svg" alt="slideForge">
+                <img class="ribbon-brand-logo ribbon-brand-logo-light" src="assets/brand/presentaforge_text_light.svg" alt="slideForge">
             </a>
             <span class="ribbon-pres-title" id="pres-title" title="Cliquer pour renommer">Présentation sans titre</span>
             <div class="ribbon-tabs-sep" aria-hidden="true"></div>

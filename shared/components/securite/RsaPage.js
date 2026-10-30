@@ -1,9 +1,8 @@
+/**
+ * RsaPage : tout le calcul (primalité, inverse modulaire, puissance modulaire en BigInt) est dans le
+ * moteur pur `algorithms/rsa-engine.js` (relecture 3b, B5, RS-I1, RS-I3) ; ici, seulement l'affichage.
+ */
 class RsaPage extends ConceptPage {
-    constructor(dataPath) {
-        super(dataPath);
-        this.primes = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
-    }
-
     async init() {
         await super.init();
         this.mountPseudocodeInspector({
@@ -11,17 +10,18 @@ class RsaPage extends ConceptPage {
         });
         this.cacheDom();
         this.bindEvents();
-        this.randomExample();
+        this.setValues(61, 53, 17, 65);
         this.computeAll();
     }
 
     cacheDom() {
-        this.pInput = document.getElementById('rsa-p');
-        this.qInput = document.getElementById('rsa-q');
-        this.eInput = document.getElementById('rsa-e');
-        this.mInput = document.getElementById('rsa-m');
+        this.inputs = {
+            p: document.getElementById('rsa-p'),
+            q: document.getElementById('rsa-q'),
+            e: document.getElementById('rsa-e'),
+            m: document.getElementById('rsa-m')
+        };
         this.statusEl = document.getElementById('rsa-status');
-
         this.nEl = document.getElementById('rsa-n');
         this.phiEl = document.getElementById('rsa-phi');
         this.dEl = document.getElementById('rsa-d');
@@ -30,73 +30,38 @@ class RsaPage extends ConceptPage {
         this.sigEl = document.getElementById('rsa-signature');
         this.verifyEl = document.getElementById('rsa-verify');
         this.pipelineEl = document.getElementById('rsa-pipeline');
+        this.euclidEl = document.getElementById('rsa-euclid');
     }
 
     bindEvents() {
         ['input', 'change'].forEach((evt) => {
-            this.pInput.addEventListener(evt, () => this.computeAll());
-            this.qInput.addEventListener(evt, () => this.computeAll());
-            this.eInput.addEventListener(evt, () => this.computeAll());
-            this.mInput.addEventListener(evt, () => this.computeAll());
+            Object.values(this.inputs).forEach((el) => el.addEventListener(evt, () => this.computeAll()));
         });
-
         document.getElementById('rsa-random').addEventListener('click', () => {
             this.randomExample();
             this.computeAll();
         });
+        document.getElementById('rsa-course').addEventListener('click', () => {
+            this.setValues(61, 53, 17, 65);
+            this.computeAll();
+        });
+    }
+
+    setValues(p, q, e, m) {
+        this.inputs.p.value = String(p);
+        this.inputs.q.value = String(q);
+        this.inputs.e.value = String(e);
+        this.inputs.m.value = String(m);
     }
 
     randomExample() {
-        const pick = () => this.primes[Math.floor(Math.random() * this.primes.length)];
-        let p = pick();
-        let q = pick();
-        while (q === p) q = pick();
-
+        const p = OEITrace.rsaRandomPrime(50, 1000);
+        let q = OEITrace.rsaRandomPrime(50, 1000);
+        while (q === p) q = OEITrace.rsaRandomPrime(50, 1000);
         const phi = (p - 1) * (q - 1);
-        const eCandidates = [3, 5, 7, 11, 17, 19, 23];
-        let e = eCandidates.find((x) => x < phi && this.gcd(x, phi) === 1) || 3;
-        const n = p * q;
-        const m = 2 + Math.floor(Math.random() * Math.max(2, n - 2));
-
-        this.pInput.value = String(p);
-        this.qInput.value = String(q);
-        this.eInput.value = String(e);
-        this.mInput.value = String(m);
-    }
-
-    gcd(a, b) {
-        let x = Math.abs(a);
-        let y = Math.abs(b);
-        while (y !== 0) {
-            const t = x % y;
-            x = y;
-            y = t;
-        }
-        return x;
-    }
-
-    egcd(a, b) {
-        if (b === 0) return { g: a, x: 1, y: 0 };
-        const r = this.egcd(b, a % b);
-        return { g: r.g, x: r.y, y: r.x - Math.floor(a / b) * r.y };
-    }
-
-    modInverse(e, phi) {
-        const r = this.egcd(e, phi);
-        if (r.g !== 1) return null;
-        return ((r.x % phi) + phi) % phi;
-    }
-
-    modPow(base, exp, mod) {
-        let b = base % mod;
-        let e = exp;
-        let result = 1;
-        while (e > 0) {
-            if (e & 1) result = (result * b) % mod;
-            b = (b * b) % mod;
-            e >>= 1;
-        }
-        return result;
+        const e = OEITrace.rsaPickE(phi) || 3;
+        const m = 2 + Math.floor(Math.random() * (p * q - 3));
+        this.setValues(p, q, e, m);
     }
 
     setStatus(text, type) {
@@ -105,97 +70,71 @@ class RsaPage extends ConceptPage {
     }
 
     renderPipeline(steps, mode) {
-        if (!this.pipelineEl) return;
-        this.pipelineEl.innerHTML = steps.map((step, index) => {
-            let cls = 'rsa-step';
-            if (mode === 'ok') {
-                cls += ' ok';
-            } else if (mode === 'bad' && index === steps.length - 1) {
-                cls += ' bad';
-            } else {
-                cls += ' active';
-            }
-            return `
-                <div class="${cls}">
-                    <div class="t">${step.title}</div>
-                    <div class="v">${step.value}</div>
-                </div>
-            `;
-        }).join('');
+        this.pipelineEl.innerHTML = '';
+        steps.forEach((step, index) => {
+            const box = document.createElement('div');
+            box.className = 'rsa-step' + (mode === 'ok' ? ' ok' : mode === 'bad' && index === steps.length - 1 ? ' bad' : ' active');
+            const t = document.createElement('div');
+            t.className = 't';
+            t.textContent = step.title;
+            const v = document.createElement('div');
+            v.className = 'v';
+            v.textContent = step.value;
+            box.append(t, v);
+            this.pipelineEl.appendChild(box);
+        });
+    }
+
+    renderEuclid(euclid, e, phi, d) {
+        this.euclidEl.innerHTML = '';
+        if (!euclid) return;
+        const lines = euclid.rows.map((row, i) => {
+            if (i === 0) return 'r = ' + row.r + ' (phi), t = ' + row.t;
+            if (i === 1) return 'r = ' + row.r + ' (e), t = ' + row.t;
+            return row.r === 0
+                ? 'r = 0 : on s\'arrête (q = ' + row.q + ')'
+                : 'r = ' + row.r + ' (q = ' + row.q + '), t = ' + row.t;
+        });
+        const pre = document.createElement('pre');
+        pre.textContent = lines.join('\n') + (d !== null ? '\n\nd = t(r = 1) mod phi = ' + d + '   (vérification : ' + e + ' × ' + d + ' mod ' + phi + ' = ' + (BigInt(e) * BigInt(d) % BigInt(phi)) + ')' : '');
+        this.euclidEl.appendChild(pre);
+    }
+
+    clearResults() {
+        [this.nEl, this.phiEl, this.dEl, this.cipherEl, this.plainEl, this.sigEl, this.verifyEl].forEach((el) => { el.textContent = '-'; });
+        this.euclidEl.innerHTML = '';
     }
 
     computeAll() {
-        const p = parseInt(this.pInput.value, 10);
-        const q = parseInt(this.qInput.value, 10);
-        const e = parseInt(this.eInput.value, 10);
-        const m = parseInt(this.mInput.value, 10);
-
-        if (!Number.isFinite(p) || !Number.isFinite(q) || !Number.isFinite(e) || !Number.isFinite(m)) {
-            this.setStatus('Entrées invalides.', 'status-bad');
-            this.renderPipeline([{ title: 'Validation', value: 'Entrées invalides' }], 'bad');
+        const read = (el) => (el.value.trim() === '' ? NaN : Number(el.value));
+        const input = { p: read(this.inputs.p), q: read(this.inputs.q), e: read(this.inputs.e), m: read(this.inputs.m) };
+        Object.values(this.inputs).forEach((el) => el.removeAttribute('aria-invalid'));
+        const r = OEITrace.rsaCompute(input);
+        if (!r.ok) {
+            this.clearResults();
+            if (r.n) this.nEl.textContent = String(r.n);
+            if (r.phi) this.phiEl.textContent = String(r.phi);
+            this.inputs[r.field].setAttribute('aria-invalid', 'true');
+            this.setStatus(r.error, 'status-bad');
+            this.renderPipeline([{ title: 'Validation', value: r.error }], 'bad');
             return;
         }
-
-        const n = p * q;
-        const phi = (p - 1) * (q - 1);
-        this.nEl.textContent = String(n);
-        this.phiEl.textContent = String(phi);
-
-        if (p === q) {
-            this.setStatus('Choisir p et q distincts.', 'status-bad');
-            this.renderPipeline([{ title: 'Validation', value: 'p et q doivent être distincts' }], 'bad');
-            return;
-        }
-
-        if (m <= 0 || m >= n) {
-            this.setStatus(`Le message m doit vérifier 0 < m < n (n=${n}).`, 'status-bad');
-            this.renderPipeline([{ title: 'Validation', value: `Message hors borne (0 < m < ${n})` }], 'bad');
-            return;
-        }
-
-        if (e <= 1 || e >= phi || this.gcd(e, phi) !== 1) {
-            this.setStatus(`e doit être copremier avec phi=${phi} et 1 < e < phi.`, 'status-bad');
-            this.renderPipeline([{ title: 'Validation', value: `e invalide pour phi=${phi}` }], 'bad');
-            return;
-        }
-
-        const d = this.modInverse(e, phi);
-        if (d == null) {
-            this.setStatus('Impossible de calculer d (inverse modulaire).', 'status-bad');
-            this.renderPipeline([{ title: 'Inverse modulaire', value: 'Aucun d valide trouvé' }], 'bad');
-            return;
-        }
-
-        const c = this.modPow(m, e, n);
-        const m2 = this.modPow(c, d, n);
-        const sig = this.modPow(m, d, n);
-        const ver = this.modPow(sig, e, n);
-
-        this.dEl.textContent = String(d);
-        this.cipherEl.textContent = String(c);
-        this.plainEl.textContent = String(m2);
-        this.sigEl.textContent = String(sig);
-        this.verifyEl.textContent = String(ver);
-
-        if (ver === m && m2 === m) {
-            this.setStatus('Clés valides: chiffrement/déchiffrement et signature OK.', 'status-ok');
-            this.renderPipeline([
-                { title: '1) KeyGen', value: `n=${n}, phi=${phi}, d=${d}` },
-                { title: '2) Chiffrement', value: `c = ${c}` },
-                { title: '3) Déchiffrement', value: `m' = ${m2}` },
-                { title: '4) Signature', value: `s = ${sig}` },
-                { title: '5) Vérification', value: `m'' = ${ver}` }
-            ], 'ok');
-        } else {
-            this.setStatus('Calcul terminé avec incohérence: vérifier les paramètres.', 'status-bad');
-            this.renderPipeline([
-                { title: '1) KeyGen', value: `n=${n}, phi=${phi}, d=${d}` },
-                { title: '2) Chiffrement', value: `c = ${c}` },
-                { title: '3) Déchiffrement', value: `m' = ${m2}` },
-                { title: '4) Signature', value: `s = ${sig}` },
-                { title: '5) Vérification', value: `m'' = ${ver} (incohérent)` }
-            ], 'bad');
-        }
+        this.nEl.textContent = String(r.n);
+        this.phiEl.textContent = String(r.phi);
+        this.dEl.textContent = String(r.d);
+        this.cipherEl.textContent = String(r.c);
+        this.plainEl.textContent = String(r.decrypted);
+        this.sigEl.textContent = String(r.signature);
+        this.verifyEl.textContent = String(r.verified);
+        this.renderEuclid(r.euclid, input.e, r.phi, r.d);
+        this.setStatus('Paramètres valides : p et q sont premiers, l\'aller-retour redonne m.', 'status-ok');
+        this.renderPipeline([
+            { title: '1) Clés', value: `n = ${r.n}, phi = ${r.phi}, d = ${r.d}` },
+            { title: '2) Chiffrement', value: `c = ${r.c}` },
+            { title: '3) Déchiffrement', value: `m = ${r.decrypted}` },
+            { title: '4) Signature brute', value: `s = ${r.signature}` },
+            { title: '5) Vérification', value: `m = ${r.verified}` }
+        ], 'ok');
     }
 }
 

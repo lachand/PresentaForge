@@ -36,7 +36,7 @@ body {
 }
 
 .tn-brand { display: inline-flex; align-items: center; text-decoration: none; }
-.tn-brand img { height: 24px; width: auto; display: block; }
+.tn-brand img { height: 28px; width: auto; display: block; }
 
 .tn-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
@@ -104,7 +104,9 @@ body {
     padding: 16px 12px;
     gap: 2px;
     overflow-y: auto;
+    scrollbar-width: none; /* défilement conservé, sans barre visible */
 }
+#side-nav::-webkit-scrollbar { display: none; }
 
 .sn-brand {
     display: flex;
@@ -183,9 +185,11 @@ body {
     flex: 1;
     padding: 36px 48px;
     overflow-y: auto;
+    scrollbar-width: none; /* défilement conservé, sans barre visible */
     background: var(--surface);
     min-width: 0;
 }
+.dashboard-main::-webkit-scrollbar { display: none; }
 
 .db-header { margin-bottom: 4px; }
 .db-header h1 {
