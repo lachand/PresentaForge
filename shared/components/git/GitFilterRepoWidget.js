@@ -1,7 +1,7 @@
 class GitFilterRepoWidget {
     static STEPS = [
         {
-            title: 'État initial — identifier le problème',
+            title: 'État initial - identifier le problème',
             cmd: 'git log --oneline',
             output: `a7f3b21 Ajouter la validation des formulaires
 c9d4e82 Mettre à jour le README
@@ -22,7 +22,7 @@ Date:   Thu Jan 15 14:32:07 2024
     new file mode 100644
     <span style="color:#a6e3a1">+DB_PASSWORD=<span style="color:#f38ba8">super_secret_123</span></span>
     <span style="color:#a6e3a1">+STRIPE_KEY=<span style="color:#f38ba8">sk-prod-xK9mL2pQ8rT...</span></span>`,
-            note: 'Cette commande révèle <strong>tous</strong> les commits qui ont créé, modifié ou supprimé le fichier — y compris si celui-ci a été supprimé par la suite. Les secrets sont toujours dans l\'historique.',
+            note: 'Cette commande révèle <strong>tous</strong> les commits qui ont créé, modifié ou supprimé le fichier - y compris si celui-ci a été supprimé par la suite. Les secrets sont toujours dans l\'historique.',
         },
         {
             title: 'PRIORITÉ : Révoquer le secret immédiatement',
@@ -33,7 +33,7 @@ Date:   Thu Jan 15 14:32:07 2024
                 { icon: 'credit-card', text: 'Révoquer toutes les autres credentials exposées (Stripe, AWS, SendGrid, etc.)' },
                 { icon: 'users', text: 'Informer votre équipe : la fenêtre de compromission est ouverte' },
             ],
-            note: 'Ne commencez pas la réécriture de l\'historique avant d\'avoir révoqué le secret. La suppression du commit ne rend pas le secret inutilisable — des bots ont déjà pu le capturer.',
+            note: 'Ne commencez pas la réécriture de l\'historique avant d\'avoir révoqué le secret. La suppression du commit ne rend pas le secret inutilisable - des bots ont déjà pu le capturer.',
         },
         {
             title: 'Installer git-filter-repo',
@@ -64,7 +64,7 @@ Filtering complete.</span>`,
 <span style="color:#89dceb">8c4f2b0</span> Ajouter la configuration API
 <span style="color:#89dceb">a1d5e93</span> Initialisation du projet
 
-<span style="color:#a6e3a1">(aucun résultat — .env n'apparaît dans aucun commit)</span>`,
+<span style="color:#a6e3a1">(aucun résultat - .env n'apparaît dans aucun commit)</span>`,
             note: 'Les SHA ont changé (nouvel historique). La commande <code>git log --all -- .env</code> ne renvoie aucun résultat : le fichier <code>.env</code> n\'existe plus dans aucun commit de l\'historique.',
         },
         {

@@ -1,5 +1,5 @@
 /**
- * GitTerminalWidget — terminal simulé montrant des scénarios Git pas à pas.
+ * GitTerminalWidget - terminal simulé montrant des scénarios Git pas à pas.
  *
  * Affiche une série de commandes et leurs sorties avec des explications
  * pédagogiques en français.
@@ -23,7 +23,7 @@ class GitTerminalWidget {
                 {
                     cmd: 'touch README.md app.py',
                     out: '',
-                    desc: 'Crée deux fichiers vides. Ils sont pour l\'instant non suivis (untracked) par Git — Git les voit mais ne les enregistre pas.'
+                    desc: 'Crée deux fichiers vides. Ils sont pour l\'instant non suivis (untracked) par Git - Git les voit mais ne les enregistre pas.'
                 },
                 {
                     cmd: 'git status',
@@ -43,7 +43,7 @@ class GitTerminalWidget {
                 {
                     cmd: 'git commit -m "Initial commit"',
                     out: '[main (root-commit) a1b2c3] Initial commit\n 2 files changed, 0 insertions(+), 0 deletions(-)\n create mode 100644 README.md\n create mode 100644 app.py',
-                    desc: 'Enregistre un snapshot permanent de la staging area dans le dépôt. Le hash court du commit (a1b2c3) est affiché — il identifie ce commit de façon unique.'
+                    desc: 'Enregistre un snapshot permanent de la staging area dans le dépôt. Le hash court du commit (a1b2c3) est affiché - il identifie ce commit de façon unique.'
                 },
                 {
                     cmd: 'git log --oneline',
@@ -94,7 +94,7 @@ class GitTerminalWidget {
                 {
                     cmd: 'cat ~/.ssh/id_ed25519.pub',
                     out: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILmGpxyz+AbC12dEfGhIjKlMnOpQrStUvWxYz123456 alice@example.com',
-                    desc: 'Affiche la clé PUBLIQUE à copier sur GitHub (Settings → SSH and GPG keys → New SSH key). Ne partagez jamais id_ed25519 (sans .pub) — c\'est la clé privée.'
+                    desc: 'Affiche la clé PUBLIQUE à copier sur GitHub (Settings → SSH and GPG keys → New SSH key). Ne partagez jamais id_ed25519 (sans .pub) - c\'est la clé privée.'
                 },
                 {
                     cmd: 'ssh -T git@github.com',
@@ -125,7 +125,7 @@ class GitTerminalWidget {
                 {
                     cmd: 'git commit -m "feat: add login function"',
                     out: '[feature/login d4e5f6] feat: add login function\n 1 file changed, 1 insertion(+)\n create mode 100644 auth.py',
-                    desc: 'Enregistre le commit dans la branche feature/login. La branche main reste intacte — ce commit n\'y est pas encore visible.'
+                    desc: 'Enregistre le commit dans la branche feature/login. La branche main reste intacte - ce commit n\'y est pas encore visible.'
                 },
                 {
                     cmd: 'git push origin feature/login',
@@ -135,7 +135,7 @@ class GitTerminalWidget {
                 {
                     cmd: 'git checkout main',
                     out: 'Switched to branch \'main\'\nYour branch is up to date with \'origin/main\'.',
-                    desc: 'Revient sur la branche main. Le fichier auth.py disparaît du répertoire de travail — il n\'existe que dans feature/login pour l\'instant.'
+                    desc: 'Revient sur la branche main. Le fichier auth.py disparaît du répertoire de travail - il n\'existe que dans feature/login pour l\'instant.'
                 },
                 {
                     cmd: 'git merge feature/login',
@@ -194,7 +194,7 @@ ${outLines}`;
             <span class="gtw-dot gtw-dot-red"></span>
             <span class="gtw-dot gtw-dot-amber"></span>
             <span class="gtw-dot gtw-dot-green"></span>
-            <span class="gtw-terminal-title">bash — ${scenario.prompt}</span>
+            <span class="gtw-terminal-title">bash - ${scenario.prompt}</span>
         </div>
         <div class="gtw-terminal-body" id="gtw-body">
             ${currentStep === 0

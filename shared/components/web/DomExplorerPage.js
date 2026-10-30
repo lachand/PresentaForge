@@ -487,14 +487,14 @@ class DomExplorerPage extends ConceptPage {
     }
 
     clearInfo() {
-        this.infoType.textContent = '—';
+        this.infoType.textContent = '-';
         this.infoType.className = 'info-value';
-        this.infoTag.textContent = '—';
+        this.infoTag.textContent = '-';
         this.infoTag.className = 'info-value';
-        this.infoAttrs.textContent = '—';
-        this.infoText.textContent = '—';
-        this.infoChildren.textContent = '—';
-        this.infoDepth.textContent = '—';
+        this.infoAttrs.textContent = '-';
+        this.infoText.textContent = '-';
+        this.infoChildren.textContent = '-';
+        this.infoDepth.textContent = '-';
     }
 
 }

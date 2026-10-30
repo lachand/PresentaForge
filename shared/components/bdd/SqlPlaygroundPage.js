@@ -3,7 +3,7 @@
  * en fabrique partagee entre la page complete (SqlPlaygroundPage, avec
  * inspecteur de pseudocode) et le widget standalone (SqlPlaygroundWidget,
  * utilisable dans un deck PresentaForge). Chaque appel a createSqlEngine()
- * cree sa PROPRE base en memoire (DB) — plusieurs instances (ex. page + widget
+ * cree sa PROPRE base en memoire (DB) - plusieurs instances (ex. page + widget
  * sur la meme slide) restent independantes.
  *
  * Supporte : SELECT (WHERE/GROUP BY/HAVING/ORDER BY/DISTINCT/LIMIT, jointures
@@ -1041,7 +1041,7 @@ if (typeof window !== 'undefined') {
 // Meme moteur SQL (createSqlEngine, partage avec SqlPlaygroundPage), UI
 // compacte : editeur + resultats + reset, sans le panneau de schema, les
 // exemples ni l'historique (secondaires, coupes comme pour les autres
-// widgets — ex. HeapWidget qui n'expose pas Heapsort).
+// widgets - ex. HeapWidget qui n'expose pas Heapsort).
 class SqlPlaygroundWidget {
     static mount(container, config = {}) {
         if (container.dataset.sqlw) return;

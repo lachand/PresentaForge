@@ -59,7 +59,7 @@ class CODEOWNERSSimulatorWidget {
                 <small>Toutes les règles correspondantes (la <strong>dernière</strong> l'emporte) :</small>
                 ${allMatches.map(r => `<div class="codeow-match-row ${r === matched ? 'winner' : ''}">
                     <code style="white-space:nowrap">${r.pattern}</code>
-                    <span class="codeow-match-owners">${r.owners.join(' ') || '—'}</span>
+                    <span class="codeow-match-owners">${r.owners.join(' ') || '-'}</span>
                     ${r === matched ? '<span class="codeow-winner-badge">' + OEIIcons.render('check') + ' gagnante</span>' : ''}
                 </div>`).join('')}
             </div>`;

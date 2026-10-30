@@ -1,5 +1,5 @@
 /**
- * GitRebaseInteractiveWidget — simulation du rebase interactif (git rebase -i).
+ * GitRebaseInteractiveWidget - simulation du rebase interactif (git rebase -i).
  * L'étudiant choisit les actions (pick/squash/drop/reword) et voit le résultat.
  */
 class GitRebaseInteractiveWidget {
@@ -48,7 +48,7 @@ class GitRebaseInteractiveWidget {
 <div class="grbi-root widget-fit">
   <div class="widget-fit-header">
     <div class="grbi-info">
-      <code>git rebase -i HEAD~6</code> — Modifiez les actions ci-dessous, puis cliquez sur "Appliquer".
+      <code>git rebase -i HEAD~6</code> - Modifiez les actions ci-dessous, puis cliquez sur "Appliquer".
       <strong>Règle d'or : uniquement sur des commits locaux non encore poussés.</strong>
     </div>
     <div class="grbi-legend">

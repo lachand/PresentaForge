@@ -1,9 +1,9 @@
 /**
- * bst-traces.js — générateurs de trace PURS pour l'arbre binaire de recherche
+ * bst-traces.js - générateurs de trace PURS pour l'arbre binaire de recherche
  * (BST). Contrairement aux tableaux, un arbre est indexé par VALEUR : les
  * `marks` portent des valeurs de nœuds, pas des indices. Chaque générateur
  * clone l'arbre en entrée (plain object `{value,left,right}` ou `null`,
- * jamais de classe/instance) et ne le mute jamais — chaque Step embarque son
+ * jamais de classe/instance) et ne le mute jamais - chaque Step embarque son
  * propre instantané `tree`, comme `array` dans les autres familles.
  *
  * Insertion/recherche/parcours ne mutent le sous-arbre non concerné que

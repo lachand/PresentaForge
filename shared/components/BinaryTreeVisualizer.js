@@ -1,15 +1,15 @@
 /**
- * BinaryTreeVisualizer — arbre binaire de recherche (BST).
+ * BinaryTreeVisualizer - arbre binaire de recherche (BST).
  *
  * Les 4 opérations (insérer, supprimer, rechercher, parcourir) vivent dans
  * shared/components/algorithms/bst-traces.js (buildBstInsertTrace/
- * buildBstDeleteTrace/buildBstSearchTrace/buildBstTraversalTrace, purs — un
+ * buildBstDeleteTrace/buildBstSearchTrace/buildBstTraversalTrace, purs - un
  * arbre y est un simple objet `{value,left,right}`, jamais une classe). Cette
  * classe est l'ADAPTATEUR PAGE ; BSTWidget l'ADAPTATEUR SLIDE (même trace).
  *
  * NB : sur la page de cours réelle (structures/arbre-binaire.html), l'arbre
  * interactif visible par l'étudiant est le widget de cours `bst-simulator`
- * (BSTWidget), monté depuis le contenu JSON — cette classe page n'y a pas de
+ * (BSTWidget), monté depuis le contenu JSON - cette classe page n'y a pas de
  * <svg id="treeSvg"> hôte et ne peint donc rien de visible (héritage du code
  * d'origine). Elle reste maintenue pour toute page qui fournirait ces ids.
  */
@@ -235,7 +235,7 @@ class BinaryTreeVisualizer extends SimulationPage {
             text.setAttribute('fill', '#64748b');
             text.setAttribute('font-family', 'var(--font)');
             text.setAttribute('font-size', '15');
-            text.textContent = 'Arbre vide — inserez des valeurs pour commencer';
+            text.textContent = 'Arbre vide - inserez des valeurs pour commencer';
             svg.appendChild(text);
             this.updateInfo();
             return;
@@ -302,8 +302,8 @@ class BinaryTreeVisualizer extends SimulationPage {
         const treeMax = document.getElementById('treeMax');
         if (nodeCount) nodeCount.textContent = stats.count;
         if (treeHeight) treeHeight.textContent = stats.height;
-        if (treeMin) treeMin.textContent = stats.min !== null ? stats.min : '—';
-        if (treeMax) treeMax.textContent = stats.max !== null ? stats.max : '—';
+        if (treeMin) treeMin.textContent = stats.min !== null ? stats.min : '-';
+        if (treeMax) treeMax.textContent = stats.max !== null ? stats.max : '-';
     }
 
     showFeedback(message, type) {
@@ -342,11 +342,11 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BSTWidget — adaptateur SLIDE (et widget de cours `bst-simulator`, seul
+// BSTWidget - adaptateur SLIDE (et widget de cours `bst-simulator`, seul
 // consommateur réel sur structures/arbre-binaire.html). Consomme la MÊME
 // trace (bst-traces.js). Insertion/suppression instantanées (comme avant) ;
-// recherche/parcours animées via TracePlayer (même granularité — un pas par
-// nœud visité — que l'ancien code, cadence désormais pilotable).
+// recherche/parcours animées via TracePlayer (même granularité - un pas par
+// nœud visité - que l'ancien code, cadence désormais pilotable).
 // ─────────────────────────────────────────────────────────────────────────────
 class BSTWidget {
     static mount(container, config = {}) {
@@ -394,8 +394,8 @@ class BSTWidget {
   <div class="bstw-info widget-fit-footer">
     Nœuds: <span class="bstw-info-chip" data-role="count">0</span>
     Hauteur: <span class="bstw-info-chip" data-role="height">0</span>
-    Min: <span class="bstw-info-chip" data-role="min">—</span>
-    Max: <span class="bstw-info-chip" data-role="max">—</span>
+    Min: <span class="bstw-info-chip" data-role="min">-</span>
+    Max: <span class="bstw-info-chip" data-role="max">-</span>
   </div>
 </div>`;
 
@@ -525,7 +525,7 @@ class BSTWidget {
             const t = document.createElementNS(NS, 'text');
             t.setAttribute('x', '140'); t.setAttribute('y', '34');
             t.setAttribute('text-anchor', 'middle'); t.setAttribute('fill', '#64748b'); t.setAttribute('font-size', '13');
-            t.textContent = 'Arbre vide — insérez des valeurs';
+            t.textContent = 'Arbre vide - insérez des valeurs';
             svg.appendChild(t);
             this._updateInfo();
             return;
@@ -581,8 +581,8 @@ class BSTWidget {
         const stats = OEITrace.bstStats(this.treeRoot);
         this._countEl.textContent = stats.count;
         this._heightEl.textContent = stats.height;
-        this._minEl.textContent = stats.min !== null ? stats.min : '—';
-        this._maxEl.textContent = stats.max !== null ? stats.max : '—';
+        this._minEl.textContent = stats.min !== null ? stats.min : '-';
+        this._maxEl.textContent = stats.max !== null ? stats.max : '-';
     }
 
     showFeedback(msg, type) {

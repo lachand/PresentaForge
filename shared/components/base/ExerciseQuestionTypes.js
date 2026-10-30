@@ -1,6 +1,20 @@
 class ExerciseQuestionTypes {
+    /**
+     * Forme de comparaison des réponses libres. Tolère les écarts de saisie qui ne
+     * changent pas la réponse : accents, apostrophes typographiques, virgule décimale
+     * (0,75 = 0.75), point médian ou signe × pour le produit, espaces autour de * et
+     * des parenthèses. Appliquée au corrigé ET aux formes acceptées, donc sans migration.
+     */
     static normalize(value) {
-        return String(value == null ? '' : value).trim().toLowerCase();
+        return String(value == null ? '' : value)
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[\u2019\u2018\u00b4`]/g, "'")
+            .replace(/(\d),(\d)/g, '$1.$2')
+            .replace(/[\u00b7\u00d7\u22c5]/g, '*')
+            .replace(/\s+/g, ' ')
+            .replace(/\s*([*()])\s*/g, '$1')
+            .trim()
+            .toLowerCase();
     }
 
     static escape(text) {
@@ -27,7 +41,7 @@ class ExerciseQuestionTypes {
     /**
      * Nettoie un texte d'indice : retire les jetons révélateurs (« Debut attendu: »…)
      * et ne garde que la première phrase. Mutualisé depuis ConceptPage/ExerciseRunnerPage
-     * (copies byte-identiques — revue §C6).
+     * (copies byte-identiques - revue §C6).
      */
     static sanitizeHintText(value) {
         if (typeof value !== 'string') return '';

@@ -1,5 +1,5 @@
 /**
- * GitConflictEditorWidget — éditeur interactif de résolution de conflits Git à 3 voies.
+ * GitConflictEditorWidget - éditeur interactif de résolution de conflits Git à 3 voies.
  *
  * Présente des scénarios de conflits réels avec une interface permettant
  * de choisir quelle version conserver pour chaque section conflictuelle.
@@ -8,7 +8,7 @@ class GitConflictEditorWidget {
     static SCENARIOS = [
         {
             key: 'login-py',
-            label: 'login.py — paramètres de connexion',
+            label: 'login.py - paramètres de connexion',
             filename: 'login.py',
             conflicts: [
                 {
@@ -24,7 +24,7 @@ class GitConflictEditorWidget {
         },
         {
             key: 'rebase-utils',
-            label: 'utils.py — conflit lors d\'un rebase',
+            label: 'utils.py - conflit lors d\'un rebase',
             filename: 'utils.py',
             context: 'rebase',
             contextNote: 'Contexte rebase : HEAD = commit de main, "theirs" = votre commit rejoué. Attention : dans un rebase, la terminologie est inversée par rapport à un merge !',
@@ -50,7 +50,7 @@ class GitConflictEditorWidget {
         },
         {
             key: 'config-json',
-            label: 'config.json — paramètres serveur',
+            label: 'config.json - paramètres serveur',
             filename: 'config.json',
             conflicts: [
                 {

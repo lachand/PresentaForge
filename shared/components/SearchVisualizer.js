@@ -1,9 +1,9 @@
 /**
- * SearchVisualizer — recherche séquentielle ET dichotomique.
+ * SearchVisualizer - recherche séquentielle ET dichotomique.
  *
  * Les deux algorithmes vivent dans shared/components/algorithms/search-traces.js
  * (buildSequentialSearchTrace / buildBinarySearchTrace, purs, génériques sur le
- * type des valeurs — la page compare des chaînes par défaut en dichotomie, le
+ * type des valeurs - la page compare des chaînes par défaut en dichotomie, le
  * widget slide des entiers, même générateur). Cette classe est l'ADAPTATEUR
  * PAGE ; SearchWidget l'ADAPTATEUR SLIDE.
  */
@@ -265,7 +265,10 @@ class SearchVisualizer extends SimulationPage {
     getTargetInputValue() {
         const raw = document.getElementById('target')?.value?.trim();
         if (!raw) return null;
-        if (this.algorithm === 'sequential') {
+        // Cible numérique pour la séquentielle, et pour la dichotomie dès que le tableau est numérique
+        // (les comparaisons de la trace utilisent ===, donc "14" ne vaudrait pas 14).
+        const numeric = this.algorithm === 'sequential' || (this.values.length > 0 && typeof this.values[0] === 'number');
+        if (numeric) {
             const parsed = parseInt(raw, 10);
             return Number.isNaN(parsed) ? null : parsed;
         }
@@ -349,7 +352,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SearchWidget — adaptateur SLIDE. Consomme la MÊME trace (search-traces.js) via
+// SearchWidget - adaptateur SLIDE. Consomme la MÊME trace (search-traces.js) via
 // TracePlayer. Couvre : sequential, binary. DOM .srw-* inchangé.
 // ─────────────────────────────────────────────────────────────────────────────
 class SearchWidget {

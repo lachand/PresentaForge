@@ -197,7 +197,7 @@ class AlgorithmExpertEngine {
             const supported = ['len', 'abs', 'min', 'max', 'sum', 'print', 'range', 'sorted', 'reversed', 'int', 'float', 'str', 'bool'];
             const unsupported = ['enumerate', 'zip', 'list', 'type', 'isinstance', 'map', 'filter'];
             if (supported.includes(name)) {
-                throw this.createExpertError('E_FN_UNKNOWN', `'${name}' est une fonction intégrée — vérifiez la syntaxe d'appel (ex: ${name}(valeur)).`, runtime);
+                throw this.createExpertError('E_FN_UNKNOWN', `'${name}' est une fonction intégrée - vérifiez la syntaxe d'appel (ex: ${name}(valeur)).`, runtime);
             }
             if (unsupported.includes(name)) {
                 throw this.createExpertError('E_FN_UNSUPPORTED', `'${name}' n'est pas supporté dans ce sous-ensemble Python. Fonctions disponibles: ${supported.join(', ')}.`, runtime);
@@ -507,7 +507,7 @@ class AlgorithmExpertEngine {
             return null;
         }
 
-        // M1: for k, v in expr — déstructuration en paires (d.items(), liste de tuples)
+        // M1: for k, v in expr - déstructuration en paires (d.items(), liste de tuples)
         if (statement.type === 'for_items') {
             const iterable = this.evaluateExpression(statement.iterableExpression, frame, runtime, depth);
             let pairs;
@@ -1392,7 +1392,7 @@ class AlgorithmExpertEngine {
 
     getExpressionAst(expression) {
         const key = String(expression || '').trim();
-        // P4: LRU cache — move to end on hit
+        // P4: LRU cache - move to end on hit
         if (this.expressionCache.has(key)) {
             const val = this.expressionCache.get(key);
             this.expressionCache.delete(key);
@@ -1517,7 +1517,7 @@ class AlgorithmExpertEngine {
                     node = { type: 'call', callee: node, args };
                     continue;
                 }
-                // L3: method call expression — obj.method(args)
+                // L3: method call expression - obj.method(args)
                 if (matchValue('.')) {
                     const methodToken = peek();
                     if (methodToken.type !== 'identifier') throw new Error(`Expression invalide: '${expression}'.`);
@@ -1930,7 +1930,7 @@ class AlgorithmExpertEngine {
             throw this.createExpertError('E_INDEX_TYPE', 'Indexation sur un type non indexable.', runtime);
         }
 
-        // L3: method call expression — obj.method(args)
+        // L3: method call expression - obj.method(args)
         if (node.type === 'method_call_expr') {
             const objVal = this.evaluateAst(node.obj, frame, runtime, depth);
             const margs = node.args.map((a) => this.evaluateAst(a, frame, runtime, depth));
@@ -2096,7 +2096,7 @@ class AlgorithmExpertEngine {
                 if (args.length !== 1) throw this.createExpertError('E_BOOL_ARGS', 'bool() attend exactement un argument.', runtime);
                 return this.toTruthValue(args[0]);
             }
-            // L1: sorted(T) — returns a new sorted copy (ascending)
+            // L1: sorted(T) - returns a new sorted copy (ascending)
             if (fnName === 'sorted') {
                 if (args.length < 1) throw this.createExpertError('E_SORTED_ARGS', 'sorted() attend au moins un argument.', runtime);
                 const src = args[0];
@@ -2110,7 +2110,7 @@ class AlgorithmExpertEngine {
                 });
                 return copy;
             }
-            // L1: reversed(T) — returns a new reversed copy
+            // L1: reversed(T) - returns a new reversed copy
             if (fnName === 'reversed') {
                 if (args.length !== 1) throw this.createExpertError('E_REVERSED_ARGS', 'reversed() attend exactement un argument.', runtime);
                 const src = args[0];

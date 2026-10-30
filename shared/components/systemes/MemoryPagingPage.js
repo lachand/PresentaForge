@@ -126,7 +126,7 @@ function renderMemoryFrames() {
                 }
             } else {
                 cell.classList.add('empty');
-                cell.textContent = '—';
+                cell.textContent = '-';
             }
 
             cells.appendChild(cell);
@@ -664,7 +664,7 @@ class MemoryWidget {
                     }
                 } else {
                     cell.classList.add('empty');
-                    cell.textContent = '—';
+                    cell.textContent = '-';
                 }
                 cells.appendChild(cell);
             }

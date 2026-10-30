@@ -1,5 +1,5 @@
 /**
- * GitDAGWidget — visualisation SVG d'un graphe de commits Git.
+ * GitDAGWidget - visualisation SVG d'un graphe de commits Git.
  *
  * Reçoit la définition du DAG via la config JSON (passée depuis le bloc widget).
  * Réutilisable sur toutes les pages de la série Git.
@@ -190,7 +190,7 @@ class GitDAGWidget {
             const c = byId[id];
             if (!c || !tooltip) return;
             node.addEventListener('mouseenter', (e) => {
-                const parentNames = c.parents.map(p => byId[p]?.id?.substring(0, 6) || p).join(', ') || '—';
+                const parentNames = c.parents.map(p => byId[p]?.id?.substring(0, 6) || p).join(', ') || '-';
                 tooltip.innerHTML = `
                     <div class="gdw-tooltip-hash">${c.id.substring(0, 6)}</div>
                     <div class="gdw-tooltip-msg">${c.message}</div>

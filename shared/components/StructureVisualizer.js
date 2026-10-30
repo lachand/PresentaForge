@@ -1,5 +1,5 @@
 /**
- * StructureVisualizer — pile (stack, LIFO) et file (queue, FIFO).
+ * StructureVisualizer - pile (stack, LIFO) et file (queue, FIFO).
  *
  * Contrairement aux familles tri/recherche, il n'y a pas « un » algorithme à
  * dérouler du début à la fin : chaque clic (empiler/dépiler, enfiler/défiler)
@@ -125,6 +125,10 @@ class StructureVisualizer extends SimulationPage {
             console.warn('Conteneur de visualisation introuvable');
             return;
         }
+        if (this.structureType === 'queue') {
+            this.renderQueue(container, step);
+            return;
+        }
         const values = step ? step.array : this.structure;
         const entering = new Set(step ? step.marks.entering : []);
         const removing = new Set(step ? step.marks.removing : []);
@@ -141,6 +145,51 @@ class StructureVisualizer extends SimulationPage {
 
         this.updateInfo(values);
         this.updatePointer(values);
+        this.renderInvariantPanel();
+        this.renderTimeline();
+        if (step && step.caption) this.setFeedback(step.caption, step.ok === false ? 'bad' : '');
+    }
+
+    /** File circulaire : une cellule par case du tableau, avec les indices `debut` et `fin`. */
+    renderQueue(container, step) {
+        const state = step && step.slots ? { slots: step.slots, ...step.vars } : (this.queue || this.newQueue());
+        const entering = new Set(step ? step.marks.entering : []);
+        const removing = new Set(step ? step.marks.removing : []);
+        container.innerHTML = '';
+        state.slots.forEach((value, index) => {
+            const item = document.createElement('div');
+            item.className = 'queue-item queue-slot';
+            const empty = value === null || value === undefined;
+            if (empty) item.classList.add('queue-slot--empty');
+            if (entering.has(index)) item.classList.add('entering', 'op-insert');
+            if (removing.has(index)) item.classList.add('removing', 'op-delete');
+            const idx = document.createElement('span');
+            idx.className = 'queue-slot-index';
+            idx.textContent = '[' + index + ']';
+            const val = document.createElement('span');
+            val.className = 'queue-slot-value';
+            val.textContent = empty ? '-' : value;
+            item.appendChild(idx);
+            item.appendChild(val);
+            const pointers = [];
+            if (index === state.debut) pointers.push('debut');
+            if (index === state.fin) pointers.push('fin');
+            pointers.forEach((name) => {
+                const tag = document.createElement('span');
+                tag.className = 'queue-ptr queue-ptr--' + name;
+                tag.textContent = name;
+                item.appendChild(tag);
+            });
+            container.appendChild(item);
+        });
+        const values = step ? step.array : this.structure;
+        this.updateInfo(values);
+        const debutEl = document.getElementById('queue-debut');
+        const finEl = document.getElementById('queue-fin');
+        const tailleEl = document.getElementById('queue-taille');
+        if (debutEl) debutEl.textContent = state.debut;
+        if (finEl) finEl.textContent = state.fin;
+        if (tailleEl) tailleEl.textContent = state.taille;
         this.renderInvariantPanel();
         this.renderTimeline();
         if (step && step.caption) this.setFeedback(step.caption, step.ok === false ? 'bad' : '');
@@ -187,8 +236,10 @@ class StructureVisualizer extends SimulationPage {
         } else if (this.structureType === 'queue') {
             const first = size ? this.structure[0] : null;
             const last = size ? this.structure[size - 1] : null;
+            const q = this.queue;
             checks.push({ label: 'FIFO conserve ordre entree->sortie', ok: true, detail: size ? `${first} ... ${last}` : 'file vide' });
-            checks.push({ label: 'Bornes first/last coherentes', ok: size === 0 || (first !== null && last !== null), detail: size ? `first=${first}, last=${last}` : 'aucune borne' });
+            checks.push({ label: 'debut et fin dans [0, capacite[', ok: q.debut >= 0 && q.debut < q.capacite && q.fin >= 0 && q.fin < q.capacite, detail: `debut=${q.debut}, fin=${q.fin}` });
+            checks.push({ label: 'fin = (debut + taille) % capacite', ok: q.fin === (q.debut + q.taille) % q.capacite, detail: `(${q.debut} + ${q.taille}) % ${q.capacite} = ${(q.debut + q.taille) % q.capacite}` });
         }
         return checks;
     }
@@ -279,31 +330,35 @@ class StructureVisualizer extends SimulationPage {
             this.renderTimeline();
             return;
         }
-        if (this.structure.length >= this.maxElements) {
-            this.setFeedback('La file est pleine.', 'bad');
-            this.logOperation('enqueue', 'Echec: capacite atteinte.', 'bad');
-            this.renderTimeline();
-            return;
-        }
         input.value = '';
-        const trace = OEITrace.buildAddTrace(this.structure, value, { structureType: 'queue', maxElements: this.maxElements });
+        const trace = OEITrace.buildCircularEnqueueTrace(this.queue, value);
         this.runOperation(trace, (last) => {
+            this.queue = OEITrace.queueStateFromStep(last);
             this.structure = last.array.slice();
             this.state.stepCount += 1;
-            this.logOperation('enqueue', 'Enfile ' + value + '.', 'ok');
-            this.render();
-            this.setFeedback('Valeur ' + value + ' enfilee.', 'ok');
+            if (last.ok === false) {
+                this.setFeedback('La file est pleine.', 'bad');
+                this.logOperation('enqueue', 'Echec: file pleine.', 'bad');
+                this.render();
+                this.setFeedback('La file est pleine.', 'bad');
+            } else {
+                this.logOperation('enqueue', 'Enfile ' + value + '.', 'ok');
+                this.render();
+                this.setFeedback('Valeur ' + value + ' enfilee.', 'ok');
+            }
         });
     }
 
     async dequeue() {
-        const trace = OEITrace.buildRemoveTrace(this.structure, { structureType: 'queue' });
+        const trace = OEITrace.buildCircularDequeueTrace(this.queue);
         this.runOperation(trace, (last) => {
+            this.queue = OEITrace.queueStateFromStep(last);
             this.structure = last.array.slice();
             this.state.stepCount += 1;
             if (last.ok === false) {
-                this.setFeedback('La file est vide.', 'bad');
                 this.logOperation('dequeue', 'Echec: file vide.', 'bad');
+                this.render();
+                this.setFeedback('La file est vide.', 'bad');
             } else {
                 this.logOperation('dequeue', 'Defile ' + last.removedValue + '.', 'ok');
                 this.render();
@@ -322,8 +377,17 @@ class StructureVisualizer extends SimulationPage {
 
     // ── reset ────────────────────────────────────────────────────────────────
 
+    /** File circulaire vide de capacité `maxElements` (voir structure-traces.js). */
+    newQueue() {
+        if (typeof OEITrace !== 'undefined' && OEITrace.createCircularQueue) {
+            return OEITrace.createCircularQueue(this.maxElements);
+        }
+        return { slots: new Array(this.maxElements).fill(null), debut: 0, fin: 0, taille: 0, capacite: this.maxElements };
+    }
+
     reset() {
         this.structure = [];
+        this.queue = this.newQueue();
         this.state.phase = 'idle';
         this.state.stepCount = 0;
         this.operationHistory = [];
@@ -343,9 +407,9 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// StructureWidget — adaptateur SLIDE. Consomme la MÊME trace
+// StructureWidget - adaptateur SLIDE. Consomme la MÊME trace
 // (structure-traces.js) via TracePlayer : chaque ajout/retrait s'anime en
-// 2 à 4 pas (au lieu d'une mutation instantanée) — DOM .stw-* inchangé.
+// 2 à 4 pas (au lieu d'une mutation instantanée) - DOM .stw-* inchangé.
 // Couvre : stack (pile), queue (file).
 // ─────────────────────────────────────────────────────────────────────────────
 class StructureWidget {
@@ -361,13 +425,14 @@ class StructureWidget {
         this.structureType = (t === 'struct-queue' || t === 'queue') ? 'queue' : 'stack';
         this.maxItems = config.maxItems || 8;
         this.items = [];
+        this.queue = null; // file circulaire (structure-traces.js), créée à la demande
         this.lastAction = '';
         this.newItemIndex = -1;
     }
 
     init() {
         const isQueue = this.structureType === 'queue';
-        const title = isQueue ? 'File (Queue) — FIFO' : 'Pile (Stack) — LIFO';
+        const title = isQueue ? 'File (Queue) - FIFO' : 'Pile (Stack) - LIFO';
         const addLabel = isQueue ? 'Enfiler' : 'Empiler';
         const removeLabel = isQueue ? 'Défiler' : 'Dépiler';
         this.root.innerHTML = `<div class="stw-container widget-fit">
@@ -402,7 +467,9 @@ class StructureWidget {
         const zone = this.root.querySelector(this.structureType === 'queue' ? '.stw-queue-zone' : '.stw-stack-zone');
         if (!zone) return;
         zone.innerHTML = '';
-        if (this.items.length === 0) {
+        if (this.structureType === 'queue') {
+            this._renderQueueSlots(zone);
+        } else if (this.items.length === 0) {
             zone.innerHTML = `<div class="stw-empty-hint">Structure vide</div>`;
         } else {
             this.items.forEach((v, i) => {
@@ -423,6 +490,39 @@ class StructureWidget {
         if (sizeInfo) sizeInfo.textContent = `${this.items.length} élément${this.items.length !== 1 ? 's' : ''}`;
     }
 
+    _ensureQueue() {
+        if (!this.queue) this.queue = window.OEITrace.createCircularQueue(this.maxItems);
+        return this.queue;
+    }
+
+    /** File circulaire : une case par emplacement du tableau, avec les indices debut et fin. */
+    _renderQueueSlots(zone) {
+        const q = this._ensureQueue();
+        q.slots.forEach((v, i) => {
+            const el = document.createElement('div');
+            const empty = v === null || v === undefined;
+            el.className = 'stw-item stw-slot' + (empty ? ' stw-slot-empty' : '');
+            if (i === this.newItemIndex) el.classList.add('new-item');
+            const idx = document.createElement('span');
+            idx.className = 'stw-slot-index';
+            idx.textContent = '[' + i + ']';
+            const val = document.createElement('span');
+            val.textContent = empty ? '-' : v;
+            el.appendChild(idx);
+            el.appendChild(val);
+            const tags = [];
+            if (i === q.debut) tags.push('debut');
+            if (i === q.fin) tags.push('fin');
+            if (tags.length) {
+                const tag = document.createElement('span');
+                tag.className = 'stw-slot-ptr';
+                tag.textContent = tags.join(' / ');
+                el.appendChild(tag);
+            }
+            zone.appendChild(el);
+        });
+    }
+
     _bindControls() {
         const inp = this.root.querySelector('.stw-input');
         const addBtn = this.root.querySelector('.stw-btn-add');
@@ -432,9 +532,25 @@ class StructureWidget {
         // Même algorithme que la page (buildAddTrace/buildRemoveTrace), mais rendu
         // instantané ici : contrairement aux algos de tri/recherche, une pile/file
         // n'anime pas ses opérations sur les slides (comportement d'origine
-        // conservé — pas de changement visible, l'aperçu doit rester réactif).
+        // conservé - pas de changement visible, l'aperçu doit rester réactif).
         const doAdd = () => {
             const val = inp.value.trim() || String(Math.floor(Math.random() * 99) + 1);
+            if (this.structureType === 'queue') {
+                const qTrace = window.OEITrace.buildCircularEnqueueTrace(this._ensureQueue(), val);
+                const qLast = qTrace.at(-1);
+                if (qLast.ok === false) {
+                    this.lastAction = `Attention : file pleine (capacité ${this.maxItems})`;
+                    this._render(); return;
+                }
+                this.queue = window.OEITrace.queueStateFromStep(qLast);
+                this.items = qLast.array.slice();
+                this.newItemIndex = qLast.marks.entering[0];
+                this.lastAction = `Enfilé : "${val}"`;
+                inp.value = '';
+                this._render();
+                setTimeout(() => { this.newItemIndex = -1; this._render(); }, 600);
+                return;
+            }
             if (this.items.length >= this.maxItems) {
                 this.lastAction = `Attention : structure pleine (max ${this.maxItems})`;
                 this._render(); return;
@@ -453,6 +569,14 @@ class StructureWidget {
                 this.lastAction = 'Attention : structure vide';
                 this._render(); return;
             }
+            if (this.structureType === 'queue') {
+                const qLast = window.OEITrace.buildCircularDequeueTrace(this._ensureQueue()).at(-1);
+                this.queue = window.OEITrace.queueStateFromStep(qLast);
+                this.items = qLast.array.slice();
+                this.lastAction = `Défilé : "${qLast.removedValue}"`;
+                this._render();
+                return;
+            }
             const trace = window.OEITrace.buildRemoveTrace(this.items, { structureType: this.structureType });
             const removed = trace.at(-1).removedValue;
             this.items = trace.at(-1).array.slice();
@@ -463,7 +587,7 @@ class StructureWidget {
         addBtn?.addEventListener('click', doAdd);
         inp?.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
         removeBtn?.addEventListener('click', doRemove);
-        resetBtn?.addEventListener('click', () => { this.items = []; this.lastAction = 'Structure réinitialisée'; this._render(); });
+        resetBtn?.addEventListener('click', () => { this.items = []; this.queue = null; this.lastAction = 'Structure réinitialisée'; this._render(); });
     }
 }
 

@@ -656,7 +656,7 @@ class AlgorithmImplementationConfigs {
     static get LEVEL_PROFILES() {
         return {
             1: {
-                label: 'Niveau 1 — découverte',
+                label: 'Niveau 1 - découverte',
                 examples: {
                     max: { array: '4,7,2,9,5', target: 0 },
                     count: { array: '1,3,1,2,1', target: 1 },
@@ -672,7 +672,7 @@ class AlgorithmImplementationConfigs {
                 recommendation: 'Passez au niveau 2 pour introduire valeurs négatives et doublons.'
             },
             2: {
-                label: 'Niveau 2 — consolidation',
+                label: 'Niveau 2 - consolidation',
                 examples: {
                     max: { array: '-2,4,4,-1,7,0', target: 0 },
                     count: { array: '3,-1,3,2,3,-1,4', target: -1 },
@@ -688,7 +688,7 @@ class AlgorithmImplementationConfigs {
                 recommendation: 'Passez au niveau 3 pour travailler les cas pièges et limites.'
             },
             3: {
-                label: 'Niveau 3 — cas pièges',
+                label: 'Niveau 3 - cas pièges',
                 examples: {
                     max: { array: '-8,-3,-12,-3,-1', target: 0 },
                     count: { array: '5,2,5,5,1,5,0', target: 4 },

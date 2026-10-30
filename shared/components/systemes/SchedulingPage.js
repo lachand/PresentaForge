@@ -463,7 +463,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SchedulingWidget — Widget autonome pour intégration dans les slides
+// SchedulingWidget - Widget autonome pour intégration dans les slides
 // Usage : SchedulingWidget.mount(container, { algorithm: 'fcfs'|'sjf'|'rr'|'priority', quantum: 2 })
 // ─────────────────────────────────────────────────────────────────────────────
 class SchedulingWidget {

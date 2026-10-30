@@ -1,5 +1,5 @@
 /**
- * SortingVisualizer — visualisation des tris élémentaires sur tableau.
+ * SortingVisualizer - visualisation des tris élémentaires sur tableau.
  *
  * Algorithmes : bubble-sort, insertion-sort, selection-sort.
  *
@@ -337,7 +337,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SortingWidget — adaptateur SLIDE (autonome, monté par le registre de widgets).
+// SortingWidget - adaptateur SLIDE (autonome, monté par le registre de widgets).
 // Consomme la MÊME trace que la page (sort-traces.js) via TracePlayer.
 // Couvre : bubble-sort, insertion-sort, selection-sort.
 // ─────────────────────────────────────────────────────────────────────────────

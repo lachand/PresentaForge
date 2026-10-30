@@ -17,7 +17,7 @@ class SecretLeakTimelineWidget {
         },
         {
             timeStr: 'T + 15 s', icon: 'cpu', label: 'Bot tiers archive le secret',
-            desc: 'Des bots spécialisés (GitGuardian, truffleHog, scanners malveillants) scrutent GitHub en temps réel. Votre token est capturé dans leur base — même si vous supprimez le commit ensuite.',
+            desc: 'Des bots spécialisés (GitGuardian, truffleHog, scanners malveillants) scrutent GitHub en temps réel. Votre token est capturé dans leur base - même si vous supprimez le commit ensuite.',
             color: 'var(--attention)'
         },
         {
@@ -60,7 +60,7 @@ class SecretLeakTimelineWidget {
                 </div>`).join('')}
             </div>
             <div class="slt-moral widget-fit-footer">
-                ${OEIIcons.render('key')} <strong>Règle fondamentale :</strong> Si vous exposez un secret, <strong>révoquez-le immédiatement</strong> chez le fournisseur (GitHub, AWS, Stripe…) — <em>avant</em> de supprimer le commit. La suppression de l'historique ne sert à rien si le secret est déjà capturé par un bot.
+                ${OEIIcons.render('key')} <strong>Règle fondamentale :</strong> Si vous exposez un secret, <strong>révoquez-le immédiatement</strong> chez le fournisseur (GitHub, AWS, Stripe…) - <em>avant</em> de supprimer le commit. La suppression de l'historique ne sert à rien si le secret est déjà capturé par un bot.
             </div>
         </div>`;
 

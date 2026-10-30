@@ -1,5 +1,5 @@
 /**
- * AlgorithmExpertContracts — inférence de contrats, génération de tests et estimation
+ * AlgorithmExpertContracts - inférence de contrats, génération de tests et estimation
  * de complexité pour AlgorithmExpertLab.
  *
  * Dépendances injectées via le constructeur :

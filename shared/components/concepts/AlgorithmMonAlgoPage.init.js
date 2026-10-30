@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderGuidedExercises(data.guidedExercises);
         }
     } catch {
-        // JSON unavailable — skip silently
+        // JSON unavailable - skip silently
     }
 });
 
@@ -78,7 +78,7 @@ function verifyGuidedExercise(ex, feedbackEl) {
         feedbackEl.textContent = `Correct ! ${ex.hint}`;
         feedbackEl.className = 'algoexpert-guided-feedback ok';
     } else {
-        feedbackEl.textContent = `Résultat incorrect. Obtenu\u00a0: ${JSON.stringify(got)} — Attendu\u00a0: ${JSON.stringify(ex.expected)}.`;
+        feedbackEl.textContent = `Résultat incorrect. Obtenu\u00a0: ${JSON.stringify(got)} - Attendu\u00a0: ${JSON.stringify(ex.expected)}.`;
         feedbackEl.className = 'algoexpert-guided-feedback bad';
     }
 }

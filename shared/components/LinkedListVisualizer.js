@@ -1,10 +1,10 @@
 /**
- * LinkedListVisualizer — liste chaînée simple.
+ * LinkedListVisualizer - liste chaînée simple.
  *
  * Les 5 opérations (ajouter en tête/queue/position, supprimer, rechercher)
  * vivent dans shared/components/algorithms/linkedlist-traces.js, pures : une
  * liste y est un tableau de valeurs `[v0, v1, …]`, jamais une classe
- * Noeud/ListeChainee à pointeurs — le pointeur-chasing (prev/current/next)
+ * Noeud/ListeChainee à pointeurs - le pointeur-chasing (prev/current/next)
  * reste une affaire de VISUALISATION (`marks`), pas de structure de données.
  * Cette classe est l'ADAPTATEUR PAGE ; LinkedListWidget l'ADAPTATEUR SLIDE.
  */
@@ -307,9 +307,9 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LinkedListWidget — adaptateur SLIDE. Consomme la MÊME trace
+// LinkedListWidget - adaptateur SLIDE. Consomme la MÊME trace
 // (linkedlist-traces.js). Insertion/suppression/recherche restent
-// instantanées (comme avant — aucune animation par pas sur les slides, pour
+// instantanées (comme avant - aucune animation par pas sur les slides, pour
 // éviter la régression déjà observée sur pile/file avec des opérations
 // animées trop lentes face à des clics rapprochés). DOM .llw-* inchangé.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -327,7 +327,7 @@ class LinkedListWidget {
         this.values = this._defaultValues.slice();
         this._highlighted = new Set();
         this._foundIdx = -1;
-        this._action = 'Liste chainee — ajoutez ou supprimez des noeuds';
+        this._action = 'Liste chainee - ajoutez ou supprimez des noeuds';
     }
 
     init() {
@@ -390,7 +390,7 @@ class LinkedListWidget {
             this.values = last.array;
             this._highlighted = new Set(last.marks.entering);
             this._foundIdx = -1;
-            this._action = `+Tete : ${v} insere en O(1) — nouvelle tete`;
+            this._action = `+Tete : ${v} insere en O(1) - nouvelle tete`;
             this._render();
         });
         this.root.querySelector('.llw-btn-tail')?.addEventListener('click', () => {
@@ -400,7 +400,7 @@ class LinkedListWidget {
             this.values = last.array;
             this._highlighted = new Set(last.marks.entering);
             this._foundIdx = -1;
-            this._action = `+Queue : ${v} insere en O(n=${this.values.length}) — parcours complet`;
+            this._action = `+Queue : ${v} insere en O(n=${this.values.length}) - parcours complet`;
             this._render();
         });
         this.root.querySelector('.llw-btn-remove')?.addEventListener('click', () => {
@@ -410,7 +410,7 @@ class LinkedListWidget {
             this._foundIdx = -1;
             if (!last.ok) { this._action = `Valeur ${v} introuvable.`; this._render(); return; }
             this.values = last.array;
-            this._action = `Supprime : ${last.removedValue} (indice ${last.removedIndex}) — ${last.removedIndex + 1} comparaison(s)`;
+            this._action = `Supprime : ${last.removedValue} (indice ${last.removedIndex}) - ${last.removedIndex + 1} comparaison(s)`;
             this._render();
         });
         this.root.querySelector('.llw-btn-search')?.addEventListener('click', () => {

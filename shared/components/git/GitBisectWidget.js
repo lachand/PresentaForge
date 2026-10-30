@@ -1,5 +1,5 @@
 /**
- * GitBisectWidget — simulation interactive de git bisect.
+ * GitBisectWidget - simulation interactive de git bisect.
  * L'étudiant marque good/bad pour trouver le commit coupable par dichotomie.
  */
 class GitBisectWidget {
@@ -50,7 +50,7 @@ class GitBisectWidget {
                 else commitStates[i] = '';
             }
             log.push(`# → Bisecting: ${badBound - goodBound - 1} revisions left (~${Math.ceil(Math.log2(badBound - goodBound))} steps)`);
-            log.push(`# Git checkout le commit #${current} — testez-le maintenant`);
+            log.push(`# Git checkout le commit #${current} - testez-le maintenant`);
         };
 
         const markGood = () => {
@@ -111,7 +111,7 @@ class GitBisectWidget {
   <div class="widget-fit-body">
     <div class="gbw-info ${found ? 'found' : 'neutral'}">
       ${found
-        ? `${OEIIcons.render('target')} <strong>Commit coupable : #${CULPRIT} — "refactor: optimisation de la boucle principale"</strong> par Bob. Trouvé en <strong>${steps} étape(s)</strong> au lieu de ${N-1} tests manuels. <code>git bisect reset</code> restaure HEAD.`
+        ? `${OEIIcons.render('target')} <strong>Commit coupable : #${CULPRIT} - "refactor: optimisation de la boucle principale"</strong> par Bob. Trouvé en <strong>${steps} étape(s)</strong> au lieu de ${N-1} tests manuels. <code>git bisect reset</code> restaure HEAD.`
         : current !== null
           ? `Commit <strong>#${current}</strong> en cours de test. Exécutez la fonction, observez le résultat ci-dessous et marquez le commit. Espace de recherche : #${goodBound}–#${badBound} (~${stepsLeft()} étape(s) restante(s)).`
           : `Cliquez sur <strong>Démarrer git bisect</strong>. Git va checkout automatiquement le commit du milieu pour que vous le testiez.`}
@@ -143,7 +143,7 @@ class GitBisectWidget {
         ? `<button class="btn btn-secondary" id="gbw-restart">Recommencer</button>`
         : `<button class="btn btn-secondary" id="gbw-good" style="border-color:var(--ok);color:var(--ok)">${OEIIcons.render('ok')} Bon : good</button>
            <button class="btn btn-secondary" id="gbw-bad" style="border-color:var(--critique);color:var(--critique)">${OEIIcons.render('ko')} Mauvais : bad</button>
-           <span class="gbw-step-info">Étape ${steps + 1} — ~${stepsLeft()} restante(s)</span>`}
+           <span class="gbw-step-info">Étape ${steps + 1} - ~${stepsLeft()} restante(s)</span>`}
   </div>
 </div>`;
 

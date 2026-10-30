@@ -109,69 +109,8 @@ class RPNPage extends ConceptPage {
     }
 
     initEval() {
-        const expr = this.rpnInput.value.trim();
-        const tokens = expr.split(/\s+/);
-        this.evalSteps = [];
+        this.evalSteps = OEITrace.buildRpnEvalTrace(this.rpnInput.value).steps;
         this.evalStep = -1;
-
-        const stack = [];
-
-        tokens.forEach((token, index) => {
-            if (this.isNumber(token)) {
-                this.evalSteps.push({
-                    type: 'push',
-                    token,
-                    index,
-                    stack: stack.slice(),
-                    info: 'Empiler ' + token
-                });
-                stack.push(parseFloat(token));
-            } else if (this.isOperator(token)) {
-                if (stack.length < 2) {
-                    this.evalSteps.push({
-                        type: 'error',
-                        token,
-                        index,
-                        stack: stack.slice(),
-                        info: 'Erreur : pas assez d\'opérandes'
-                    });
-                    return;
-                }
-                const b = stack.pop();
-                const a = stack.pop();
-                const result = this.applyOp(token, a, b);
-                this.evalSteps.push({
-                    type: 'op',
-                    token,
-                    index,
-                    a,
-                    b,
-                    result,
-                    stack: stack.slice(),
-                    info: 'Calculer ' + a + ' ' + token + ' ' + b + ' = ' + result
-                });
-                stack.push(result);
-            }
-        });
-
-        if (stack.length === 1) {
-            this.evalSteps.push({
-                type: 'done',
-                token: null,
-                index: tokens.length,
-                stack: stack.slice(),
-                result: stack[0],
-                info: 'Résultat final : ' + stack[0]
-            });
-        } else {
-            this.evalSteps.push({
-                type: 'error',
-                token: null,
-                index: tokens.length,
-                stack: stack.slice(),
-                info: 'Erreur : expression invalide'
-            });
-        }
     }
 
     applyEvalStep(stepIndex) {
@@ -191,6 +130,8 @@ class RPNPage extends ConceptPage {
 
         if (step.type === 'done') {
             this.resultDisplay.textContent = step.result;
+        } else if (step.type === 'error') {
+            this.resultDisplay.textContent = 'Erreur';
         }
     }
 
@@ -214,117 +155,8 @@ class RPNPage extends ConceptPage {
     }
 
     initConv() {
-        const tokens = this.tokenizeInfix(this.infixInput.value.trim());
-        this.convSteps = [];
+        this.convSteps = OEITrace.buildInfixToPostfixTrace(this.infixInput.value).steps;
         this.convStep = -1;
-
-        const output = [];
-        const opStack = [];
-
-        tokens.forEach((token, index) => {
-            if (this.isNumber(token)) {
-                output.push(token);
-                this.convSteps.push({
-                    type: 'number',
-                    token,
-                    index,
-                    output: output.slice(),
-                    opStack: opStack.slice(),
-                    info: 'Nombre ' + token + ' → sortie'
-                });
-                return;
-            }
-
-            if (token === '(') {
-                opStack.push(token);
-                this.convSteps.push({
-                    type: 'paren_open',
-                    token,
-                    index,
-                    output: output.slice(),
-                    opStack: opStack.slice(),
-                    info: 'Parenthèse ouvrante → pile'
-                });
-                return;
-            }
-
-            if (token === ')') {
-                while (opStack.length > 0 && opStack[opStack.length - 1] !== '(') {
-                    const op = opStack.pop();
-                    output.push(op);
-                    this.convSteps.push({
-                        type: 'paren_close_pop',
-                        token: op,
-                        index,
-                        output: output.slice(),
-                        opStack: opStack.slice(),
-                        info: 'Dépiler ' + op + ' → sortie'
-                    });
-                }
-                if (opStack.length > 0) opStack.pop();
-                this.convSteps.push({
-                    type: 'paren_close',
-                    token,
-                    index,
-                    output: output.slice(),
-                    opStack: opStack.slice(),
-                    info: 'Parenthèse fermante : dépiler jusqu\'à ('
-                });
-                return;
-            }
-
-            if (this.isOperator(token)) {
-                while (
-                    opStack.length > 0
-                    && opStack[opStack.length - 1] !== '('
-                    && this.precedence(opStack[opStack.length - 1]) >= this.precedence(token)
-                ) {
-                    const op = opStack.pop();
-                    output.push(op);
-                    this.convSteps.push({
-                        type: 'op_pop',
-                        token: op,
-                        index,
-                        output: output.slice(),
-                        opStack: opStack.slice(),
-                        info: 'Dépiler ' + op + ' (priorité ≥) → sortie'
-                    });
-                }
-
-                opStack.push(token);
-                this.convSteps.push({
-                    type: 'op_push',
-                    token,
-                    index,
-                    output: output.slice(),
-                    opStack: opStack.slice(),
-                    info: 'Opérateur ' + token + ' → pile'
-                });
-            }
-        });
-
-        while (opStack.length > 0) {
-            const op = opStack.pop();
-            output.push(op);
-            this.convSteps.push({
-                type: 'final_pop',
-                token: op,
-                index: tokens.length,
-                output: output.slice(),
-                opStack: opStack.slice(),
-                info: 'Dépiler ' + op + ' → sortie'
-            });
-        }
-
-        this.convSteps.push({
-            type: 'done',
-            token: null,
-            index: tokens.length,
-            output: output.slice(),
-            opStack: [],
-            result: output.join(' '),
-            info: 'Conversion terminée : ' + output.join(' ')
-        });
     }
 
     applyConvStep(stepIndex) {
@@ -340,8 +172,9 @@ class RPNPage extends ConceptPage {
         this.stackViz.renderItems(this.opStackZone, step.opStack, { itemClass: 'stack-item' });
         this.stepInfoConv.textContent = step.info;
 
-        if (step.type === 'done' && this.convResultDisplay) {
-            this.convResultDisplay.textContent = step.result;
+        if (this.convResultDisplay) {
+            if (step.type === 'done') this.convResultDisplay.textContent = step.result;
+            else if (step.type === 'error') this.convResultDisplay.textContent = 'Erreur';
         }
     }
 
@@ -366,10 +199,16 @@ class RPNPage extends ConceptPage {
 
     buildTree() {
         const expr = this.treeInput.value.trim();
-        const postfix = this.infixToPostfix(expr);
-        const tree = this.postfixToTree(postfix);
+        const trace = OEITrace.buildInfixToPostfixTrace(expr);
 
         this.treeInfix.textContent = expr;
+        if (trace.error) {
+            this.treePostfix.textContent = trace.error;
+            this.treeContainer.innerHTML = '';
+            return;
+        }
+        const postfix = trace.output;
+        const tree = this.postfixToTree(postfix);
         this.treePostfix.textContent = postfix.join(' ');
 
         this.treeViz.render(this.treeContainer, tree, {
@@ -405,86 +244,11 @@ class RPNPage extends ConceptPage {
     }
 
     isNumber(token) {
-        return !isNaN(parseFloat(token)) && isFinite(token);
+        return OEITrace.rpnIsNumber(token);
     }
 
     isOperator(token) {
-        return ['+', '-', '*', '/', '^'].indexOf(token) !== -1;
-    }
-
-    precedence(op) {
-        if (op === '+' || op === '-') return 1;
-        if (op === '*' || op === '/') return 2;
-        if (op === '^') return 3;
-        return 0;
-    }
-
-    applyOp(op, a, b) {
-        switch (op) {
-            case '+': return a + b;
-            case '-': return a - b;
-            case '*': return a * b;
-            case '/': return a / b;
-            case '^': return Math.pow(a, b);
-            default: return 0;
-        }
-    }
-
-    tokenizeInfix(expr) {
-        const tokens = [];
-        let current = '';
-
-        for (let i = 0; i < expr.length; i++) {
-            const char = expr[i];
-            if (char === ' ') {
-                if (current) {
-                    tokens.push(current);
-                    current = '';
-                }
-            } else if ('+-*/^()'.indexOf(char) !== -1) {
-                if (current) {
-                    tokens.push(current);
-                    current = '';
-                }
-                tokens.push(char);
-            } else {
-                current += char;
-            }
-        }
-
-        if (current) tokens.push(current);
-        return tokens;
-    }
-
-    infixToPostfix(expr) {
-        const tokens = this.tokenizeInfix(expr);
-        const output = [];
-        const opStack = [];
-
-        tokens.forEach((token) => {
-            if (this.isNumber(token)) {
-                output.push(token);
-            } else if (token === '(') {
-                opStack.push(token);
-            } else if (token === ')') {
-                while (opStack.length > 0 && opStack[opStack.length - 1] !== '(') {
-                    output.push(opStack.pop());
-                }
-                if (opStack.length > 0) opStack.pop();
-            } else if (this.isOperator(token)) {
-                while (
-                    opStack.length > 0
-                    && opStack[opStack.length - 1] !== '('
-                    && this.precedence(opStack[opStack.length - 1]) >= this.precedence(token)
-                ) {
-                    output.push(opStack.pop());
-                }
-                opStack.push(token);
-            }
-        });
-
-        while (opStack.length > 0) output.push(opStack.pop());
-        return output;
+        return OEITrace.rpnIsOperator(token);
     }
 }
 

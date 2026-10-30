@@ -311,7 +311,7 @@ if (typeof window !== 'undefined') {
 
 // ── Standalone widget ──────────────────────────────────────────
 // Meme moteur que ConfidenceIntervalPage, sans controleur de vitesse partage
-// ni inspecteur de pseudocode — delai fixe local, historique plus court.
+// ni inspecteur de pseudocode - delai fixe local, historique plus court.
 class ConfidenceIntervalWidget {
     static mount(container, config = {}) {
         if (container.dataset.ciw) return;

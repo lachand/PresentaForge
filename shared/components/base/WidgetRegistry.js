@@ -1,5 +1,5 @@
 /**
- * WidgetRegistry — Source unique de vérité pour tous les widgets OEI.
+ * WidgetRegistry - Source unique de vérité pour tous les widgets OEI.
  *
  * Utilisé par :
  *   - ConceptPage (pages de cours) : montage des widgets dans le contenu JSON
@@ -7,20 +7,20 @@
  *   - slides-editor.js (éditeur) : WIDGET_OPTIONS dérivé dynamiquement
  *
  * Champs par entrée :
- *   global      — nom de la classe sur `window`
- *   script      — chemin relatif à shared/components/
- *   label       — nom affiché dans l'éditeur
- *   category    — catégorie de regroupement
- *   description — courte description (tooltip / modale)
- *   level       — niveau pédagogique cible : 'L1', 'L2', 'L3', ou ''
- *   tags        — mots-clés pour la recherche
- *   defaultConfig — config JSON par défaut lors de l'insertion
- *   staticFallback — fn(config) → HTML pour exports raster (PDF/PNG)
+ *   global      - nom de la classe sur `window`
+ *   script      - chemin relatif à shared/components/
+ *   label       - nom affiché dans l'éditeur
+ *   category    - catégorie de regroupement
+ *   description - courte description (tooltip / modale)
+ *   level       - niveau pédagogique cible : 'L1', 'L2', 'L3', ou ''
+ *   tags        - mots-clés pour la recherche
+ *   defaultConfig - config JSON par défaut lors de l'insertion
+ *   staticFallback - fn(config) → HTML pour exports raster (PDF/PNG)
  */
 
 // Helper pour le staticFallback standard
 const _sf = (icon, name) =>
-    () => `<div class="sl-widget-static"><div class="sl-widget-static-icon">${icon}</div><div class="sl-widget-static-name">${name}</div><div class="sl-widget-static-desc">Simulation interactive — disponible en présentation</div></div>`;
+    () => `<div class="sl-widget-static"><div class="sl-widget-static-icon">${icon}</div><div class="sl-widget-static-name">${name}</div><div class="sl-widget-static-desc">Simulation interactive - disponible en présentation</div></div>`;
 
 const OEI_WIDGET_REGISTRY = {
 
@@ -796,7 +796,7 @@ const OEI_WIDGET_REGISTRY = {
         script: 'base/SlidesEmbed.js',
         label: 'Présentation intégrée',
         category: 'Slides',
-        description: 'Viewer de slides inline — intègre une présentation JSON directement dans la page',
+        description: 'Viewer de slides inline - intègre une présentation JSON directement dans la page',
         level: '',
         tags: ['slides', 'présentation', 'embed', 'iframe', 'cours'],
         defaultConfig: { file: 'data/slides/exemple.json', height: 480 },

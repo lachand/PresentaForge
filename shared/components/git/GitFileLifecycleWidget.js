@@ -1,5 +1,5 @@
 /**
- * GitFileLifecycleWidget — machine à états visuelle du cycle de vie d'un fichier Git.
+ * GitFileLifecycleWidget - machine à états visuelle du cycle de vie d'un fichier Git.
  *
  * Montre les 4 états d'un fichier (non suivi, modifié, indexé, commis)
  * et les transitions possibles via les commandes Git.
@@ -130,7 +130,7 @@ class GitFileLifecycleWidget {
      *   - staged    → modified  (git restore --staged, arc court)
      */
     static _buildDiagram(activeState) {
-        // Layout — 5 états, BW=90, gaps=55px
+        // Layout - 5 états, BW=90, gaps=55px
         const W = 710, H = 190;
         const BW = 90, BH = 42, BY = 64;   // boîtes : y=64 → y=106
         const CY = BY + BH / 2;             // y=85 : centre vertical

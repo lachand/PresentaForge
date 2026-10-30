@@ -1,14 +1,14 @@
 /**
- * hashtable-traces.js — générateurs de trace PURS pour la table de hachage à
+ * hashtable-traces.js - générateurs de trace PURS pour la table de hachage à
  * chaînage séparé. Une table y est `Bucket[]` (un `Bucket` = `{key,value}[]`),
- * jamais une classe — la mécanique de chaînage (sonder/comparer/insérer/
+ * jamais une classe - la mécanique de chaînage (sonder/comparer/insérer/
  * mettre à jour/supprimer) est strictement la même quel que soit le type de
  * clé ; c'est l'ADAPTATEUR qui calcule la valeur brute à hacher (`raw`) :
  *   - page  : hash polynomial d'une clé texte (`polynomialHash`) + méthode
  *             modulo OU multiplication au choix de l'utilisateur, mode 'map'
  *             (une clé déjà présente met à jour sa valeur, jamais de doublon).
  *   - slide : clé numérique directe (`raw = clé`), méthode modulo uniquement,
- *             mode 'multiset' (pas de recherche de doublon — comportement
+ *             mode 'multiset' (pas de recherche de doublon - comportement
  *             d'origine du widget, qui traite les entrées comme un sac de
  *             valeurs, pas un dictionnaire).
  * `computeHashInfo` est le point de réduction PARTAGÉ (mod signé-sûr, donc
@@ -47,7 +47,7 @@
 
     /**
      * Réduit une valeur brute à un indice de bucket. `raw` peut être négatif
-     * (clé numérique du widget) — la réduction modulo est signée-sûre
+     * (clé numérique du widget) - la réduction modulo est signée-sûre
      * (`((raw % m) + m) % m`), correcte que `raw` soit déjà positif (page,
      * qui applique `Math.abs` avant d'appeler) ou signé (widget).
      */
@@ -172,7 +172,7 @@
         return finalize(steps);
     }
 
-    /** Recherche. `hashInfo` déjà calculé — sonde le bucket nœud par nœud, comme l'insertion en mode 'map'. */
+    /** Recherche. `hashInfo` déjà calculé - sonde le bucket nœud par nœud, comme l'insertion en mode 'map'. */
     function buildHashSearchTrace(table, key, hashInfo) {
         const work = cloneTable(table);
         const { hash } = hashInfo;

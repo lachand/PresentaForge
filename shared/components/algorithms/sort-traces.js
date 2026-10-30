@@ -1,5 +1,5 @@
 /**
- * sort-traces.js — générateurs de trace PURS pour la famille « tri ».
+ * sort-traces.js - générateurs de trace PURS pour la famille « tri ».
  *
  * Chaque `buildXxxTrace(input, opts)` renvoie un `Step[]` sérialisable en JSON,
  * SANS aucun accès DOM. La même trace alimente l'adaptateur page
@@ -40,7 +40,10 @@
         compare: 'bubble-line2',
         swap: 'bubble-line3',
         innerEnd: 'bubble-line5',
-        done: 'bubble-line6'
+        done: 'bubble-line6',
+        flagReset: 'bubble-flag-init',
+        flagSet: 'bubble-flag-set',
+        flagCheck: 'bubble-flag-check'
     };
     const INSERTION_LINES = {
         outer: 'insertion-line0',
@@ -159,6 +162,12 @@
                 caption: `Passe ${i + 1} : le plus grand élément de la zone non triée va remonter en fin.`,
                 marks: { sorted }, vars: { i }
             });
+            let swapped = false;
+            t.push({
+                line: BUBBLE_LINES.flagReset, phase: 'flag-reset',
+                caption: 'Drapeau échangé ← faux : aucun échange n\'a encore eu lieu dans cette passe.',
+                marks: { sorted }, vars: { i }
+            });
 
             for (let j = 0; j < n - i - 1; j += 1) {
                 t.bump({ comparisons: 1 });
@@ -180,9 +189,10 @@
                     });
                     const tmp = a[j]; a[j] = a[j + 1]; a[j + 1] = tmp;
                     t.bump({ writes: 2, swaps: 1 });
+                    swapped = true;
                     t.push({
-                        line: BUBBLE_LINES.swap, phase: 'swap-settle',
-                        caption: `a[${j}] et a[${j + 1}] sont échangés.`,
+                        line: BUBBLE_LINES.flagSet, phase: 'swap-settle',
+                        caption: `a[${j}] et a[${j + 1}] sont échangés ; drapeau échangé ← vrai.`,
                         marks: { sorted }, vars: { i, j },
                         delay: 'postswap'
                     });
@@ -194,6 +204,15 @@
                 caption: `Fin de la passe ${i + 1} : l'indice ${n - i - 1} est définitivement placé.`,
                 marks: { sorted: suffixSorted(i + 1) }, vars: { i }
             });
+
+            t.push({
+                line: BUBBLE_LINES.flagCheck, phase: 'flag-check',
+                caption: swapped
+                    ? 'Au moins un échange dans cette passe : le tableau n\'est peut-être pas encore trié, on continue.'
+                    : 'Aucun échange dans cette passe : toutes les paires sont dans l\'ordre, le tableau est trié. Arrêt anticipé.',
+                marks: { sorted: swapped ? suffixSorted(i + 1) : range(0, n) }, vars: { i }
+            });
+            if (!swapped) break;
         }
 
         t.push({
@@ -435,7 +454,7 @@
                 maxDepth = Math.max(maxDepth, f.depth);
                 if (f.lo < f.hi) {
                     emit({ line: QUICK_LINES.ifLowHigh, phase: 'call',
-                        caption: `triRapide(A, ${f.lo}, ${f.hi}) — profondeur ${f.depth}.`,
+                        caption: `triRapide(A, ${f.lo}, ${f.hi}) - profondeur ${f.depth}.`,
                         marks: { range: [f.lo, f.hi], sorted: [...sorted] },
                         vars: { i: f.lo, j: f.hi },
                         view: view({ range: { low: f.lo, high: f.hi, pivotIndex: -1, pivotValue: null, splitIndex: -1, depth: f.depth } }) });
@@ -555,7 +574,7 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Tri fusion — TOP-DOWN récursif avec arbre d'appels (canon retenu, 3G).
+    // Tri fusion - TOP-DOWN récursif avec arbre d'appels (canon retenu, 3G).
     // Reproduit la visualisation historique de la page : arbre qui se déploie
     // (division) puis se replie (fusion) + tableau linéaire progressif + runs triés.
     // ─────────────────────────────────────────────────────────────────────────
@@ -832,7 +851,7 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Tri par comptage (counting sort) — histogramme / cumul / placement stable
+    // Tri par comptage (counting sort) - histogramme / cumul / placement stable
     // ─────────────────────────────────────────────────────────────────────────
     const COUNTING_LINES = {
         init: 'cline2', countLoop: 'cline3', count: 'cline4',
@@ -915,7 +934,7 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Radix sort (LSD, base 10) — distribution dans 10 seaux puis collecte
+    // Radix sort (LSD, base 10) - distribution dans 10 seaux puis collecte
     // ─────────────────────────────────────────────────────────────────────────
     const RADIX_LINES = {
         init: 'rline2', bucketReset: 'rline3', distribLoop: 'rline4',

@@ -5,43 +5,43 @@ class OsiModelPage extends ConceptPage {
         // Layer data
         const osiLayers = {
             7: {
-                name: 'Couche 7 — Application',
+                name: 'Couche 7 - Application',
                 role: 'Interface entre l\'utilisateur et le réseau. Fournit les services réseau aux applications (navigation web, courrier électronique, transfert de fichiers).',
                 pdu: 'Données',
                 protocols: ['HTTP', 'HTTPS', 'FTP', 'SMTP', 'POP3', 'IMAP', 'DNS', 'DHCP', 'SSH', 'Telnet', 'SNMP']
             },
             6: {
-                name: 'Couche 6 — Présentation',
+                name: 'Couche 6 - Présentation',
                 role: 'Traduit les données entre le format réseau et le format compréhensible par l\'application. Gère le chiffrement, la compression et la conversion de format.',
                 pdu: 'Données',
                 protocols: ['SSL/TLS', 'JPEG', 'GIF', 'PNG', 'MPEG', 'ASCII', 'Unicode', 'MIME']
             },
             5: {
-                name: 'Couche 5 — Session',
+                name: 'Couche 5 - Session',
                 role: 'Établit, maintient et termine les sessions de communication entre les applications. Gère la synchronisation et le contrôle du dialogue.',
                 pdu: 'Données',
                 protocols: ['NetBIOS', 'RPC', 'PPTP', 'SAP', 'SDP', 'NFS']
             },
             4: {
-                name: 'Couche 4 — Transport',
+                name: 'Couche 4 - Transport',
                 role: 'Assure le transfert fiable (ou non) des données de bout en bout. Segmentation, contrôle de flux, correction d\'erreurs et multiplexage des connexions.',
                 pdu: 'Segment (TCP) / Datagramme (UDP)',
                 protocols: ['TCP', 'UDP', 'SCTP', 'DCCP', 'SPX']
             },
             3: {
-                name: 'Couche 3 — Réseau',
+                name: 'Couche 3 - Réseau',
                 role: 'Gère l\'adressage logique (IP) et le routage des paquets à travers différents réseaux. Détermine le meilleur chemin pour acheminer les données.',
                 pdu: 'Paquet',
                 protocols: ['IP (IPv4/IPv6)', 'ICMP', 'ARP', 'OSPF', 'BGP', 'RIP', 'EIGRP', 'IPsec']
             },
             2: {
-                name: 'Couche 2 — Liaison de données',
+                name: 'Couche 2 - Liaison de données',
                 role: 'Assure le transfert fiable de trames entre deux nœuds directement connectés. Gère l\'adressage physique (MAC), la détection d\'erreurs et le contrôle d\'accès au média.',
                 pdu: 'Trame',
                 protocols: ['Ethernet', 'Wi-Fi (802.11)', 'PPP', 'HDLC', 'Frame Relay', 'STP', 'VLAN (802.1Q)']
             },
             1: {
-                name: 'Couche 1 — Physique',
+                name: 'Couche 1 - Physique',
                 role: 'Transmet les bits bruts sur le support physique (câble, fibre optique, ondes radio). Définit les caractéristiques électriques, mécaniques et fonctionnelles.',
                 pdu: 'Bits',
                 protocols: ['Ethernet physique', 'USB', 'Bluetooth', 'DSL', 'ISDN', 'RS-232', 'Fibre optique', 'Wi-Fi (radio)']

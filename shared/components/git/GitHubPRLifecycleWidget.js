@@ -1,5 +1,5 @@
 /**
- * GitHubPRLifecycleWidget — diagramme d'états du cycle de vie d'une Pull Request GitHub.
+ * GitHubPRLifecycleWidget - diagramme d'états du cycle de vie d'une Pull Request GitHub.
  *
  * Affiche l'état courant de la PR, les transitions disponibles, un historique
  * et un graphe SVG lisible de tous les états.

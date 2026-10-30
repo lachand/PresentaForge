@@ -1,5 +1,5 @@
 /**
- * GitHubIssueTrackerWidget — simulation d'un tracker d'issues GitHub.
+ * GitHubIssueTrackerWidget - simulation d'un tracker d'issues GitHub.
  *
  * Liste d'issues pré-remplie avec filtres, création d'issue et progression milestones.
  */
@@ -137,11 +137,11 @@ class GitHubIssueTrackerWidget {
     <div class="gitw-milestones">
       <div class="gitw-ms-title">Progression des milestones</div>
       <div class="gitw-ms-row">
-        <div class="gitw-ms-header"><span class="gitw-ms-name">v1.1</span><span class="gitw-ms-count">${ms11.closed}/${ms11.total} fermées — ${pct11}%</span></div>
+        <div class="gitw-ms-header"><span class="gitw-ms-name">v1.1</span><span class="gitw-ms-count">${ms11.closed}/${ms11.total} fermées - ${pct11}%</span></div>
         <div class="gitw-ms-bar-bg"><div class="gitw-ms-bar-fill" style="width:${pct11}%"></div></div>
       </div>
       <div class="gitw-ms-row">
-        <div class="gitw-ms-header"><span class="gitw-ms-name">v2.0</span><span class="gitw-ms-count">${ms20.closed}/${ms20.total} fermées — ${pct20}%</span></div>
+        <div class="gitw-ms-header"><span class="gitw-ms-name">v2.0</span><span class="gitw-ms-count">${ms20.closed}/${ms20.total} fermées - ${pct20}%</span></div>
         <div class="gitw-ms-bar-bg"><div class="gitw-ms-bar-fill" style="width:${pct20}%;background:var(--primary,#4f46e5)"></div></div>
       </div>
     </div>

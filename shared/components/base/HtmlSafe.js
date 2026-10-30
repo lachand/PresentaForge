@@ -1,9 +1,9 @@
 /**
- * HtmlSafe — façade unique d'échappement / assainissement pour les pages de cours
+ * HtmlSafe - façade unique d'échappement / assainissement pour les pages de cours
  * (revue 2026-09 §A2/A3/C5). Remplace les 7 copies d'`escapeHtml` et les strip-tags
  * maison. S'appuie sur `OEIHtmlSanitizer` (DOMPurify vendoré + repli portable) chargé
  * avant ce fichier ; en son absence, `rich()`/`richInline()` retombent sur `escape()`
- * (échec fermé — jamais moins sûr que du texte).
+ * (échec fermé - jamais moins sûr que du texte).
  */
 (function (global) {
     'use strict';
@@ -47,7 +47,7 @@
         const probe = value.replace(NOISE_RE, '').toLowerCase();
         if (SAFE_SCHEME_RE.test(probe)) return value;
         if (ANY_SCHEME_RE.test(probe)) return '#';
-        return value; // relatif / ancre / query — sûr
+        return value; // relatif / ancre / query - sûr
     }
 
     const HtmlSafe = { escape, rich, richInline, url };

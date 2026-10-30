@@ -1,5 +1,5 @@
 /**
- * BranchProtectionWidget — PR bloquée par des règles de protection.
+ * BranchProtectionWidget - PR bloquée par des règles de protection.
  * L'étudiant débloque chaque règle pour autoriser le merge.
  */
 class BranchProtectionWidget {

@@ -1,5 +1,5 @@
 /**
- * QuickSortVisualizer — visualisation du tri rapide (Lomuto, pivot = dernier).
+ * QuickSortVisualizer - visualisation du tri rapide (Lomuto, pivot = dernier).
  *
  * L'algorithme (récursion simulée par pile) vit dans
  * shared/components/algorithms/sort-traces.js → buildQuickSortTrace().
@@ -201,7 +201,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QuickSortWidget — adaptateur SLIDE. Même trace (buildQuickSortTrace) via TracePlayer.
+// QuickSortWidget - adaptateur SLIDE. Même trace (buildQuickSortTrace) via TracePlayer.
 // ─────────────────────────────────────────────────────────────────────────────
 class QuickSortWidget {
     static mount(container, config = {}) {

@@ -1,22 +1,22 @@
 /**
- * heap-traces.js — générateurs de trace PURS pour le tas binaire (min/max).
+ * heap-traces.js - générateurs de trace PURS pour le tas binaire (min/max).
  * Un tas y est un simple tableau `[v0, v1, …]` (indices 2i+1/2i+2 pour les
- * enfants) — jamais de classe. `mode` ('min'|'max') pilote le comparateur
+ * enfants) - jamais de classe. `mode` ('min'|'max') pilote le comparateur
  * partagé `cmp` : c'est le SEUL paramètre qui distingue min-heap et max-heap,
  * consommé identiquement par insertion, extraction ET heapsort.
  *
  * `buildHeapInsertTrace`/`buildHeapExtractTrace` sont consommés par LA PAGE
  * (animée, pseudocode ligne à ligne) ET LE WIDGET (instantané, ne lit que
- * `.at(-1)`) — même mécanique de sift-up/sift-down, aucune divergence.
+ * `.at(-1)`) - même mécanique de sift-up/sift-down, aucune divergence.
  * `resetHeap()` (page) et `_insertSilent` (widget) réutilisent aussi
- * `buildHeapInsertTrace` pour semer le tas initial (silencieux) — plus
+ * `buildHeapInsertTrace` pour semer le tas initial (silencieux) - plus
  * aucune 3ᵉ copie du sift-up.
  *
  * `buildHeapsortTrace` est PAGE UNIQUEMENT (pas de bouton Heapsort sur le
  * widget, comme CountingRadixWidget qui n'a pas de mode radix). Correctif de
  * revue inclus : le code d'origine construisait toujours un tas MAXIMUM et
  * codait `arr[l] > arr[largest]` en dur dans le heapify/sift-down de
- * heapsort, ignorant totalement `this.mode` — un tri par tas lancé en mode
+ * heapsort, ignorant totalement `this.mode` - un tri par tas lancé en mode
  * min-heap produisait quand même un résultat croissant (construit sur un tas
  * max caché). Ici, heapify et sift-down utilisent `cmp(mode, …)` comme
  * partout ailleurs : mode 'max' construit un tas max et place le plus grand
@@ -24,7 +24,7 @@
  * CROISSANT (comportement observable inchangé). Mode 'min' construit un tas
  * min et place le plus PETIT élément restant en fin de zone non triée à
  * chaque tour → résultat DÉCROISSANT (le tri par tas en mode min-heap est
- * l'algorithme dual — cohérent avec le tas réellement affiché, corrige le bug).
+ * l'algorithme dual - cohérent avec le tas réellement affiché, corrige le bug).
  */
 (function (root, factory) {
     'use strict';
@@ -42,7 +42,7 @@
     // pext6 (« tant que i a un enfant meilleur ») n'est jamais peint à l'écran dans le
     // code d'origine : aucun render()/sleep() ne suit son highlightLine avant que la
     // ligne suivante (pext7, ou l'épilogue si la boucle s'arrête) ne l'écrase dans le
-    // même tick JS — volontairement absent des traces, il ne l'était déjà pas à l'écran.
+    // même tick JS - volontairement absent des traces, il ne l'était déjà pas à l'écran.
     const EXT_LINES = { start: 'pext1', readRoot: 'pext2', moveLast: 'pext3', popLast: 'pext4', initI: 'pext5', compare: 'pext7', swap: 'pext8', advance: 'pext9' };
 
     function cmp(mode, a, b) {
@@ -211,7 +211,7 @@
     }
 
     /**
-     * Heapsort. Pas de pseudocode dédié (comme dans le code d'origine — aucune ligne
+     * Heapsort. Pas de pseudocode dédié (comme dans le code d'origine - aucune ligne
      * surlignée). Le heapify initial n'est PAS animé pas-à-pas dans le code d'origine
      * (boucle synchrone sans render() intermédiaire) : un seul pas 'heapify' révèle le
      * tas construit d'un coup, puis chaque extraction-vers-la-fin s'anime normalement.
@@ -230,7 +230,7 @@
 
         for (let end = n - 1; end > 0; end -= 1) {
             // Indices déjà définitivement triés par les tours précédents (cumulatif,
-            // comme `this.sortedIndices` — un Set qui ne fait jamais que grandir dans
+            // comme `this.sortedIndices` - un Set qui ne fait jamais que grandir dans
             // le code d'origine) : [end+1, n). `end` lui-même n'y entre qu'après le
             // commit de ce tour, juste en dessous.
             const sortedBefore = [];

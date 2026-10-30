@@ -1,5 +1,5 @@
 /**
- * GitHubKanbanWidget — tableau Kanban simulant GitHub Projects.
+ * GitHubKanbanWidget - tableau Kanban simulant GitHub Projects.
  *
  * 4 colonnes : Backlog | En cours | En review | Terminé.
  * Les cartes peuvent être déplacées entre les colonnes.

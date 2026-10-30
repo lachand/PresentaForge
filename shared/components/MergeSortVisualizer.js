@@ -1,8 +1,8 @@
 /**
- * MergeSortVisualizer — visualisation du tri fusion (TOP-DOWN récursif, arbre d'appels).
+ * MergeSortVisualizer - visualisation du tri fusion (TOP-DOWN récursif, arbre d'appels).
  *
  * L'algorithme vit dans shared/components/algorithms/sort-traces.js →
- * buildMergeSortTrace() (canon retenu 3G : top-down récursif — le widget slide
+ * buildMergeSortTrace() (canon retenu 3G : top-down récursif - le widget slide
  * consomme désormais la même trace, fin de l'incohérence bottom-up/top-down).
  * Cette classe est l'ADAPTATEUR PAGE ; MergeSortWidget l'ADAPTATEUR SLIDE.
  */
@@ -241,7 +241,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MergeSortWidget — adaptateur SLIDE. Consomme buildMergeSortTrace (top-down),
+// MergeSortWidget - adaptateur SLIDE. Consomme buildMergeSortTrace (top-down),
 // rend uniquement les champs cœur (barres + bandes gauche/droite/fusionné) :
 // le DOM .msw-* reste identique, seule la SÉQUENCE d'états change (top-down).
 // ─────────────────────────────────────────────────────────────────────────────

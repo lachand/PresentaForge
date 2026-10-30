@@ -147,7 +147,7 @@ class RelationalAlgebraPage extends ConceptPage {
     /* ===== ROW CRUD ===== */
     function addRow(tableName) {
         const t = tables[tableName];
-        showEditModal('Ajouter une ligne — ' + tableName, t.columns, t.columns.map(() => ''), (values) => {
+        showEditModal('Ajouter une ligne - ' + tableName, t.columns, t.columns.map(() => ''), (values) => {
             t.rows.push(values.map((v, i) => autoType(v)));
             renderTableList();
             renderSourceTables();
@@ -156,7 +156,7 @@ class RelationalAlgebraPage extends ConceptPage {
 
     function editRow(tableName, rowIdx) {
         const t = tables[tableName];
-        showEditModal('Modifier la ligne — ' + tableName, t.columns, t.rows[rowIdx].map(String), (values) => {
+        showEditModal('Modifier la ligne - ' + tableName, t.columns, t.rows[rowIdx].map(String), (values) => {
             t.rows[rowIdx] = values.map(v => autoType(v));
             renderTableList();
             renderSourceTables();
@@ -224,7 +224,7 @@ class RelationalAlgebraPage extends ConceptPage {
 
         if (op === 'selection') {
             el.innerHTML = `
-                <h4>&sigma; S&eacute;lection — Filtrer les lignes selon une condition</h4>
+                <h4>&sigma; S&eacute;lection - Filtrer les lignes selon une condition</h4>
                 <div class="field-group">
                     <label>Table source</label>
                     <select id="selTable">${tNames.map(n => `<option value="${n}" ${n===selectedTable?'selected':''}>${n}</option>`).join('')}</select>
@@ -242,7 +242,7 @@ class RelationalAlgebraPage extends ConceptPage {
             const t = tables[selectedTable] || tables[tNames[0]];
             const tName = selectedTable || tNames[0];
             el.innerHTML = `
-                <h4>&pi; Projection — Garder certaines colonnes</h4>
+                <h4>&pi; Projection - Garder certaines colonnes</h4>
                 <div class="field-group">
                     <label>Table source</label>
                     <select id="projTable" data-inline-onchange="updateProjCols()">${tNames.map(n => `<option value="${n}" ${n===tName?'selected':''}>${n}</option>`).join('')}</select>
@@ -269,7 +269,7 @@ class RelationalAlgebraPage extends ConceptPage {
                     <select id="joinRight">${tNames.map((n,i) => `<option value="${n}" ${i===Math.min(1,tNames.length-1)?'selected':''}>${n}</option>`).join('')}</select>
                 </div>
                 <div class="field-group">
-                    <label>Condition (ex: id = id_etudiant) — vide = jointure naturelle</label>
+                    <label>Condition (ex: id = id_etudiant) - vide = jointure naturelle</label>
                     <input type="text" id="joinCond" placeholder="id = id_etudiant" style="font-family:var(--font-mono);">
                 </div>
                 <div style="margin-top:0.5rem;">
@@ -281,7 +281,7 @@ class RelationalAlgebraPage extends ConceptPage {
             const symbol = op === 'union' ? '∪' : '−';
             const name = op === 'union' ? 'Union' : 'Différence';
             el.innerHTML = `
-                <h4>${symbol} ${name} — Tables de m&ecirc;me sch&eacute;ma</h4>
+                <h4>${symbol} ${name} - Tables de m&ecirc;me sch&eacute;ma</h4>
                 <div class="field-group">
                     <label>Table 1</label>
                     <select id="setT1">${tNames.map(n => `<option value="${n}">${n}</option>`).join('')}</select>
@@ -313,7 +313,7 @@ class RelationalAlgebraPage extends ConceptPage {
             `;
         } else if (op === 'renommage') {
             el.innerHTML = `
-                <h4>&rho; Renommage — Renommer une colonne</h4>
+                <h4>&rho; Renommage - Renommer une colonne</h4>
                 <div class="field-group">
                     <label>Table source</label>
                     <select id="renTable">${tNames.map(n => `<option value="${n}" ${n===selectedTable?'selected':''}>${n}</option>`).join('')}</select>

@@ -381,7 +381,7 @@ const PseudocodeSupport = {
             // Rendre la ligne opérable au clavier (revue §D3)
             line.setAttribute('role', 'button');
             line.setAttribute('tabindex', '0');
-            line.setAttribute('aria-label', `Ligne : ${line.textContent.trim().replace(/\s+/g, ' ')} — voir quoi et pourquoi`);
+            line.setAttribute('aria-label', `Ligne : ${line.textContent.trim().replace(/\s+/g, ' ')} - voir quoi et pourquoi`);
 
             const select = () => {
                 lines.forEach((el) => {

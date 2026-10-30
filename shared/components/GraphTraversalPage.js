@@ -241,20 +241,19 @@ class GraphTraversalPage extends ConceptPage {
             this.nextId++;
         });
 
+        // Graphe de l'exemple du cours : BFS 0,1,2,3,5,4 et DFS 0,1,3,4,2,5 depuis le sommet 0.
         this.edges = [
             { from: 0, to: 1 },
+            { from: 0, to: 2 },
+            { from: 0, to: 3 },
             { from: 0, to: 5 },
-            { from: 1, to: 2 },
             { from: 1, to: 3 },
-            { from: 2, to: 3 },
-            { from: 3, to: 4 },
-            { from: 4, to: 5 },
-            { from: 0, to: 3 }
+            { from: 1, to: 4 }
         ];
 
         this.startNode = 0;
         this.renderGraph();
-        this.setFeedback('Graphe par defaut charge (6 noeuds, 8 aretes).', 'success');
+        this.setFeedback('Graphe par defaut charge (6 noeuds, 6 aretes).', 'success');
         this.updateExportButton();
     }
 
@@ -447,18 +446,18 @@ class GraphTraversalPage extends ConceptPage {
         await OEIUtils.sleep(this.speedCtrl.getDelay());
 
         while (stack.length > 0) {
-            this.highlightLine('line15');
+            this.highlightLine('line14');
             await OEIUtils.sleep(this.speedCtrl.getDelay() / 3);
 
             const current = stack.pop();
-            this.highlightLine('line16');
+            this.highlightLine('line15');
             this.removeFromStructure('stack');
 
-            this.highlightLine('line17');
+            this.highlightLine('line16');
             await OEIUtils.sleep(this.speedCtrl.getDelay() / 3);
             if (visited.has(current)) continue;
 
-            this.highlightLine('line18');
+            this.highlightLine('line17');
             visited.add(current);
 
             this.processingNode = current;
@@ -466,17 +465,17 @@ class GraphTraversalPage extends ConceptPage {
             this.setFeedback('Traitement du noeud ' + current + '...', 'info');
             await OEIUtils.sleep(this.speedCtrl.getDelay());
 
-            this.highlightLine('line19');
+            this.highlightLine('line18');
             this.addToVisitOrder(current);
             await OEIUtils.sleep(this.speedCtrl.getDelay() / 3);
 
-            this.highlightLine('line20');
+            this.highlightLine('line19');
             const neighbors = (adj[current] || []).slice().reverse();
             for (const neighbor of neighbors) {
-                this.highlightLine('line21');
+                this.highlightLine('line20');
                 await OEIUtils.sleep(this.speedCtrl.getDelay() / 3);
                 if (!visited.has(neighbor)) {
-                    this.highlightLine('line22');
+                    this.highlightLine('line21');
                     stack.push(neighbor);
                     this.addToStructure(neighbor);
 

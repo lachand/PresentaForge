@@ -1,5 +1,5 @@
 /**
- * SlidesEmbed — Viewer de slides intégrable dans les pages de cours OEI.
+ * SlidesEmbed - Viewer de slides intégrable dans les pages de cours OEI.
  *
  * Utilisation :
  *   SlidesEmbed.mount(container, { file: 'data/slides/mon-cours.json', height: 480 });

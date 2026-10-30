@@ -373,14 +373,14 @@ class ConcurrencyWidget {
       <div class="cnw-grid">
         <div class="cnw-card">
           <div class="cnw-card-title">Fil T1</div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t1-phase>—</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t1-local>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t1-phase>-</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t1-local>-</span></div>
           <div class="cnw-kv"><span class="cnw-kv-key">Écritures</span><span class="cnw-kv-val" data-mx-t1-writes>0/3</span></div>
         </div>
         <div class="cnw-card">
           <div class="cnw-card-title">Fil T2</div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t2-phase>—</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t2-local>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-mx-t2-phase>-</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Valeur locale</span><span class="cnw-kv-val" data-mx-t2-local>-</span></div>
           <div class="cnw-kv"><span class="cnw-kv-key">Écritures</span><span class="cnw-kv-val" data-mx-t2-writes>0/3</span></div>
         </div>
       </div>
@@ -414,15 +414,15 @@ class ConcurrencyWidget {
       <div class="cnw-grid">
         <div class="cnw-card">
           <div class="cnw-card-title">Fil T1</div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t1-phase>—</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t1-wait>—</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t1-order>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t1-phase>-</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t1-wait>-</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t1-order>-</span></div>
         </div>
         <div class="cnw-card">
           <div class="cnw-card-title">Fil T2</div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t2-phase>—</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t2-wait>—</span></div>
-          <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t2-order>—</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Phase</span><span class="cnw-kv-val" data-dl-t2-phase>-</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Attend</span><span class="cnw-kv-val" data-dl-t2-wait>-</span></div>
+          <div class="cnw-kv"><span class="cnw-kv-key">Ordre</span><span class="cnw-kv-val" data-dl-t2-order>-</span></div>
         </div>
       </div>
       <div class="cnw-section-lbl">Journal</div>
@@ -537,7 +537,7 @@ class ConcurrencyWidget {
         ['T1','T2'].forEach(id => {
             const t = this.mutex.threads[id];
             this._q(`[data-mx-${id.toLowerCase()}-phase]`).textContent = this._mxPhaseLabel(t.phase);
-            this._q(`[data-mx-${id.toLowerCase()}-local]`).textContent = t.local == null ? '—' : String(t.local);
+            this._q(`[data-mx-${id.toLowerCase()}-local]`).textContent = t.local == null ? '-' : String(t.local);
             this._q(`[data-mx-${id.toLowerCase()}-writes]`).textContent = `${t.writes}/${t.target}`;
         });
         this._q('[data-mx-log]').innerHTML = this.mutex.logs.map(l => `<li class="cnw-log-item">${l}</li>`).join('');
@@ -619,7 +619,7 @@ class ConcurrencyWidget {
             const phase = t.step === 0 ? `acq ${t.order[0]}` : t.step === 1 ? `acq ${t.order[1]}` : t.step === 2 ? 'release' : 'done';
             const lc = id.toLowerCase();
             this._q(`[data-dl-${lc}-phase]`).textContent = phase;
-            this._q(`[data-dl-${lc}-wait]`).textContent = t.waitingFor || '—';
+            this._q(`[data-dl-${lc}-wait]`).textContent = t.waitingFor || '-';
             this._q(`[data-dl-${lc}-order]`).textContent = `${t.order[0]} → ${t.order[1]}`;
         });
         const st = this._q('[data-dl-status]');

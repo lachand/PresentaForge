@@ -5,7 +5,7 @@
  * shared/components/algorithms/heap-traces.js, pure (`mode` 'min'|'max' pilote
  * le seul comparateur partagé). Comme pile/file, liste chaînée et table de
  * hachage, chaque clic (Insérer/Extraire/Heapsort) est une opération
- * INDÉPENDANTE sur un tas qui PERSISTE — la PAGE anime via TracePlayer
+ * INDÉPENDANTE sur un tas qui PERSISTE - la PAGE anime via TracePlayer
  * (patron `runOperation`, identique à StructureVisualizer/HashTableVisualizer) ;
  * le WIDGET reste instantané (règle établie depuis la régression pile/file sur
  * clics rapprochés) et n'expose pas Heapsort (comme CountingRadixWidget qui
@@ -15,7 +15,7 @@
  * - setMode(mode) : Basculer min-heap / max-heap
  * - doInsert() : Insérer une valeur
  * - doExtract() : Extraire la racine
- * - doHeapsort() : Trier via heapsort (mode-aware — voir heap-traces.js)
+ * - doHeapsort() : Trier via heapsort (mode-aware - voir heap-traces.js)
  * - resetHeap() : Réinitialiser avec les données de démonstration
  */
 class HeapVisualizer extends SimulationPage {
@@ -498,9 +498,9 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HeapWidget — adaptateur SLIDE. Consomme LA MÊME mécanique de sift-up/
+// HeapWidget - adaptateur SLIDE. Consomme LA MÊME mécanique de sift-up/
 // sift-down (heap-traces.js) mais en lecture instantanée (`.at(-1)` seulement
-// — pas d'animation, comme pile/file/liste chaînée/table de hachage). Pas de
+// - pas d'animation, comme pile/file/liste chaînée/table de hachage). Pas de
 // bouton Heapsort (comme CountingRadixWidget sans mode radix). DOM .hpw-*
 // inchangé. Usage : HeapWidget.mount(container, { mode: 'min'|'max', data: [...] })
 // ─────────────────────────────────────────────────────────────────────────────
@@ -515,7 +515,7 @@ class HeapWidget {
         this.root = container;
         this.mode = config.mode || 'min';
         this._heap = [];
-        this._action = `Tas ${this.mode === 'min' ? 'minimum' : 'maximum'} — inserez des valeurs`;
+        this._action = `Tas ${this.mode === 'min' ? 'minimum' : 'maximum'} - inserez des valeurs`;
         const defaults = Array.isArray(config.data) && config.data.length > 0
             ? config.data : [15, 10, 20, 8, 12, 30];
         defaults.forEach(v => this._insertSilent(v));
@@ -529,7 +529,7 @@ class HeapWidget {
         if (this._heap.length === 0) { this._action = 'Tas vide.'; this._render(); return; }
         const last = window.OEITrace.buildHeapExtractTrace(this._heap, this.mode).at(-1);
         this._heap = last.heap;
-        this._action = `Extrait : ${last.removedValue} (${this.mode === 'min' ? 'minimum' : 'maximum'}) — heapify-down`;
+        this._action = `Extrait : ${last.removedValue} (${this.mode === 'min' ? 'minimum' : 'maximum'}) - heapify-down`;
         this._render();
     }
 
@@ -622,7 +622,7 @@ class HeapWidget {
             if (isNaN(v)) return;
             if (this._heap.length >= 15) { this._action = 'Tas plein (max 15).'; this._render(); return; }
             this._insertSilent(v);
-            this._action = `Insere ${v} — remontee jusqu'a la racine (sift-up)`;
+            this._action = `Insere ${v} - remontee jusqu'a la racine (sift-up)`;
             this._render();
         });
         this.root.querySelector('.hpw-btn-extract')?.addEventListener('click', () => {

@@ -1,5 +1,5 @@
 /**
- * AlgorithmExpertDiagnostics — moteur d'analyse statique de AlgorithmExpertLab.
+ * AlgorithmExpertDiagnostics - moteur d'analyse statique de AlgorithmExpertLab.
  *
  * Dépendances injectées via le constructeur :
  *   - getExpressionAst(expr)     : parseur d'expressions (fourni par AlgorithmExpertLab)
@@ -191,7 +191,7 @@ class AlgorithmExpertDiagnostics {
         const bodyLines = this._flattenStatements(entryDef.body);
         const source = bodyLines.map((stmt) => stmt.source).join('\n');
 
-        // P3: improved W_RETURN_MISSING — checks all branches, not just flat list
+        // P3: improved W_RETURN_MISSING - checks all branches, not just flat list
         const hasAnyReturn = bodyLines.some((stmt) => stmt.type === 'return');
         const allPathsHaveReturn = this.allPathsReturn(entryDef.body);
         if (!allPathsHaveReturn) {
@@ -265,7 +265,7 @@ class AlgorithmExpertDiagnostics {
                     code: 'I_DENOMINATOR_GUARDED',
                     severity: 'info',
                     category: 'input_contract',
-                    message: `Division par ${guardedParams.join(', ')} protégée par un test \`!= 0\` — vérification correcte.`,
+                    message: `Division par ${guardedParams.join(', ')} protégée par un test \`!= 0\` - vérification correcte.`,
                     suggestion: 'Bonne pratique : tester le dénominateur avant division. Assurez-vous que la condition couvre bien tous les chemins d\'exécution.',
                     confidence: 0.9
                 }));
@@ -326,7 +326,7 @@ class AlgorithmExpertDiagnostics {
                 code: 'I_DOUBLE_NEGATION',
                 severity: 'info',
                 category: 'style',
-                message: '"not not x" est redondant — equivalent a bool(x).',
+                message: '"not not x" est redondant - equivalent a bool(x).',
                 suggestion: 'Supprimer la double negation ou remplacer par bool(x) si besoin de conversion.',
                 quickFix: 'x  # ou bool(x)',
                 confidence: 0.95
@@ -354,7 +354,7 @@ class AlgorithmExpertDiagnostics {
                     confidence: 0.8
                 }));
             } else {
-                // D7: i used both as T[i] and as standalone index value — suggest enumerate
+                // D7: i used both as T[i] and as standalone index value - suggest enumerate
                 const indexedUsed = new RegExp(`\\b${arr}\\s*\\[\\s*${loopVar}\\b`).test(source);
                 if (indexedUsed) {
                     diagnostics.push(this.createDiagnostic({
@@ -401,7 +401,7 @@ class AlgorithmExpertDiagnostics {
         };
         checkLoopVarOverwrite(entryDef.body);
 
-        // D6: W_SHADOWED_PARAM — a parameter is immediately overwritten before being read
+        // D6: W_SHADOWED_PARAM - a parameter is immediately overwritten before being read
         if (entryDef.params && entryDef.params.length) {
             const firstStatements = entryDef.body.slice(0, Math.min(5, entryDef.body.length));
             entryDef.params.forEach((param) => {
@@ -426,7 +426,7 @@ class AlgorithmExpertDiagnostics {
             });
         }
 
-        // D8: I_DEAD_PASS — `pass` left in a body that has other real statements
+        // D8: I_DEAD_PASS - `pass` left in a body that has other real statements
         const checkDeadPass = (stmts) => {
             stmts.forEach((stmt) => {
                 if (stmt.type === 'if') {
@@ -454,7 +454,7 @@ class AlgorithmExpertDiagnostics {
         };
         checkDeadPass(entryDef.body);
 
-        // D9: W_CONSECUTIVE_ASSIGN — same variable assigned twice in a row without being read
+        // D9: W_CONSECUTIVE_ASSIGN - same variable assigned twice in a row without being read
         for (let i = 0; i < bodyLines.length - 1; i += 1) {
             const curr = bodyLines[i];
             const next = bodyLines[i + 1];
@@ -479,7 +479,7 @@ class AlgorithmExpertDiagnostics {
             }
         }
 
-        // D10: I_UNUSED_INIT — variable initialised to 0/[]/'' before a loop but never updated inside
+        // D10: I_UNUSED_INIT - variable initialised to 0/[]/'' before a loop but never updated inside
         const topLevelAssigns = entryDef.body.filter((s) => s.type === 'assign' && s.target && s.target.kind === 'name');
         const loopStmts = entryDef.body.filter((s) => s.type === 'for' || s.type === 'for_in' || s.type === 'for_enumerate' || s.type === 'for_items' || s.type === 'while');
         topLevelAssigns.forEach((initStmt) => {

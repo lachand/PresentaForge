@@ -362,7 +362,7 @@ if (typeof window !== 'undefined') {
 
 // ── Standalone widget ──────────────────────────────────────────
 // Meme moteur que CLTPage (memes formules), sans le controleur de vitesse
-// partage ni l'inspecteur de pseudocode (page-scoped) — delai fixe local.
+// partage ni l'inspecteur de pseudocode (page-scoped) - delai fixe local.
 class CLTWidget {
     static mount(container, config = {}) {
         if (container.dataset.cltw) return;

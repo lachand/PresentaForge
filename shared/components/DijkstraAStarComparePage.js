@@ -161,8 +161,10 @@ class DijkstraAStarComparePage extends ConceptPage {
         const dx = n1.x - n2.x;
         const dy = n1.y - n2.y;
         const euclid = Math.sqrt(dx * dx + dy * dy) / 50;
+        // 'inflated' surestime volontairement (x1,5 sur la distance brute) : heuristique inadmissible.
         if (mode === 'inflated') return Math.round(euclid * 1.5);
-        return Math.round(euclid);
+        // 'euclidean' : facteur 0,7 pour rester admissible et consistante sur ce graphe.
+        return Math.round(euclid * DijkstraAStarComparePage.HEURISTIC_SCALE);
     }
 
     reconstructPath(pred, source, dest) {
@@ -474,6 +476,8 @@ class DijkstraAStarComparePage extends ConceptPage {
         });
     }
 }
+
+DijkstraAStarComparePage.HEURISTIC_SCALE = 0.7;
 
 if (typeof window !== 'undefined') {
     window.DijkstraAStarComparePage = DijkstraAStarComparePage;

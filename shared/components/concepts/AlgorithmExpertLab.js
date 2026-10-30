@@ -442,7 +442,7 @@ class AlgorithmExpertLab {
             return;
         }
 
-        // E1: smart Enter — preserve indentation, add extra indent after ':'
+        // E1: smart Enter - preserve indentation, add extra indent after ':'
         if (event.key === 'Enter' && source === 'code') {
             const textarea = event.target;
             const pos = textarea.selectionStart;
@@ -531,7 +531,7 @@ class AlgorithmExpertLab {
             return;
         }
 
-        // E2: Ctrl+/ — toggle # comment on selected line(s)
+        // E2: Ctrl+/ - toggle # comment on selected line(s)
         if (event.key === '/') {
             event.preventDefault();
             const ta = event.target;
@@ -604,7 +604,7 @@ class AlgorithmExpertLab {
         this.onEditorChanged('code');
     }
 
-    // P5: session history — store last 5 analyses in localStorage
+    // P5: session history - store last 5 analyses in localStorage
     saveToHistory() {
         const code = this.codeInput.value || '';
         if (!code.trim()) return;
@@ -630,7 +630,7 @@ class AlgorithmExpertLab {
         const options = history.map((h, idx) => {
             const date = new Date(h.ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
             const preview = h.code.split('\n')[0].slice(0, 40);
-            return `<option value="${idx}">${date} — ${this.escapeHtml(preview)}</option>`;
+            return `<option value="${idx}">${date} - ${this.escapeHtml(preview)}</option>`;
         });
         select.innerHTML = first + options.join('');
         select.onchange = () => {
@@ -1061,7 +1061,7 @@ class AlgorithmExpertLab {
         };
     }
 
-    // P3: Tab switching logic — moved from inline <script> in HTML
+    // P3: Tab switching logic - moved from inline <script> in HTML
     initTabs() {
         const tabs = this.container.querySelectorAll('.algoexpert-tab');
         const panels = this.container.querySelectorAll('.algoexpert-tabpanel');
@@ -1080,30 +1080,30 @@ class AlgorithmExpertLab {
         });
     }
 
-    // P4: Python subset reference — generated from JS config, inserted into #algoexpert-subset-grid
+    // P4: Python subset reference - generated from JS config, inserted into #algoexpert-subset-grid
     renderPythonSubset() {
         const target = document.getElementById('algoexpert-subset-grid');
         if (!target) return;
 
         const col1 = [
             { title: 'Structures de contrôle', items: [
-                '<code>def f(params):</code> — définition de fonction',
-                '<code>return expr</code> — valeur de retour',
-                '<code>if / elif / else</code> — branchements',
-                '<code>for i in range(n)</code> — boucle numérique',
-                '<code>for x in liste</code> — boucle sur itérable',
-                '<code>for i, x in enumerate(liste)</code> — indice + valeur',
-                '<code>for k, v in d.items():</code> — paires dict',
-                '<code>while condition:</code> — boucle while',
-                '<code>break</code> — sortie de boucle',
-                '<code>continue</code> — itération suivante'
+                '<code>def f(params):</code> - définition de fonction',
+                '<code>return expr</code> - valeur de retour',
+                '<code>if / elif / else</code> - branchements',
+                '<code>for i in range(n)</code> - boucle numérique',
+                '<code>for x in liste</code> - boucle sur itérable',
+                '<code>for i, x in enumerate(liste)</code> - indice + valeur',
+                '<code>for k, v in d.items():</code> - paires dict',
+                '<code>while condition:</code> - boucle while',
+                '<code>break</code> - sortie de boucle',
+                '<code>continue</code> - itération suivante'
             ]},
             { title: 'Affectations', items: [
-                '<code>x = expr</code> — affectation simple',
+                '<code>x = expr</code> - affectation simple',
                 '<code>x += 1</code> &nbsp;<code>-=</code> &nbsp;<code>*=</code> &nbsp;<code>//=</code> &nbsp;<code>/=</code> &nbsp;<code>%=</code>',
-                '<code>d[k] += 1</code> — augmenté sur dict/liste',
-                '<code>a, b = b, a</code> — déstructuration / échange',
-                '<code>liste[i] = val</code> &nbsp;<code>d[k] = val</code> — affectation indexée'
+                '<code>d[k] += 1</code> - augmenté sur dict/liste',
+                '<code>a, b = b, a</code> - déstructuration / échange',
+                '<code>liste[i] = val</code> &nbsp;<code>d[k] = val</code> - affectation indexée'
             ]}
         ];
 
@@ -1122,15 +1122,15 @@ class AlgorithmExpertLab {
                 '<code>len(x)</code> &nbsp;<code>range(n)</code> &nbsp;<code>range(a, b)</code> &nbsp;<code>range(a, b, pas)</code>',
                 '<code>abs(x)</code> &nbsp;<code>min(a, b)</code> &nbsp;<code>max(a, b)</code> &nbsp;<code>sum(liste)</code>',
                 '<code>min(liste)</code> &nbsp;<code>max(liste)</code>',
-                '<code>sorted(liste)</code> — copie triée &nbsp;<code>reversed(liste)</code> — copie inversée',
-                '<code>int(x)</code> &nbsp;<code>float(x)</code> &nbsp;<code>str(x)</code> &nbsp;<code>bool(x)</code> — conversions',
-                '<code>print(x)</code> — capturé en trace'
+                '<code>sorted(liste)</code> - copie triée &nbsp;<code>reversed(liste)</code> - copie inversée',
+                '<code>int(x)</code> &nbsp;<code>float(x)</code> &nbsp;<code>str(x)</code> &nbsp;<code>bool(x)</code> - conversions',
+                '<code>print(x)</code> - capturé en trace'
             ]},
             { title: 'Méthodes de liste', items: [
-                '<code>T.append(x)</code> — ajout en fin',
-                '<code>T.pop()</code> — suppression en fin',
-                '<code>T.sort()</code> — tri en place',
-                '<code>T.count(x)</code> &nbsp;<code>T.index(x)</code> — en expression'
+                '<code>T.append(x)</code> - ajout en fin',
+                '<code>T.pop()</code> - suppression en fin',
+                '<code>T.sort()</code> - tri en place',
+                '<code>T.count(x)</code> &nbsp;<code>T.index(x)</code> - en expression'
             ]},
             { title: 'Méthodes de chaîne', items: [
                 '<code>s.upper()</code> &nbsp;<code>s.lower()</code> &nbsp;<code>s.strip()</code>',
@@ -1139,7 +1139,7 @@ class AlgorithmExpertLab {
                 '<code>s.find(sub)</code> &nbsp;<code>s.count(sub)</code> &nbsp;<code>sep.join(liste)</code>'
             ]},
             { title: 'Dictionnaires', items: [
-                '<code>d = {"a": 1}</code> — littéral',
+                '<code>d = {"a": 1}</code> - littéral',
                 '<code>d[k]</code> &nbsp;<code>d[k] = v</code> &nbsp;<code>d[k] += n</code>',
                 '<code>d.get(k, défaut)</code> &nbsp;<code>d.keys()</code> &nbsp;<code>d.values()</code> &nbsp;<code>d.items()</code>',
                 '<code>for k in d:</code> &nbsp;<code>for k, v in d.items():</code>'
@@ -1676,10 +1676,10 @@ class AlgorithmExpertLab {
     }
 
     renderVariables() {
-        // P8: blind mode — hide variables while a prediction is pending (not yet validated)
+        // P8: blind mode - hide variables while a prediction is pending (not yet validated)
         const blindMode = this.blindModeToggle && this.blindModeToggle.checked;
         if (blindMode && this.currentEvent()) {
-            this.varsOutput.innerHTML = '<span class="algoexpert-blind-hint">Variables masquées — faites votre prédiction, puis validez pour les révéler.</span>';
+            this.varsOutput.innerHTML = '<span class="algoexpert-blind-hint">Variables masquées - faites votre prédiction, puis validez pour les révéler.</span>';
             return;
         }
 
@@ -1765,7 +1765,7 @@ class AlgorithmExpertLab {
 
         this.timelineOutput.classList.remove('hidden');
         if (history.length < 2) {
-            this.timelineOutput.innerHTML = `<span class="algoexpert-timeline-label">${this.escapeHtml(varName)}</span><span class="text-muted" style="font-size:0.8rem"> — pas assez d'historique numérique</span><button class="algoexpert-timeline-close" title="Fermer">×</button>`;
+            this.timelineOutput.innerHTML = `<span class="algoexpert-timeline-label">${this.escapeHtml(varName)}</span><span class="text-muted" style="font-size:0.8rem"> - pas assez d'historique numérique</span><button class="algoexpert-timeline-close" title="Fermer">×</button>`;
         } else {
             const W = 280; const H = 52; const PAD = 6;
             const values = history.map((h) => h.value);
@@ -2044,7 +2044,7 @@ class AlgorithmExpertLab {
             this.ruleCoverageOutput.innerHTML = ruleCoverage
                 .map((item) => {
                     const description = this.diag.getDiagnosticCodeDescription(item.code);
-                    return `<li><strong>${this.escapeHtml(item.code)}</strong> : ${item.count} occurrence(s) — ${this.escapeHtml(description)}</li>`;
+                    return `<li><strong>${this.escapeHtml(item.code)}</strong> : ${item.count} occurrence(s) - ${this.escapeHtml(description)}</li>`;
                 })
                 .join('');
         }

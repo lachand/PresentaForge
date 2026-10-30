@@ -288,7 +288,7 @@ class AlgorithmImplementationPage extends ConceptPage {
                 const { score, date } = data[key];
                 const tone = score >= 80 ? 'ok' : score >= 50 ? 'warn' : 'bad';
                 return `<span class="algoimpl-prog-entry">
-                    <span class="algoimpl-prog-label">${this.escapeHtml(label)} — N${this.escapeHtml(String(level))}</span>
+                    <span class="algoimpl-prog-label">${this.escapeHtml(label)} - N${this.escapeHtml(String(level))}</span>
                     <span class="mod-status ${tone}" style="font-size:0.75rem">${score}%</span>
                     <span class="algoimpl-prog-date">${this.escapeHtml(date)}</span>
                 </span>`;

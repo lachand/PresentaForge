@@ -12,6 +12,8 @@ class BinairePage extends ConceptPage {
         this.binInput = document.getElementById('binInput');
         this.hexInput = document.getElementById('hexInput');
         this.bitsDecimalEl = document.getElementById('bitsDecimal');
+        this.bitsSignedEl = document.getElementById('bitsSigned');
+        this.btnNegate = document.getElementById('btnNegate');
         this.converterFeedback = document.getElementById('converterFeedback');
 
         this.opA = document.getElementById('opA');
@@ -28,6 +30,11 @@ class BinairePage extends ConceptPage {
 
         this.bindConverterEvents();
         this.bindBitwiseEvents();
+        if (this.btnNegate) {
+            this.btnNegate.addEventListener('click', () => {
+                this.bitViz.setValue(((~this.bitViz.value) + 1) & 0xFF, 'neg');
+            });
+        }
 
         this.bitViz.buildPowersTable('powersTable', [[0, 7], [8, 15]]);
         this.bitViz.setValue(0, 'dec');
@@ -49,6 +56,7 @@ class BinairePage extends ConceptPage {
         if (source !== 'hex' && this.hexInput) this.hexInput.value = hex;
 
         if (this.bitsDecimalEl) this.bitsDecimalEl.textContent = value;
+        if (this.bitsSignedEl) this.bitsSignedEl.textContent = value > 127 ? value - 256 : value;
         this.setFeedback('', '');
     }
 

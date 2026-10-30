@@ -1,5 +1,5 @@
 /**
- * GitZonesWidget — visualisation interactive des trois zones Git.
+ * GitZonesWidget - visualisation interactive des trois zones Git.
  *
  * Montre comment git add et git commit font transiter les fichiers
  * entre le répertoire de travail, la staging area et le dépôt.
@@ -128,7 +128,7 @@ class GitZonesWidget {
                 commitCount++;
                 const hash = hashOf(commitCount * 31 + 7);
                 const names = state.staging.map(f => f.name).join(', ');
-                state.commits.unshift({ hash, msg: `commit #${commitCount} — ${names}` });
+                state.commits.unshift({ hash, msg: `commit #${commitCount} - ${names}` });
                 state.staging = [];
                 highlight('repo');
                 feedback(`git commit → commit ${hash} créé avec ${names}`, 'ok');

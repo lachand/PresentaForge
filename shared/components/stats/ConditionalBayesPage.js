@@ -280,7 +280,7 @@ if (typeof window !== 'undefined') {
 
 // ── Standalone widget ──────────────────────────────────────────
 // Meme moteur que ConditionalBayesPage (formule de Bayes + simulation de
-// population), sans inspecteur de pseudocode — delai fixe local pour l'anim.
+// population), sans inspecteur de pseudocode - delai fixe local pour l'anim.
 class ConditionalBayesWidget {
     static mount(container, config = {}) {
         if (container.dataset.bayw) return;

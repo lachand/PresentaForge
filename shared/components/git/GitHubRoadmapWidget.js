@@ -1,5 +1,5 @@
 /**
- * GitHubRoadmapWidget — frise chronologique des milestones GitHub.
+ * GitHubRoadmapWidget - frise chronologique des milestones GitHub.
  *
  * Affiche 4 milestones sur un axe temporel horizontal (Jan 2025 → Jan 2026)
  * avec marqueur "aujourd'hui", tooltips et panneau détail.
@@ -154,7 +154,7 @@ class GitHubRoadmapWidget {
                 // Label
                 const labelX = x1 + barW / 2;
                 const labelY = y + BAR_H / 2 + 4;
-                barsHtml += `<text x="${labelX.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--surface)" pointer-events="none">${ms.label} — ${ms.pct}%</text>`;
+                barsHtml += `<text x="${labelX.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--surface)" pointer-events="none">${ms.label} - ${ms.pct}%</text>`;
 
                 barsHtml += `</g>`;
             });
@@ -179,7 +179,7 @@ ${barsHtml}
             return `<div class="grw-detail">
                 <div class="grw-detail-title">
                     <div class="grw-detail-dot" style="background:${ms.color}"></div>
-                    ${ms.label} — ${statusLabel} — ${ms.pct}% complet
+                    ${ms.label} - ${statusLabel} - ${ms.pct}% complet
                 </div>
                 <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">${ms.closedIssues} / ${ms.totalIssues} issues fermées</div>
                 <ul class="grw-issue-list">${issueRows}</ul>

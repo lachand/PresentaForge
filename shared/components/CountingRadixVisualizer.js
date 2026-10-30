@@ -1,10 +1,10 @@
 /**
- * CountingRadixVisualizer — tri par comptage ET radix sort (LSD base 10).
+ * CountingRadixVisualizer - tri par comptage ET radix sort (LSD base 10).
  *
  * Les deux algorithmes vivent dans shared/components/algorithms/sort-traces.js
  * (buildCountingSortTrace / buildRadixSortTrace, purs). Cette classe est
  * l'ADAPTATEUR PAGE (2 modes, 2 blocs de pseudocode) ; CountingRadixWidget
- * l'ADAPTATEUR SLIDE (comptage uniquement, historiquement — inchangé).
+ * l'ADAPTATEUR SLIDE (comptage uniquement, historiquement - inchangé).
  */
 class CountingRadixVisualizer extends SimulationPage {
     constructor(dataPath) {
@@ -298,7 +298,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CountingRadixWidget — adaptateur SLIDE : tri par comptage (counting sort).
+// CountingRadixWidget - adaptateur SLIDE : tri par comptage (counting sort).
 // Consomme buildCountingSortTrace via TracePlayer ; DOM .crw-* inchangé.
 // ─────────────────────────────────────────────────────────────────────────────
 class CountingRadixWidget {

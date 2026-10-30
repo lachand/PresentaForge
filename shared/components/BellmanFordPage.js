@@ -54,7 +54,36 @@ class BellmanFordPage extends ConceptPage {
         this.bindEvents();
         this.populateSources();
         this.refreshEdges();
+        this.explainOutput = document.getElementById('explain-output');
+        this.renderPseudocodeFromData();
+        this.bindPseudocodeInspector();
         this.resetAlgorithm();
+    }
+
+    renderPseudocodeFromData() {
+        if (typeof PseudocodeSupport === 'undefined') return;
+        PseudocodeSupport.renderFromData(this.data, {
+            containerId: 'pseudocode-container',
+            lineIdBuilder: (_block, _idx, lineNumber) => 'bline' + lineNumber
+        });
+    }
+
+    bindPseudocodeInspector() {
+        if (typeof PseudocodeSupport === 'undefined') return;
+        PseudocodeSupport.bindLineInspector(this.data, {
+            containerId: 'pseudocode-container',
+            explainOutput: this.explainOutput,
+            clickTitle: 'Cliquer pour expliquer cette ligne'
+        });
+    }
+
+    /** Surligne les lignes du pseudocode correspondant à l'étape courante (ids `bline<n>`). */
+    highlightLines(...ids) {
+        document.querySelectorAll('#pseudocode-container .line.highlight').forEach((line) => line.classList.remove('highlight'));
+        ids.forEach((id) => {
+            const line = document.getElementById(id);
+            if (line) line.classList.add('highlight');
+        });
     }
 
     cacheDom() {
@@ -143,6 +172,7 @@ class BellmanFordPage extends ConceptPage {
         });
         this.dist[source] = 0;
 
+        this.highlightLines('bline2', 'bline3');
         this.addLog(`Etat initial: dist(${source}) = 0, autres = ∞.`, 'info');
         this.setFeedback('Pret: cliquez sur Initialiser ou Etape pour demarrer les relaxations.', 'info');
         this.render();
@@ -165,6 +195,7 @@ class BellmanFordPage extends ConceptPage {
         this.dist[source] = 0;
 
         this.logs = [];
+        this.highlightLines('bline2', 'bline3', 'bline4');
         this.addLog(`Demarrage Bellman-Ford depuis ${source}.`, 'warn');
         this.setFeedback('Relaxations en cours.', 'info');
         this.render();
@@ -178,6 +209,7 @@ class BellmanFordPage extends ConceptPage {
         this.edgeStates[key] = 'active';
 
         if (fromDist === Infinity) {
+            this.highlightLines('bline5', 'bline6');
             this.addLog(`It ${this.iteration}: ${edge.from} -> ${edge.to} ignoree (source inatteignable).`, 'info');
             return;
         }
@@ -187,6 +219,7 @@ class BellmanFordPage extends ConceptPage {
             this.dist[edge.to] = alt;
             this.pred[edge.to] = edge.from;
             this.edgeStates[key] = 'relaxing';
+            this.highlightLines('bline5', 'bline6', 'bline7', 'bline8');
             this.addLog(
                 `It ${this.iteration}: relaxation ${edge.from} -> ${edge.to}, nouvelle dist=${alt}.`,
                 'ok'
@@ -194,6 +227,7 @@ class BellmanFordPage extends ConceptPage {
             return;
         }
 
+        this.highlightLines('bline5', 'bline6');
         this.addLog(
             `It ${this.iteration}: ${edge.from} -> ${edge.to}, pas d amelioration (${this.distanceText(this.dist[edge.to])}).`,
             'info'
@@ -209,6 +243,7 @@ class BellmanFordPage extends ConceptPage {
 
         if (cycleEdge) {
             this.cycleDetected = true;
+            this.highlightLines('bline9', 'bline10', 'bline11');
             this.edgeStates = {};
             this.edgeStates[this.graph.edgeKey(cycleEdge.from, cycleEdge.to)] = 'relaxing';
             this.addLog(
@@ -220,6 +255,7 @@ class BellmanFordPage extends ConceptPage {
         }
 
         this.cycleDetected = false;
+        this.highlightLines('bline9', 'bline10', 'bline12');
         this.addLog('Aucune amelioration supplementaire: pas de cycle negatif atteignable.', 'ok');
         this.setFeedback('Execution terminee: distances stables.', 'ok');
     }

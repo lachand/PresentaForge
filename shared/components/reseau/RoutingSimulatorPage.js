@@ -660,7 +660,7 @@ class RoutingSimulatorPage extends ConceptPage {
                 if (!before) {
                     return {
                         dest: current.dest,
-                        before: '—',
+                        before: '-',
                         after: `${current.nextHop} / ${current.cost} / ${current.iface}`,
                         status: 'new',
                         label: 'Nouveau'
@@ -712,7 +712,7 @@ if (typeof window !== 'undefined') {
 // ── Standalone widget ──────────────────────────────────────────
 // Version compacte du simulateur ci-dessus : mêmes 3 topologies et même Dijkstra
 // pas-à-pas, mais sans l'inspecteur de pseudocode (page-scoped) ni la table de
-// diff entre routeurs (fonctionnalité secondaire) — même principe de coupe que
+// diff entre routeurs (fonctionnalité secondaire) - même principe de coupe que
 // DnsWidget/HeapWidget vis-à-vis de leur page d'origine.
 class RoutingSimulatorWidget {
 
@@ -810,7 +810,7 @@ class RoutingSimulatorWidget {
             </div>
             <div class="widget-fit-body">
                 <div class="rsw-network">
-                    <svg class="rsw-svg" viewBox="0 0 800 460" role="img" aria-label="Visualisation du réseau — parcours de Dijkstra"></svg>
+                    <svg class="rsw-svg" viewBox="0 0 800 460" role="img" aria-label="Visualisation du réseau - parcours de Dijkstra"></svg>
                 </div>
                 <div class="rsw-tables">
                     <table class="rsw-table" aria-label="File de priorité">
@@ -920,7 +920,7 @@ class RoutingSimulatorWidget {
             circle.setAttribute('data-node', n.id);
             circle.setAttribute('tabindex', '0');
             circle.setAttribute('role', 'button');
-            circle.setAttribute('aria-label', `Routeur ${n.label} — ${n.name}`);
+            circle.setAttribute('aria-label', `Routeur ${n.label} - ${n.name}`);
             circle.addEventListener('click', () => this._onRouterClick(n.id));
             circle.addEventListener('keydown', (ev) => {
                 if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); this._onRouterClick(n.id); }

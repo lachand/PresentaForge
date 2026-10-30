@@ -140,7 +140,10 @@ class AStarPage extends ConceptPage {
         if (!n1 || !n2) return 0;
         const dx = n1.x - n2.x;
         const dy = n1.y - n2.y;
-        return Math.round(Math.sqrt(dx * dx + dy * dy) / 50);
+        // Distance euclidienne en pixels, ramenee a l'echelle des poids et reduite par
+        // HEURISTIC_SCALE : sans ce facteur, h surestime la distance reelle pour 26 couples
+        // (sommet, objectif) et n'est ni admissible ni consistante (relecture 1b, B6).
+        return Math.round(Math.sqrt(dx * dx + dy * dy) / 50 * AStarPage.HEURISTIC_SCALE);
     }
 
     neighbors(nodeId) {
@@ -415,7 +418,7 @@ class AStarPage extends ConceptPage {
         if (this.phase === 'extracting') {
             if (this.openSet.size === 0) {
                 this.phase = 'done';
-                this.highlightLines('aline15');
+                this.highlightLines('aline6');
                 this.setFeedback('Echec: aucun chemin vers ' + this.goal + '.', 'error');
                 this.renderAll();
                 return false;
@@ -426,17 +429,17 @@ class AStarPage extends ConceptPage {
             this.openSet.delete(u);
             this.closed.add(u);
 
-            this.highlightLines('aline6', 'aline7');
             if (u === this.goal) {
                 this.buildFinalPath();
                 this.phase = 'done';
-                this.highlightLines('aline8', 'aline15');
+                this.highlightLines('aline7', 'aline8');
                 this.setFeedback('Objectif atteint. Cout du chemin = ' + this.g[this.goal] + '.', 'success');
                 this.stepCount++;
                 this.renderAll();
                 return false;
             }
 
+            this.highlightLines('aline7', 'aline8', 'aline9');
             this.currentNeighbors = this.neighbors(u).filter((n) => !this.closed.has(n.node));
             this.neighborIdx = 0;
             this.phase = this.currentNeighbors.length > 0 ? 'relaxing' : 'extracting';
@@ -459,7 +462,7 @@ class AStarPage extends ConceptPage {
             const v = neighbor.node;
             const tentative = this.g[this.currentNode] + neighbor.weight;
 
-            this.highlightLines('aline9', 'aline10');
+            this.highlightLines('aline10', 'aline11', 'aline12');
             const edgeKey = this.edgeKey(this.currentNode, v);
             this.edgeStates[edgeKey] = 'relaxing';
 
@@ -470,7 +473,7 @@ class AStarPage extends ConceptPage {
                 this.pred[v] = this.currentNode;
                 this.open.push({ node: v });
                 this.openSet.add(v);
-                this.highlightLines('aline11', 'aline12', 'aline13');
+                this.highlightLines('aline12', 'aline13', 'aline14', 'aline15');
                 this.setFeedback('Mise a jour de ' + v + ': g=' + this.g[v] + ', h=' + this.h[v] + ', f=' + this.f[v] + '.', 'success');
             } else {
                 this.setFeedback('Pas d amelioration pour ' + v + ' (tentative=' + tentative + ').', '');
@@ -508,6 +511,10 @@ class AStarPage extends ConceptPage {
         this.doStep();
     }
 }
+
+// Facteur appliqué à la distance euclidienne : 0,7 garantit h admissible et consistante
+// sur le graphe du widget (verifie par tests/unit/graph-heuristics.test.mjs).
+AStarPage.HEURISTIC_SCALE = 0.7;
 
 if (typeof window !== 'undefined') {
     window.AStarPage = AStarPage;

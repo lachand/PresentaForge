@@ -1,14 +1,14 @@
 /**
- * HashTableVisualizer — table de hachage à chaînage séparé.
+ * HashTableVisualizer - table de hachage à chaînage séparé.
  *
  * La mécanique de bucket (sonder/comparer/insérer/mettre à jour/supprimer)
  * vit dans shared/components/algorithms/hashtable-traces.js, pure. Comme
  * pour les structures pile/file et la liste chaînée, chaque clic est une
- * opération INDÉPENDANTE sur une table qui PERSISTE entre les opérations —
+ * opération INDÉPENDANTE sur une table qui PERSISTE entre les opérations -
  * pas « un » algorithme à dérouler du début à la fin. Cette classe est
- * l'ADAPTATEUR PAGE (hash polynomial d'une clé texte, mode 'map' — une clé
+ * l'ADAPTATEUR PAGE (hash polynomial d'une clé texte, mode 'map' - une clé
  * déjà présente met à jour sa valeur) ; HashTableWidget l'ADAPTATEUR SLIDE
- * (clé numérique directe, mode 'multiset' — comportement d'origine inchangé,
+ * (clé numérique directe, mode 'multiset' - comportement d'origine inchangé,
  * pas de recherche de doublon).
  */
 class HashTableVisualizer extends SimulationPage {
@@ -37,7 +37,7 @@ class HashTableVisualizer extends SimulationPage {
 
     /** Rendu d'un pas : buckets + panneau de calcul de hash. Le panneau "feedback"
      *  n'est mis à jour qu'à la fin de l'opération (voir doInsert/doSearch/doDelete),
-     *  pas à chaque pas — comme dans le code d'origine (aucun flicker de message). */
+     *  pas à chaque pas - comme dans le code d'origine (aucun flicker de message). */
     renderStep(step) {
         this.table = step.table;
         this.renderBuckets(step.marks.activeBucket, step.marks.indices.length
@@ -422,9 +422,9 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HashTableWidget — adaptateur SLIDE. Consomme la MÊME mécanique de bucket
+// HashTableWidget - adaptateur SLIDE. Consomme la MÊME mécanique de bucket
 // (hashtable-traces.js) mais en mode 'multiset' (clé numérique directe,
-// jamais de recherche de doublon — comportement d'origine inchangé) et rendu
+// jamais de recherche de doublon - comportement d'origine inchangé) et rendu
 // instantané (pas d'animation par pas, comme pile/file/liste chaînée). DOM
 // .htw-* inchangé. Usage : HashTableWidget.mount(container, { buckets: 8, data: [14, 7, 21, 3] })
 // ─────────────────────────────────────────────────────────────────────────────
@@ -542,7 +542,7 @@ class HashTableWidget {
             this._table = Array.from({ length: this.NUM_BUCKETS }, () => []);
             this._activeRow = -1;
             this._foundKey = null;
-            this._action = `Table reinitialisee — ${this.NUM_BUCKETS} buckets vides`;
+            this._action = `Table reinitialisee - ${this.NUM_BUCKETS} buckets vides`;
             this._render();
         });
     }

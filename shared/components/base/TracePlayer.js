@@ -1,9 +1,9 @@
 /**
- * TracePlayer — moteur de lecture partagé pour les visualisations pilotées par trace.
+ * TracePlayer - moteur de lecture partagé pour les visualisations pilotées par trace.
  *
  * Consomme un tableau de « pas » (`Step[]`) produit par un générateur pur et pilote
  * un curseur : play / pause / pas-avant / pas-arrière / seek / reset. Aucune
- * connaissance du DOM ni de l'algorithme — le rendu de chaque pas est délégué via
+ * connaissance du DOM ni de l'algorithme - le rendu de chaque pas est délégué via
  * la fonction `render` injectée.
  *
  * Utilisé à l'identique par l'adaptateur page (`SimulationPage`) et l'adaptateur
@@ -199,7 +199,7 @@ class TracePlayer {
     }
 }
 
-// Export module (tests Node) — le fichier reste un script classique côté navigateur.
+// Export module (tests Node) - le fichier reste un script classique côté navigateur.
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = TracePlayer;
 }

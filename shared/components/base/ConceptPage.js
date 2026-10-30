@@ -2,7 +2,7 @@
  * ConceptPage - Base class for concept pages with JSON course loading.
  */
 // Widget registry: use shared OEI_WIDGET_REGISTRY (loaded via WidgetRegistry.js).
-// Chargement paresseux via OEIUtils.loadScript (source unique — revue §C7).
+// Chargement paresseux via OEIUtils.loadScript (source unique - revue §C7).
 let _widgetRegistryPromise = null;
 function _ensureWidgetRegistry() {
     if (typeof OEI_WIDGET_REGISTRY !== 'undefined' && window.OEI_WIDGET_REGISTRY) {
@@ -15,7 +15,7 @@ function _ensureWidgetRegistry() {
             : 'shared/components/base/WidgetRegistry.js';
         _widgetRegistryPromise = OEIUtils.loadScript(url, { globalName: 'OEI_WIDGET_REGISTRY' })
             .then((ok) => {
-                if (!ok) console.warn('WidgetRegistry.js indisponible — widgets désactivés');
+                if (!ok) console.warn('WidgetRegistry.js indisponible - widgets désactivés');
                 return window.OEI_WIDGET_REGISTRY || {};
             });
     }
@@ -69,7 +69,7 @@ class ConceptPage {
 
     static async _loadKaTeX() {
         if (typeof window === 'undefined') return true;
-        // Délègue au chargeur d'assets unique (OEIUtils.loadKaTeX) — revue §C7.
+        // Délègue au chargeur d'assets unique (OEIUtils.loadKaTeX) - revue §C7.
         return OEIUtils.loadKaTeX();
     }
 
@@ -104,7 +104,7 @@ class ConceptPage {
         if (!this.data || !this.data.metadata) return;
 
         if (this.data.metadata.title) {
-            document.title = this.data.metadata.title + ' — Outils Enseignement';
+            document.title = this.data.metadata.title + ' - Outils Enseignement';
         }
 
         if (this.pageTitleId && this.data.metadata.title) {
@@ -385,7 +385,7 @@ class ConceptPage {
         tabsRoot.className = 'content-tabs-block';
         const uid = `tabs-${Math.random().toString(36).slice(2, 8)}`;
 
-        // Barre d'onglets (motif ARIA tablist — revue §D3)
+        // Barre d'onglets (motif ARIA tablist - revue §D3)
         const bar = document.createElement('div');
         bar.className = 'content-tabs-bar';
         bar.setAttribute('role', 'tablist');
@@ -469,7 +469,7 @@ class ConceptPage {
             if (btn) activate(parseInt(btn.dataset.tabIdx, 10), false);
         });
 
-        // Navigation clavier (flèches / Home / End) — motif ARIA tablist
+        // Navigation clavier (flèches / Home / End) - motif ARIA tablist
         bar.addEventListener('keydown', (e) => {
             const current = tabBtns.findIndex((b) => b.getAttribute('aria-selected') === 'true');
             let next = null;
@@ -684,7 +684,7 @@ class ConceptPage {
         if (!cacheKey || !globalName || !scriptPath) return false;
         if (typeof window !== 'undefined' && window[globalName]) return true;
         if (typeof document === 'undefined') return false;
-        // Chargeur d'assets unique (OEIUtils.loadScript) — revue §C7.
+        // Chargeur d'assets unique (OEIUtils.loadScript) - revue §C7.
         return OEIUtils.loadScript(this.resolveSharedScriptPath(scriptPath), { globalName });
     }
 

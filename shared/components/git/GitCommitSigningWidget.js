@@ -1,5 +1,5 @@
 /**
- * GitCommitSigningWidget — simulation du badge "Verified" GitHub.
+ * GitCommitSigningWidget - simulation du badge "Verified" GitHub.
  *
  * Compare côte à côte un commit non signé et un commit signé,
  * puis guide l'étudiant à travers les étapes de configuration de la signature SSH.
@@ -65,7 +65,7 @@ class GitCommitSigningWidget {
                 </div>
                 <div class="gcsw-badge-row">
                     <span class="gcsw-badge-unverified">Non vérifié</span>
-                    <span style="font-size:0.72rem;color:var(--muted)">Identité non prouvée — n'importe qui peut configurer ce nom</span>
+                    <span style="font-size:0.72rem;color:var(--muted)">Identité non prouvée - n'importe qui peut configurer ce nom</span>
                 </div>
             </div>
         </div>
@@ -90,7 +90,7 @@ class GitCommitSigningWidget {
         </div>
     </div>
 
-    <div class="gcsw-steps-title">Configurer la signature SSH — pas à pas</div>
+    <div class="gcsw-steps-title">Configurer la signature SSH - pas à pas</div>
     <div class="gcsw-steps">${stepsHtml}</div>
 
     <div class="gcsw-result-box ${allDone ? 'visible' : ''}">

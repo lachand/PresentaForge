@@ -370,7 +370,7 @@ class NormalizationPage extends ConceptPage {
                     html += '<div class="step-card violation"><h4>Violations de la 2NF (dépendances partielles)</h4>';
                     html += '<ul class="fd-list">';
                     for (const v of nfResult.violations['2NF']) {
-                        html += `<li class="violation-item">${fdStr(v.fd)} — LHS est un sous-ensemble propre de la clé { ${v.key.join(', ')} }</li>`;
+                        html += `<li class="violation-item">${fdStr(v.fd)} - LHS est un sous-ensemble propre de la clé { ${v.key.join(', ')} }</li>`;
                     }
                     html += '</ul></div>';
                 }
@@ -379,7 +379,7 @@ class NormalizationPage extends ConceptPage {
                     html += '<div class="step-card violation"><h4>Violations de la 3NF (dépendances transitives)</h4>';
                     html += '<ul class="fd-list">';
                     for (const v of nfResult.violations['3NF']) {
-                        html += `<li class="violation-item">${fdStr(v.fd)} — ${v.nonPrimeRHS.join(', ')} non premier(s) et LHS n'est pas une super-clé</li>`;
+                        html += `<li class="violation-item">${fdStr(v.fd)} - ${v.nonPrimeRHS.join(', ')} non premier(s) et LHS n'est pas une super-clé</li>`;
                     }
                     html += '</ul></div>';
                 }
@@ -388,7 +388,7 @@ class NormalizationPage extends ConceptPage {
                     html += '<div class="step-card violation"><h4>Violations de BCNF</h4>';
                     html += '<ul class="fd-list">';
                     for (const fd of nfResult.violations['BCNF']) {
-                        html += `<li class="violation-item">${fdStr(fd)} — le déterminant { ${fd.lhs.join(', ')} } n'est pas une super-clé</li>`;
+                        html += `<li class="violation-item">${fdStr(fd)} - le déterminant { ${fd.lhs.join(', ')} } n'est pas une super-clé</li>`;
                     }
                     html += '</ul></div>';
                 }

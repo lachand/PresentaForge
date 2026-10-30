@@ -1,5 +1,5 @@
 /**
- * GitSecretScanningWidget — simulation interactive de la push protection GitHub.
+ * GitSecretScanningWidget - simulation interactive de la push protection GitHub.
  *
  * L'étudiant tente de pousser un commit contenant un secret (clé AWS).
  * GitHub bloque le push. Trois choix s'offrent à lui : supprimer le secret,
@@ -21,7 +21,7 @@ class GitSecretScanningWidget {
             { cls: 'error',   text: 'remote: error: GH013: Repository rule violations found for refs/heads/main.' },
             { cls: 'error',   text: 'remote:' },
             { cls: 'error',   text: 'remote: - PUSH PROTECTION' },
-            { cls: 'error',   text: 'remote:   ——————————————————————————————————' },
+            { cls: 'error',   text: 'remote:   ----------------------------------' },
             { cls: 'error',   text: 'remote:   Resolve the following secrets before pushing:' },
             { cls: 'error',   text: 'remote:' },
             { cls: 'warning', text: 'remote:   (1) AWS Access Key ID' },
@@ -57,7 +57,7 @@ class GitSecretScanningWidget {
 # Avant (dangereux)
 AWS_KEY = "AKIAIOSFODNN7EXAMPLE"
 
-# Après (sûr) — variable d'environnement
+# Après (sûr) - variable d'environnement
 import os
 AWS_KEY = os.environ.get("AWS_ACCESS_KEY_ID")
 
@@ -69,10 +69,10 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
                 cls: 'bad',
                 title: OEIIcons.render('ban') + ' Action dangereuse : bypass activé',
                 body: `Le bypass de la push protection est autorisé pour les propriétaires du dépôt dans des cas <em>exceptionnels</em> (faux positif avéré, clé de test sans valeur réelle).<br><br>
-<strong>Dans ce cas-ci, la clé AWS est réelle — le bypass est une faute grave :</strong>
+<strong>Dans ce cas-ci, la clé AWS est réelle - le bypass est une faute grave :</strong>
 <ul style="margin:0.4rem 0 0 1.2rem;line-height:1.7">
 <li>Le secret est maintenant public dans l'historique Git</li>
-<li>Des bots scannent GitHub en temps réel — la clé peut être exploitée en <strong>moins de 30 secondes</strong></li>
+<li>Des bots scannent GitHub en temps réel - la clé peut être exploitée en <strong>moins de 30 secondes</strong></li>
 <li>Conséquences possibles : factures AWS frauduleuses, exfiltration de données, atteinte à la réputation</li>
 </ul>
 <br><strong>Action corrective immédiate :</strong> révoquer la clé AWS puis <a href="https://docs.github.com/fr/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository" style="color:var(--primary)">réécrire l'historique</a>.`
@@ -87,7 +87,7 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
         <span class="gssw-dot gssw-dot-r"></span>
         <span class="gssw-dot gssw-dot-y"></span>
         <span class="gssw-dot gssw-dot-g"></span>
-        <span class="gssw-term-title">bash — ~/monprojet</span>
+        <span class="gssw-term-title">bash - ~/monprojet</span>
     </div>
     <div class="gssw-term-body">
         <span class="gssw-line output">Vous venez d'ajouter une clé AWS dans config/secrets.py :</span>
@@ -114,7 +114,7 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
         <span class="gssw-dot gssw-dot-r"></span>
         <span class="gssw-dot gssw-dot-y"></span>
         <span class="gssw-dot gssw-dot-g"></span>
-        <span class="gssw-term-title">bash — ~/monprojet</span>
+        <span class="gssw-term-title">bash - ~/monprojet</span>
     </div>
     <div class="gssw-term-body" id="gssw-term-body">
         ${lines.map(l => `<span class="gssw-line ${l.cls}">${l.text}</span>`).join('')}
@@ -123,7 +123,7 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
         });
 
         // Les choix sont de hauteur variable (3 boutons + descriptions) : ils vivent
-        // dans le body scrollable avec le terminal, pas dans un footer figé — sinon,
+        // dans le body scrollable avec le terminal, pas dans un footer figé - sinon,
         // dans une petite boîte, le footer lui-même déborderait sans pouvoir défiler
         // (mesuré : footer seul > hauteur de boîte type slide 800×440).
         const renderChoice = () => ({
@@ -134,7 +134,7 @@ Ajoutez <code>config/secrets.py</code> et <code>.env*</code> à votre <code>.git
         <span class="gssw-dot gssw-dot-r"></span>
         <span class="gssw-dot gssw-dot-y"></span>
         <span class="gssw-dot gssw-dot-g"></span>
-        <span class="gssw-term-title">bash — ~/monprojet</span>
+        <span class="gssw-term-title">bash - ~/monprojet</span>
     </div>
     <div class="gssw-term-body">
         ${PUSH_LINES.map(l => `<span class="gssw-line ${l.cls}">${l.text}</span>`).join('')}

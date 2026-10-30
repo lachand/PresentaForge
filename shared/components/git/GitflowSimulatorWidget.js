@@ -1,5 +1,5 @@
 /**
- * GitflowSimulatorWidget — simulation pas-à-pas du workflow Gitflow.
+ * GitflowSimulatorWidget - simulation pas-à-pas du workflow Gitflow.
  * Montre l'évolution des branches sur un graphe SVG.
  */
 class GitflowSimulatorWidget {

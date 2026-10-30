@@ -1,9 +1,9 @@
 /**
- * linkedlist-traces.js — générateurs de trace PURS pour la liste chaînée
+ * linkedlist-traces.js - générateurs de trace PURS pour la liste chaînée
  * simple. Une liste y est un simple tableau de valeurs `[v0, v1, …]` (jamais
  * une classe Noeud/ListeChainee à pointeurs) : la sémantique « pointeurs »
  * (prev/current/next) est un fait de VISUALISATION porté par `marks`, pas une
- * structure de données séparée — la valeur pédagogique du pointeur-chasing
+ * structure de données séparée - la valeur pédagogique du pointeur-chasing
  * est dans l'animation, pas dans la représentation mémoire du générateur.
  *
  * Les opérations en O(1) au point d'insertion (ajouter en queue / à une
@@ -66,7 +66,7 @@
         const next = [value, ...src];
         steps.push(mk(next, {
             line: 'ajouterEnTete-line3', phase: 'commit',
-            caption: `liste.tête ← nouveau — "${value}" ajouté en tête.`,
+            caption: `liste.tête ← nouveau - "${value}" ajouté en tête.`,
             marks: { entering: [0], current: [0], next: next.length > 1 ? [1] : [] }
         }));
         return finalize(steps);

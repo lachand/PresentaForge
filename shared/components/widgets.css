@@ -1,5 +1,5 @@
 /*
- * OEI Widgets — feuille de style unique de TOUS les widgets interactifs OEI.
+ * OEI Widgets - feuille de style unique de TOUS les widgets interactifs OEI.
  *
  * Chargee par <link rel="stylesheet"> sur :
  *   - les pages de cours (celles qui chargent shared/components/base/ConceptPage.js) ;
@@ -24,11 +24,11 @@
  *     avec les slides, la chaine var(--sl-x, <fallback>) est conservee telle
  *     quelle. Pour les fonds/textes pastel de la famille git/ + systemes :
  *     tokens --widget-* (voir plus bas) sous la forme
- *     `var(--widget-x, <litteral d'origine>)` — le token n'est defini QUE dans
+ *     `var(--widget-x, <litteral d'origine>)` - le token n'est defini QUE dans
  *     les blocs sombres, donc le rendu CLAIR reste le litteral d'origine
  *     (pixel-identique) et seul le rendu SOMBRE est corrige.
  *  4. Theme sombre : ne rien ecrire de specifique au widget hors des blocs
- *     --widget-* ci-dessous — laisser les var() heritees porter la bascule.
+ *     --widget-* ci-dessous - laisser les var() heritees porter la bascule.
  *  5. @keyframes : nom prefixe par le widget (aucune collision possible).
  *  6. INTERDIT : document.createElement('style') / ensureStyles() dans un
  *     composant. Garde-fou : tools/audit-no-ensure-styles.mjs (qa:content + CI).
@@ -64,7 +64,7 @@
  * NOTE DE MIGRATION : ce fichier est une EXTRACTION FIDELE des blocs
  * ensureStyles() existants (formatage d'origine conserve section par section).
  * Vague 2 : la famille git/ + Dns/Concurrency/Memory/Pipeline voit ses couleurs
- * pastel codees en dur remplacees par `var(--widget-x, <litteral>)` — rendu
+ * pastel codees en dur remplacees par `var(--widget-x, <litteral>)` - rendu
  * clair inchange, rendu sombre corrige via les blocs ci-dessous.
  */
 
@@ -98,11 +98,11 @@
 
 
 /* =====================================================================
-   ACCESSIBILITE — prefers-reduced-motion
+   ACCESSIBILITE - prefers-reduced-motion
    Seule exception tolérée au principe "pas de sélecteur d'élément nu"
    ci-dessus : garde-fou d'accessibilité global, même règle que
    shared/style.css (chargée par les pages de cours mais PAS par
-   slides/*.html — les widgets montés dans les slides n'avaient donc
+   slides/*.html - les widgets montés dans les slides n'avaient donc
    aucune protection). Les `transitionend`/`animationend` continuent de
    se déclencher (durée quasi nulle), donc pas de simulation bloquée.
    ===================================================================== */
@@ -117,7 +117,7 @@
 }
 
 /* =====================================================================
-   PATRON .widget-fit — widget qui s'adapte a sa boite (slides canvas)
+   PATRON .widget-fit - widget qui s'adapte a sa boite (slides canvas)
    Un widget place comme element `type:"widget"` sur une slide recoit une
    boite de taille FIXE (voir overflow:auto sur _canvasElement / .cel-inner).
    Ce patron isole les zones a taille fixe (controles toujours visibles) de
@@ -139,11 +139,11 @@
 
 
 /* #################################################################### */
-/* #  VISUALISEURS — tri / recherche / structures                 # */
+/* #  VISUALISEURS - tri / recherche / structures                 # */
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .sw-*  —  SortingWidget (bulle / insertion / selection) + QuickSortWidget
+   .sw-*  -  SortingWidget (bulle / insertion / selection) + QuickSortWidget
    source : SortingVisualizer.js  (+ 2 regles propres a QuickSortVisualizer.js)
    ------------------------------------------------------------------- */
 .sw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -171,7 +171,7 @@
 .sw-bar.bound-mark .sw-bar-inner{background:var(--accent);opacity:.5;}
 
 /* -------------------------------------------------------------------
-   .msw-*  —  MergeSortWidget
+   .msw-*  -  MergeSortWidget
    source : MergeSortVisualizer.js
    ------------------------------------------------------------------- */
 .msw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -190,7 +190,7 @@
 .msw-btn-secondary{background:color-mix(in srgb, var(--surface) 8%, transparent);color:var(--sl-text,var(--surface));}
 
 /* -------------------------------------------------------------------
-   .crw-*  —  CountingRadixWidget
+   .crw-*  -  CountingRadixWidget
    source : CountingRadixVisualizer.js
    ------------------------------------------------------------------- */
 .crw-container{display:flex;flex-direction:column;gap:8px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -211,7 +211,7 @@
 .crw-btn-secondary{background:color-mix(in srgb, var(--surface) 8%, transparent);color:var(--sl-text,var(--surface));}
 
 /* -------------------------------------------------------------------
-   .srw-*  —  SearchWidget
+   .srw-*  -  SearchWidget
    source : SearchVisualizer.js
    ------------------------------------------------------------------- */
 .srw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -245,7 +245,7 @@
 .srw-btn-secondary{background:color-mix(in srgb, var(--surface) 8%, transparent);color:var(--sl-text,var(--surface));}
 
 /* -------------------------------------------------------------------
-   .hpw-*  —  HeapWidget
+   .hpw-*  -  HeapWidget
    source : HeapVisualizer.js
    ------------------------------------------------------------------- */
 .hpw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -263,7 +263,7 @@
 .hpw-info-bar{font-size:var(--text-xs);color:var(--sl-text,var(--production));min-height:16px;line-height:1.4;}
 
 /* -------------------------------------------------------------------
-   .bstw-*  —  BSTWidget (arbre binaire de recherche)
+   .bstw-*  -  BSTWidget (arbre binaire de recherche)
    source : BinaryTreeVisualizer.js
    ------------------------------------------------------------------- */
 .bstw-root{font-family:var(--font,system-ui);padding:.65rem;display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;}
@@ -293,7 +293,7 @@
 .bstw-svg .bst-label.visited,.bstw-svg .bst-label.found{fill:var(--surface);}
 
 /* -------------------------------------------------------------------
-   .llw-*  —  LinkedListWidget
+   .llw-*  -  LinkedListWidget
    source : LinkedListVisualizer.js
    ------------------------------------------------------------------- */
 .llw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -315,7 +315,7 @@
 .llw-info-bar{font-size:var(--text-xs);color:var(--sl-text,var(--production));min-height:16px;line-height:1.4;}
 
 /* -------------------------------------------------------------------
-   .htw-*  —  HashTableWidget
+   .htw-*  -  HashTableWidget
    source : HashTableVisualizer.js
    ------------------------------------------------------------------- */
 .htw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -337,7 +337,7 @@
 .htw-info-bar{font-size:var(--text-xs);color:var(--sl-text,var(--production));min-height:16px;line-height:1.4;}
 
 /* -------------------------------------------------------------------
-   .stw-*  —  StructureWidget (pile LIFO / file FIFO)
+   .stw-*  -  StructureWidget (pile LIFO / file FIFO)
    source : StructureVisualizer.js
    ------------------------------------------------------------------- */
 .stw-container{display:flex;flex-direction:column;gap:10px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -355,6 +355,10 @@
 .stw-item{padding:6px 16px;border-radius:var(--radius-lg);background:var(--sl-primary,var(--accent));color:var(--surface);font-size:.85rem;font-weight:600;transition: all var(--dur-base) var(--ease-standard);text-align:center;white-space:nowrap;border:1px solid color-mix(in srgb, var(--line) 22%, transparent);box-shadow:inset 0 1px 0 color-mix(in srgb, var(--ink) 20%, transparent);}
 .stw-item.new-item{background:var(--sl-accent,var(--consommation));animation:stw-pop .3s ease-out;}
 .stw-item.top-item{outline:2px solid var(--sl-accent,var(--consommation));}
+.stw-slot{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:44px;padding:4px 8px;}
+.stw-slot-empty{background:transparent;color:var(--sl-muted,var(--ink-muted));border:1px dashed var(--sl-border,var(--production));box-shadow:none;}
+.stw-slot-index{font-size:var(--text-2xs);font-weight:400;opacity:.8;}
+.stw-slot-ptr{font-size:var(--text-2xs);font-weight:700;color:var(--sl-accent,var(--consommation));}
 .stw-arrow{font-size:.8rem;color:var(--sl-muted,var(--production));}
 @keyframes stw-pop{0%{transform:scale(1.25);opacity:.5;}100%{transform:scale(1);opacity:1;}}
 .stw-info{font-size:var(--text-xs);color:var(--sl-text,var(--production));min-height:16px;display:flex;justify-content:space-between;}
@@ -363,11 +367,11 @@
 
 
 /* #################################################################### */
-/* #  CONCEPTS — logique booleenne                                # */
+/* #  CONCEPTS - logique booleenne                                # */
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .boolean-gates-*  —  BooleanGatesWidget
+   .boolean-gates-*  -  BooleanGatesWidget
    source : concepts/BooleanGatesWidget.js
    ------------------------------------------------------------------- */
             /* Variables locales : se raccordent aux vars slides (--sl-*) quand les vars page
@@ -656,7 +660,7 @@
             }
 
 /* -------------------------------------------------------------------
-   .boolean-expression-*  —  BooleanExpressionPlaygroundWidget
+   .boolean-expression-*  -  BooleanExpressionPlaygroundWidget
    source : concepts/BooleanGatesWidget.js
    ------------------------------------------------------------------- */
             .boolean-expression-widget { display: grid; gap: 0.75rem; }
@@ -785,7 +789,7 @@
             }
 
 /* -------------------------------------------------------------------
-   .boolean-kmap-*  —  BooleanKarnaughWidget
+   .boolean-kmap-*  -  BooleanKarnaughWidget
    source : concepts/BooleanKarnaughWidget.js
    ------------------------------------------------------------------- */
             .boolean-kmap-widget { display: grid; gap: 0.85rem; }
@@ -951,7 +955,7 @@
             }
 
 /* -------------------------------------------------------------------
-   .boolean-simplifier-*  —  BooleanSimplifierWidget
+   .boolean-simplifier-*  -  BooleanSimplifierWidget
    source : concepts/BooleanSimplifierWidget.js
    ------------------------------------------------------------------- */
             .boolean-simplifier-widget { display: grid; gap: 0.9rem; }
@@ -1157,7 +1161,7 @@
             }
 
 /* -------------------------------------------------------------------
-   .boole-eval-summary-*  —  BooleEvaluationPage (bilan de competences)
+   .boole-eval-summary-*  -  BooleEvaluationPage (bilan de competences)
    source : concepts/BooleEvaluationPage.js
    ------------------------------------------------------------------- */
             .boole-eval-summary {
@@ -1233,7 +1237,7 @@
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .dnw-*  —  DnsWidget (resolution DNS)
+   .dnw-*  -  DnsWidget (resolution DNS)
    source : DnsSimulatorPage.js
    ------------------------------------------------------------------- */
 .dnw { font-family: inherit; display: flex; flex-direction: column; gap: 10px; }
@@ -1270,7 +1274,7 @@
 .dnw-section-lbl { font-size: 0.78rem; font-weight: 700; color: var(--muted, var(--ink-muted)); }
 
 /* -------------------------------------------------------------------
-   .rsw-*  —  RoutingSimulatorWidget (routage, Dijkstra pas-a-pas)
+   .rsw-*  -  RoutingSimulatorWidget (routage, Dijkstra pas-a-pas)
    source : RoutingSimulatorPage.js
    ------------------------------------------------------------------- */
 .rsw-container { display: flex; flex-direction: column; gap: 10px; font-family: inherit; color: var(--text, var(--ink)); height: 100%; box-sizing: border-box; }
@@ -1318,7 +1322,7 @@
 .rsw-mono { font-family: var(--font-mono, monospace); font-size: 0.75rem; }
 
 /* -------------------------------------------------------------------
-   .ipw-*  —  IpSubnetWidget (calculateur CIDR)
+   .ipw-*  -  IpSubnetWidget (calculateur CIDR)
    source : IpSubnetPage.js
    ------------------------------------------------------------------- */
 .ipw-container{display:flex;flex-direction:column;gap:8px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -1346,7 +1350,7 @@
 .ipw-sep{color:color-mix(in srgb, var(--surface) 20%, transparent);padding:0 1px;}
 
 /* -------------------------------------------------------------------
-   .tcpw-*  —  TcpWidget (3-way handshake)
+   .tcpw-*  -  TcpWidget (3-way handshake)
    source : TcpHandshakePage.js
    ------------------------------------------------------------------- */
 .tcpw-container{display:flex;flex-direction:column;gap:8px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -1386,7 +1390,7 @@
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .cnw-*  —  ConcurrencyWidget (mutex / deadlock)
+   .cnw-*  -  ConcurrencyWidget (mutex / deadlock)
    source : ConcurrencyPage.js
    ------------------------------------------------------------------- */
 .cnw { font-family: inherit; display: flex; flex-direction: column; gap: 10px; }
@@ -1424,7 +1428,7 @@
 .cnw-res-box.deadlocked { border-color: var(--critique); background: color-mix(in srgb, var(--critique) 8%, transparent); }
 
 /* -------------------------------------------------------------------
-   .mpw-*  —  MemoryWidget (remplacement de pages)
+   .mpw-*  -  MemoryWidget (remplacement de pages)
    source : MemoryPagingPage.js
    ------------------------------------------------------------------- */
 .mpw { font-family: inherit; display: flex; flex-direction: column; gap: 10px; }
@@ -1456,7 +1460,7 @@
 .mpw-info { font-size: 0.82rem; color: var(--muted, var(--ink-muted)); min-height: 1.4em; }
 
 /* -------------------------------------------------------------------
-   .plw-*  —  PipelineWidget (pipeline processeur)
+   .plw-*  -  PipelineWidget (pipeline processeur)
    source : PipelinePage.js
    ------------------------------------------------------------------- */
 .plw { font-family: inherit; display: flex; flex-direction: column; gap: 10px; }
@@ -1491,7 +1495,7 @@
 .plw-section-lbl { font-size: 0.78rem; font-weight: 700; color: var(--muted, var(--ink-muted)); }
 
 /* -------------------------------------------------------------------
-   .schw-*  —  SchedulingWidget (ordonnancement CPU)
+   .schw-*  -  SchedulingWidget (ordonnancement CPU)
    source : SchedulingPage.js
    ------------------------------------------------------------------- */
 .schw-container{display:flex;flex-direction:column;gap:8px;padding:16px;height:100%;box-sizing:border-box;font-family:var(--sl-font-body,sans-serif);color:var(--sl-text,var(--surface));}
@@ -1521,11 +1525,11 @@
 
 
 /* #################################################################### */
-/* #  WEB — DOM / evenements                                      # */
+/* #  WEB - DOM / evenements                                      # */
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .dom-widget-*  —  DomTreeWidget
+   .dom-widget-*  -  DomTreeWidget
    source : web/DomTreeWidget.js
    ------------------------------------------------------------------- */
             .dom-widget { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.9rem; background: var(--card); margin: 0.9rem 0; }
@@ -1595,7 +1599,7 @@
             @media (max-width: 980px) { .dom-widget-grid { grid-template-columns: 1fr; } }
 
 /* -------------------------------------------------------------------
-   .event-widget / .deleg- / .flow- / .flow3d- / .loop- / .restaurant- ...  —  EventWidgets
+   .event-widget / .deleg- / .flow- / .flow3d- / .loop- / .restaurant- ...  -  EventWidgets
    source : web/EventWidgets.js  (couvre aussi le fallback .deleg-* de event-widgets/delegation-standardiste.js)
    ------------------------------------------------------------------- */
             .event-widget { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card); padding: 1rem; margin: 1rem 0; }
@@ -2094,11 +2098,11 @@
 
 
 /* #################################################################### */
-/* #  GIT  —  cours Git / GitHub (27 widgets, revue : conserves entiers) # */
+/* #  GIT  -  cours Git / GitHub (27 widgets, revue : conserves entiers) # */
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .gzw-*  —  GitZonesWidget (3 zones : working / staging / repo)
+   .gzw-*  -  GitZonesWidget (3 zones : working / staging / repo)
    source : git/GitZonesWidget.js
    ------------------------------------------------------------------- */
 .gzw-root {
@@ -2332,7 +2336,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .gflw-*  —  GitFileLifecycleWidget (untracked -> staged -> committed)
+   .gflw-*  -  GitFileLifecycleWidget (untracked -> staged -> committed)
    source : git/GitFileLifecycleWidget.js
    ------------------------------------------------------------------- */
 .gflw-root {
@@ -2473,7 +2477,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .gdw-*  —  GitDAGWidget (graphe de commits)
+   .gdw-*  -  GitDAGWidget (graphe de commits)
    source : git/GitDAGWidget.js
    ------------------------------------------------------------------- */
 .gdw-root { font-family: var(--font); }
@@ -2563,7 +2567,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .gtw-*  —  GitTerminalWidget (terminal interactif)
+   .gtw-*  -  GitTerminalWidget (terminal interactif)
    source : git/GitTerminalWidget.js
    ------------------------------------------------------------------- */
 .gtw-root {
@@ -2732,7 +2736,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .gsc-*  —  GitStrategyComparator (merge / rebase / squash)
+   .gsc-*  -  GitStrategyComparator (merge / rebase / squash)
    source : git/GitStrategyComparator.js
    ------------------------------------------------------------------- */
 .gsc-root {
@@ -2853,7 +2857,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .gmcw-*  —  GitMergeComparisonWidget
+   .gmcw-*  -  GitMergeComparisonWidget
    source : git/GitMergeComparisonWidget.js
    ------------------------------------------------------------------- */
 .gmcw-root {
@@ -2986,7 +2990,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .gcew-*  —  GitConflictEditorWidget (resolution de conflit)
+   .gcew-*  -  GitConflictEditorWidget (resolution de conflit)
    source : git/GitConflictEditorWidget.js
    ------------------------------------------------------------------- */
 .gcew-root {
@@ -3208,7 +3212,7 @@
 .gcew-feedback.bad { background: var(--widget-warn-bg, var(--attention-fond)); color: var(--widget-warn-fg, var(--consommation)); }
 
 /* -------------------------------------------------------------------
-   .gflow-*  —  GitflowSimulatorWidget
+   .gflow-*  -  GitflowSimulatorWidget
    source : git/GitflowSimulatorWidget.js
    ------------------------------------------------------------------- */
 .gflow-root { font-family: var(--font); }
@@ -3238,7 +3242,7 @@
 .gflow-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
 /* -------------------------------------------------------------------
-   .grbi-*  —  GitRebaseInteractiveWidget (pick / squash / fixup)
+   .grbi-*  -  GitRebaseInteractiveWidget (pick / squash / fixup)
    source : git/GitRebaseInteractiveWidget.js
    ------------------------------------------------------------------- */
 .grbi-root { font-family: var(--font); }
@@ -3303,7 +3307,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .gbw-*  —  GitBisectWidget (recherche dichotomique de commit)
+   .gbw-*  -  GitBisectWidget (recherche dichotomique de commit)
    source : git/GitBisectWidget.js
    ------------------------------------------------------------------- */
 .gbw-root { font-family: var(--font); }
@@ -3385,7 +3389,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .grv-*  —  GitResetVisualizerWidget (--soft / --mixed / --hard)
+   .grv-*  -  GitResetVisualizerWidget (--soft / --mixed / --hard)
    source : git/GitResetVisualizerWidget.js
    ------------------------------------------------------------------- */
 .grv-root {
@@ -3661,7 +3665,7 @@
 .grv-pop { animation: grv-pop 0.3s ease-out; }
 
 /* -------------------------------------------------------------------
-   .gcsw-*  —  GitCommitSigningWidget (signature GPG / SSH)
+   .gcsw-*  -  GitCommitSigningWidget (signature GPG / SSH)
    source : git/GitCommitSigningWidget.js
    ------------------------------------------------------------------- */
 .gcsw-root { font-family: var(--font); color: var(--text); }
@@ -3866,7 +3870,7 @@
 .gcsw-restart-btn:hover { border-color: var(--text); color: var(--text); }
 
 /* -------------------------------------------------------------------
-   .gssw-*  —  GitSecretScanningWidget
+   .gssw-*  -  GitSecretScanningWidget
    source : git/GitSecretScanningWidget.js
    ------------------------------------------------------------------- */
 .gssw-root { font-family: var(--font); color: var(--text); }
@@ -3989,7 +3993,7 @@
 .gssw-cursor { animation: gssw-blink 1s infinite; color: var(--ok); }
 
 /* -------------------------------------------------------------------
-   .gfr-*  —  GitFilterRepoWidget (reecriture d'historique)
+   .gfr-*  -  GitFilterRepoWidget (reecriture d'historique)
    source : git/GitFilterRepoWidget.js
    ------------------------------------------------------------------- */
         .gfr-widget { font-family: var(--font-sans, sans-serif); display: flex; flex-direction: column; gap: 0.9rem; }
@@ -4026,7 +4030,7 @@
         .gfr-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
 
 /* -------------------------------------------------------------------
-   .slt-*  —  SecretLeakTimelineWidget
+   .slt-*  -  SecretLeakTimelineWidget
    source : git/SecretLeakTimelineWidget.js
    ------------------------------------------------------------------- */
         .slt-widget { font-family: var(--font-sans, sans-serif); }
@@ -4055,7 +4059,7 @@
         .slt-moral strong { color: var(--widget-warn-fg, var(--consommation)); }
 
 /* -------------------------------------------------------------------
-   .cicd-*  —  CICDPipelineWidget
+   .cicd-*  -  CICDPipelineWidget
    source : git/CICDPipelineWidget.js
    ------------------------------------------------------------------- */
 .cicd-root { font-family: var(--font); }
@@ -4143,7 +4147,7 @@
             /* (keyframe cicdSpin retiree : jamais referencee) */
 
 /* -------------------------------------------------------------------
-   .gaw-*  —  GitHubActionsWidget (anatomie YAML)
+   .gaw-*  -  GitHubActionsWidget (anatomie YAML)
    source : git/GitHubActionsWidget.js
    ------------------------------------------------------------------- */
 .gaw-root {
@@ -4277,7 +4281,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .wts-*  —  WorkflowTriggerSimulatorWidget
+   .wts-*  -  WorkflowTriggerSimulatorWidget
    source : git/WorkflowTriggerSimulatorWidget.js
    ------------------------------------------------------------------- */
 .wts { font-family: var(--font); }
@@ -4308,7 +4312,7 @@
 .wts-wf-reason { font-size: var(--text-xs); color: var(--ok); margin-top: 0.2rem; }
 
 /* -------------------------------------------------------------------
-   .jdg-*  —  JobDependencyGraphWidget
+   .jdg-*  -  JobDependencyGraphWidget
    source : git/JobDependencyGraphWidget.js
    ------------------------------------------------------------------- */
 .jdg { font-family: var(--font); }
@@ -4349,7 +4353,7 @@
 .jdg-hint { font-size: var(--text-xs); color: var(--muted); margin-top: 0.5rem; }
 
 /* -------------------------------------------------------------------
-   .mbw-*  —  MatrixBuilderWidget
+   .mbw-*  -  MatrixBuilderWidget
    source : git/MatrixBuilderWidget.js
    ------------------------------------------------------------------- */
 .mbw { font-family: var(--font); }
@@ -4390,7 +4394,7 @@
 .mbw-job-chip { background: color-mix(in srgb, var(--primary) 10%, var(--widget-hover, transparent)); border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border)); border-radius: var(--radius-lg); padding: 0.2rem 0.55rem; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--widget-heading, var(--production)); }
 
 /* -------------------------------------------------------------------
-   .prlw-*  —  GitHubPRLifecycleWidget
+   .prlw-*  -  GitHubPRLifecycleWidget
    source : git/GitHubPRLifecycleWidget.js
    ------------------------------------------------------------------- */
 .prlw-root {
@@ -4515,7 +4519,7 @@
 .prlw-graph-svg { display: block; margin: 0 auto; overflow: visible; }
 
 /* -------------------------------------------------------------------
-   .gitw-*  —  GitHubIssueTrackerWidget
+   .gitw-*  -  GitHubIssueTrackerWidget
    source : git/GitHubIssueTrackerWidget.js
    ------------------------------------------------------------------- */
 .gitw-root {
@@ -4743,7 +4747,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .gkw-*  —  GitHubKanbanWidget
+   .gkw-*  -  GitHubKanbanWidget
    source : git/GitHubKanbanWidget.js
    ------------------------------------------------------------------- */
 .gkw-root {
@@ -4897,7 +4901,7 @@
 .gkw-move-btn:disabled:hover { background: var(--bg); color: var(--muted); border-color: var(--border); }
 
 /* -------------------------------------------------------------------
-   .grw-*  —  GitHubRoadmapWidget
+   .grw-*  -  GitHubRoadmapWidget
    source : git/GitHubRoadmapWidget.js
    ------------------------------------------------------------------- */
 .grw-root {
@@ -4996,7 +5000,7 @@
 .grw-issue-closed { text-decoration: line-through; color: var(--muted); }
 
 /* -------------------------------------------------------------------
-   .bpw-*  —  BranchProtectionWidget
+   .bpw-*  -  BranchProtectionWidget
    source : git/BranchProtectionWidget.js
    ------------------------------------------------------------------- */
 .bpw-root { font-family: var(--font); }
@@ -5040,7 +5044,7 @@
 }
 
 /* -------------------------------------------------------------------
-   .codeow-*  —  CODEOWNERSSimulatorWidget
+   .codeow-*  -  CODEOWNERSSimulatorWidget
    source : git/CODEOWNERSSimulatorWidget.js
    ------------------------------------------------------------------- */
         .codeow-widget { display: flex; flex-direction: column; gap: 1rem; font-family: var(--font-sans, sans-serif); }
@@ -5075,7 +5079,7 @@
         .codeow-example-btn:hover { background: var(--primary, var(--accent)); color: var(--surface); border-color: var(--primary, var(--accent)); }
 
 /* -------------------------------------------------------------------
-   .dep-*  —  DependabotAlertWidget
+   .dep-*  -  DependabotAlertWidget
    source : git/DependabotAlertWidget.js
    ------------------------------------------------------------------- */
         .dep-widget { font-family: var(--font-sans, sans-serif); display: flex; flex-direction: column; gap: 1rem; }
@@ -5131,7 +5135,7 @@
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .cltw-*  —  CLTWidget (loi normale / theoreme central limite)
+   .cltw-*  -  CLTWidget (loi normale / theoreme central limite)
    source : CLTPage.js
    ------------------------------------------------------------------- */
 .cltw-container { display: flex; flex-direction: column; gap: 8px; font-family: inherit; color: var(--text, var(--ink)); height: 100%; box-sizing: border-box; }
@@ -5153,7 +5157,7 @@
 .cltw-feedback { font-size: 0.78rem; color: var(--muted, var(--ink-muted)); min-height: 1.2em; }
 
 /* -------------------------------------------------------------------
-   .ciw-*  —  ConfidenceIntervalWidget (intervalles de confiance)
+   .ciw-*  -  ConfidenceIntervalWidget (intervalles de confiance)
    source : ConfidenceIntervalPage.js
    ------------------------------------------------------------------- */
 .ciw-container { display: flex; flex-direction: column; gap: 8px; font-family: inherit; color: var(--text, var(--ink)); height: 100%; box-sizing: border-box; }
@@ -5171,7 +5175,7 @@
 .ciw-feedback { font-size: 0.78rem; color: var(--muted, var(--ink-muted)); min-height: 1.2em; }
 
 /* -------------------------------------------------------------------
-   .bayw-*  —  ConditionalBayesWidget (probabilite conditionnelle / Bayes)
+   .bayw-*  -  ConditionalBayesWidget (probabilite conditionnelle / Bayes)
    source : ConditionalBayesPage.js
    ------------------------------------------------------------------- */
 .bayw-container { display: flex; flex-direction: column; gap: 8px; font-family: inherit; color: var(--text, var(--ink)); height: 100%; box-sizing: border-box; }
@@ -5195,7 +5199,7 @@
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .sqlw-*  —  SqlPlaygroundWidget (mini-SGBD en memoire)
+   .sqlw-*  -  SqlPlaygroundWidget (mini-SGBD en memoire)
    source : SqlPlaygroundPage.js (moteur partage createSqlEngine())
    ------------------------------------------------------------------- */
 .sqlw-container { display: flex; flex-direction: column; gap: 8px; font-family: inherit; color: var(--text, var(--ink)); height: 100%; box-sizing: border-box; }
@@ -5220,7 +5224,7 @@
 /* #################################################################### */
 
 /* -------------------------------------------------------------------
-   .sl-embed-*  —  SlidesEmbed (viewer de slides integre dans une page de cours)
+   .sl-embed-*  -  SlidesEmbed (viewer de slides integre dans une page de cours)
    source : base/SlidesEmbed.js
    ------------------------------------------------------------------- */
 .sl-embed-wrap {

@@ -1,17 +1,17 @@
 /**
- * search-traces.js — générateurs de trace PURS pour la famille « recherche ».
+ * search-traces.js - générateurs de trace PURS pour la famille « recherche ».
  *
  * `buildSequentialSearchTrace` / `buildBinarySearchTrace` renvoient un `Step[]`
  * sérialisable en JSON, SANS accès DOM. Générique sur le type des valeurs : les
  * comparaisons `<` / `===` / `>` fonctionnent nativement sur des nombres OU des
- * chaînes (recherche dichotomique page = mots FR, widget slide = entiers — même
+ * chaînes (recherche dichotomique page = mots FR, widget slide = entiers - même
  * générateur, aucune coercition de type ici, chaque adaptateur fournit ses
  * propres données déjà triées pour la dichotomie).
  *
  * Forme d'un Step :
  * {
  *   i, line, phase, caption,
- *   array:  <valeurs inchangées — la recherche ne mute rien>,
+ *   array:  <valeurs inchangées - la recherche ne mute rien>,
  *   marks:  { current:number[], found:number[], checked:number[],
  *             eliminatedLeft:number[], eliminatedRight:number[], range:[lo,hi]|null },
  *   vars:   { currentIdx, low, high, mid },
@@ -107,7 +107,7 @@
             line: '', phase: 'start',
             caption: n === 0
                 ? 'Tableau vide : rien à chercher.'
-                : `Démarrage de la recherche séquentielle (scan de gauche à droite) — cible = ${target}.`
+                : `Démarrage de la recherche séquentielle (scan de gauche à droite) - cible = ${target}.`
         });
 
         for (let i = 0; i < n; i += 1) {
@@ -147,8 +147,8 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Recherche dichotomique — suppose `values` déjà trié dans l'ordre croissant
-    // (numérique ou lexicographique — comparaisons génériques <, ===, >).
+    // Recherche dichotomique - suppose `values` déjà trié dans l'ordre croissant
+    // (numérique ou lexicographique - comparaisons génériques <, ===, >).
     // ─────────────────────────────────────────────────────────────────────────
     function buildBinarySearchTrace(values, target) {
         const a = Array.isArray(values) ? values.slice() : [];
@@ -164,7 +164,7 @@
             line: '', phase: 'start',
             caption: n === 0
                 ? 'Tableau vide : rien à chercher.'
-                : `Démarrage de la dichotomie : intervalle initial [0..${n - 1}] — cible = ${target}.`,
+                : `Démarrage de la dichotomie : intervalle initial [0..${n - 1}] - cible = ${target}.`,
             vars: { low, high }
         });
 

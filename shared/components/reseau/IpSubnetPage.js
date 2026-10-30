@@ -8,7 +8,7 @@ class IpSubnetPage extends ConceptPage {
             for (let n = 0; n <= 16; n++) {
                 const tr = document.createElement('tr');
                 const pow = Math.pow(2, n);
-                tr.innerHTML = `<td>${n}</td><td>${pow.toLocaleString('fr-FR')}</td><td>${n >= 2 ? (pow - 2).toLocaleString('fr-FR') : '—'}</td>`;
+                tr.innerHTML = `<td>${n}</td><td>${pow.toLocaleString('fr-FR')}</td><td>${n >= 2 ? (pow - 2).toLocaleString('fr-FR') : '-'}</td>`;
                 tbody.appendChild(tr);
             }
         })();
@@ -172,7 +172,7 @@ class IpSubnetPage extends ConceptPage {
                 </div>
                 <div class="summary-item">
                     <div class="label">Plage d'hôtes</div>
-                    <div class="value" style="font-size:0.75rem;">${totalHosts > 0 ? ipToString(firstHostOctets) + ' — ' + ipToString(lastHostOctets) : 'Aucun hôte'}</div>
+                    <div class="value" style="font-size:0.75rem;">${totalHosts > 0 ? ipToString(firstHostOctets) + ' - ' + ipToString(lastHostOctets) : 'Aucun hôte'}</div>
                 </div>
             `;
 
@@ -244,7 +244,7 @@ class IpSubnetPage extends ConceptPage {
             }
 
             html += '</tbody></table>';
-            html += `<p class="text-sm text-muted mt-1">Nouveau masque : /${newCidr} (${ipToString(newMaskOctets)}) — ${hostsPerSubnet.toLocaleString('fr-FR')} hôtes par sous-réseau — ${extraBits} bits empruntés</p>`;
+            html += `<p class="text-sm text-muted mt-1">Nouveau masque : /${newCidr} (${ipToString(newMaskOctets)}) - ${hostsPerSubnet.toLocaleString('fr-FR')} hôtes par sous-réseau - ${extraBits} bits empruntés</p>`;
             document.getElementById('subnet-table-wrap').innerHTML = html;
         }
 
@@ -281,7 +281,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// IpSubnetWidget — Widget autonome pour intégration dans les slides
+// IpSubnetWidget - Widget autonome pour intégration dans les slides
 // Usage : IpSubnetWidget.mount(container, { ip: '192.168.1.0/24' })
 // ─────────────────────────────────────────────────────────────────────────────
 class IpSubnetWidget {
@@ -376,7 +376,7 @@ class IpSubnetWidget {
         const binary = this.root.querySelector('.ipw-result-binary');
         const r = IpSubnetWidget._calc(input);
         if (!r) {
-            errEl.textContent = 'Format invalide — utilisez 192.168.1.0/24';
+            errEl.textContent = 'Format invalide - utilisez 192.168.1.0/24';
             summary.style.display = 'none';
             binary.style.display = 'none';
             return;
@@ -390,8 +390,8 @@ class IpSubnetWidget {
             ['Wildcard', s(r.wildcard), false],
             ['Hotes disponibles', r.hosts.toLocaleString('fr-FR'), true],
             ['Bits reseau/hote', `${r.cidr} / ${32-r.cidr}`, false],
-            ['Classe', `${r.cls} — ${r.priv?'Privee':'Publique'}`, false],
-            ['Plage hotes', r.hosts > 0 ? `${s(r.first)} — ${s(r.last)}` : 'Aucun', false]
+            ['Classe', `${r.cls} - ${r.priv?'Privee':'Publique'}`, false],
+            ['Plage hotes', r.hosts > 0 ? `${s(r.first)} - ${s(r.last)}` : 'Aucun', false]
         ].map(([lbl, val, hl]) =>
             `<div class="ipw-item ${hl?'highlight':''}"><div class="ipw-item-label">${lbl}</div><div class="ipw-item-value">${val}</div></div>`
         ).join('');

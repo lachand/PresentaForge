@@ -245,7 +245,7 @@ class AlgorithmImplementationSteps {
             description: `Initialisation: somme <- 0.`,
             objective: `Initialiser l'accumulateur somme à zéro.`,
             why: `L'accumulateur doit partir de 0 pour que tous les éléments soient comptés.`,
-            pitfall: `Erreur fréquente: initialiser somme avec T[0] au lieu de 0 — ce serait faux.`,
+            pitfall: `Erreur fréquente: initialiser somme avec T[0] au lieu de 0 - ce serait faux.`,
             pitfallCategory: 'initialisation',
             cue: 'On initialise somme à 0 avant le parcours.',
             pointers: [],
@@ -439,7 +439,7 @@ class AlgorithmImplementationSteps {
             description: `Initialisation: max_abs <- |T[0]| = ${maxAbs}.`,
             objective: 'Initialiser max_abs avec la valeur absolue du premier élément.',
             why: 'La valeur absolue de T[0] est la référence de départ pour la comparaison.',
-            pitfall: 'Erreur fréquente: initialiser avec T[0] sans valeur absolue — incorrect si T[0] est négatif.',
+            pitfall: 'Erreur fréquente: initialiser avec T[0] sans valeur absolue - incorrect si T[0] est négatif.',
             pitfallCategory: 'initialisation',
             cue: `On initialise max_abs avec |${values[0]}| = ${maxAbs}.`,
             pointers: [0],
@@ -511,7 +511,7 @@ class AlgorithmImplementationSteps {
             description: `Initialisation: min <- T[0] = ${minVal}, max <- T[0] = ${maxVal}.`,
             objective: 'Initialiser min et max avec le premier élément.',
             why: 'T[0] est une référence valide pour les deux: le tableau n\'est pas vide.',
-            pitfall: 'Erreur fréquente: initialiser min et max à 0 — incorrect si tous les éléments sont négatifs.',
+            pitfall: 'Erreur fréquente: initialiser min et max à 0 - incorrect si tous les éléments sont négatifs.',
             pitfallCategory: 'initialisation',
             cue: 'On démarre avec min = max = T[0].',
             pointers: [0],
@@ -698,8 +698,8 @@ class AlgorithmImplementationSteps {
                 steps.push({
                     line: shouldSwap ? 4 : 3,
                     description: shouldSwap
-                        ? `i=${i}, j=${j}: T[${j}]=${left} > T[${j + 1}]=${right} — échange effectué.`
-                        : `i=${i}, j=${j}: T[${j}]=${left} <= T[${j + 1}]=${right} — pas d'échange.`,
+                        ? `i=${i}, j=${j}: T[${j}]=${left} > T[${j + 1}]=${right} - échange effectué.`
+                        : `i=${i}, j=${j}: T[${j}]=${left} <= T[${j + 1}]=${right} - pas d'échange.`,
                     objective: 'Comparer T[j] et T[j+1], échanger si T[j] > T[j+1].',
                     why: 'Le tri à bulles remonte les grands éléments vers la droite, passage par passage.',
                     pitfall: shouldSwap
@@ -741,7 +741,7 @@ class AlgorithmImplementationSteps {
             description: `Tri terminé. Tableau trié : [${arr.join(', ')}].`,
             objective: 'Le tableau est maintenant trié par ordre croissant.',
             why: 'Après n-1 passages, chaque élément est à sa place définitive.',
-            pitfall: 'Rappel: le tri à bulles est O(n²) — il existe des algorithmes bien plus efficaces.',
+            pitfall: 'Rappel: le tri à bulles est O(n²) - il existe des algorithmes bien plus efficaces.',
             pitfallCategory: 'mise_a_jour',
             cue: 'Tous les passages sont terminés.',
             pointers: [],

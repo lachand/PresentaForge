@@ -1,5 +1,5 @@
 /**
- * GitHubActionsWidget — explorateur interactif d'un workflow GitHub Actions.
+ * GitHubActionsWidget - explorateur interactif d'un workflow GitHub Actions.
  *
  * Affiche un fichier YAML annoté. Cliquer sur une section met en évidence
  * la zone et affiche une explication détaillée.
@@ -58,14 +58,14 @@ jobs:
         {
             id: 'name',
             lines: [0],
-            title: 'name: — Nom du workflow',
+            title: 'name: - Nom du workflow',
             color: 'var(--accent)',
             explain: `Le champ <code>name:</code> définit le nom affiché dans l'onglet <em>Actions</em> de GitHub. Sans ce champ, GitHub utilise le chemin du fichier (<code>.github/workflows/ci.yml</code>). Choisissez un nom clair : <em>CI</em>, <em>Tests &amp; Lint</em>, <em>Deploy to Production</em>.`
         },
         {
             id: 'on',
             lines: [2, 3, 4, 5, 6],
-            title: 'on: — Déclencheurs (events)',
+            title: 'on: - Déclencheurs (events)',
             color: 'var(--cote)',
             explain: `Le bloc <code>on:</code> liste les événements qui déclenchent le workflow.<br><br>
 <b>push → branches: [main]</b> : se déclenche à chaque push sur main.<br>
@@ -75,32 +75,32 @@ Autres déclencheurs utiles : <code>schedule</code> (cron), <code>workflow_dispa
         {
             id: 'job-test',
             lines: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
-            title: 'jobs.test — Job de tests',
+            title: 'jobs.test - Job de tests',
             color: 'var(--ok)',
             explain: `Ce job <code>test</code> s'exécute en premier. Il installe Python, les dépendances, puis lance pytest.<br><br>
-<b>runs-on: ubuntu-latest</b> — runner Ubuntu hébergé par GitHub (gratuit pour les dépôts publics).<br>
-<b>actions/checkout@v4</b> — clone le dépôt sur le runner. Toujours la première step.<br>
-<b>actions/setup-python@v5 + with: python-version</b> — installe Python 3.12 proprement.<br>
-<b>run:</b> — exécute une commande shell directement sur le runner.`
+<b>runs-on: ubuntu-latest</b> - runner Ubuntu hébergé par GitHub (gratuit pour les dépôts publics).<br>
+<b>actions/checkout@v4</b> - clone le dépôt sur le runner. Toujours la première step.<br>
+<b>actions/setup-python@v5 + with: python-version</b> - installe Python 3.12 proprement.<br>
+<b>run:</b> - exécute une commande shell directement sur le runner.`
         },
         {
             id: 'job-lint',
             lines: [25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
-            title: 'jobs.lint — Job de linting',
+            title: 'jobs.lint - Job de linting',
             color: 'var(--attention)',
             explain: `Le job <code>lint</code> vérifie la qualité du code avec flake8.<br><br>
-<b>needs: test</b> — ce job ne démarre que si le job <code>test</code> a réussi. Sans <code>needs:</code>, tous les jobs s'exécutent en parallèle.<br><br>
+<b>needs: test</b> - ce job ne démarre que si le job <code>test</code> a réussi. Sans <code>needs:</code>, tous les jobs s'exécutent en parallèle.<br><br>
 Si <code>test</code> échoue, <code>lint</code> est automatiquement annulé (statut <em>Skipped</em>), ce qui économise des minutes de runner.`
         },
         {
             id: 'job-deploy',
             lines: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
-            title: 'jobs.deploy — Job de déploiement',
+            title: 'jobs.deploy - Job de déploiement',
             color: 'var(--critique)',
             explain: `Le job <code>deploy</code> ne s'exécute que si <code>test</code> ET <code>lint</code> ont réussi, ET seulement sur la branche main.<br><br>
-<b>needs: [test, lint]</b> — attend les deux jobs.<br>
-<b>if: github.ref == 'refs/heads/main'</b> — condition d'exécution. Sur une branche de feature, ce job est ignoré.<br>
-<b>secrets.DEPLOY_API_KEY</b> — variable secrète définie dans <em>Settings → Secrets</em>, jamais visible dans les logs.`
+<b>needs: [test, lint]</b> - attend les deux jobs.<br>
+<b>if: github.ref == 'refs/heads/main'</b> - condition d'exécution. Sur une branche de feature, ce job est ignoré.<br>
+<b>secrets.DEPLOY_API_KEY</b> - variable secrète définie dans <em>Settings → Secrets</em>, jamais visible dans les logs.`
         }
     ];
 

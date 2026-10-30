@@ -1,5 +1,5 @@
 /**
- * GitResetVisualizerWidget — visualisation interactive de git reset (--soft / --mixed / --hard)
+ * GitResetVisualizerWidget - visualisation interactive de git reset (--soft / --mixed / --hard)
  * et git revert.
  *
  * Affiche un historique de commits et trois zones (Working Dir, Staging Area, HEAD)
@@ -25,7 +25,7 @@ class GitResetVisualizerWidget {
         const EXPLAIN = {
             initial: {
                 title: 'État initial',
-                text: 'HEAD pointe sur le commit <code>d4e5f6</code> (fix: null check). Le working directory et la staging area sont propres — aucune modification en cours.',
+                text: 'HEAD pointe sur le commit <code>d4e5f6</code> (fix: null check). Le working directory et la staging area sont propres - aucune modification en cours.',
                 cls: 'initial'
             },
             soft: {
@@ -45,7 +45,7 @@ class GitResetVisualizerWidget {
             },
             revert: {
                 title: 'git revert d4e5f6',
-                text: 'Un <b>nouveau commit</b> (e5f6a7) est créé, qui inverse les effets de <code>d4e5f6</code>. L\'historique <b>n\'est pas réécrit</b> — on voit les deux commits. C\'est la méthode sûre pour annuler un commit déjà publié sur un remote partagé.',
+                text: 'Un <b>nouveau commit</b> (e5f6a7) est créé, qui inverse les effets de <code>d4e5f6</code>. L\'historique <b>n\'est pas réécrit</b> - on voit les deux commits. C\'est la méthode sûre pour annuler un commit déjà publié sur un remote partagé.',
                 cls: 'revert'
             }
         };
@@ -106,7 +106,7 @@ ${i < commits.length - 1 ? '<div class="grv-arrow"></div>' : ''}`;
             };
 
             const chipHtml = (files, kind) => {
-                if (!files.length) return '<span class="grv-zone-empty">— aucune modification</span>';
+                if (!files.length) return '<span class="grv-zone-empty">- aucune modification</span>';
                 return files.map(f => `<span class="grv-file-chip ${kind} grv-pop">${OEIIcons.render('file')} ${f}</span>`).join('');
             };
 

@@ -1,5 +1,5 @@
 /**
- * CICDPipelineWidget — simulation visuelle d'un pipeline CI/CD.
+ * CICDPipelineWidget - simulation visuelle d'un pipeline CI/CD.
  * Déclenché par un push/PR, montre les étapes Lint → Tests → Build → Deploy.
  */
 class CICDPipelineWidget {
@@ -140,7 +140,7 @@ class CICDPipelineWidget {
           <div class="cicd-stage-icon">${OEIIcons.render(stageStates[s.id] === 'running' ? 'hourglass' : stageStates[s.id] === 'success' ? 'ok' : stageStates[s.id] === 'failure' ? 'ko' : stageStates[s.id] === 'blocked' ? 'ban' : s.icon)}</div>
           <div class="cicd-stage-name">${s.name}</div>
           <div class="cicd-stage-subdesc">${s.subdesc}</div>
-          <div class="cicd-stage-status">${stageStates[s.id] === 'running' ? 'En cours…' : stageStates[s.id] === 'success' ? 'Passé' : stageStates[s.id] === 'failure' ? 'Échec' : stageStates[s.id] === 'blocked' ? 'Bloqué' : '—'}</div>
+          <div class="cicd-stage-status">${stageStates[s.id] === 'running' ? 'En cours…' : stageStates[s.id] === 'success' ? 'Passé' : stageStates[s.id] === 'failure' ? 'Échec' : stageStates[s.id] === 'blocked' ? 'Bloqué' : '-'}</div>
         </div>
         ${i < STAGES.length - 1 ? '<div class="cicd-arrow">→</div>' : ''}
       `).join('')}
@@ -152,7 +152,7 @@ class CICDPipelineWidget {
       ${running
         ? (paused ? OEIIcons.render('pause') + ' Pipeline en pause : cliquez sur Reprendre.' : OEIIcons.render('hourglass') + ' Pipeline en cours d\'exécution…')
         : Object.values(stageStates).includes('failure')
-          ? `${OEIIcons.render('ko')} Pipeline échoué à l'étape <strong>${STAGES.find(s => stageStates[s.id] === 'failure')?.name}</strong>. Les étapes suivantes sont bloquées — la PR ne peut pas être mergée.`
+          ? `${OEIIcons.render('ko')} Pipeline échoué à l'étape <strong>${STAGES.find(s => stageStates[s.id] === 'failure')?.name}</strong>. Les étapes suivantes sont bloquées - la PR ne peut pas être mergée.`
           : stageStates[STAGES[STAGES.length-1].id] === 'success'
             ? OEIIcons.render('ok') + ' Tous les checks sont passés. La PR peut être mergée.'
             : 'Cliquez sur "Déclencher" pour simuler un push.'}

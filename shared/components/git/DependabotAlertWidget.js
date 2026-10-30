@@ -68,7 +68,7 @@ class DependabotAlertWidget {
                             </div>
                             <div class="dep-meta-item">
                                 <span class="dep-meta-label">CVSS</span>
-                                <span class="dep-cvss" style="background:${a.severityColor}">${a.cvss} / 10 — ${a.cvssLabel}</span>
+                                <span class="dep-cvss" style="background:${a.severityColor}">${a.cvss} / 10 - ${a.cvssLabel}</span>
                             </div>
                             <div class="dep-meta-item">
                                 <span class="dep-meta-label">Correction disponible</span>
@@ -133,15 +133,15 @@ class DependabotAlertWidget {
             <div class="dep-dismiss-options">
                 <div class="dep-dismiss-opt">
                     <span>${OEIIcons.render('search')}</span>
-                    <div><strong>Fausse détection</strong> — le code vulnérable n'est pas accessible dans votre contexte d'exécution. Justifiable et acceptable si vous avez analysé l'impact réel.</div>
+                    <div><strong>Fausse détection</strong> - le code vulnérable n'est pas accessible dans votre contexte d'exécution. Justifiable et acceptable si vous avez analysé l'impact réel.</div>
                 </div>
                 <div class="dep-dismiss-opt dep-dismiss-opt-warn">
                     <span>${OEIIcons.render('hourglass')}</span>
-                    <div><strong>Reporter</strong> — vous avez conscience de la vulnérabilité et planifiez une correction. Risqué si la CVE est exploitée activement (CVSS ${a.cvss}/10).</div>
+                    <div><strong>Reporter</strong> - vous avez conscience de la vulnérabilité et planifiez une correction. Risqué si la CVE est exploitée activement (CVSS ${a.cvss}/10).</div>
                 </div>
                 <div class="dep-dismiss-opt dep-dismiss-opt-danger">
                     <span>${OEIIcons.render('ko')}</span>
-                    <div><strong>Ignorer sans raison valable</strong> — avec un score CVSS de ${a.cvss}/10, cette vulnérabilité représente un risque réel. Fortement déconseillé.</div>
+                    <div><strong>Ignorer sans raison valable</strong> - avec un score CVSS de ${a.cvss}/10, cette vulnérabilité représente un risque réel. Fortement déconseillé.</div>
                 </div>
             </div>
         </div>`;
@@ -152,7 +152,7 @@ class DependabotAlertWidget {
             <div class="dep-panel-title">${OEIIcons.render('clipboard')} Fiche ${a.cve}</div>
             <table class="dep-cve-table">
                 <tr><td>Identifiant</td><td><code>${a.cve}</code></td></tr>
-                <tr><td>Score CVSS v3</td><td><span class="dep-cvss" style="background:${a.severityColor}">${a.cvss} / 10 — ${a.cvssLabel}</span></td></tr>
+                <tr><td>Score CVSS v3</td><td><span class="dep-cvss" style="background:${a.severityColor}">${a.cvss} / 10 - ${a.cvssLabel}</span></td></tr>
                 <tr><td>Package</td><td><code>${a.package}</code> (${a.ecosystem})</td></tr>
                 <tr><td>Versions affectées</td><td><code>${a.affected}</code></td></tr>
                 <tr><td>Version corrigée</td><td><code>≥ ${a.fixed}</code></td></tr>

@@ -18,7 +18,7 @@
 // ConceptPage.js avant SimulationPage.js ; l'ancien repli anonyme (jamais atteint)
 // a été retiré au profit d'une erreur explicite si la dépendance manque.
 if (typeof ConceptPage === 'undefined') {
-    throw new Error('SimulationPage requiert ConceptPage.js — à charger avant SimulationPage.js');
+    throw new Error('SimulationPage requiert ConceptPage.js - à charger avant SimulationPage.js');
 }
 const SimulationPageBase = ConceptPage;
 
@@ -41,7 +41,7 @@ class SimulationPage extends SimulationPageBase {
         this.speedCtrl = null;
         this.lastHighlightedLineId = null;
 
-        // Lecture pilotée par trace (TracePlayer) — activée si la sous-classe
+        // Lecture pilotée par trace (TracePlayer) - activée si la sous-classe
         // fournit buildTrace() + renderStep(). Reste null pour les pages qui
         // gardent leur boucle async maison.
         this.player = null;
@@ -133,7 +133,7 @@ class SimulationPage extends SimulationPageBase {
             if (ctrl.type === 'button') {
                 const style = ident(ctrl.style || 'primary');
                 const action = ident(ctrl.action);
-                // pont data-inline-on* (pas d'onclick inline — compatible CSP stricte)
+                // pont data-inline-on* (pas d'onclick inline - compatible CSP stricte)
                 html += `<button class="btn btn-${style}" data-inline-onclick="page.${action}()">${esc(ctrl.label)}</button>`;
             } else if (ctrl.type === 'input') {
                 html += `<input type="text" id="${esc(ctrl.id)}" placeholder="${esc(ctrl.placeholder)}" class="input">`;
@@ -242,7 +242,7 @@ class SimulationPage extends SimulationPageBase {
 
         if (typeof this.buildTrace !== 'function' || typeof this.renderStep !== 'function') return;
         if (typeof TracePlayer === 'undefined') {
-            console.warn('TracePlayer.js non chargé — lecture pas-à-pas indisponible');
+            console.warn('TracePlayer.js non chargé - lecture pas-à-pas indisponible');
             return;
         }
 
@@ -387,7 +387,7 @@ class SimulationPage extends SimulationPageBase {
             try {
                 localStorage.setItem(storageKey, expert ? 'expert' : 'novice');
             } catch (error) {
-                // stockage indisponible (navigation privée) — sans conséquence
+                // stockage indisponible (navigation privée) - sans conséquence
             }
         };
 

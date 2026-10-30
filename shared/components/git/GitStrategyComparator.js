@@ -1,5 +1,5 @@
 /**
- * GitStrategyComparator — comparateur visuel de 4 stratégies de branchement Git.
+ * GitStrategyComparator - comparateur visuel de 4 stratégies de branchement Git.
  *
  * Présente Trunk-Based, GitHub Flow, Gitflow et GitLab Flow avec des
  * timelines SVG lisibles et des fiches avantages/inconvénients.

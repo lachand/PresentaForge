@@ -1,5 +1,5 @@
 /**
- * GitMergeComparisonWidget — comparaison côte à côte de 3 stratégies d'intégration :
+ * GitMergeComparisonWidget - comparaison côte à côte de 3 stratégies d'intégration :
  * Fast-forward merge | 3-way merge (merge commit) | Rebase + merge
  *
  * Montre le même point de départ (branche divergente) et le résultat de chaque stratégie.
@@ -13,7 +13,7 @@ class GitMergeComparisonWidget {
                 icon: 'bolt',
                 label: 'Fast-forward merge',
                 cmd: 'git checkout main\ngit merge feature/login\n# → Fast-forward\n# main avance simplement au commit de feature',
-                detail: `Le <b>fast-forward</b> se produit quand la branche cible (<code>main</code>) n'a pas avancé depuis la création de <code>feature</code>. Git se contente de déplacer le pointeur <code>main</code> vers le dernier commit de <code>feature</code> — aucun commit de merge n'est créé. L'historique reste parfaitement linéaire.`,
+                detail: `Le <b>fast-forward</b> se produit quand la branche cible (<code>main</code>) n'a pas avancé depuis la création de <code>feature</code>. Git se contente de déplacer le pointeur <code>main</code> vers le dernier commit de <code>feature</code> - aucun commit de merge n'est créé. L'historique reste parfaitement linéaire.`,
                 pros: [
                     { ok: true, text: 'Historique linéaire, lisible comme une ligne droite' },
                     { ok: true, text: 'Aucun commit parasite dans git log' },
@@ -105,7 +105,7 @@ class GitMergeComparisonWidget {
                 icon: 'git-commit',
                 label: 'Rebase + fast-forward',
                 cmd: 'git checkout feature/login\ngit rebase main\n# C3\' et C4\' réécrits sur main\ngit checkout main\ngit merge feature/login\n# → Fast-forward',
-                detail: `Le <b>rebase</b> réécrit les commits de <code>feature</code> comme s'ils avaient été créés à partir de la pointe actuelle de <code>main</code>. Les commits C3 et C4 deviennent C3' et C4' — mêmes changements, nouveaux hashs. Le merge final est un fast-forward : l'historique résultant est parfaitement linéaire.`,
+                detail: `Le <b>rebase</b> réécrit les commits de <code>feature</code> comme s'ils avaient été créés à partir de la pointe actuelle de <code>main</code>. Les commits C3 et C4 deviennent C3' et C4' - mêmes changements, nouveaux hashs. Le merge final est un fast-forward : l'historique résultant est parfaitement linéaire.`,
                 pros: [
                     { ok: true, text: 'Historique linéaire et propre' },
                     { ok: true, text: 'Chaque commit est autonome et lisible' },
@@ -180,7 +180,7 @@ class GitMergeComparisonWidget {
             container.innerHTML = `
 <div class="gmcw-root">
     <div class="gmcw-start">
-        <div class="gmcw-start-title">Situation de départ — même pour les 3 stratégies</div>
+        <div class="gmcw-start-title">Situation de départ - même pour les 3 stratégies</div>
         <svg class="gmcw-svg" width="300" height="85" viewBox="0 0 300 85">
             <defs>
                 <marker id="gmcw-arr-s" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">

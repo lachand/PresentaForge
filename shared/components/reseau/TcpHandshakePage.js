@@ -311,7 +311,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TcpWidget — Widget autonome pour intégration dans les slides
+// TcpWidget - Widget autonome pour intégration dans les slides
 // Usage : TcpWidget.mount(container, { scenario: 'normal'|'data'|'close'|'lost' })
 // ─────────────────────────────────────────────────────────────────────────────
 class TcpWidget {
@@ -327,11 +327,11 @@ class TcpWidget {
         ],
         data: [
             { from: 'c', label: 'SYN', detail: 'seq=1000', cState: 'SYN-SENT', sState: 'LISTEN',
-              info: 'Etablissement — client envoie SYN.' },
+              info: 'Etablissement - client envoie SYN.' },
             { from: 's', label: 'SYN-ACK', detail: 'seq=2000, ack=1001', cState: 'SYN-SENT', sState: 'SYN-RECEIVED',
               info: 'Serveur repond SYN-ACK.' },
             { from: 'c', label: 'ACK', detail: 'ack=2001', cState: 'ESTABLISHED', sState: 'ESTABLISHED',
-              info: 'Connexion etablie — transfert de donnees possible.' },
+              info: 'Connexion etablie - transfert de donnees possible.' },
             { from: 'c', label: 'DATA', detail: 'seq=1001, 512 B', cState: 'ESTABLISHED', sState: 'ESTABLISHED',
               info: 'Client envoie 512 octets de donnees.' },
             { from: 's', label: 'ACK', detail: 'ack=1513', cState: 'ESTABLISHED', sState: 'ESTABLISHED',
@@ -349,7 +349,7 @@ class TcpWidget {
         ],
         lost: [
             { from: 'c', label: 'SYN', detail: 'seq=1000', lost: true, cState: 'SYN-SENT', sState: 'LISTEN',
-              info: 'SYN envoye — mais perdu sur le reseau.' },
+              info: 'SYN envoye - mais perdu sur le reseau.' },
             { from: 'c', label: 'SYN (retrans.)', detail: 'seq=1000', cState: 'SYN-SENT', sState: 'LISTEN',
               info: 'Apres timeout, le client retransmet le SYN.' },
             { from: 's', label: 'SYN-ACK', detail: 'seq=2000, ack=1001', cState: 'SYN-SENT', sState: 'SYN-RECEIVED',
