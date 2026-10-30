@@ -12,13 +12,13 @@ class OsiModelPage extends ConceptPage {
             },
             6: {
                 name: 'Couche 6 - Présentation',
-                role: 'Traduit les données entre le format réseau et le format compréhensible par l\'application. Gère le chiffrement, la compression et la conversion de format.',
+                role: 'Traduit les données entre le format réseau et le format compréhensible par l\'application. Gère le chiffrement, la compression et la conversion de format. Dans TCP/IP, cette couche n\'a pas d\'en-tête propre : TLS est un protocole applicatif posé au-dessus de TCP.',
                 pdu: 'Données',
                 protocols: ['SSL/TLS', 'JPEG', 'GIF', 'PNG', 'MPEG', 'ASCII', 'Unicode', 'MIME']
             },
             5: {
                 name: 'Couche 5 - Session',
-                role: 'Établit, maintient et termine les sessions de communication entre les applications. Gère la synchronisation et le contrôle du dialogue.',
+                role: 'Établit, maintient et termine les sessions de communication entre les applications. Gère la synchronisation et le contrôle du dialogue. Dans TCP/IP, c\'est l\'application qui s\'en charge : il n\'y a pas d\'en-tête de session.',
                 pdu: 'Données',
                 protocols: ['NetBIOS', 'RPC', 'PPTP', 'SAP', 'SDP', 'NFS']
             },
@@ -30,7 +30,7 @@ class OsiModelPage extends ConceptPage {
             },
             3: {
                 name: 'Couche 3 - Réseau',
-                role: 'Gère l\'adressage logique (IP) et le routage des paquets à travers différents réseaux. Détermine le meilleur chemin pour acheminer les données.',
+                role: 'Gère l\'adressage logique (IP) et le routage des paquets à travers différents réseaux. Détermine le meilleur chemin pour acheminer les données. Les protocoles de routage (OSPF, BGP, RIP) sont classés ici par convention ; dans la pile TCP/IP ils s\'appuient sur IP, UDP ou TCP.',
                 pdu: 'Paquet',
                 protocols: ['IP (IPv4/IPv6)', 'ICMP', 'ARP', 'OSPF', 'BGP', 'RIP', 'EIGRP', 'IPsec']
             },
@@ -143,22 +143,27 @@ class OsiModelPage extends ConceptPage {
                 el.classList.remove('visited', 'current');
             });
             document.getElementById('packet-visual').innerHTML = '';
-            document.getElementById('anim-status').textContent = 'Cliquez sur "Envoyer un paquet" pour démarrer l\'animation.';
+            const size = document.getElementById('packet-size');
+            if (size) size.textContent = '';
+            document.getElementById('anim-status').textContent = 'Clique sur « Envoyer un paquet » pour démarrer l\'animation.';
             const mp = document.getElementById('medium-packet');
             mp.style.display = 'none';
             mp.style.left = '0px';
         }
 
-        function updatePacket(parts) {
+        function updatePacket(parts, bytes, bits) {
             const pv = document.getElementById('packet-visual');
             pv.innerHTML = '';
             parts.forEach(p => {
                 const div = document.createElement('div');
                 div.className = 'packet-part ' + p.cls;
                 div.textContent = p.label;
-                div.style.minWidth = p.width || '40px';
                 pv.appendChild(div);
             });
+            const size = document.getElementById('packet-size');
+            if (size) {
+                size.textContent = bytes ? bytes + ' octets pour 100 octets de données' + (bits ? ' (envoyés bit par bit)' : '') : '';
+            }
         }
 
         async function startAnimation() {
@@ -168,37 +173,18 @@ class OsiModelPage extends ConceptPage {
             animRunning = true;
 
             const status = document.getElementById('anim-status');
-            const sLayers = [7, 6, 5, 4, 3, 2, 1];
-            const packetStages = [
-                [{ cls: 'packet-data', label: 'Données', width: '80px' }],
-                [{ cls: 'packet-l7', label: 'L7', width: '30px' }, { cls: 'packet-data', label: 'Données', width: '80px' }],
-                [{ cls: 'packet-l7', label: 'L5-7', width: '30px' }, { cls: 'packet-data', label: 'Données', width: '80px' }],
-                [{ cls: 'packet-l7', label: 'L5-7', width: '30px' }, { cls: 'packet-data', label: 'Données', width: '80px' }],
-                [{ cls: 'packet-l4', label: 'TCP', width: '35px' }, { cls: 'packet-l7', label: 'L5-7', width: '30px' }, { cls: 'packet-data', label: 'Données', width: '70px' }],
-                [{ cls: 'packet-l3', label: 'IP', width: '30px' }, { cls: 'packet-l4', label: 'TCP', width: '35px' }, { cls: 'packet-l7', label: 'L5-7', width: '25px' }, { cls: 'packet-data', label: 'Data', width: '60px' }],
-                [{ cls: 'packet-l2', label: 'ETH', width: '35px' }, { cls: 'packet-l3', label: 'IP', width: '30px' }, { cls: 'packet-l4', label: 'TCP', width: '30px' }, { cls: 'packet-l7', label: 'L5-7', width: '25px' }, { cls: 'packet-data', label: 'Data', width: '50px' }, { cls: 'packet-trail', label: 'FCS', width: '25px' }],
-                [{ cls: 'packet-l2', label: 'ETH', width: '35px' }, { cls: 'packet-l3', label: 'IP', width: '30px' }, { cls: 'packet-l4', label: 'TCP', width: '30px' }, { cls: 'packet-l7', label: 'L5-7', width: '25px' }, { cls: 'packet-data', label: 'Data', width: '50px' }, { cls: 'packet-trail', label: 'FCS', width: '25px' }]
-            ];
-
-            const statusMessages = [
-                "Couche Application : génération des données",
-                "Couche Présentation : encodage / chiffrement",
-                "Couche Session : établissement de session",
-                "Couche Transport : segmentation + en-tête TCP",
-                "Couche Réseau : ajout de l'en-tête IP (adressage)",
-                "Couche Liaison : ajout de l'en-tête Ethernet + FCS",
-                "Couche Physique : conversion en bits",
-            ];
+            const Osi = window.OEITrace;
+            const plan = Osi.osiEncapsulationStages(100);
+            const showStage = (st) => updatePacket(Osi.osiStackParts(st.stack), st.bytes, st.bits);
 
             // Encapsulation (sender, top to bottom)
-            for (let i = 0; i < sLayers.length; i++) {
+            for (const st of plan.sender) {
                 if (!animRunning) return;
-                const layer = sLayers[i];
-                const el = document.getElementById('s-l' + layer);
+                const el = document.getElementById('s-l' + st.layer);
                 document.querySelectorAll('.anim-layer').forEach(e => e.classList.remove('current'));
                 el.classList.add('visited', 'current');
-                status.textContent = 'Encapsulation : ' + statusMessages[i];
-                updatePacket(packetStages[i]);
+                status.textContent = 'Encapsulation : ' + st.message;
+                showStage(st);
                 await OEIUtils.sleep(speedCtrl.getDelay());
             }
 
@@ -216,34 +202,13 @@ class OsiModelPage extends ConceptPage {
             mp.style.display = 'none';
 
             // Decapsulation (receiver, bottom to top)
-            const rLayers = [1, 2, 3, 4, 5, 6, 7];
-            const decapMessages = [
-                "Couche Physique : réception des bits",
-                "Couche Liaison : retrait en-tête Ethernet, vérification FCS",
-                "Couche Réseau : retrait en-tête IP, vérification destination",
-                "Couche Transport : retrait en-tête TCP, réassemblage",
-                "Couche Session : gestion de la session",
-                "Couche Présentation : déchiffrement / décodage",
-                "Couche Application : données livrées à l'application",
-            ];
-            const decapPackets = [
-                packetStages[7],
-                packetStages[5],
-                packetStages[4],
-                packetStages[3],
-                packetStages[2],
-                packetStages[1],
-                packetStages[0]
-            ];
-
-            for (let i = 0; i < rLayers.length; i++) {
+            for (const st of plan.receiver) {
                 if (!animRunning) return;
-                const layer = rLayers[i];
-                const el = document.getElementById('r-l' + layer);
+                const el = document.getElementById('r-l' + st.layer);
                 document.querySelectorAll('.anim-layer').forEach(e => e.classList.remove('current'));
                 el.classList.add('visited', 'current');
-                status.textContent = 'Décapsulation : ' + decapMessages[i];
-                updatePacket(decapPackets[i]);
+                status.textContent = 'Décapsulation : ' + st.message;
+                showStage(st);
                 await OEIUtils.sleep(speedCtrl.getDelay());
             }
 

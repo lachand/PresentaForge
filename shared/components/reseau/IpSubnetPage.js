@@ -13,65 +13,12 @@ class IpSubnetPage extends ConceptPage {
             }
         })();
 
+        const Engine = window.OEITrace;
         let currentIP = null;
         let currentMask = null;
 
-        function parseIPCIDR(input) {
-            input = input.trim();
-            const parts = input.split('/');
-            if (parts.length !== 2) return null;
-            const ipStr = parts[0];
-            const cidr = parseInt(parts[1]);
-            if (isNaN(cidr) || cidr < 0 || cidr > 32) return null;
-
-            const octets = ipStr.split('.');
-            if (octets.length !== 4) return null;
-
-            const ipNum = [];
-            for (let o of octets) {
-                const n = parseInt(o);
-                if (isNaN(n) || n < 0 || n > 255) return null;
-                ipNum.push(n);
-            }
-
-            return { octets: ipNum, cidr: cidr };
-        }
-
-        function ipToInt(octets) {
-            return ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>> 0;
-        }
-
-        function intToIP(num) {
-            return [(num >>> 24) & 0xFF, (num >>> 16) & 0xFF, (num >>> 8) & 0xFF, num & 0xFF];
-        }
-
-        function ipToString(octets) {
-            return octets.join('.');
-        }
-
-        function maskFromCIDR(cidr) {
-            if (cidr === 0) return 0;
-            return (0xFFFFFFFF << (32 - cidr)) >>> 0;
-        }
-
-        function toBinaryStr(num, bits) {
-            return num.toString(2).padStart(bits, '0');
-        }
-
-        function getClass(firstOctet) {
-            if (firstOctet < 128) return 'A';
-            if (firstOctet < 192) return 'B';
-            if (firstOctet < 224) return 'C';
-            if (firstOctet < 240) return 'D';
-            return 'E';
-        }
-
-        function isPrivate(octets) {
-            if (octets[0] === 10) return true;
-            if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return true;
-            if (octets[0] === 192 && octets[1] === 168) return true;
-            return false;
-        }
+        const ipToString = (octets) => octets.join('.');
+        const toBinaryStr = (num, bits) => num.toString(2).padStart(bits, '0');
 
         function renderBinaryRow(label, octets, cidr, isAddress) {
             const fullBin = octets.map(o => toBinaryStr(o, 8)).join('');
@@ -87,13 +34,23 @@ class IpSubnetPage extends ConceptPage {
             return html;
         }
 
+        function categoryBadge(category) {
+            const color = category.id === 'public' ? 'var(--warning)' : category.id === 'private' ? 'var(--ok)' : 'var(--info, var(--muted))';
+            return `<span class="class-badge" style="background:${color};">${category.label}</span>`;
+        }
+
+        function hostRangeText(r) {
+            if (r.kind === 'single') return 'Aucune plage : une seule adresse';
+            return ipToString(r.first) + ' - ' + ipToString(r.last);
+        }
+
         function calculate() {
             const input = document.getElementById('ip-input').value;
-            const parsed = parseIPCIDR(input);
+            const r = Engine.ipSubnetAnalyze(input);
             const feedback = document.getElementById('feedback');
 
-            if (!parsed) {
-                feedback.textContent = 'Format invalide. Utilisez le format : 192.168.1.0/24';
+            if (!r) {
+                feedback.textContent = 'Format attendu : 192.168.1.0/24 (adresse, barre oblique, nombre de bits réseau)';
                 feedback.className = 'feedback error';
                 document.getElementById('binary-card').style.display = 'none';
                 document.getElementById('subnet-section').style.display = 'none';
@@ -103,76 +60,59 @@ class IpSubnetPage extends ConceptPage {
             feedback.textContent = '';
             feedback.className = 'feedback';
 
-            const { octets, cidr } = parsed;
+            const { octets, cidr } = r;
             currentIP = octets;
             currentMask = cidr;
-
-            const ipInt = ipToInt(octets);
-            const maskInt = maskFromCIDR(cidr);
-            const networkInt = (ipInt & maskInt) >>> 0;
-            const broadcastInt = (networkInt | (~maskInt >>> 0)) >>> 0;
-            const networkOctets = intToIP(networkInt);
-            const broadcastOctets = intToIP(broadcastInt);
-            const maskOctets = intToIP(maskInt);
-            const wildcardInt = (~maskInt) >>> 0;
-            const wildcardOctets = intToIP(wildcardInt);
-            const firstHostInt = networkInt + 1;
-            const lastHostInt = broadcastInt - 1;
-            const firstHostOctets = intToIP(firstHostInt);
-            const lastHostOctets = intToIP(lastHostInt);
             const hostBits = 32 - cidr;
-            const totalHosts = hostBits >= 2 ? Math.pow(2, hostBits) - 2 : (hostBits === 1 ? 0 : 1);
 
             // Binary grid
             const grid = document.getElementById('binary-grid');
             let html = '';
             html += renderBinaryRow('Adresse IP', octets, cidr, true);
-            html += renderBinaryRow('Masque', maskOctets, cidr, false);
-            html += renderBinaryRow('Adresse réseau', networkOctets, cidr, true);
-            html += renderBinaryRow('Broadcast', broadcastOctets, cidr, true);
-            if (totalHosts > 0) {
-                html += renderBinaryRow('Premier hôte', firstHostOctets, cidr, true);
-                html += renderBinaryRow('Dernier hôte', lastHostOctets, cidr, true);
+            html += renderBinaryRow('Masque', r.mask, cidr, false);
+            html += renderBinaryRow('Adresse réseau', r.network, cidr, true);
+            html += renderBinaryRow('Broadcast', r.broadcast, cidr, true);
+            if (r.first) {
+                html += renderBinaryRow('Premier hôte', r.first, cidr, true);
+                html += renderBinaryRow('Dernier hôte', r.last, cidr, true);
             }
-            html += renderBinaryRow('Wildcard', wildcardOctets, cidr, false);
+            html += renderBinaryRow('Wildcard', r.wildcard, cidr, false);
             grid.innerHTML = html;
 
             // Summary
-            const ipClass = getClass(octets[0]);
-            const priv = isPrivate(octets);
             const summaryGrid = document.getElementById('summary-grid');
             summaryGrid.innerHTML = `
                 <div class="summary-item">
                     <div class="label">Adresse réseau</div>
-                    <div class="value">${ipToString(networkOctets)}/${cidr}</div>
+                    <div class="value">${ipToString(r.network)}/${cidr}</div>
                 </div>
                 <div class="summary-item">
                     <div class="label">Broadcast</div>
-                    <div class="value">${ipToString(broadcastOctets)}</div>
+                    <div class="value">${ipToString(r.broadcast)}</div>
                 </div>
                 <div class="summary-item">
                     <div class="label">Masque</div>
-                    <div class="value">${ipToString(maskOctets)}</div>
+                    <div class="value">${ipToString(r.mask)}</div>
                 </div>
                 <div class="summary-item">
                     <div class="label">Wildcard</div>
-                    <div class="value">${ipToString(wildcardOctets)}</div>
+                    <div class="value">${ipToString(r.wildcard)}</div>
                 </div>
                 <div class="summary-item">
                     <div class="label">Hôtes disponibles</div>
-                    <div class="value">${totalHosts.toLocaleString('fr-FR')}</div>
+                    <div class="value">${r.hosts.toLocaleString('fr-FR')}</div>
                 </div>
                 <div class="summary-item">
                     <div class="label">Bits réseau / hôte</div>
                     <div class="value">${cidr} / ${hostBits}</div>
                 </div>
                 <div class="summary-item">
-                    <div class="label">Classe</div>
-                    <div class="value">Classe ${ipClass} ${priv ? '<span class="class-badge" style="background:var(--ok);">Privée</span>' : '<span class="class-badge" style="background:var(--warning);">Publique</span>'}</div>
+                    <div class="label">Nature de l'adresse</div>
+                    <div class="value">${categoryBadge(r.category)}</div>
                 </div>
                 <div class="summary-item">
                     <div class="label">Plage d'hôtes</div>
-                    <div class="value" style="font-size:0.75rem;">${totalHosts > 0 ? ipToString(firstHostOctets) + ' - ' + ipToString(lastHostOctets) : 'Aucun hôte'}</div>
+                    <div class="value" style="font-size:0.75rem;">${hostRangeText(r)}${r.kind === 'point-to-point' ? ' (liaison point à point, RFC 3021)' : ''}</div>
                 </div>
             `;
 
@@ -185,32 +125,27 @@ class IpSubnetPage extends ConceptPage {
 
         function updateSubnetOptions() {
             const select = document.getElementById('subnet-count');
-            const hostBits = 32 - currentMask;
             select.innerHTML = '';
-            for (let i = 1; i <= hostBits - 1; i++) {
-                const n = Math.pow(2, i);
+            const counts = Engine.ipSubnetCountOptions(currentMask);
+            counts.forEach((n) => {
                 const opt = document.createElement('option');
                 opt.value = n;
                 opt.textContent = n;
                 select.appendChild(opt);
-            }
+            });
+            const note = document.getElementById('subnet-table-wrap');
+            if (!counts.length) note.innerHTML = '<p class="text-sm text-muted">Un /' + currentMask + ' ne se découpe plus en sous-réseaux d\'hôtes (le plus petit utile est un /30).</p>';
         }
 
         function calculateSubnets() {
             if (!currentIP || currentMask === null) return;
-            const n = parseInt(document.getElementById('subnet-count').value);
-            const extraBits = Math.log2(n);
-            const newCidr = currentMask + extraBits;
-            if (newCidr > 30) {
-                document.getElementById('subnet-table-wrap').innerHTML = '<p class="feedback error">Trop de sous-réseaux pour ce masque.</p>';
+            const n = parseInt(document.getElementById('subnet-count').value, 10);
+            const split = Engine.ipSubnetSplit({ octets: currentIP, cidr: currentMask }, n);
+            if (!split) {
+                document.getElementById('subnet-table-wrap').innerHTML = '<p class="feedback error">Découpage impossible pour ce masque.</p>';
                 return;
             }
-
-            const networkInt = (ipToInt(currentIP) & maskFromCIDR(currentMask)) >>> 0;
-            const newMask = maskFromCIDR(newCidr);
-            const newMaskOctets = intToIP(newMask);
-            const subnetSize = Math.pow(2, 32 - newCidr);
-            const hostsPerSubnet = subnetSize - 2;
+            const extraBits = split.cidr - currentMask;
 
             let html = `<table class="subnet-table">
                 <thead>
@@ -226,25 +161,20 @@ class IpSubnetPage extends ConceptPage {
                 </thead>
                 <tbody>`;
 
-            for (let i = 0; i < n; i++) {
-                const subnetStart = (networkInt + i * subnetSize) >>> 0;
-                const subnetBroadcast = (subnetStart + subnetSize - 1) >>> 0;
-                const firstHost = (subnetStart + 1) >>> 0;
-                const lastHost = (subnetBroadcast - 1) >>> 0;
-
+            split.subnets.forEach((sn, i) => {
                 html += `<tr>
                     <td>${i + 1}</td>
-                    <td>${ipToString(intToIP(subnetStart))}/${newCidr}</td>
-                    <td>${ipToString(intToIP(firstHost))}</td>
-                    <td>${ipToString(intToIP(lastHost))}</td>
-                    <td>${ipToString(intToIP(subnetBroadcast))}</td>
-                    <td>${ipToString(newMaskOctets)}</td>
-                    <td>${hostsPerSubnet.toLocaleString('fr-FR')}</td>
+                    <td>${ipToString(sn.network)}/${split.cidr}</td>
+                    <td>${ipToString(sn.first)}</td>
+                    <td>${ipToString(sn.last)}</td>
+                    <td>${ipToString(sn.broadcast)}</td>
+                    <td>${ipToString(split.mask)}</td>
+                    <td>${split.hostsPerSubnet.toLocaleString('fr-FR')}</td>
                 </tr>`;
-            }
+            });
 
             html += '</tbody></table>';
-            html += `<p class="text-sm text-muted mt-1">Nouveau masque : /${newCidr} (${ipToString(newMaskOctets)}) - ${hostsPerSubnet.toLocaleString('fr-FR')} hôtes par sous-réseau - ${extraBits} bits empruntés</p>`;
+            html += `<p class="text-sm text-muted mt-1">Nouveau masque : /${split.cidr} (${ipToString(split.mask)}) - ${split.hostsPerSubnet.toLocaleString('fr-FR')} hôtes par sous-réseau - ${extraBits} bits empruntés</p>`;
             document.getElementById('subnet-table-wrap').innerHTML = html;
         }
 
@@ -296,59 +226,17 @@ class IpSubnetWidget {
         this._defaultIp = config.ip || '192.168.1.0/24';
     }
 
-    // Pure IP math helpers
-    static _parse(input) {
-        const parts = input.trim().split('/');
-        if (parts.length !== 2) return null;
-        const cidr = parseInt(parts[1]);
-        if (isNaN(cidr) || cidr < 0 || cidr > 32) return null;
-        const octs = parts[0].split('.');
-        if (octs.length !== 4) return null;
-        const nums = octs.map(o => parseInt(o));
-        if (nums.some(n => isNaN(n) || n < 0 || n > 255)) return null;
-        return { octets: nums, cidr };
-    }
-    static _toInt(o) { return ((o[0]<<24)|(o[1]<<16)|(o[2]<<8)|o[3])>>>0; }
-    static _toOcts(n) { return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255]; }
-    static _mask(c) { return c===0?0:((0xFFFFFFFF<<(32-c))>>>0); }
-    static _ipStr(o) { return o.join('.'); }
-    static _cls(f) { return f<128?'A':f<192?'B':f<224?'C':'D/E'; }
-    static _priv(o) {
-        if (o[0]===10) return true;
-        if (o[0]===172&&o[1]>=16&&o[1]<=31) return true;
-        if (o[0]===192&&o[1]===168) return true;
-        return false;
-    }
     static _calc(input) {
-        const p = IpSubnetWidget._parse(input);
-        if (!p) return null;
-        const { octets, cidr } = p;
-        const ipInt = IpSubnetWidget._toInt(octets);
-        const maskInt = IpSubnetWidget._mask(cidr);
-        const netInt = (ipInt & maskInt)>>>0;
-        const bcastInt = (netInt|(~maskInt>>>0))>>>0;
-        const hostBits = 32 - cidr;
-        const hosts = hostBits >= 2 ? Math.pow(2, hostBits) - 2 : 0;
-        return {
-            octets, cidr, hosts,
-            network: IpSubnetWidget._toOcts(netInt),
-            broadcast: IpSubnetWidget._toOcts(bcastInt),
-            mask: IpSubnetWidget._toOcts(maskInt),
-            wildcard: IpSubnetWidget._toOcts((~maskInt)>>>0),
-            first: IpSubnetWidget._toOcts(netInt+1),
-            last: IpSubnetWidget._toOcts(bcastInt-1),
-            cls: IpSubnetWidget._cls(octets[0]),
-            priv: IpSubnetWidget._priv(octets)
-        };
+        return window.OEITrace.ipSubnetAnalyze(input);
     }
 
     init() {
         this.root.innerHTML = `<div class="ipw-container">
-            <div class="ipw-header">Calculateur de sous-reseau IP</div>
+            <div class="ipw-header">Calculateur de sous-réseau IP</div>
             <div class="ipw-input-row">
                 <input class="ipw-input ipw-ip-input" type="text" placeholder="192.168.1.0/24" value="${this._defaultIp}" spellcheck="false">
                 <button class="ipw-btn ipw-btn-calc">Calculer</button>
-                <button class="ipw-btn ipw-btn-rand ipw-btn-secondary">&#127922; Aleatoire</button>
+                <button class="ipw-btn ipw-btn-rand ipw-btn-secondary">Aléatoire</button>
             </div>
             <div class="ipw-error ipw-error-msg"></div>
             <div class="ipw-summary ipw-result-summary" style="display:none"></div>
@@ -376,22 +264,22 @@ class IpSubnetWidget {
         const binary = this.root.querySelector('.ipw-result-binary');
         const r = IpSubnetWidget._calc(input);
         if (!r) {
-            errEl.textContent = 'Format invalide - utilisez 192.168.1.0/24';
+            errEl.textContent = 'Format attendu : 192.168.1.0/24 (adresse, barre oblique, bits réseau)';
             summary.style.display = 'none';
             binary.style.display = 'none';
             return;
         }
         errEl.textContent = '';
-        const s = IpSubnetWidget._ipStr;
+        const s = (o) => o.join('.');
         summary.innerHTML = [
-            ['Adresse reseau', `${s(r.network)}/${r.cidr}`, true],
+            ['Adresse réseau', `${s(r.network)}/${r.cidr}`, true],
             ['Broadcast', s(r.broadcast), false],
             ['Masque', s(r.mask), false],
             ['Wildcard', s(r.wildcard), false],
-            ['Hotes disponibles', r.hosts.toLocaleString('fr-FR'), true],
-            ['Bits reseau/hote', `${r.cidr} / ${32-r.cidr}`, false],
-            ['Classe', `${r.cls} - ${r.priv?'Privee':'Publique'}`, false],
-            ['Plage hotes', r.hosts > 0 ? `${s(r.first)} - ${s(r.last)}` : 'Aucun', false]
+            ['Hôtes disponibles', r.hosts.toLocaleString('fr-FR'), true],
+            ['Bits réseau / hôte', `${r.cidr} / ${32-r.cidr}`, false],
+            ['Nature', r.category.label, false],
+            ['Plage d\'hôtes', r.kind === 'single' ? 'Aucune : une seule adresse' : `${s(r.first)} - ${s(r.last)}`, false]
         ].map(([lbl, val, hl]) =>
             `<div class="ipw-item ${hl?'highlight':''}"><div class="ipw-item-label">${lbl}</div><div class="ipw-item-value">${val}</div></div>`
         ).join('');
@@ -400,7 +288,7 @@ class IpSubnetWidget {
         binary.innerHTML = [
             ['IP', r.octets, true],
             ['Masque', r.mask, false],
-            ['Reseau', r.network, true],
+            ['Réseau', r.network, true],
             ['Broadcast', r.broadcast, true]
         ].map(([lbl, octs, net]) =>
             `<div class="ipw-bin-row"><span class="ipw-bin-label">${lbl}</span>${this._renderBits(octs, r.cidr, net)}<span style="font-size:.62rem;color:var(--sl-muted,#94a3b8);padding-left:4px;">${s(octs)}</span></div>`

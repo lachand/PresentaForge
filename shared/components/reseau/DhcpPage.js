@@ -9,7 +9,9 @@ class DhcpPage extends ConceptPage {
         ];
 
         this.pool = this.buildPool('192.168.10.', 20, 35);
+        this.roguePool = ['192.168.10.250'];
         this.leases = [];
+        this.clock = 0;
         this.transaction = null;
 
         this.autoTimer = null;
@@ -42,6 +44,9 @@ class DhcpPage extends ConceptPage {
         this.resetBtn = document.getElementById('dhcp-reset');
         this.relayToggle = document.getElementById('dhcp-relay-toggle');
         this.serverDownToggle = document.getElementById('dhcp-server-down');
+        this.rogueToggle = document.getElementById('dhcp-rogue');
+        this.clockOutput = document.getElementById('dhcp-clock');
+        this.timeButtons = Array.from(document.querySelectorAll('[data-dhcp-advance]'));
 
         this.clientLabel = document.getElementById('dhcp-client-label');
         this.nodeClient = document.getElementById('dhcp-node-client');
@@ -90,15 +95,31 @@ class DhcpPage extends ConceptPage {
 
         this.relayToggle.addEventListener('change', () => {
             this.updateTopologyMode();
-            this.setFeedback('Mode de transit modifie (applique a la prochaine etape).', 'warning');
+            this.setFeedback(this.relayEnabled()
+                ? "Agent de relais activé (appliqué à la prochaine étape)."
+                : "Agent de relais retiré : le serveur est dans un autre sous-réseau, la diffusion s'arrêtera au routeur.", 'warning');
         });
 
         this.serverDownToggle.addEventListener('change', () => {
             if (this.serverDownToggle.checked) {
-                this.setFeedback('Serveur DHCP simule indisponible.', 'warning');
+                this.setFeedback('Serveur DHCP simulé indisponible.', 'warning');
             } else {
-                this.setFeedback('Serveur DHCP de nouveau operationnel.', 'info');
+                this.setFeedback('Serveur DHCP de nouveau opérationnel.', 'info');
             }
+        });
+
+        this.rogueToggle.addEventListener('change', () => {
+            this.setFeedback(this.rogueToggle.checked
+                ? 'Un serveur pirate est branché sur le segment : il répondra au DISCOVER avant le vrai serveur.'
+                : 'Le serveur pirate est débranché.', 'warning');
+        });
+
+        this.timeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const kind = button.dataset.dhcpAdvance;
+                if (kind === 'next') this.advanceToNextDeadline();
+                else this.advanceClock(Number(kind) * 3600);
+            });
         });
     }
 
@@ -129,12 +150,21 @@ class DhcpPage extends ConceptPage {
         const relayOn = this.relayEnabled();
         this.topology.classList.toggle('relay-on', relayOn);
         this.topology.classList.toggle('relay-off', !relayOn);
-        this.nodeRelay.classList.toggle('disabled', !relayOn);
+        const note = this.nodeRelay.querySelector('small');
+        if (note) note.textContent = relayOn ? 'Agent de relais (option 82)' : "Sans relais : la diffusion s'arrête ici";
 
         if (!this.transaction) {
-            const route = relayOn ? ['client', 'switch', 'relay', 'server'] : ['client', 'switch', 'server'];
+            const route = relayOn ? ['client', 'switch', 'relay', 'server'] : ['client', 'switch', 'relay'];
             this.pathLabel.textContent = this.readablePath(route);
         }
+    }
+
+    get model() {
+        return window.OEITrace;
+    }
+
+    activeLeases() {
+        return this.leases.filter((lease) => lease.state !== 'apipa' && lease.source !== 'rogue');
     }
 
     getLeaseByMac(mac) {
@@ -142,25 +172,25 @@ class DhcpPage extends ConceptPage {
     }
 
     getFirstFreeIp() {
-        const used = new Set(this.leases.map((lease) => lease.ip));
+        const used = new Set(this.activeLeases().map((lease) => lease.ip));
         return this.pool.find((ip) => !used.has(ip)) || null;
     }
 
     getOfferIp(client) {
         const existing = this.getLeaseByMac(client.mac);
-        if (existing) return existing.ip;
+        if (existing && existing.state !== 'apipa' && existing.source !== 'rogue') return existing.ip;
         return this.getFirstFreeIp();
     }
 
     phaseText() {
         if (!this.transaction) return 'Idle';
         if (this.transaction.done && this.transaction.failed) {
-            return `Echec (${this.transaction.failStage || 'offer'})`;
+            return `Échec (${this.transaction.failStage || 'offer'})`;
         }
-        if (this.transaction.done) return 'Termine (ACK)';
+        if (this.transaction.done) return 'Terminé (ACK)';
 
         switch (this.transaction.phase) {
-        case 0: return 'Pret DISCOVER';
+        case 0: return 'Prêt pour DISCOVER';
         case 1: return 'Attente OFFER';
         case 2: return 'Attente REQUEST';
         case 3: return 'Attente ACK';
@@ -212,7 +242,7 @@ class DhcpPage extends ConceptPage {
     readableNode(key) {
         if (key === 'client') return 'Client';
         if (key === 'switch') return 'Switch';
-        if (key === 'relay') return 'Relay';
+        if (key === 'relay') return 'Routeur';
         if (key === 'server') return 'Serveur';
         return key;
     }
@@ -222,12 +252,14 @@ class DhcpPage extends ConceptPage {
     }
 
     routeOut() {
+        if (this.transaction && this.transaction.rogue) return ['client', 'switch'];
         return this.relayEnabled()
             ? ['client', 'switch', 'relay', 'server']
-            : ['client', 'switch', 'server'];
+            : ['client', 'switch', 'relay'];
     }
 
     routeBack() {
+        if (this.transaction && this.transaction.rogue) return ['switch', 'client'];
         return this.routeOut().slice().reverse();
     }
 
@@ -256,6 +288,7 @@ class DhcpPage extends ConceptPage {
             client,
             phase: 0,
             offeredIp: null,
+            rogue: false,
             done: false,
             failed: false,
             failStage: null
@@ -266,26 +299,57 @@ class DhcpPage extends ConceptPage {
         this.hidePacket();
         this.highlightNodes([]);
 
-        this.setFeedback(`Transaction initialisee pour ${client.label}.`, 'info');
+        this.setFeedback(`Transaction initialisée pour ${client.label}.`, 'info');
         this.addLog(`Nouvelle transaction pour ${client.label} (${client.mac}).`, 'info');
         this.renderAll();
     }
 
-    commitLease(client, ip) {
-        const expiry = new Date(Date.now() + 60 * 60 * 1000);
-        const existing = this.getLeaseByMac(client.mac);
-        if (existing) {
-            existing.ip = ip;
-            existing.expiresAt = expiry;
-            return;
-        }
-        this.leases.push({
+    commitLease(client, ip, source) {
+        const lease = {
             clientId: client.id,
             clientLabel: client.label,
             mac: client.mac,
             ip,
-            expiresAt: expiry
-        });
+            leaseSeconds: this.model.DHCP_LEASE_SECONDS,
+            grantedAt: this.clock,
+            state: 'bound',
+            source: source || 'server'
+        };
+        const index = this.leases.findIndex((l) => l.mac === client.mac);
+        if (index >= 0) this.leases[index] = lease;
+        else this.leases.push(lease);
+    }
+
+    setApipa(client) {
+        const index = this.clients.indexOf(client);
+        const ip = this.model.dhcpApipaAddress(index < 0 ? 0 : index);
+        const lease = {
+            clientId: client.id,
+            clientLabel: client.label,
+            mac: client.mac,
+            ip,
+            leaseSeconds: this.model.DHCP_LEASE_SECONDS,
+            grantedAt: this.clock,
+            state: 'apipa',
+            source: 'apipa'
+        };
+        const at = this.leases.findIndex((l) => l.mac === client.mac);
+        if (at >= 0) this.leases[at] = lease;
+        else this.leases.push(lease);
+        return ip;
+    }
+
+    failTransaction(tx, message, feedback) {
+        tx.done = true;
+        tx.failed = true;
+        tx.failStage = 'offer';
+        this.hidePacket();
+        this.highlightNodes([]);
+        const apipa = this.setApipa(tx.client);
+        this.addLog(message, 'bad');
+        this.addLog(`Après plusieurs DISCOVER sans réponse, ${tx.client.label} s'auto-attribue ${apipa} (APIPA).`, 'warn');
+        this.setFeedback(feedback, 'bad');
+        this.renderAll();
     }
 
     async stepTransaction() {
@@ -301,8 +365,18 @@ class DhcpPage extends ConceptPage {
             const tx = this.transaction;
 
             if (tx.phase === 0) {
+                tx.outcome = this.model.dhcpDiscoverOutcome({
+                    relay: this.relayEnabled(),
+                    serverUp: !this.serverDownToggle.checked,
+                    poolFree: this.pool.length - this.activeLeases().filter((l) => this.pool.includes(l.ip) && l.mac !== tx.client.mac).length,
+                    rogue: this.rogueToggle.checked
+                });
+                tx.rogue = tx.outcome.from === 'rogue';
                 await this.animateRoute(this.routeOut(), 'DISCOVER', 'from-client');
                 this.addLog(`${tx.client.label} diffuse DHCPDISCOVER.`, 'warn');
+                if (tx.outcome.reason === 'no-relay') {
+                    this.addLog("Le routeur ne transmet pas les diffusions : le DISCOVER s'arrête ici (pas d'agent de relais).", 'bad');
+                }
                 this.setFeedback('Le client cherche un serveur DHCP.', 'info');
                 tx.phase = 1;
                 this.renderAll();
@@ -310,35 +384,28 @@ class DhcpPage extends ConceptPage {
             }
 
             if (tx.phase === 1) {
-                if (this.serverDownToggle.checked) {
-                    tx.done = true;
-                    tx.failed = true;
-                    tx.failStage = 'offer';
-                    this.hidePacket();
-                    this.highlightNodes([]);
-                    this.addLog('Aucune reponse du serveur DHCP (indisponible).', 'bad');
-                    this.setFeedback('Timeout: aucun DHCPOFFER recu.', 'bad');
-                    this.renderAll();
+                const outcome = tx.outcome;
+                if (outcome.result === 'timeout') {
+                    const reasons = {
+                        'no-relay': ["Aucune réponse : la diffusion n'a pas franchi le routeur.", 'Délai dépassé : sans agent de relais, le DISCOVER ne rejoint jamais le serveur.'],
+                        'server-down': ['Aucune réponse du serveur DHCP (indisponible).', 'Délai dépassé : aucun DHCPOFFER reçu.'],
+                        'pool-empty': ["Le pool est épuisé : le serveur n'a plus d'adresse à offrir et ne répond pas.", 'Délai dépassé : le pool est vide, le serveur reste silencieux.']
+                    };
+                    const [log, feedback] = reasons[outcome.reason];
+                    this.failTransaction(tx, log, feedback);
                     return;
                 }
 
-                tx.offeredIp = this.getOfferIp(tx.client);
-
-                if (!tx.offeredIp) {
-                    tx.done = true;
-                    tx.failed = true;
-                    tx.failStage = 'offer';
-                    await this.animateRoute(this.routeBack(), 'NAK (POOL VIDE)', 'from-server bad');
-                    this.addLog('Serveur: aucun bail disponible, DHCPNAK.', 'bad');
-                    this.setFeedback('Echec: pool DHCP vide.', 'bad');
-                    this.renderAll();
-                    return;
-                }
-
+                tx.offeredIp = tx.rogue ? this.roguePool[0] : this.getOfferIp(tx.client);
                 this.currentIpOutput.textContent = tx.offeredIp;
-                await this.animateRoute(this.routeBack(), `OFFER ${tx.offeredIp}`, 'from-server');
-                this.addLog(`Serveur propose ${tx.offeredIp} via DHCPOFFER.`, 'ok');
-                this.setFeedback('Le serveur reserve provisoirement une IP.', 'info');
+                await this.animateRoute(this.routeBack(), `OFFER ${tx.offeredIp}${tx.rogue ? ' (pirate)' : ''}`, tx.rogue ? 'from-server bad' : 'from-server');
+                if (tx.rogue) {
+                    this.addLog(`Un serveur pirate répond le premier et propose ${tx.offeredIp} avec sa propre passerelle.`, 'bad');
+                    this.setFeedback('Le client prend la première offre reçue : il ne sait pas que ce serveur est illégitime.', 'warning');
+                } else {
+                    this.addLog(`Serveur propose ${tx.offeredIp} via DHCPOFFER.`, 'ok');
+                    this.setFeedback('Le serveur réserve provisoirement une IP.', 'info');
+                }
                 tx.phase = 2;
                 this.renderAll();
                 return;
@@ -347,20 +414,25 @@ class DhcpPage extends ConceptPage {
             if (tx.phase === 2) {
                 await this.animateRoute(this.routeOut(), `REQUEST ${tx.offeredIp}`, 'from-client');
                 this.addLog(`${tx.client.label} demande officiellement ${tx.offeredIp}.`, 'warn');
-                this.setFeedback('Le client confirme l offre retenue.', 'info');
+                this.setFeedback("Le client confirme l'offre retenue.", 'info');
                 tx.phase = 3;
                 this.renderAll();
                 return;
             }
 
             if (tx.phase === 3) {
-                this.commitLease(tx.client, tx.offeredIp);
+                this.commitLease(tx.client, tx.offeredIp, tx.rogue ? 'rogue' : 'server');
                 await this.animateRoute(this.routeBack(), `ACK ${tx.offeredIp}`, 'from-server');
                 tx.done = true;
                 tx.failed = false;
 
-                this.addLog(`Serveur valide le bail: DHCPACK ${tx.offeredIp}.`, 'ok');
-                this.setFeedback('Bail etabli avec succes.', 'ok');
+                if (tx.rogue) {
+                    this.addLog(`Le serveur pirate valide le bail : DHCPACK ${tx.offeredIp}.`, 'bad');
+                    this.setFeedback('Bail établi, mais avec un serveur pirate : sa passerelle et ses DNS sont ceux de l\'attaquant.', 'warning');
+                } else {
+                    this.addLog(`Serveur valide le bail : DHCPACK ${tx.offeredIp}, durée 8 h.`, 'ok');
+                    this.setFeedback('Bail établi. Avance l\'horloge pour voir T1 et T2.', 'ok');
+                }
                 this.stopAuto();
                 this.renderAll();
             }
@@ -369,21 +441,39 @@ class DhcpPage extends ConceptPage {
         }
     }
 
+    leaseStateLabel(lease) {
+        const labels = {
+            bound: 'Lié',
+            renewing: 'Renouvellement (T1 passé)',
+            rebinding: 'Rebinding (T2 passé)',
+            apipa: 'APIPA : aucun serveur'
+        };
+        return labels[lease.state] || lease.state;
+    }
+
     renderLeases() {
         if (!this.leases.length) {
-            this.leasesBody.innerHTML = '<tr><td colspan="4" class="text-muted">Aucun bail actif</td></tr>';
+            this.leasesBody.innerHTML = '<tr><td colspan="6" class="text-muted">Aucun bail actif</td></tr>';
             return;
         }
 
+        const fmt = (seconds) => this.model.dhcpFormatDuration(seconds);
         this.leasesBody.innerHTML = this.leases
             .map((lease) => {
-                const exp = lease.expiresAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                const timers = this.model.dhcpTimers(lease.leaseSeconds);
+                const pirate = lease.source === 'rogue' ? ' (pirate)' : '';
+                const marks = lease.state === 'apipa'
+                    ? '-'
+                    : `T1 ${fmt(lease.grantedAt + timers.t1)} / T2 ${fmt(lease.grantedAt + timers.t2)}`;
+                const left = lease.state === 'apipa' ? '-' : fmt(lease.grantedAt + lease.leaseSeconds - this.clock);
                 return `
                     <tr>
                         <td>${this.escapeHtml(lease.clientLabel)}</td>
                         <td class="mono">${this.escapeHtml(lease.mac)}</td>
-                        <td class="mono">${this.escapeHtml(lease.ip)}</td>
-                        <td>${this.escapeHtml(exp)}</td>
+                        <td class="mono">${this.escapeHtml(lease.ip + pirate)}</td>
+                        <td>${this.escapeHtml(this.leaseStateLabel(lease))}</td>
+                        <td>${this.escapeHtml(marks)}</td>
+                        <td>${this.escapeHtml(left)}</td>
                     </tr>
                 `;
             })
@@ -391,7 +481,7 @@ class DhcpPage extends ConceptPage {
     }
 
     renderPoolGrid() {
-        const leasedByIp = new Map(this.leases.map((lease) => [lease.ip, lease]));
+        const leasedByIp = new Map(this.activeLeases().map((lease) => [lease.ip, lease]));
         const offeredIp = (this.transaction && !this.transaction.done) ? this.transaction.offeredIp : null;
 
         this.poolGrid.innerHTML = this.pool
@@ -471,9 +561,10 @@ class DhcpPage extends ConceptPage {
     }
 
     renderMetrics() {
-        const used = new Set(this.leases.map((lease) => lease.ip));
-        this.leaseCountOutput.textContent = String(this.leases.length);
+        const used = new Set(this.activeLeases().map((lease) => lease.ip));
+        this.leaseCountOutput.textContent = String(used.size);
         this.poolFreeOutput.textContent = String(this.pool.length - used.size);
+        if (this.clockOutput) this.clockOutput.textContent = '+' + this.model.dhcpFormatDuration(this.clock);
 
         this.phaseOutput.textContent = this.phaseText();
     }
@@ -484,6 +575,57 @@ class DhcpPage extends ConceptPage {
         this.renderTimeline();
         this.renderLeases();
         this.updateTopologyMode();
+    }
+
+    advanceClock(seconds) {
+        if (seconds <= 0) return;
+        this.clock += seconds;
+        const serverUp = !this.serverDownToggle.checked;
+        const events = [];
+        this.leases.forEach((lease, index) => {
+            if (lease.state === 'apipa' || lease.source === 'rogue') return;
+            const result = this.model.dhcpAdvanceLease(lease, this.clock, serverUp);
+            result.events.forEach((event) => events.push({ ...event, lease: result.lease }));
+            this.leases[index] = result.lease;
+            if (result.lease.state === 'apipa') {
+                const client = this.clients.find((c) => c.mac === lease.mac);
+                result.lease.ip = this.model.dhcpApipaAddress(this.clients.indexOf(client));
+                result.lease.source = 'apipa';
+            }
+        });
+        events.sort((a, b) => a.at - b.at);
+        events.forEach((event) => this.logLeaseEvent(event));
+        if (!events.length) {
+            this.addLog(`Horloge : +${this.model.dhcpFormatDuration(this.clock)}. Aucune échéance franchie.`, 'info');
+        }
+        this.setFeedback(events.length ? 'Des échéances de bail ont été franchies : lis le journal.' : 'Aucune échéance franchie.', events.length ? 'warning' : 'info');
+        this.renderAll();
+    }
+
+    advanceToNextDeadline() {
+        const deadlines = this.leases
+            .map((lease) => this.model.dhcpNextDeadline(lease, this.clock))
+            .filter((value) => value !== null);
+        if (!deadlines.length) {
+            this.setFeedback('Aucun bail avec une échéance à venir.', 'info');
+            return;
+        }
+        this.advanceClock(Math.min(...deadlines) - this.clock);
+    }
+
+    logLeaseEvent(event) {
+        const label = event.lease.clientLabel;
+        const at = '+' + this.model.dhcpFormatDuration(event.at);
+        const server = '192.168.10.1';
+        if (event.type === 'T1') {
+            this.addLog(`${at} - T1 (50 %) : ${label} envoie un DHCPREQUEST en unicast à ${server}.`, 'warn');
+        } else if (event.type === 'T2') {
+            this.addLog(`${at} - T2 (87,5 %) : toujours sans réponse, ${label} diffuse un DHCPREQUEST en broadcast.`, 'warn');
+        } else if (event.type === 'RENEWED') {
+            this.addLog(`${at} - DHCPACK : le bail de ${label} repart pour 8 h, T1 et T2 sont recalculés.`, 'ok');
+        } else if (event.type === 'EXPIRED') {
+            this.addLog(`${at} - Fin du bail : ${label} abandonne ${event.detail} et s'auto-attribue une adresse APIPA.`, 'bad');
+        }
     }
 
     toggleAuto() {
@@ -518,6 +660,7 @@ class DhcpPage extends ConceptPage {
         this.stopAuto();
         this.transaction = null;
         this.leases = [];
+        this.clock = 0;
         this.logOutput.innerHTML = '';
 
         this.highlightNodes([]);
@@ -527,7 +670,7 @@ class DhcpPage extends ConceptPage {
         this.clientLabel.textContent = client ? `${client.label} / ${client.mac}` : '-';
         this.currentIpOutput.textContent = '-';
 
-        this.setFeedback('Reseau reinitialise. Aucun bail actif.', 'info');
+        this.setFeedback('Réseau réinitialisé. Aucun bail actif.', 'info');
         this.renderAll();
     }
 }

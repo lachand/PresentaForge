@@ -5,78 +5,8 @@ class RoutingSimulatorPage extends ConceptPage {
         // ============================================
         // Topologies
         // ============================================
-        const TOPOLOGIES = {
-            campus: {
-                nodes: [
-                    { id: 'R1', label: 'R1', name: 'Bâtiment A', x: 120, y: 80 },
-                    { id: 'R2', label: 'R2', name: 'Bâtiment B', x: 380, y: 60 },
-                    { id: 'R3', label: 'R3', name: 'Serveurs', x: 650, y: 100 },
-                    { id: 'R4', label: 'R4', name: 'Bâtiment C', x: 120, y: 340 },
-                    { id: 'R5', label: 'R5', name: 'Coeur réseau', x: 380, y: 230 },
-                    { id: 'R6', label: 'R6', name: 'Bâtiment D', x: 650, y: 350 },
-                    { id: 'R7', label: 'R7', name: 'Passerelle', x: 380, y: 400 }
-                ],
-                edges: [
-                    { from: 'R1', to: 'R2', weight: 4 },
-                    { from: 'R1', to: 'R4', weight: 2 },
-                    { from: 'R1', to: 'R5', weight: 5 },
-                    { from: 'R2', to: 'R3', weight: 3 },
-                    { from: 'R2', to: 'R5', weight: 1 },
-                    { from: 'R3', to: 'R6', weight: 6 },
-                    { from: 'R4', to: 'R5', weight: 3 },
-                    { from: 'R4', to: 'R7', weight: 4 },
-                    { from: 'R5', to: 'R6', weight: 2 },
-                    { from: 'R5', to: 'R7', weight: 3 },
-                    { from: 'R6', to: 'R7', weight: 5 }
-                ]
-            },
-            entreprise: {
-                nodes: [
-                    { id: 'R1', label: 'R1', name: 'Accueil', x: 100, y: 200 },
-                    { id: 'R2', label: 'R2', name: 'Étage 1', x: 280, y: 80 },
-                    { id: 'R3', label: 'R3', name: 'Étage 2', x: 280, y: 340 },
-                    { id: 'R4', label: 'R4', name: 'Data Center', x: 500, y: 80 },
-                    { id: 'R5', label: 'R5', name: 'DMZ', x: 500, y: 340 },
-                    { id: 'R6', label: 'R6', name: 'Firewall', x: 700, y: 200 }
-                ],
-                edges: [
-                    { from: 'R1', to: 'R2', weight: 2 },
-                    { from: 'R1', to: 'R3', weight: 3 },
-                    { from: 'R2', to: 'R3', weight: 5 },
-                    { from: 'R2', to: 'R4', weight: 1 },
-                    { from: 'R3', to: 'R5', weight: 2 },
-                    { from: 'R4', to: 'R5', weight: 4 },
-                    { from: 'R4', to: 'R6', weight: 3 },
-                    { from: 'R5', to: 'R6', weight: 1 },
-                    { from: 'R1', to: 'R6', weight: 10 }
-                ]
-            },
-            internet: {
-                nodes: [
-                    { id: 'R1', label: 'R1', name: 'Paris', x: 180, y: 120 },
-                    { id: 'R2', label: 'R2', name: 'Londres', x: 120, y: 300 },
-                    { id: 'R3', label: 'R3', name: 'Berlin', x: 440, y: 60 },
-                    { id: 'R4', label: 'R4', name: 'Madrid', x: 350, y: 350 },
-                    { id: 'R5', label: 'R5', name: 'Rome', x: 600, y: 280 },
-                    { id: 'R6', label: 'R6', name: 'Amsterdam', x: 350, y: 180 },
-                    { id: 'R7', label: 'R7', name: 'Zurich', x: 650, y: 100 }
-                ],
-                edges: [
-                    { from: 'R1', to: 'R2', weight: 3 },
-                    { from: 'R1', to: 'R6', weight: 2 },
-                    { from: 'R1', to: 'R3', weight: 7 },
-                    { from: 'R2', to: 'R4', weight: 8 },
-                    { from: 'R2', to: 'R6', weight: 4 },
-                    { from: 'R3', to: 'R6', weight: 3 },
-                    { from: 'R3', to: 'R7', weight: 2 },
-                    { from: 'R4', to: 'R5', weight: 5 },
-                    { from: 'R4', to: 'R6', weight: 6 },
-                    { from: 'R5', to: 'R7', weight: 3 },
-                    { from: 'R5', to: 'R6', weight: 4 },
-                    { from: 'R6', to: 'R7', weight: 5 }
-                ]
-            }
-        };
+        const Routing = window.OEITrace;
+        const TOPOLOGIES = Routing.ROUTING_TOPOLOGIES;
 
         // ============================================
         // State
@@ -85,6 +15,13 @@ class RoutingSimulatorPage extends ConceptPage {
         let source = null;
         let dest = null;
         let selectMode = 'source'; // 'source' or 'dest'
+        let cutLink = null; // [a, b] quand un lien est coupé
+
+        // Topologie réellement utilisée par Dijkstra : sans le lien coupé, s'il y en a un
+        function activeTopo() {
+            const topo = TOPOLOGIES[currentTopo];
+            return cutLink ? Routing.routingWithoutLink(topo, cutLink[0], cutLink[1]) : topo;
+        }
 
         // Dijkstra state
         let dState = null; // { dist, prev, visited, pq, current, finished, pathEdges }
@@ -122,7 +59,8 @@ class RoutingSimulatorPage extends ConceptPage {
                 line.setAttribute('y1', sy);
                 line.setAttribute('x2', ex);
                 line.setAttribute('y2', ey);
-                line.setAttribute('class', 'edge-line');
+                const isCut = cutLink && ((cutLink[0] === e.from && cutLink[1] === e.to) || (cutLink[0] === e.to && cutLink[1] === e.from));
+                line.setAttribute('class', isCut ? 'edge-line down' : 'edge-line');
                 line.setAttribute('id', `edge-${e.from}-${e.to}`);
                 svg.appendChild(line);
 
@@ -196,11 +134,52 @@ class RoutingSimulatorPage extends ConceptPage {
                 b.classList.toggle('active', b.dataset.topo === t);
             });
             currentTopo = t;
+            cutLink = null;
             source = null;
             dest = null;
             dState = null;
+            buildLinkSelector();
             renderNetwork();
             resetAlgo();
+            computeAllRoutingTables();
+        }
+
+        function buildLinkSelector() {
+            const sel = document.getElementById('link-select');
+            if (!sel) return;
+            sel.innerHTML = TOPOLOGIES[currentTopo].edges
+                .map((e) => `<option value="${e.from}-${e.to}">${e.from}-${e.to} (coût ${e.weight})</option>`)
+                .join('');
+            updateLinkButton();
+        }
+
+        function updateLinkButton() {
+            const btn = document.getElementById('btn-cut-link');
+            if (btn) btn.textContent = cutLink ? `Rétablir le lien ${cutLink[0]}-${cutLink[1]}` : 'Couper ce lien';
+            const sel = document.getElementById('link-select');
+            if (sel) sel.disabled = Boolean(cutLink);
+        }
+
+        function toggleLink() {
+            if (cutLink) {
+                cutLink = null;
+            } else {
+                const value = document.getElementById('link-select').value;
+                cutLink = value.split('-');
+            }
+            dState = null;
+            updateLinkButton();
+            renderNetwork();
+            resetAlgo();
+            computeAllRoutingTables();
+            const feedback = document.getElementById('feedback');
+            if (cutLink) {
+                feedback.textContent = `Le lien ${cutLink[0]}-${cutLink[1]} est coupé : chaque routeur relance Dijkstra sur la topologie restante. Compare les tables avant et après.`;
+                feedback.className = 'feedback warning';
+            } else {
+                feedback.textContent = 'Lien rétabli : les tables reviennent à leur état d\'origine.';
+                feedback.className = 'feedback';
+            }
         }
 
         // ============================================
@@ -305,39 +284,12 @@ class RoutingSimulatorPage extends ConceptPage {
         // ============================================
         // Dijkstra algorithm step-by-step
         // ============================================
-        function getNeighbors(nodeId) {
-            const topo = TOPOLOGIES[currentTopo];
-            const neighbors = [];
-            topo.edges.forEach(e => {
-                if (e.from === nodeId) neighbors.push({ node: e.to, weight: e.weight });
-                if (e.to === nodeId) neighbors.push({ node: e.from, weight: e.weight });
-            });
-            return neighbors;
-        }
-
         function initDijkstra() {
             if (!source || !dest) return;
 
-            const topo = TOPOLOGIES[currentTopo];
-            const dist = {};
-            const prev = {};
-            const visited = new Set();
-            const pq = [];
-            const visitedEdges = [];
-
-            topo.nodes.forEach(n => {
-                dist[n.id] = Infinity;
-                prev[n.id] = null;
-            });
-            dist[source] = 0;
-            pq.push({ node: source, dist: 0 });
-
-            dState = {
-                dist, prev, visited, pq, visitedEdges,
-                current: null, finished: false,
-                pathNodes: null, pathEdges: null,
-                stepCount: 0
-            };
+            dState = Routing.dijkstraInit(activeTopo(), source);
+            dState.pathNodes = null;
+            dState.pathEdges = null;
 
             updatePQTable();
             updateDistTable();
@@ -352,37 +304,19 @@ class RoutingSimulatorPage extends ConceptPage {
 
             if (dState.finished) return;
 
-            const { dist, prev, visited, pq, visitedEdges } = dState;
             const stepDesc = document.getElementById('step-desc');
+            const event = Routing.dijkstraStep(activeTopo(), dState, dest);
 
-            // Find min in PQ
-            if (pq.length === 0) {
-                dState.finished = true;
-                stepDesc.innerHTML = `L'algorithme est terminé. Aucun chemin supplémentaire à explorer.`;
+            if (event.type === 'empty') {
+                stepDesc.innerHTML = `La file est vide : tous les routeurs atteignables ont été traités.`;
                 buildPath();
                 document.getElementById('btn-step').disabled = true;
                 document.getElementById('btn-auto').disabled = true;
                 return;
             }
 
-            // Sort PQ and extract min
-            pq.sort((a, b) => a.dist - b.dist);
-            const current = pq.shift();
-
-            if (visited.has(current.node)) {
-                // Skip already visited
-                stepDijkstra();
-                return;
-            }
-
-            dState.current = current.node;
-            visited.add(current.node);
-            dState.stepCount++;
-
-            // Check if we reached destination
-            if (current.node === dest) {
-                dState.finished = true;
-                stepDesc.innerHTML = `<strong>Destination ${dest} atteinte !</strong> Distance totale : <strong>${dist[dest]}</strong>. Reconstruction du chemin...`;
+            if (event.type === 'reached') {
+                stepDesc.innerHTML = `<strong>Destination ${dest} atteinte !</strong> Distance totale : <strong>${dState.dist[dest]}</strong>. Arrêt anticipé : les routeurs encore dans la file ne peuvent plus améliorer ce chemin. Reconstruction du chemin...`;
                 buildPath();
                 updateNodeColors();
                 updateEdgeColors();
@@ -390,31 +324,14 @@ class RoutingSimulatorPage extends ConceptPage {
                 updateDistTable();
                 document.getElementById('btn-step').disabled = true;
                 document.getElementById('btn-auto').disabled = true;
-                computeAllRoutingTables();
                 return;
             }
 
-            // Relax neighbors
-            const neighbors = getNeighbors(current.node);
-            let relaxedInfo = [];
-
-            neighbors.forEach(nb => {
-                if (visited.has(nb.node)) return;
-                const newDist = dist[current.node] + nb.weight;
-                visitedEdges.push([current.node, nb.node]);
-                if (newDist < dist[nb.node]) {
-                    dist[nb.node] = newDist;
-                    prev[nb.node] = current.node;
-                    pq.push({ node: nb.node, dist: newDist });
-                    relaxedInfo.push(`${nb.node} (${newDist})`);
-                }
-            });
-
-            const relaxStr = relaxedInfo.length > 0
-                ? `Mise à jour : ${relaxedInfo.join(', ')}`
+            const relaxStr = event.relaxed.length > 0
+                ? `Mise à jour : ${event.relaxed.map(r => `${r.node} (${r.dist})`).join(', ')}`
                 : `Aucun voisin à mettre à jour.`;
 
-            stepDesc.innerHTML = `Étape ${dState.stepCount} : Traitement de <strong>${current.node}</strong> (distance : ${dist[current.node]}). ${relaxStr}`;
+            stepDesc.innerHTML = `Étape ${dState.stepCount} : Traitement de <strong>${event.node}</strong> (distance : ${dState.dist[event.node]}). ${relaxStr}`;
 
             updateNodeColors();
             updateEdgeColors();
@@ -465,16 +382,16 @@ class RoutingSimulatorPage extends ConceptPage {
         function resetAlgo() {
             dState = null;
             lastRouteSnapshot = null;
-            document.getElementById('step-desc').textContent = 'Sélectionnez un routeur source et un routeur destination, puis cliquez sur "Etape suivante" pour démarrer Dijkstra.';
+            document.getElementById('step-desc').textContent = 'Choisis un routeur source et un routeur destination, puis clique sur « Étape suivante » pour démarrer Dijkstra.';
             document.getElementById('pq-body').innerHTML = '<tr><td colspan="2" style="color:var(--muted);">En attente...</td></tr>';
             document.getElementById('pq-count').textContent = 'vide';
             document.getElementById('dist-body').innerHTML = '<tr><td colspan="4" style="color:var(--muted);">En attente...</td></tr>';
-            document.getElementById('route-body').innerHTML = '<tr><td colspan="4" style="color:var(--muted);">Terminez l\'algorithme pour voir les tables de routage.</td></tr>';
+            document.getElementById('route-body').innerHTML = '<tr><td colspan="5" style="color:var(--muted);">Choisis un routeur ci-dessus pour voir sa table.</td></tr>';
             const diffCard = document.getElementById('route-diff-card');
             const diffBody = document.getElementById('route-diff-body');
             if (diffCard) diffCard.style.display = 'none';
             if (diffBody) {
-                diffBody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">Sélectionnez un autre routeur pour comparer.</td></tr>';
+                diffBody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">Coupe un lien, ou choisis un autre routeur, pour comparer.</td></tr>';
             }
             document.getElementById('feedback').textContent = '';
 
@@ -482,6 +399,7 @@ class RoutingSimulatorPage extends ConceptPage {
             document.getElementById('btn-auto').disabled = !(source && dest);
 
             renderNetwork();
+            computeAllRoutingTables();
         }
 
         // ============================================
@@ -533,67 +451,16 @@ class RoutingSimulatorPage extends ConceptPage {
         // ============================================
         // Routing tables (computed for all routers)
         // ============================================
-        function dijkstraFull(srcId) {
-            const topo = TOPOLOGIES[currentTopo];
-            const dist = {};
-            const prev = {};
-            const visited = new Set();
-            const pq = [];
-
-            topo.nodes.forEach(n => { dist[n.id] = Infinity; prev[n.id] = null; });
-            dist[srcId] = 0;
-            pq.push({ node: srcId, dist: 0 });
-
-            while (pq.length > 0) {
-                pq.sort((a, b) => a.dist - b.dist);
-                const current = pq.shift();
-                if (visited.has(current.node)) continue;
-                visited.add(current.node);
-
-                getNeighbors(current.node).forEach(nb => {
-                    if (visited.has(nb.node)) return;
-                    const newDist = dist[current.node] + nb.weight;
-                    if (newDist < dist[nb.node]) {
-                        dist[nb.node] = newDist;
-                        prev[nb.node] = current.node;
-                        pq.push({ node: nb.node, dist: newDist });
-                    }
-                });
-            }
-
-            return { dist, prev };
-        }
-
         let allRoutingTables = {};
+        let baselineTables = {};
         let lastRouteSnapshot = null;
 
         function computeAllRoutingTables() {
             const topo = TOPOLOGIES[currentTopo];
-            allRoutingTables = {};
+            allRoutingTables = Routing.routingTables(activeTopo());
+            baselineTables = cutLink ? Routing.routingTables(topo) : allRoutingTables;
             lastRouteSnapshot = null;
-            topo.nodes.forEach(n => {
-                const result = dijkstraFull(n.id);
-                const table = [];
-                topo.nodes.forEach(dest => {
-                    if (dest.id === n.id) return;
-                    // Determine next hop
-                    let path = [];
-                    let cur = dest.id;
-                    while (cur !== null) {
-                        path.unshift(cur);
-                        cur = result.prev[cur];
-                    }
-                    const nextHop = path.length >= 2 ? path[1] : '-';
-                    table.push({
-                        dest: dest.id,
-                        nextHop: nextHop,
-                        cost: result.dist[dest.id] === Infinity ? '-' : result.dist[dest.id],
-                        iface: nextHop !== '-' ? `eth-${nextHop.toLowerCase()}` : '-'
-                    });
-                });
-                allRoutingTables[n.id] = table;
-            });
-
+            buildRouteSelector();
             showRouteTable(topo.nodes[0].id);
         }
 
@@ -614,13 +481,14 @@ class RoutingSimulatorPage extends ConceptPage {
             const body = document.getElementById('route-body');
 
             if (!table) {
-                body.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">Terminez l\'algorithme pour voir les tables de routage.</td></tr>';
+                body.innerHTML = '<tr><td colspan="5" style="color:var(--muted);">Choisis un routeur ci-dessus pour voir sa table.</td></tr>';
                 return;
             }
 
             body.innerHTML = table.map(r => `
                 <tr>
                     <td>${r.dest}</td>
+                    <td style="font-family:var(--font-mono); font-size:0.78rem;">${r.prefix}</td>
                     <td>${r.nextHop}</td>
                     <td>${r.cost}</td>
                     <td style="font-family:var(--font-mono); font-size:0.78rem;">${r.iface}</td>
@@ -642,9 +510,25 @@ class RoutingSimulatorPage extends ConceptPage {
 
             card.style.display = 'block';
 
+            if (cutLink && baselineTables[routerId]) {
+                const rows = Routing.routingDiff(baselineTables[routerId], currentTable);
+                const changed = rows.filter((r) => r.status !== 'same').length;
+                title.textContent = `Panne ${cutLink[0]}-${cutLink[1]} : table de ${routerId} avant et après (${changed} changement${changed > 1 ? 's' : ''})`;
+                const fmt = (e) => e ? `${e.nextHop} / ${e.cost} / ${e.iface}` : '-';
+                body.innerHTML = rows.map((r) => `
+                    <tr>
+                        <td>${r.dest}</td>
+                        <td style="font-family:var(--font-mono); font-size:0.77rem;">${fmt(r.before)}</td>
+                        <td style="font-family:var(--font-mono); font-size:0.77rem;">${fmt(r.after)}</td>
+                        <td><span class="diff-status ${r.status}">${r.status === 'same' ? 'Identique' : 'Modifié'}</span></td>
+                    </tr>
+                `).join('');
+                return;
+            }
+
             if (!currentTable || !lastRouteSnapshot) {
                 title.textContent = `Diff des tables de routage (${routerId})`;
-                body.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">Sélectionnez un autre routeur pour comparer les changements.</td></tr>';
+                body.innerHTML = '<tr><td colspan="4" style="color:var(--muted);">Coupe un lien, ou choisis un autre routeur, pour comparer les changements.</td></tr>';
                 lastRouteSnapshot = {
                     routerId,
                     table: currentTable ? currentTable.map((r) => ({ ...r })) : []
@@ -696,6 +580,9 @@ class RoutingSimulatorPage extends ConceptPage {
         speedCtrl = new OEIUtils.SpeedController('speedSlider', 'speedLabel');
         renderNetwork();
         window.addEventListener('resize', renderNetwork);
+        buildLinkSelector();
+        computeAllRoutingTables();
+        document.getElementById('btn-cut-link').addEventListener('click', toggleLink);
 
         window.setTopology = setTopology;
         window.stepDijkstra = stepDijkstra;
@@ -716,63 +603,9 @@ if (typeof window !== 'undefined') {
 // DnsWidget/HeapWidget vis-à-vis de leur page d'origine.
 class RoutingSimulatorWidget {
 
-    static _TOPOLOGIES = {
-        campus: {
-            nodes: [
-                { id: 'R1', label: 'R1', name: 'Bâtiment A', x: 120, y: 80 },
-                { id: 'R2', label: 'R2', name: 'Bâtiment B', x: 380, y: 60 },
-                { id: 'R3', label: 'R3', name: 'Serveurs', x: 650, y: 100 },
-                { id: 'R4', label: 'R4', name: 'Bâtiment C', x: 120, y: 340 },
-                { id: 'R5', label: 'R5', name: 'Coeur réseau', x: 380, y: 230 },
-                { id: 'R6', label: 'R6', name: 'Bâtiment D', x: 650, y: 350 },
-                { id: 'R7', label: 'R7', name: 'Passerelle', x: 380, y: 400 }
-            ],
-            edges: [
-                { from: 'R1', to: 'R2', weight: 4 }, { from: 'R1', to: 'R4', weight: 2 },
-                { from: 'R1', to: 'R5', weight: 5 }, { from: 'R2', to: 'R3', weight: 3 },
-                { from: 'R2', to: 'R5', weight: 1 }, { from: 'R3', to: 'R6', weight: 6 },
-                { from: 'R4', to: 'R5', weight: 3 }, { from: 'R4', to: 'R7', weight: 4 },
-                { from: 'R5', to: 'R6', weight: 2 }, { from: 'R5', to: 'R7', weight: 3 },
-                { from: 'R6', to: 'R7', weight: 5 }
-            ]
-        },
-        entreprise: {
-            nodes: [
-                { id: 'R1', label: 'R1', name: 'Accueil', x: 100, y: 200 },
-                { id: 'R2', label: 'R2', name: 'Étage 1', x: 280, y: 80 },
-                { id: 'R3', label: 'R3', name: 'Étage 2', x: 280, y: 340 },
-                { id: 'R4', label: 'R4', name: 'Data Center', x: 500, y: 80 },
-                { id: 'R5', label: 'R5', name: 'DMZ', x: 500, y: 340 },
-                { id: 'R6', label: 'R6', name: 'Firewall', x: 700, y: 200 }
-            ],
-            edges: [
-                { from: 'R1', to: 'R2', weight: 2 }, { from: 'R1', to: 'R3', weight: 3 },
-                { from: 'R2', to: 'R3', weight: 5 }, { from: 'R2', to: 'R4', weight: 1 },
-                { from: 'R3', to: 'R5', weight: 2 }, { from: 'R4', to: 'R5', weight: 4 },
-                { from: 'R4', to: 'R6', weight: 3 }, { from: 'R5', to: 'R6', weight: 1 },
-                { from: 'R1', to: 'R6', weight: 10 }
-            ]
-        },
-        internet: {
-            nodes: [
-                { id: 'R1', label: 'R1', name: 'Paris', x: 180, y: 120 },
-                { id: 'R2', label: 'R2', name: 'Londres', x: 120, y: 300 },
-                { id: 'R3', label: 'R3', name: 'Berlin', x: 440, y: 60 },
-                { id: 'R4', label: 'R4', name: 'Madrid', x: 350, y: 350 },
-                { id: 'R5', label: 'R5', name: 'Rome', x: 600, y: 280 },
-                { id: 'R6', label: 'R6', name: 'Amsterdam', x: 350, y: 180 },
-                { id: 'R7', label: 'R7', name: 'Zurich', x: 650, y: 100 }
-            ],
-            edges: [
-                { from: 'R1', to: 'R2', weight: 3 }, { from: 'R1', to: 'R6', weight: 2 },
-                { from: 'R1', to: 'R3', weight: 7 }, { from: 'R2', to: 'R4', weight: 8 },
-                { from: 'R2', to: 'R6', weight: 4 }, { from: 'R3', to: 'R6', weight: 3 },
-                { from: 'R3', to: 'R7', weight: 2 }, { from: 'R4', to: 'R5', weight: 5 },
-                { from: 'R4', to: 'R6', weight: 6 }, { from: 'R5', to: 'R7', weight: 3 },
-                { from: 'R5', to: 'R6', weight: 4 }, { from: 'R6', to: 'R7', weight: 5 }
-            ]
-        }
-    };
+    static get _TOPOLOGIES() {
+        return window.OEITrace.ROUTING_TOPOLOGIES;
+    }
 
     static _NS = 'http://www.w3.org/2000/svg';
 
@@ -825,13 +658,13 @@ class RoutingSimulatorWidget {
                 <div class="rsw-route-section">
                     <div class="rsw-route-selector" data-route-selector></div>
                     <table class="rsw-table" aria-label="Table de routage">
-                        <thead><tr><th>Destination</th><th>Prochain saut</th><th>Coût</th><th>Interface</th></tr></thead>
-                        <tbody data-route-body><tr><td colspan="4" class="rsw-muted">Terminez l'algorithme pour voir la table de routage.</td></tr></tbody>
+                        <thead><tr><th>Destination</th><th>Préfixe</th><th>Prochain saut</th><th>Coût</th><th>Interface</th></tr></thead>
+                        <tbody data-route-body><tr><td colspan="5" class="rsw-muted">Termine l'algorithme pour voir la table de routage.</td></tr></tbody>
                     </table>
                 </div>
             </div>
             <div class="widget-fit-footer">
-                <div class="rsw-step-desc" data-step-desc>Sélectionnez un routeur source puis un routeur destination.</div>
+                <div class="rsw-step-desc" data-step-desc>Choisis un routeur source puis un routeur destination.</div>
                 <div class="rsw-controls">
                     <button class="rsw-btn rsw-btn-primary" data-btn-step disabled>Étape suivante</button>
                     <button class="rsw-btn rsw-btn-secondary" data-btn-auto disabled>Auto</button>
@@ -1019,14 +852,9 @@ class RoutingSimulatorWidget {
     _initDijkstra() {
         if (!this.source || !this.dest) return;
         const topo = RoutingSimulatorWidget._TOPOLOGIES[this.topo];
-        const dist = {}; const prev = {};
-        topo.nodes.forEach((n) => { dist[n.id] = Infinity; prev[n.id] = null; });
-        dist[this.source] = 0;
-
-        this.dState = {
-            dist, prev, visited: new Set(), pq: [{ node: this.source, dist: 0 }], visitedEdges: [],
-            current: null, finished: false, pathNodes: null, pathEdges: null, stepCount: 0
-        };
+        this.dState = window.OEITrace.dijkstraInit(topo, this.source);
+        this.dState.pathNodes = null;
+        this.dState.pathEdges = null;
         this._updatePQTable();
         this._updateDistTable();
         this._q('[data-step-desc]').innerHTML = `Initialisation : distance de <strong>${this.source}</strong> = 0, toutes les autres = infini.`;
@@ -1036,29 +864,20 @@ class RoutingSimulatorWidget {
         if (!this.dState) { this._initDijkstra(); return; }
         if (this.dState.finished) return;
 
-        const { dist, prev, visited, pq, visitedEdges } = this.dState;
+        const topo = RoutingSimulatorWidget._TOPOLOGIES[this.topo];
         const stepDesc = this._q('[data-step-desc]');
+        const event = window.OEITrace.dijkstraStep(topo, this.dState, this.dest);
 
-        if (pq.length === 0) {
-            this.dState.finished = true;
-            stepDesc.innerHTML = `L'algorithme est terminé. Aucun chemin supplémentaire à explorer.`;
+        if (event.type === 'empty') {
+            stepDesc.innerHTML = `La file est vide : tous les routeurs atteignables ont été traités.`;
             this._buildPath();
             this._q('[data-btn-step]').disabled = true;
             this._q('[data-btn-auto]').disabled = true;
             return;
         }
 
-        pq.sort((a, b) => a.dist - b.dist);
-        const current = pq.shift();
-        if (visited.has(current.node)) { this._stepDijkstra(); return; }
-
-        this.dState.current = current.node;
-        visited.add(current.node);
-        this.dState.stepCount += 1;
-
-        if (current.node === this.dest) {
-            this.dState.finished = true;
-            stepDesc.innerHTML = `<strong>Destination ${this.dest} atteinte !</strong> Distance totale : <strong>${dist[this.dest]}</strong>.`;
+        if (event.type === 'reached') {
+            stepDesc.innerHTML = `<strong>Destination ${this.dest} atteinte !</strong> Distance totale : <strong>${this.dState.dist[this.dest]}</strong>. Arrêt anticipé : la file ne peut plus améliorer ce chemin.`;
             this._buildPath();
             this._updateNodeColors();
             this._updateEdgeColors();
@@ -1070,21 +889,10 @@ class RoutingSimulatorWidget {
             return;
         }
 
-        const relaxed = [];
-        this._neighbors(current.node).forEach((nb) => {
-            if (visited.has(nb.node)) return;
-            const newDist = dist[current.node] + nb.weight;
-            visitedEdges.push([current.node, nb.node]);
-            if (newDist < dist[nb.node]) {
-                dist[nb.node] = newDist;
-                prev[nb.node] = current.node;
-                pq.push({ node: nb.node, dist: newDist });
-                relaxed.push(`${nb.node} (${newDist})`);
-            }
-        });
-
-        const relaxStr = relaxed.length > 0 ? `Mise à jour : ${relaxed.join(', ')}` : `Aucun voisin à mettre à jour.`;
-        stepDesc.innerHTML = `Étape ${this.dState.stepCount} : traitement de <strong>${current.node}</strong> (distance : ${dist[current.node]}). ${relaxStr}`;
+        const relaxStr = event.relaxed.length > 0
+            ? `Mise à jour : ${event.relaxed.map((r) => `${r.node} (${r.dist})`).join(', ')}`
+            : `Aucun voisin à mettre à jour.`;
+        stepDesc.innerHTML = `Étape ${this.dState.stepCount} : traitement de <strong>${event.node}</strong> (distance : ${this.dState.dist[event.node]}). ${relaxStr}`;
         this._updateNodeColors();
         this._updateEdgeColors();
         this._updatePQTable();
@@ -1123,10 +931,10 @@ class RoutingSimulatorWidget {
     _resetAlgo() {
         if (this._autoTimer) { clearTimeout(this._autoTimer); this._autoTimer = null; }
         this.dState = null;
-        this._q('[data-step-desc]').textContent = 'Sélectionnez un routeur source et un routeur destination, puis cliquez sur "Étape suivante" pour démarrer Dijkstra.';
+        this._q('[data-step-desc]').textContent = 'Choisis un routeur source et un routeur destination, puis clique sur « Étape suivante » pour démarrer Dijkstra.';
         this._q('[data-pq-body]').innerHTML = '<tr><td colspan="2" class="rsw-muted">En attente…</td></tr>';
         this._q('[data-dist-body]').innerHTML = '<tr><td colspan="4" class="rsw-muted">En attente…</td></tr>';
-        this._q('[data-route-body]').innerHTML = '<tr><td colspan="4" class="rsw-muted">Terminez l\'algorithme pour voir la table de routage.</td></tr>';
+        this._q('[data-route-body]').innerHTML = '<tr><td colspan="5" class="rsw-muted">Termine l\'algorithme pour voir la table de routage.</td></tr>';
         this._q('[data-btn-step]').disabled = !(this.source && this.dest);
         this._q('[data-btn-auto]').disabled = !(this.source && this.dest);
         this._renderNetwork();
@@ -1154,46 +962,9 @@ class RoutingSimulatorWidget {
         }).join('');
     }
 
-    _dijkstraFull(srcId) {
-        const topo = RoutingSimulatorWidget._TOPOLOGIES[this.topo];
-        const dist = {}; const prev = {}; const visited = new Set(); const pq = [];
-        topo.nodes.forEach((n) => { dist[n.id] = Infinity; prev[n.id] = null; });
-        dist[srcId] = 0;
-        pq.push({ node: srcId, dist: 0 });
-        while (pq.length > 0) {
-            pq.sort((a, b) => a.dist - b.dist);
-            const current = pq.shift();
-            if (visited.has(current.node)) continue;
-            visited.add(current.node);
-            this._neighbors(current.node).forEach((nb) => {
-                if (visited.has(nb.node)) return;
-                const newDist = dist[current.node] + nb.weight;
-                if (newDist < dist[nb.node]) { dist[nb.node] = newDist; prev[nb.node] = current.node; pq.push({ node: nb.node, dist: newDist }); }
-            });
-        }
-        return { dist, prev };
-    }
-
     _computeAllRoutingTables() {
         const topo = RoutingSimulatorWidget._TOPOLOGIES[this.topo];
-        this.allRoutingTables = {};
-        topo.nodes.forEach((n) => {
-            const result = this._dijkstraFull(n.id);
-            const table = [];
-            topo.nodes.forEach((d) => {
-                if (d.id === n.id) return;
-                const path = [];
-                let cur = d.id;
-                while (cur !== null) { path.unshift(cur); cur = result.prev[cur]; }
-                const nextHop = path.length >= 2 ? path[1] : '-';
-                table.push({
-                    dest: d.id, nextHop,
-                    cost: result.dist[d.id] === Infinity ? '-' : result.dist[d.id],
-                    iface: nextHop !== '-' ? `eth-${nextHop.toLowerCase()}` : '-'
-                });
-            });
-            this.allRoutingTables[n.id] = table;
-        });
+        this.allRoutingTables = window.OEITrace.routingTables(topo);
         this._showRouteTable(topo.nodes[0].id);
     }
 
@@ -1212,11 +983,11 @@ class RoutingSimulatorWidget {
         const table = this.allRoutingTables[routerId];
         const body = this._q('[data-route-body]');
         if (!table) {
-            body.innerHTML = '<tr><td colspan="4" class="rsw-muted">Terminez l\'algorithme pour voir la table de routage.</td></tr>';
+            body.innerHTML = '<tr><td colspan="5" class="rsw-muted">Termine l\'algorithme pour voir la table de routage.</td></tr>';
             return;
         }
         body.innerHTML = table.map((r) => (
-            `<tr><td>${r.dest}</td><td>${r.nextHop}</td><td>${r.cost}</td><td class="rsw-mono">${r.iface}</td></tr>`
+            `<tr><td>${r.dest}</td><td class="rsw-mono">${r.prefix}</td><td>${r.nextHop}</td><td>${r.cost}</td><td class="rsw-mono">${r.iface}</td></tr>`
         )).join('');
     }
 

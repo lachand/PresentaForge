@@ -3,43 +3,8 @@ class RelationalAlgebraPage extends ConceptPage {
         await super.init();
         this.mountPseudocodeInspector();
     /* ===== DATA ===== */
-    const initialTables = {
-        'Étudiants': {
-            columns: ['id', 'nom', 'prenom', 'age', 'ville'],
-            rows: [
-                [1, 'Dupont', 'Alice', 21, 'Paris'],
-                [2, 'Martin', 'Bob', 19, 'Lyon'],
-                [3, 'Bernard', 'Claire', 22, 'Paris'],
-                [4, 'Petit', 'David', 20, 'Marseille'],
-                [5, 'Durand', 'Emma', 23, 'Lyon'],
-                [6, 'Leroy', 'Franck', 19, 'Toulouse']
-            ]
-        },
-        'Cours': {
-            columns: ['id_cours', 'intitule', 'credits', 'enseignant'],
-            rows: [
-                ['C1', 'Algorithmes', 6, 'Prof. Laurent'],
-                ['C2', 'Bases de données', 4, 'Prof. Moreau'],
-                ['C3', 'Réseaux', 4, 'Prof. Laurent'],
-                ['C4', 'Systèmes', 5, 'Prof. Simon']
-            ]
-        },
-        'Inscriptions': {
-            columns: ['id_etudiant', 'id_cours', 'note', 'semestre'],
-            rows: [
-                [1, 'C1', 15, 'S1'],
-                [1, 'C2', 12, 'S1'],
-                [2, 'C1', 14, 'S1'],
-                [2, 'C3', 16, 'S2'],
-                [3, 'C2', 18, 'S1'],
-                [3, 'C4', 11, 'S2'],
-                [4, 'C1', 9, 'S1'],
-                [5, 'C2', 17, 'S2'],
-                [5, 'C3', 13, 'S1'],
-                [6, 'C4', 15, 'S2']
-            ]
-        }
-    };
+    // Données et moteur purs : shared/components/algorithms/relational-algebra-engine.js
+    const { algebraEngine, ALGEBRA_INITIAL_TABLES: initialTables } = window.RelationalAlgebraEngine;
 
     let tables = {};
     let selectedTable = null;
@@ -52,7 +17,7 @@ class RelationalAlgebraPage extends ConceptPage {
 
     function init() {
         tables = deepCopy(initialTables);
-        selectedTable = 'Étudiants';
+        selectedTable = 'Employes';
         currentOp = null;
         history = [];
         resultTable = null;
@@ -82,7 +47,7 @@ class RelationalAlgebraPage extends ConceptPage {
     function renderSourceTables() {
         const area = document.getElementById('sourceTablesArea');
         if (!selectedTable || !tables[selectedTable]) {
-            area.innerHTML = '<p class="empty-msg">Sélectionnez une table</p>';
+            area.innerHTML = '<p class="empty-msg">Sélectionne une table</p>';
             return;
         }
         area.innerHTML = '';
@@ -230,8 +195,8 @@ class RelationalAlgebraPage extends ConceptPage {
                     <select id="selTable">${tNames.map(n => `<option value="${n}" ${n===selectedTable?'selected':''}>${n}</option>`).join('')}</select>
                 </div>
                 <div class="field-group">
-                    <label>Condition (ex: age > 20, ville = 'Paris', note >= 15)</label>
-                    <input type="text" id="selCondition" placeholder="age > 20" style="font-family:var(--font-mono);">
+                    <label>Condition (ex : salaire > 50000, nom = 'Alice' ; ET, OU, NON et parenthèses acceptés)</label>
+                    <input type="text" id="selCondition" placeholder="salaire > 50000" style="font-family:var(--font-mono);">
                 </div>
                 <div style="margin-top:0.5rem;">
                     <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" data-inline-onclick="executeSelection()">Ex&eacute;cuter &sigma;</button>
@@ -269,8 +234,8 @@ class RelationalAlgebraPage extends ConceptPage {
                     <select id="joinRight">${tNames.map((n,i) => `<option value="${n}" ${i===Math.min(1,tNames.length-1)?'selected':''}>${n}</option>`).join('')}</select>
                 </div>
                 <div class="field-group">
-                    <label>Condition (ex: id = id_etudiant) - vide = jointure naturelle</label>
-                    <input type="text" id="joinCond" placeholder="id = id_etudiant" style="font-family:var(--font-mono);">
+                    <label>Condition (ex : departement_id = id) - vide = jointure naturelle sur toutes les colonnes de même nom</label>
+                    <input type="text" id="joinCond" placeholder="departement_id = id" style="font-family:var(--font-mono);">
                 </div>
                 <div style="margin-top:0.5rem;">
                     <button class="btn btn-primary" style="font-size:0.85rem;min-width:auto;" data-inline-onclick="executeJoin()">Ex&eacute;cuter &#x2A1D;</button>
@@ -349,210 +314,6 @@ class RelationalAlgebraPage extends ConceptPage {
             container.appendChild(lbl);
         });
     }
-
-    /* ===== ALGEBRA ENGINE (operations pures, sans DOM) ===== */
-    const algebraEngine = {
-        parseCondition(condStr) {
-            const input = condStr.trim();
-            if (/\bET\b/i.test(input) || /\bAND\b/i.test(input)) {
-                const parts = input.split(/\bET\b|\bAND\b/i).map(p => this.parseCondition(p.trim()));
-                return (row, cols) => parts.every(fn => fn(row, cols));
-            }
-            if (/\bOU\b/i.test(input) || /\bOR\b/i.test(input)) {
-                const parts = input.split(/\bOU\b|\bOR\b/i).map(p => this.parseCondition(p.trim()));
-                return (row, cols) => parts.some(fn => fn(row, cols));
-            }
-            const m = input.match(/^(\w+)\s*(=|!=|<>|>=|<=|>|<)\s*(.+)$/);
-            if (!m) throw new Error('Condition invalide : ' + input);
-            const [, col, oper, rawVal] = m;
-            const parsedValue = rawVal.trim().replace(/^['"]|['"]$/g, '');
-            return (row, cols) => {
-                const ci = cols.indexOf(col);
-                if (ci === -1) throw new Error('Colonne inconnue : ' + col);
-                const cellVal = row[ci];
-                let cmpVal = parsedValue;
-                if (typeof cellVal === 'number') cmpVal = Number(cmpVal);
-                return this.compare(cellVal, oper, cmpVal);
-            };
-        },
-
-        compare(left, oper, right) {
-            switch (oper) {
-                case '=': return left == right;
-                case '!=':
-                case '<>':
-                    return left != right;
-                case '>': return left > right;
-                case '<': return left < right;
-                case '>=': return left >= right;
-                case '<=': return left <= right;
-                default: return false;
-            }
-        },
-
-        selection(tableName, tableDef, condition) {
-            if (!condition) throw new Error('Veuillez saisir une condition.');
-            const condFn = this.parseCondition(condition);
-            const matchedIndices = [];
-            const rows = [];
-            tableDef.rows.forEach((row, idx) => {
-                if (condFn(row, tableDef.columns)) {
-                    matchedIndices.push(idx);
-                    rows.push([...row]);
-                }
-            });
-            return {
-                resultTable: { columns: [...tableDef.columns], rows },
-                matchedIndices,
-                expression: `σ<sub>${condition}</sub>(${tableName})`,
-                message: `${rows.length} ligne(s) sélectionnée(s) sur ${tableDef.rows.length}.`
-            };
-        },
-
-        projection(tableName, tableDef, keepColumns) {
-            if (!keepColumns.length) throw new Error('Sélectionnez au moins une colonne.');
-            const keepIndices = keepColumns.map(col => {
-                const idx = tableDef.columns.indexOf(col);
-                if (idx === -1) throw new Error(`Colonne inconnue : ${col}`);
-                return idx;
-            });
-            const seen = new Set();
-            const rows = [];
-            tableDef.rows.forEach(row => {
-                const projected = keepIndices.map(i => row[i]);
-                const key = JSON.stringify(projected);
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    rows.push(projected);
-                }
-            });
-            return {
-                resultTable: { columns: [...keepColumns], rows },
-                expression: `π<sub>${keepColumns.join(',')}</sub>(${tableName})`,
-                message: `Projection effectuée : ${keepColumns.length} colonne(s), ${rows.length} ligne(s) (doublons éliminés).`
-            };
-        },
-
-        join(leftName, rightName, leftTable, rightTable, condition) {
-            let rows = [];
-            let columns = [];
-            if (!condition) {
-                const common = leftTable.columns.filter(col => rightTable.columns.includes(col));
-                if (!common.length) {
-                    throw new Error('Aucune colonne commune trouvée pour la jointure naturelle.');
-                }
-                const rightOnly = rightTable.columns.filter(col => !common.includes(col));
-                columns = [...leftTable.columns, ...rightOnly];
-                leftTable.rows.forEach(leftRow => {
-                    rightTable.rows.forEach(rightRow => {
-                        const matches = common.every(col => (
-                            leftRow[leftTable.columns.indexOf(col)] == rightRow[rightTable.columns.indexOf(col)]
-                        ));
-                        if (matches) {
-                            rows.push([...leftRow, ...rightOnly.map(col => rightRow[rightTable.columns.indexOf(col)])]);
-                        }
-                    });
-                });
-            } else {
-                const match = condition.match(/^(\w+)\s*(=|!=|<>|>=|<=|>|<)\s*(\w+)$/);
-                if (!match) {
-                    throw new Error('Format de condition: colonne1 = colonne2');
-                }
-                const [, leftColRaw, oper, rightColRaw] = match;
-                columns = [
-                    ...leftTable.columns.map(col => `${leftName}.${col}`),
-                    ...rightTable.columns.map(col => `${rightName}.${col}`)
-                ];
-                const leftCol = leftColRaw.replace(leftName + '.', '');
-                const rightCol = rightColRaw.replace(rightName + '.', '');
-                const leftIdx = leftTable.columns.indexOf(leftCol);
-                const rightIdx = rightTable.columns.indexOf(rightCol);
-                if (leftIdx === -1) throw new Error(`Colonne inconnue dans ${leftName} : ${leftColRaw}`);
-                if (rightIdx === -1) throw new Error(`Colonne inconnue dans ${rightName} : ${rightColRaw}`);
-                leftTable.rows.forEach(leftRow => {
-                    rightTable.rows.forEach(rightRow => {
-                        if (this.compare(leftRow[leftIdx], oper, rightRow[rightIdx])) {
-                            rows.push([...leftRow, ...rightRow]);
-                        }
-                    });
-                });
-            }
-            const expression = condition
-                ? `${leftName} ⨝<sub>${condition}</sub> ${rightName}`
-                : `${leftName} ⨝ ${rightName}`;
-            return {
-                resultTable: { columns, rows },
-                expression,
-                message: `Jointure effectuée : ${rows.length} ligne(s).`
-            };
-        },
-
-        setOperation(op, leftName, rightName, leftTable, rightTable) {
-            if (leftTable.columns.length !== rightTable.columns.length) {
-                throw new Error('Les tables doivent avoir le même nombre de colonnes.');
-            }
-            const sameSchema = leftTable.columns.every((col, idx) => (
-                col.toLowerCase() === rightTable.columns[idx].toLowerCase()
-            ));
-            if (!sameSchema) {
-                throw new Error('Les schémas doivent être compatibles (mêmes colonnes dans le même ordre).');
-            }
-            let rows = [];
-            if (op === 'union') {
-                const seen = new Set();
-                [...leftTable.rows, ...rightTable.rows].forEach(row => {
-                    const key = JSON.stringify(row);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        rows.push([...row]);
-                    }
-                });
-            } else {
-                const rightKeys = new Set(rightTable.rows.map(row => JSON.stringify(row)));
-                rows = leftTable.rows.filter(row => !rightKeys.has(JSON.stringify(row))).map(row => [...row]);
-            }
-            const symbol = op === 'union' ? '∪' : '−';
-            return {
-                resultTable: { columns: [...leftTable.columns], rows },
-                expression: `${leftName} ${symbol} ${rightName}`,
-                message: `${op === 'union' ? 'Union' : 'Différence'} : ${rows.length} ligne(s).`
-            };
-        },
-
-        product(leftName, rightName, leftTable, rightTable) {
-            const columns = [
-                ...leftTable.columns.map(col => `${leftName}.${col}`),
-                ...rightTable.columns.map(col => `${rightName}.${col}`)
-            ];
-            const rows = [];
-            leftTable.rows.forEach(leftRow => {
-                rightTable.rows.forEach(rightRow => {
-                    rows.push([...leftRow, ...rightRow]);
-                });
-            });
-            return {
-                resultTable: { columns, rows },
-                expression: `${leftName} × ${rightName}`,
-                message: `Produit cartésien : ${rows.length} ligne(s) (${leftTable.rows.length} × ${rightTable.rows.length}).`
-            };
-        },
-
-        rename(tableName, tableDef, oldName, newName) {
-            if (!oldName || !newName) throw new Error('Veuillez remplir les deux champs.');
-            const colIdx = tableDef.columns.indexOf(oldName);
-            if (colIdx === -1) throw new Error(`Colonne "${oldName}" introuvable dans ${tableName}.`);
-            if (tableDef.columns.includes(newName) && oldName !== newName) {
-                throw new Error(`La colonne "${newName}" existe déjà dans ${tableName}.`);
-            }
-            const columns = [...tableDef.columns];
-            columns[colIdx] = newName;
-            return {
-                resultTable: { columns, rows: tableDef.rows.map(row => [...row]) },
-                expression: `ρ<sub>${newName}/${oldName}</sub>(${tableName})`,
-                message: `Colonne "${oldName}" renommée en "${newName}".`
-            };
-        }
-    };
 
     /* ===== EXECUTE OPERATIONS ===== */
     function executeSelection() {

@@ -1272,6 +1272,9 @@
 .dnw-feedback.ok { color: var(--ok); font-weight: 600; }
 .dnw-feedback.err { color: var(--critique); font-weight: 600; }
 .dnw-section-lbl { font-size: 0.78rem; font-weight: 700; color: var(--muted, var(--ink-muted)); }
+.dnw .record-badge { font-size: var(--text-xs); padding: 1px 6px; border-radius: var(--radius-lg); font-weight: 700; background: var(--primary, var(--accent)); color: var(--surface); }
+.dnw-select { font-size: 0.8rem; padding: 3px 8px; border: 1px solid var(--border, var(--line-subtle)); border-radius: var(--radius-lg); background: var(--surface, var(--widget-surface-2, var(--surface-sunken))); color: var(--text, var(--ink)); }
+.dnw-clock { font-size: 0.8rem; color: var(--muted, var(--ink-muted)); }
 
 /* -------------------------------------------------------------------
    .rsw-*  -  RoutingSimulatorWidget (routage, Dijkstra pas-a-pas)

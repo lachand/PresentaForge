@@ -317,6 +317,7 @@ const OEI_WIDGET_REGISTRY = {
     'net-tcp': {
         global: 'TcpWidget',
         script: 'reseau/TcpHandshakePage.js',
+        deps: ['algorithms/tcp-scenarios.js'],
         label: 'Simulation TCP',
         category: 'Réseau',
         description: '3-way handshake, transfert de données, fermeture et simulation de perte de paquets',
@@ -328,6 +329,7 @@ const OEI_WIDGET_REGISTRY = {
     'net-ip-subnet': {
         global: 'IpSubnetWidget',
         script: 'reseau/IpSubnetPage.js',
+        deps: ['algorithms/ip-subnet-engine.js'],
         label: 'Calculateur IP/Masque',
         category: 'Réseau',
         description: 'Calculateur de sous-réseau : adresse réseau, broadcast, plage hôtes, représentation binaire',
@@ -386,6 +388,7 @@ const OEI_WIDGET_REGISTRY = {
     'net-dns': {
         global: 'DnsWidget',
         script: 'reseau/DnsSimulatorPage.js',
+        deps: ['algorithms/dns-resolver-model.js'],
         label: 'Résolution DNS',
         category: 'Réseau',
         description: 'Simulation de la résolution DNS étape par étape (racine → TLD → autoritaire) avec cache TTL',
@@ -397,6 +400,7 @@ const OEI_WIDGET_REGISTRY = {
     'net-routing': {
         global: 'RoutingSimulatorWidget',
         script: 'reseau/RoutingSimulatorPage.js',
+        deps: ['algorithms/routing-dijkstra.js'],
         label: 'Simulateur de routage',
         category: 'Réseau',
         description: 'Algorithme de Dijkstra pas-à-pas sur 3 topologies (campus, entreprise, internet) avec table de routage finale',
@@ -480,6 +484,7 @@ const OEI_WIDGET_REGISTRY = {
     'sql-playground': {
         global: 'SqlPlaygroundWidget',
         script: 'bdd/SqlPlaygroundPage.js',
+        deps: ['algorithms/sql-engine.js'],
         label: 'Bac à sable SQL',
         category: 'BDD',
         description: 'Mini-SGBD en mémoire (SELECT/INSERT/UPDATE/DELETE, jointures, agrégats) sur un schéma employés/départements/projets',

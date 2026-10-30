@@ -8,100 +8,13 @@ class TcpHandshakePage extends ConceptPage {
 
 const speedCtrl = new OEIUtils.SpeedController();
 
-var scenarios = {
-    normal: [
-        {
-            from: 'client', to: 'server', label: 'SYN', detail: 'seq=1000',
-            clientState: 'SYN-SENT', serverState: 'LISTEN',
-            info: '<strong>Étape 1 :</strong> Le client envoie un segment SYN avec un numéro de séquence initial (seq=1000) pour demander l\'établissement d\'une connexion.'
-        },
-        {
-            from: 'server', to: 'client', label: 'SYN-ACK', detail: 'seq=2000, ack=1001',
-            clientState: 'SYN-SENT', serverState: 'SYN-RECEIVED',
-            info: '<strong>Étape 2 :</strong> Le serveur répond avec SYN-ACK, son propre numéro de séquence (seq=2000) et accuse réception (ack=1001).'
-        },
-        {
-            from: 'client', to: 'server', label: 'ACK', detail: 'ack=2001',
-            clientState: 'ESTABLISHED', serverState: 'ESTABLISHED',
-            info: '<strong>Étape 3 :</strong> Le client accuse réception avec ACK. La connexion est maintenant établie des deux côtés.',
-            final: 'ÉTABLIE'
-        }
-    ],
-    data: [
-        {
-            from: 'client', to: 'server', label: 'SYN', detail: 'seq=1000',
-            clientState: 'SYN-SENT', serverState: 'LISTEN',
-            info: '<strong>Étape 1 :</strong> Le client initie la connexion avec SYN.'
-        },
-        {
-            from: 'server', to: 'client', label: 'SYN-ACK', detail: 'seq=2000, ack=1001',
-            clientState: 'SYN-SENT', serverState: 'SYN-RECEIVED',
-            info: '<strong>Étape 2 :</strong> Le serveur répond avec SYN-ACK.'
-        },
-        {
-            from: 'client', to: 'server', label: 'ACK', detail: 'ack=2001',
-            clientState: 'ESTABLISHED', serverState: 'ESTABLISHED',
-            info: '<strong>Étape 3 :</strong> Connexion établie. Le client peut maintenant envoyer des données.'
-        },
-        {
-            from: 'client', to: 'server', label: 'DATA', detail: 'seq=1001, 512 bytes',
-            clientState: 'ESTABLISHED', serverState: 'ESTABLISHED',
-            info: '<strong>Transfert de données :</strong> Le client envoie 512 octets de données.'
-        },
-        {
-            from: 'server', to: 'client', label: 'ACK', detail: 'ack=1513',
-            clientState: 'ESTABLISHED', serverState: 'ESTABLISHED',
-            info: '<strong>Accusé de réception :</strong> Le serveur accuse réception des données (ack = seq + data_length).',
-            final: 'DONNÉES TRANSFÉRÉES'
-        }
-    ],
-    close: [
-        {
-            from: 'client', to: 'server', label: 'FIN', detail: 'seq=1500',
-            clientState: 'FIN-WAIT-1', serverState: 'ESTABLISHED',
-            info: '<strong>Fermeture initiée :</strong> Le client envoie FIN pour fermer sa partie de la connexion.'
-        },
-        {
-            from: 'server', to: 'client', label: 'ACK', detail: 'ack=1501',
-            clientState: 'FIN-WAIT-2', serverState: 'CLOSE-WAIT',
-            info: '<strong>ACK du FIN :</strong> Le serveur accuse réception du FIN.'
-        },
-        {
-            from: 'server', to: 'client', label: 'FIN', detail: 'seq=2500',
-            clientState: 'FIN-WAIT-2', serverState: 'LAST-ACK',
-            info: '<strong>FIN du serveur :</strong> Le serveur envoie son propre FIN pour fermer sa partie.'
-        },
-        {
-            from: 'client', to: 'server', label: 'ACK', detail: 'ack=2501',
-            clientState: 'TIME-WAIT', serverState: 'CLOSED',
-            info: '<strong>ACK final :</strong> Le client accuse réception. Après un délai (TIME-WAIT), la connexion sera complètement fermée.',
-            final: 'FERMÉE'
-        }
-    ],
-    lost: [
-        {
-            from: 'client', to: 'server', label: 'SYN', detail: 'seq=1000', lost: true,
-            clientState: 'SYN-SENT', serverState: 'LISTEN',
-            info: '<strong>SYN perdu :</strong> Le premier segment SYN est perdu sur le réseau. Le serveur ne le reçoit jamais.'
-        },
-        {
-            from: 'client', to: 'server', label: 'SYN (retrans.)', detail: 'seq=1000',
-            clientState: 'SYN-SENT', serverState: 'LISTEN',
-            info: '<strong>Retransmission :</strong> Après un timeout, le client retransmet le segment SYN.'
-        },
-        {
-            from: 'server', to: 'client', label: 'SYN-ACK', detail: 'seq=2000, ack=1001',
-            clientState: 'SYN-SENT', serverState: 'SYN-RECEIVED',
-            info: '<strong>SYN-ACK reçu :</strong> Le serveur répond au SYN retransmis.'
-        },
-        {
-            from: 'client', to: 'server', label: 'ACK', detail: 'ack=2001',
-            clientState: 'ESTABLISHED', serverState: 'ESTABLISHED',
-            info: '<strong>Connexion établie :</strong> Malgré la perte initiale, la connexion est établie grâce à la retransmission.',
-            final: 'ÉTABLIE (après retrans.)'
-        }
-    ]
-};
+var Tcp = window.OEITrace;
+var scenarios = {};
+Object.keys(Tcp.TCP_SCENARIOS).forEach(function(name) {
+    scenarios[name] = Tcp.TCP_SCENARIOS[name].steps.map(function(step) {
+        return Object.assign({}, step, { detail: Tcp.tcpDetail(step) });
+    });
+});
 
 var animState = {
     scenario: 'normal',
@@ -153,7 +66,7 @@ function resetAnimation() {
     document.getElementById('currentStep').textContent = '0';
     document.getElementById('segmentsSent').textContent = '0';
     document.getElementById('connectionStatus').textContent = '--';
-    document.getElementById('stepInfo').innerHTML = 'Sélectionnez un scénario et cliquez sur "Lancer" ou "Étape"';
+    document.getElementById('stepInfo').innerHTML = 'Choisis un scénario, puis clique sur « Lancer » ou « Étape »';
     document.getElementById('btnRun').textContent = 'Lancer';
     document.getElementById('rttValue').textContent = (networkConfig.latencyMs * 2) + ' ms';
 
@@ -200,7 +113,7 @@ function maybeApplyNetworkLoss(index, step) {
     var lostStep = {
         ...step,
         lost: true,
-        info: step.info + '<br><strong>Perte simulée :</strong> segment perdu, attente de timeout.'
+        info: step.info + '<br><strong>Perte simulée :</strong> segment perdu, attente du timeout.'
     };
 
     // Inject a retransmission step right after the lost packet.
@@ -209,7 +122,8 @@ function maybeApplyNetworkLoss(index, step) {
         ...step,
         label: retransLabel,
         retransmitted: true,
-        info: '<strong>Retransmission :</strong> le segment est renvoyé après expiration du timer (RTO).'
+        title: 'Retransmission',
+        info: 'Le segment est renvoyé après expiration du timer (RTO).'
     };
     animState.steps.splice(index + 1, 0, retransStep);
 
@@ -223,7 +137,9 @@ function renderStep(index) {
     // Create message element
     var message = document.createElement('div');
     message.className = 'message';
-    message.style.top = (index * 70 + 20) + 'px';
+    var spacing = animState.steps.length > 6 ? 48 : 70;
+    container.style.minHeight = (animState.steps.length * spacing + 30) + 'px';
+    message.style.top = (index * spacing + 20) + 'px';
 
     var arrow = document.createElement('div');
     arrow.className = 'message-arrow';
@@ -278,7 +194,7 @@ function renderStep(index) {
 
     // Update info
     var netInfo = `<div style="margin-top:0.45rem;font-size:0.82rem;color:var(--muted);"><strong>Réseau simulé :</strong> latence ${networkConfig.latencyMs} ms, perte ${networkConfig.lossPct}%.</div>`;
-    document.getElementById('stepInfo').innerHTML = step.info + netInfo;
+    document.getElementById('stepInfo').innerHTML = '<strong>' + step.title + ' :</strong> ' + step.info + netInfo;
 
     // Update stats
     if (!step.lost) {
@@ -312,53 +228,28 @@ if (typeof window !== 'undefined') {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TcpWidget - Widget autonome pour intégration dans les slides
-// Usage : TcpWidget.mount(container, { scenario: 'normal'|'data'|'close'|'lost' })
+// Usage : TcpWidget.mount(container, { scenario: 'normal'|'data'|'close'|'lost'|'dataloss' })
 // ─────────────────────────────────────────────────────────────────────────────
 class TcpWidget {
 
-    static _SCENARIOS = {
-        normal: [
-            { from: 'c', label: 'SYN', detail: 'seq=1000', cState: 'SYN-SENT', sState: 'LISTEN',
-              info: 'Client envoie SYN (seq=1000) pour demander une connexion.' },
-            { from: 's', label: 'SYN-ACK', detail: 'seq=2000, ack=1001', cState: 'SYN-SENT', sState: 'SYN-RECEIVED',
-              info: 'Serveur repond SYN-ACK (son seq=2000, ack du client+1=1001).' },
-            { from: 'c', label: 'ACK', detail: 'ack=2001', cState: 'ESTABLISHED', sState: 'ESTABLISHED',
-              info: 'Client accuse reception. Connexion ETABLIE des deux cotes.', done: true }
-        ],
-        data: [
-            { from: 'c', label: 'SYN', detail: 'seq=1000', cState: 'SYN-SENT', sState: 'LISTEN',
-              info: 'Etablissement - client envoie SYN.' },
-            { from: 's', label: 'SYN-ACK', detail: 'seq=2000, ack=1001', cState: 'SYN-SENT', sState: 'SYN-RECEIVED',
-              info: 'Serveur repond SYN-ACK.' },
-            { from: 'c', label: 'ACK', detail: 'ack=2001', cState: 'ESTABLISHED', sState: 'ESTABLISHED',
-              info: 'Connexion etablie - transfert de donnees possible.' },
-            { from: 'c', label: 'DATA', detail: 'seq=1001, 512 B', cState: 'ESTABLISHED', sState: 'ESTABLISHED',
-              info: 'Client envoie 512 octets de donnees.' },
-            { from: 's', label: 'ACK', detail: 'ack=1513', cState: 'ESTABLISHED', sState: 'ESTABLISHED',
-              info: 'Serveur accuse reception (ack = seq + taille donnees).', done: true }
-        ],
-        close: [
-            { from: 'c', label: 'FIN', detail: 'seq=1500', cState: 'FIN-WAIT-1', sState: 'ESTABLISHED',
-              info: 'Client envoie FIN pour fermer sa partie.' },
-            { from: 's', label: 'ACK', detail: 'ack=1501', cState: 'FIN-WAIT-2', sState: 'CLOSE-WAIT',
-              info: 'Serveur accuse le FIN du client.' },
-            { from: 's', label: 'FIN', detail: 'seq=2500', cState: 'FIN-WAIT-2', sState: 'LAST-ACK',
-              info: 'Serveur envoie son propre FIN.' },
-            { from: 'c', label: 'ACK', detail: 'ack=2501', cState: 'TIME-WAIT', sState: 'CLOSED',
-              info: 'Client accuse reception. Apres TIME-WAIT, connexion fermee.', done: true }
-        ],
-        lost: [
-            { from: 'c', label: 'SYN', detail: 'seq=1000', lost: true, cState: 'SYN-SENT', sState: 'LISTEN',
-              info: 'SYN envoye - mais perdu sur le reseau.' },
-            { from: 'c', label: 'SYN (retrans.)', detail: 'seq=1000', cState: 'SYN-SENT', sState: 'LISTEN',
-              info: 'Apres timeout, le client retransmet le SYN.' },
-            { from: 's', label: 'SYN-ACK', detail: 'seq=2000, ack=1001', cState: 'SYN-SENT', sState: 'SYN-RECEIVED',
-              info: 'Serveur repond au SYN retransmis.' },
-            { from: 'c', label: 'ACK', detail: 'ack=2001', cState: 'ESTABLISHED', sState: 'ESTABLISHED',
-              info: 'Connexion etablie malgre la perte initiale.', done: true }
-        ]
-    };
-
+    static get _SCENARIOS() {
+        const T = window.OEITrace;
+        const out = {};
+        Object.keys(T.TCP_SCENARIOS).forEach((name) => {
+            const steps = T.TCP_SCENARIOS[name].steps;
+            out[name] = steps.map((st, i) => ({
+                from: st.from === 'client' ? 'c' : 's',
+                label: st.label,
+                detail: T.tcpDetail(st),
+                lost: !!st.lost,
+                cState: st.clientState,
+                sState: st.serverState,
+                info: st.title + ' : ' + st.info,
+                done: i === steps.length - 1
+            }));
+        });
+        return out;
+    }
 
     static mount(container, config = {}) {
         const w = new TcpWidget(container, config);
@@ -381,7 +272,7 @@ class TcpWidget {
         this._idx = -1;
         this._running = false;
         this._renderDiagram();
-        this._renderStatus('CLOSED', 'LISTEN', 'Selectionnez une etape ou cliquez Lancer.');
+        this._renderStatus('CLOSED', 'LISTEN', 'Clique sur « Lancer » ou « Étape ».');
         this._highlightScenarioBtn(name);
     }
 
@@ -391,9 +282,10 @@ class TcpWidget {
                 <div class="tcpw-header">Simulation TCP</div>
                 <div class="tcpw-scenario-bar">
                     <button class="tcpw-sc-btn" data-sc="normal">3-way handshake</button>
-                    <button class="tcpw-sc-btn" data-sc="data">Transfert donnees</button>
+                    <button class="tcpw-sc-btn" data-sc="data">Transfert de données</button>
                     <button class="tcpw-sc-btn" data-sc="close">Fermeture</button>
-                    <button class="tcpw-sc-btn" data-sc="lost">Perte de paquet</button>
+                    <button class="tcpw-sc-btn" data-sc="lost">Perte de SYN</button>
+                    <button class="tcpw-sc-btn" data-sc="dataloss">Perte de données</button>
                 </div>
             </div>
             <div class="widget-fit-body">
@@ -411,7 +303,7 @@ class TcpWidget {
                 <div class="tcpw-info tcpw-info-text"></div>
                 <div class="tcpw-controls">
                     <button class="tcpw-btn tcpw-btn-play">&#9654; Lancer</button>
-                    <button class="tcpw-btn tcpw-btn-step tcpw-btn-secondary">Etape</button>
+                    <button class="tcpw-btn tcpw-btn-step tcpw-btn-secondary">Étape</button>
                     <button class="tcpw-btn tcpw-btn-reset tcpw-btn-secondary">&#8635; Reset</button>
                 </div>
             </div>
@@ -433,7 +325,7 @@ class TcpWidget {
         this._steps.slice(0, this._idx + 1).forEach((step, i) => {
             const div = document.createElement('div');
             div.className = 'tcpw-msg visible';
-            div.style.top = (i * 44) + 'px';
+            div.style.top = (i * (this._steps.length > 6 ? 30 : 44)) + 'px';
             const arrowCls = step.from === 's' ? 'reverse' : '';
             const lostCls = step.lost ? 'lost' : '';
             div.innerHTML = `
