@@ -101,6 +101,19 @@ async function resolveInitialDeck(params) {
     const startGen = editor._loadGen || 0;
     const superseded = () => (editor._loadGen || 0) !== startGen;
 
+    // 0. ?new=1 (bouton « Nouvelle présentation » du tableau de bord) : deck vierge, sans reprendre
+    // le brouillon ni le lien Firebase de la session précédente. Le brouillon quitté reste
+    // récupérable dans l'historique des révisions ; le paramètre est retiré pour qu'un
+    // rechargement conserve le deck en cours au lieu de le remettre à zéro.
+    if (params.get('new')) {
+        try { history.replaceState({}, '', location.pathname); } catch {}
+        try { sessionStorage.removeItem('oei-firebase-open-id'); } catch {}
+        try { window.OEIFirebase?.clearCurrentId?.(); } catch {}
+        if (editor.loadDraft()) { try { await window.saveRevision?.('before-new'); } catch {} }
+        editor.new();
+        return;
+    }
+
     // Synchroniser sessionStorage + URL (comportement historique).
     if (fbId) {
         try { sessionStorage.setItem('oei-firebase-open-id', fbId); } catch {}

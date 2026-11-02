@@ -123,7 +123,7 @@ const EDITOR_BOOTSTRAP_GROUPS = Object.freeze([
     ['../shared/slides/editor-checker.js?v=13'],
     ['../shared/slides/banner-picker.js?v=1'],
     ['../shared/slides/editor-bindings.js?v=35'],
-    ['../shared/slides/editor-main.js?v=11'],
+    ['../shared/slides/editor-main.js?v=12'],
 ]);
 
 // Le total est calculé depuis la liste (et non codé en dur côté barre de progression : la barre
