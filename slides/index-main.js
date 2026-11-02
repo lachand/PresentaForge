@@ -138,12 +138,12 @@
         return null; // use default CSS gradient
     }
 
-    // Derive a deterministic dark background color from a title string
-    function _colorFromTitle(title) {
+    // Vignette par défaut (sans bandeau) : teinte de repère Signature (--viz-1..8) dérivée du titre
+    function _toneStyle(seed) {
         let h = 0;
-        for (let i = 0; i < title.length; i++) h = ((h << 5) - h + title.charCodeAt(i)) | 0;
-        const hue = Math.abs(h) % 360;
-        return `hsl(${hue},45%,22%)`;
+        const str = String(seed || '');
+        for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        return `--cover-tone:var(--viz-${(Math.abs(h) % 8) + 1})`;
     }
 
     function _extractDeckMeta(rawData) {
@@ -415,7 +415,7 @@
         document.getElementById('examples-count').textContent = `${EXAMPLES.length} exemple${EXAMPLES.length > 1 ? 's' : ''}`;
         grid.innerHTML = EXAMPLES.map((p, idx) => `
             <article class="pres-card">
-                <div class="pres-cover" style="--cover:${themeColor(p.theme)}">
+                <div class="pres-cover pres-cover--plain" style="${escAttr(_toneStyle(p.title))}">
                     <span class="cover-kicker">${p.topic}</span>
                     <span class="cover-icon" aria-hidden="true">${icon(p.icon)}</span>
                 </div>
@@ -435,10 +435,10 @@
     }
 
     const TEMPLATES = [
-        { file: '../data/slides/templates/cours-magistral.json', name: 'Cours magistral', desc: 'Titre, chapitres, bullets, code + quiz', icon: 'book', color: '#00508d' },
-        { file: '../data/slides/templates/tp-guide.json',        name: 'TP guidé',        desc: 'Étapes numérotées, code, quiz', icon: 'flask', color: '#1a7a40' },
-        { file: '../data/slides/templates/projet.json',          name: 'Présentation projet', desc: 'Intro, plan, architecture, bilan', icon: 'rocket', color: '#5c35a8' },
-        { file: '../data/slides/templates/quiz-rapide.json',     name: 'Quiz rapide',     desc: '5 questions live en 5 slides', icon: 'help', color: '#c0680a' },
+        { file: '../data/slides/templates/cours-magistral.json', name: 'Cours magistral', desc: 'Titre, chapitres, bullets, code + quiz', icon: 'book', tone: 1 },
+        { file: '../data/slides/templates/tp-guide.json',        name: 'TP guidé',        desc: 'Étapes numérotées, code, quiz', icon: 'flask', tone: 4 },
+        { file: '../data/slides/templates/projet.json',          name: 'Présentation projet', desc: 'Intro, plan, architecture, bilan', icon: 'rocket', tone: 3 },
+        { file: '../data/slides/templates/quiz-rapide.json',     name: 'Quiz rapide',     desc: '5 questions live en 5 slides', icon: 'help', tone: 2 },
     ];
 
     function renderTemplates() {
@@ -446,7 +446,7 @@
         if (!grid) return;
         grid.innerHTML = TEMPLATES.map((t, idx) => `
             <button type="button" class="template-card" data-action="open-template" data-template-index="${idx}" aria-label="Démarrer avec le modèle : ${t.name}">
-                <div class="template-card-cover" style="background:${t.color};">${icon(t.icon)}</div>
+                <div class="template-card-cover" style="--cover-tone:var(--viz-${t.tone})"><span class="template-card-glyph" aria-hidden="true">${icon(t.icon)}</span><span class="template-card-index" aria-hidden="true">${String(idx + 1).padStart(2, '0')}</span></div>
                 <div class="template-card-body">
                     <div class="template-card-name">${t.name}</div>
                     <div class="template-card-desc">${t.desc}</div>
@@ -503,16 +503,17 @@
         host.innerHTML = `<div class="pres-grid">${rows.map((deck, idx) => {
             const titleText = deck.thumb?.text || deck.title || '';
             // Chantier 8 — thumbBg va dans un attribut style="…" : n'accepter qu'une couleur CSS simple.
-            const rawBg = deck.thumb?.bg || (titleText ? _colorFromTitle(titleText) : null);
+            const rawBg = deck.thumb?.bg;
             const thumbBg = (typeof rawBg === 'string' && /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d%,.\s/]+\)|[a-z-]+|(linear|radial)-gradient\([^"'<>]+\))$/i.test(rawBg.trim())) ? rawBg.trim() : null;
-            const coverStyle = thumbBg ? `background:${thumbBg}` : `--cover:${themeColor('dark')}`;
             const firstSlide = deck.rawData ? _firstSlide(deck.rawData) : null;
             const miniHtml = firstSlide && window.SlidesRenderer
                 ? SlidesRenderer.renderSlide(firstSlide, 0, { includeNotes: false })
                 : '';
+            const plainCover = !thumbBg && !miniHtml;
+            const coverStyle = thumbBg ? `background:${thumbBg}` : (plainCover ? _toneStyle(titleText || deck.title) : `--cover:${themeColor('dark')}`);
             return `
             <article class="pres-card">
-                <div class="pres-cover" style="${escAttr(coverStyle)}">
+                <div class="pres-cover${plainCover ? ' pres-cover--plain' : ''}" style="${escAttr(coverStyle)}">
                     ${miniHtml ? `<div class="pres-slide-mini-outer"><div class="pres-slide-mini-inner">${miniHtml}</div></div>` : ''}
                     <span class="cover-kicker">${esc(deck.sourceLabel || (deck.source === 'recent' ? 'Récente' : 'Bibliothèque'))}</span>
                     ${titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`}
@@ -1014,11 +1015,13 @@
             const safeImage = (banner?.image && /^data:image\//i.test(banner.image)) ? banner.image.replace(/["\\]/g, '') : null;
             const safeColor = banner ? _safeFirebaseBannerColor(banner.color) : null;
             let coverStyle;
+            let plainCover = false;
             if (safeImage) coverStyle = `background:center/cover no-repeat url("${safeImage}")`;
             else if (safeColor) coverStyle = `background:${safeColor}`;
             else {
-                const thumbBg = p.thumb?.bg || (titleText ? _colorFromTitle(titleText) : null);
-                coverStyle = thumbBg ? `background:${thumbBg}` : '--cover:#00508d';
+                const thumbBg = p.thumb?.bg;
+                plainCover = !thumbBg;
+                coverStyle = thumbBg ? `background:${thumbBg}` : _toneStyle(titleText || p.title);
             }
             // Priorité d'affichage dans la vignette : image de bandeau (rien par-dessus, pour
             // ne pas surcharger) > icône emoji du bandeau > texte extrait de la 1ère slide >
@@ -1036,7 +1039,7 @@
             const draggableAttr = _firebaseViewMode === 'course' ? ` draggable="true" data-fb-id="${escAttr(p.id)}"` : '';
             return `
             <article class="pres-card"${draggableAttr}>
-                <div class="pres-cover" style="${escAttr(coverStyle)}">
+                <div class="pres-cover${plainCover ? ' pres-cover--plain' : ''}" style="${escAttr(coverStyle)}">
                     ${selectBoxHtml}
                     <button type="button" class="cover-kicker cover-kicker--btn ${p.public ? 'cover-kicker--public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public). Cliquer pour la rendre privée.' : 'Privée : seul vous la voyez. Cliquer pour la rendre visible des étudiants.'}" aria-pressed="${p.public ? 'true' : 'false'}">${p.public ? icon('eye') + ' Visible étudiants' : icon('lock') + ' Privé'}</button>
                     ${coverInner}
