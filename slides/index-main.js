@@ -69,6 +69,79 @@
         { file: '../data/slides/demo-complete.json', title: 'Démo complète — Tous les types', slides: 24, theme: 'icom', topic: 'Complet', icon: 'lab' },
     ];
 
+    // Modules chargés à la demande (hors chemin critique de la page d'accueil). Chaque groupe est
+    // exécuté dans l'ordre ; `deps` liste les groupes à charger avant. Les ?v= sont suivis par
+    // tools/slides/cache-bust-audit.mjs comme dans editor-bootstrap.js.
+    const LAZY_GROUPS = {
+        render: {
+            scripts: [
+                '../vendor/dompurify/3.4.14/purify.min.js',
+                '../shared/slides/html-sanitizer.js?v=1',
+                '../shared/slides/background-utils.js?v=1',
+                '../shared/slides/slides-special-math-runtime.js?v=3',
+                '../shared/slides/slides-special-code-runtime.js?v=3',
+                '../shared/slides/slides-special-quiz-runtime.js?v=5',
+                '../shared/slides/slides-special-live-runtime.js?v=1',
+                '../shared/slides/slides-special-runtime.js?v=3',
+                '../shared/slides/slides-typography.js?v=1',
+                '../shared/slides/element-style-schema.js?v=1',
+                '../shared/slides/slides-core.js?v=38',
+                '../shared/slides/slides-themes.js?v=8',
+                '../shared/slides/slides-diagram-renderer.js?v=1',
+                '../shared/slides/slides-renderer-canvas.js?v=12',
+            ],
+        },
+        importer: {
+            deps: ['render'],
+            scripts: [
+                '../shared/slides/import-pipeline-bundle.js?v=3',
+                '../shared/slides/import-pipeline.js?v=9',
+            ],
+        },
+        multiImport: { deps: ['importer'], scripts: ['../shared/slides/multi-import-modal.js?v=1'] },
+        banner: {
+            scripts: [
+                '../shared/slides/editor-export-media.js?v=2',
+                '../shared/slides/banner-picker.js?v=1',
+            ],
+        },
+        bulk: {
+            scripts: [
+                '../shared/slides/batch-export-client.js?v=2',
+                '../shared/slides/bulk-actions-modal.js?v=6',
+            ],
+        },
+        firebaseModal: { deps: ['banner'], scripts: ['../shared/slides/firebase-modal.js?v=4'] },
+    };
+    const _lazyLoads = {};
+    // Résout toujours (même en cas d'échec) : les appelants testent ensuite la présence du global
+    // (`if (!window.OEIxxx) return;`), comme avant le chargement différé.
+    function ensureModules(name) {
+        if (_lazyLoads[name]) return _lazyLoads[name];
+        const group = LAZY_GROUPS[name];
+        _lazyLoads[name] = (async () => {
+            for (const dep of group.deps || []) await ensureModules(dep);
+            const { loadClassicScripts } = await import('../shared/slides/legacy-bootstrap-loader.js');
+            await loadClassicScripts(group.scripts);
+        })().catch(err => {
+            delete _lazyLoads[name];
+            console.warn('[index] chargement différé impossible :', name, err);
+        });
+        return _lazyLoads[name];
+    }
+    // Une fois la page affichée, télécharge (sans exécuter) les modules des actions courantes.
+    function prefetchModules() {
+        const urls = ['importer', 'multiImport', 'banner', 'bulk', 'firebaseModal']
+            .flatMap(n => LAZY_GROUPS[n].scripts);
+        urls.forEach(src => {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.as = 'script';
+            link.href = src;
+            document.head.appendChild(link);
+        });
+    }
+
     let _localDecks = [];
     const _localFilters = { search: '', sort: 'updated-desc', tag: '' };
 
@@ -89,22 +162,11 @@
         return (window.OEIIcons && window.OEIIcons.has(name)) ? window.OEIIcons.render(name) : icons.slide;
     }
 
-    function themeColor(id) {
-        const fallback = '#4f6df5';
-        const builtIn = (window.SlidesThemes?.BUILT_IN || {})[id] || (window.SlidesThemes?.BUILT_IN || {}).dark;
-        return builtIn?.colors?.slideBg || fallback;
-    }
-
     function _toTimestamp(value, fallback = 0) {
         const n = Number(value);
         if (Number.isFinite(n) && n > 0) return n;
         const t = Date.parse(String(value || ''));
         return Number.isFinite(t) ? t : fallback;
-    }
-
-    // Parse rawData JSON and return the first slide object (for HTML thumbnail)
-    function _firstSlide(rawData) {
-        try { return JSON.parse(String(rawData || ''))?.slides?.[0] || null; } catch { return null; }
     }
 
     // Inject thumbnail theme CSS once (dark theme scoped to .pres-slide-mini-inner)
@@ -160,9 +222,10 @@
                 theme,
                 tags: [...new Set(tags.filter(Boolean))],
                 thumb: _slideThumb(parsed),
+                firstSlide: parsed?.slides?.[0] || null,
             };
         } catch (_) {
-            return { title: '', theme: '', tags: [], thumb: null };
+            return { title: '', theme: '', tags: [], thumb: null, firstSlide: null };
         }
     }
 
@@ -210,6 +273,7 @@
                     slideCount: Number(r.slideCount) || 0,
                     tags: [...new Set(['recent', ...meta.tags])],
                     thumb: meta.thumb,
+                    firstSlide: meta.firstSlide,
                     rawData,
                 };
             });
@@ -241,6 +305,7 @@
                     slideCount,
                     tags: [...new Set(['library', ...meta.tags])],
                     thumb: meta.thumb,
+                    firstSlide: meta.firstSlide,
                     rawData,
                 };
             })
@@ -272,6 +337,7 @@
                     lastTimelineAt: _toTimestamp(r.lastTimelineAt, 0),
                     tags: [...new Set(['workdoc', ...(Array.isArray(r.tags) ? r.tags : []), ...meta.tags])],
                     thumb: meta.thumb,
+                    firstSlide: meta.firstSlide,
                     rawData,
                 };
             });
@@ -481,6 +547,34 @@
         }
     }
 
+    // Rend les aperçus de 1re slide à la demande : le moteur de rendu est chargé après le premier
+    // affichage, puis chaque aperçu n'est construit que lorsqu'il approche de la fenêtre.
+    function _mountLocalMinis(host, rows) {
+        const slots = [...host.querySelectorAll('[data-mini-idx]')];
+        if (!slots.length) return;
+        ensureModules('render').then(() => {
+            if (!window.SlidesRenderer) return;
+            _ensureThumbThemeCss();
+            const mount = slot => {
+                if (!slot.isConnected || slot.dataset.mounted) return;
+                slot.dataset.mounted = '1';
+                const firstSlide = rows[Number(slot.dataset.miniIdx)]?.firstSlide;
+                const inner = slot.firstElementChild;
+                if (!firstSlide || !inner) return;
+                try { inner.innerHTML = SlidesRenderer.renderSlide(firstSlide, 0, { includeNotes: false }); } catch (_) {}
+            };
+            if (typeof IntersectionObserver !== 'function') { slots.forEach(mount); return; }
+            const io = new IntersectionObserver(entries => {
+                entries.forEach(e => {
+                    if (!e.isIntersecting) return;
+                    io.unobserve(e.target);
+                    mount(e.target);
+                });
+            }, { rootMargin: '200px' });
+            slots.forEach(slot => io.observe(slot));
+        });
+    }
+
     function renderLocalDecks() {
         const host = document.getElementById('local-grid');
         _syncLocalTagOptions();
@@ -499,22 +593,19 @@
             return;
         }
 
-        _ensureThumbThemeCss();
         host.innerHTML = `<div class="pres-grid">${rows.map((deck, idx) => {
             const titleText = deck.thumb?.text || deck.title || '';
             // Chantier 8 — thumbBg va dans un attribut style="…" : n'accepter qu'une couleur CSS simple.
             const rawBg = deck.thumb?.bg;
             const thumbBg = (typeof rawBg === 'string' && /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d%,.\s/]+\)|[a-z-]+|(linear|radial)-gradient\([^"'<>]+\))$/i.test(rawBg.trim())) ? rawBg.trim() : null;
-            const firstSlide = deck.rawData ? _firstSlide(deck.rawData) : null;
-            const miniHtml = firstSlide && window.SlidesRenderer
-                ? SlidesRenderer.renderSlide(firstSlide, 0, { includeNotes: false })
-                : '';
-            const plainCover = !thumbBg && !miniHtml;
-            const coverStyle = thumbBg ? `background:${thumbBg}` : (plainCover ? _toneStyle(titleText || deck.title) : `--cover:${themeColor('dark')}`);
+            // Aperçu de la 1re slide : emplacement vide ici, rendu à l'affichage (_mountLocalMinis).
+            const hasMini = !!deck.firstSlide;
+            const plainCover = !thumbBg && !hasMini;
+            const coverStyle = thumbBg ? `background:${thumbBg}` : (plainCover ? _toneStyle(titleText || deck.title) : '--cover:var(--inactif)');
             return `
             <article class="pres-card">
                 <div class="pres-cover${plainCover ? ' pres-cover--plain' : ''}" style="${escAttr(coverStyle)}">
-                    ${miniHtml ? `<div class="pres-slide-mini-outer"><div class="pres-slide-mini-inner">${miniHtml}</div></div>` : ''}
+                    ${hasMini ? `<div class="pres-slide-mini-outer" data-mini-idx="${idx}"><div class="pres-slide-mini-inner"></div></div>` : ''}
                     <span class="cover-kicker">${esc(deck.sourceLabel || (deck.source === 'recent' ? 'Récente' : 'Bibliothèque'))}</span>
                     ${titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`}
                 </div>
@@ -538,6 +629,7 @@
                 </div>
             </article>
         `; }).join('')}</div>`;
+        _mountLocalMinis(host, rows);
     }
 
     async function discardDraft() {
@@ -548,6 +640,7 @@
     }
 
     function onOpenFile() {
+        ensureModules('importer'); // charge pendant le choix du fichier
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
@@ -556,6 +649,7 @@
                 const file = e.target.files?.[0];
                 if (!file) return;
                 const text = await file.text();
+                await ensureModules('importer');
                 if (window.OEIImportPipeline?.importFromText) {
                     const result = await window.OEIImportPipeline.importFromText(text);
                     const ok = await window.OEIImportPipeline.confirmImport(result, { sourceLabel: file.name || 'Fichier JSON' });
@@ -588,7 +682,7 @@
             await OEIDialog.alert('Connectez-vous à Firebase avant d’importer plusieurs decks : le regroupement par cours est stocké sur Firebase.');
             return;
         }
-        if (!window.OEIMultiImportModal) return;
+        ensureModules('multiImport'); // charge pendant le choix des fichiers
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
@@ -596,6 +690,8 @@
         input.onchange = async e => {
             const files = Array.from(e.target.files || []);
             if (!files.length) return;
+            await ensureModules('multiImport');
+            if (!window.OEIMultiImportModal) return;
             const items = await Promise.all(files.map(async file => {
                 try {
                     const text = await file.text();
@@ -1281,6 +1377,7 @@
     }
 
     async function editFirebaseCourseBanner(course) {
+        await ensureModules('banner');
         if (!window.OEIBannerPicker) return;
         window.OEIBannerPicker.open({
             title: `Bandeau du cours « ${course || 'Sans cours'} »`,
@@ -1308,7 +1405,8 @@
 
     // Édition groupée (niveau/tags/cours) sur les présentations sélectionnées — délègue à
     // shared/slides/bulk-actions-modal.js (même esprit que window.OEIBannerPicker).
-    function editFirebaseSelection(items) {
+    async function editFirebaseSelection(items) {
+        await ensureModules('bulk');
         if (!window.OEIBulkEditModal || !items.length) return;
         const knownCourses = [...new Set(_firebaseDecks.map(p => p.course).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
         window.OEIBulkEditModal.open({
@@ -1333,7 +1431,8 @@
     }
 
     // Export groupé (ZIP si 2+ présentations) — délègue à shared/slides/bulk-actions-modal.js.
-    function exportFirebaseSelection(items) {
+    async function exportFirebaseSelection(items) {
+        await ensureModules('bulk');
         if (!window.OEIBulkExportModal || !items.length) return;
         window.OEIBulkExportModal.open({ items });
     }
@@ -1463,7 +1562,8 @@
         if (grid) persistSeanceOrder(grid);
     });
 
-    function _openFirebaseModal() {
+    async function _openFirebaseModal() {
+        await ensureModules('firebaseModal');
         if (!window.OEIFirebaseModal) return;
         window.OEIFirebaseModal.open({
             mode: 'open',
@@ -1515,6 +1615,11 @@
         _updateFirebaseSectionHeader();
         if (ok) await loadFirebaseDecks();
     })();
+
+    // Page affichée : télécharge les modules différés pendant que le navigateur est inactif.
+    const _schedulePrefetch = () => (window.requestIdleCallback || (fn => setTimeout(fn, 1500)))(prefetchModules);
+    if (document.readyState === 'complete') _schedulePrefetch();
+    else window.addEventListener?.('load', _schedulePrefetch);
 
     // ── Hamburger sidebar toggle (mobile ≤ 860px) ────────────────
     (function() {

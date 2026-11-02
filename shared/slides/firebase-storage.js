@@ -44,6 +44,7 @@
             if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
             const s = document.createElement('script');
             s.src = src;
+            s.async = false; // téléchargement en parallèle, exécution dans l'ordre d'insertion (app avant auth/firestore)
             s.onload  = resolve;
             s.onerror = () => reject(new Error('Failed to load ' + src));
             document.head.appendChild(s);
@@ -52,7 +53,7 @@
 
     async function _loadSDK() {
         if (_sdkLoaded) return;
-        for (const src of FB_SCRIPTS) await _loadScript(src);
+        await Promise.all(FB_SCRIPTS.map(_loadScript));
         _sdkLoaded = true;
     }
 
