@@ -153,6 +153,7 @@
             play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="9 7 17 12 9 17 9 7"/></svg>',
             edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z"/></svg>',
             trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+            more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
             clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>',
             count: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="6" x2="21" y2="6"/><line x1="7" y1="12" x2="21" y2="12"/><line x1="7" y1="18" x2="21" y2="18"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
             draft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>',
@@ -827,6 +828,59 @@
     let _firebaseDecks = [];
     let _firebaseViewMode = 'course';   // 'course' | 'flat' | 'level' | 'tag'
     let _firebaseDrillGroup = null;     // { mode, key, label } | null
+    const LAYOUT_KEY = 'oei-index-firebase-layout';
+    let _firebaseLayout = 'grid';       // 'grid' | 'list' (mémorisé par navigateur)
+    try { if (localStorage.getItem(LAYOUT_KEY) === 'list') _firebaseLayout = 'list'; } catch (_) {}
+
+    // Menu « ⋯ » : actions secondaires d'une carte ou d'un groupe (ouverture/fermeture : cf. plus bas).
+    const menuItemHtml = (iconName, label, attrs, danger) =>
+        `<button type="button" role="menuitem" class="pf-menu-item${danger ? ' pf-menu-item--danger' : ''}" ${attrs}>${icon(iconName)}<span class="pf-menu-label">${label}</span></button>`;
+    const menuHtml = (ariaLabel, itemsHtml) => `
+        <div class="pf-menu">
+            <button type="button" class="pf-menu-btn" data-menu-toggle aria-haspopup="menu" aria-expanded="false" aria-label="${escAttr(ariaLabel)}" title="${escAttr(ariaLabel)}">${icon('more')}</button>
+            <div class="pf-menu-list" role="menu" hidden>${itemsHtml}</div>
+        </div>`;
+    function _closeMenus(except) {
+        document.querySelectorAll('.pf-menu.is-open').forEach(m => {
+            if (m === except) return;
+            m.classList.remove('is-open');
+            m.querySelector('[data-menu-toggle]')?.setAttribute('aria-expanded', 'false');
+            const list = m.querySelector('.pf-menu-list');
+            if (list) list.hidden = true;
+        });
+    }
+    document.addEventListener('click', e => {
+        const toggle = e.target.closest?.('[data-menu-toggle]');
+        const wrap = toggle?.closest('.pf-menu') || null;
+        _closeMenus(wrap);
+        if (!wrap) return;
+        const open = !wrap.classList.contains('is-open');
+        wrap.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        const list = wrap.querySelector('.pf-menu-list');
+        if (list) {
+            list.hidden = !open;
+            if (open) list.querySelector('[role="menuitem"]')?.focus();
+        }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const open = document.querySelector('.pf-menu.is-open');
+        if (!open) return;
+        const toggle = open.querySelector('[data-menu-toggle]');
+        _closeMenus(null);
+        toggle?.focus();
+    });
+
+    // Confirmation de copie : toast (le menu qui contenait le bouton est déjà refermé).
+    function _flashCopied(target, message = 'Lien copié') {
+        if (window.OEIToast) { window.OEIToast.show(message, { type: 'success', duration: 2000 }); return; }
+        const lab = target?.querySelector?.('.pf-menu-label') || target;
+        if (!lab) return;
+        const orig = lab.textContent;
+        lab.textContent = 'Copié !';
+        setTimeout(() => { lab.textContent = orig; }, 2000);
+    }
     let _firebaseCourseBanners = {};    // course -> {color,icon,image} | undefined, via listCourseBanners()
     let _firebaseSelectionMode = false; // affiche les cases à cocher sur les cartes
     // Sélection indexée par id (pas par index de tableau) : idx n'est stable que le temps d'un
@@ -952,8 +1006,10 @@
             card.classList.add('connected');
             label.textContent = 'Firebase connecté';
             sub.textContent = user ? user.email : '';
+            card.hidden = true; // l'état (e-mail, déconnexion) est déjà dans l'en-tête de « Mes présentations Firebase »
         } else {
             card.classList.remove('connected');
+            card.hidden = false;
             label.textContent = 'Firebase';
             sub.textContent = 'Connecter un projet Firebase';
         }
@@ -1007,11 +1063,7 @@
             await OEIDialog.prompt('Copiez ce lien (Ctrl+C) :', { title: 'Lien du catalogue du cours', value: url, confirmLabel: 'Fermer', cancelLabel: 'Annuler' });
             return;
         }
-        if (target) {
-            const orig = target.textContent;
-            target.textContent = 'Copié !';
-            setTimeout(() => { target.textContent = orig; }, 2000);
-        }
+        _flashCopied(target);
     }
 
     // Lien de salle étudiante par cours (à coller une fois en ressource Moodle) : même ID de
@@ -1038,11 +1090,7 @@
             await OEIDialog.prompt('Copiez ce lien (Ctrl+C) :', { title: 'Lien de la salle en direct', value: url, confirmLabel: 'Fermer', cancelLabel: 'Annuler' });
             return;
         }
-        if (target) {
-            const orig = target.textContent;
-            target.textContent = 'Copié !';
-            setTimeout(() => { target.textContent = orig; }, 2000);
-        }
+        _flashCopied(target);
     }
 
     let _firebaseFilterQuery = '';
@@ -1059,10 +1107,21 @@
 
     function _updateFirebaseViewSwitcher() {
         document.querySelectorAll('.firebase-view-tab').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.viewMode === _firebaseViewMode);
+            if (!btn.dataset.viewMode) return;
+            const on = btn.dataset.viewMode === _firebaseViewMode;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
         const selectBtn = document.getElementById('btn-firebase-select-mode');
-        if (selectBtn) selectBtn.classList.toggle('active', _firebaseSelectionMode);
+        if (selectBtn) {
+            selectBtn.classList.toggle('active', _firebaseSelectionMode);
+            selectBtn.setAttribute('aria-pressed', _firebaseSelectionMode ? 'true' : 'false');
+        }
+        document.querySelectorAll('[data-action="firebase-layout"]').forEach(btn => {
+            const on = btn.dataset.layout === _firebaseLayout;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
     }
 
     // Met à jour la barre d'actions groupées sans relancer un rendu complet de la grille
@@ -1082,7 +1141,7 @@
         const toolsEl = document.getElementById('firebase-tools');
         if (!host) return;
 
-        if (toolsEl) toolsEl.style.display = _firebaseDecks.length ? 'block' : 'none';
+        if (toolsEl) toolsEl.style.display = _firebaseDecks.length ? 'flex' : 'none';
         _updateFirebaseViewSwitcher();
 
         if (!_firebaseDecks.length) {
@@ -1105,70 +1164,113 @@
             return;
         }
 
-        const renderCard = ({ p, idx }) => {
-            const banner = _resolveFirebaseBanner(p);
-            const titleText = p.thumb?.text || p.title || '';
-            const safeImage = (banner?.image && /^data:image\//i.test(banner.image)) ? banner.image.replace(/["\\]/g, '') : null;
-            const safeColor = banner ? _safeFirebaseBannerColor(banner.color) : null;
-            let coverStyle;
-            let plainCover = false;
-            if (safeImage) coverStyle = `background:center/cover no-repeat url("${safeImage}")`;
-            else if (safeColor) coverStyle = `background:${safeColor}`;
-            else {
-                const thumbBg = p.thumb?.bg;
-                plainCover = !thumbBg;
-                coverStyle = thumbBg ? `background:${thumbBg}` : _toneStyle(titleText || p.title);
-            }
-            // Priorité d'affichage dans la vignette : image de bandeau (rien par-dessus, pour
-            // ne pas surcharger) > icône emoji du bandeau > texte extrait de la 1ère slide >
-            // icône SVG générique.
-            const coverInner = safeImage ? '' : (banner?.icon
-                ? `<span class="cover-icon cover-icon--emoji" aria-hidden="true">${esc(banner.icon)}</span>`
-                : (titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`));
-            const selectBoxHtml = _firebaseSelectionMode ? `
+        // Bandeau (couleur ou image) : validation commune aux cartes et aux en-têtes de groupe.
+        const bannerParts = banner => ({
+            safeImage: (banner?.image && /^data:image\//i.test(banner.image)) ? banner.image.replace(/["\\]/g, '') : null,
+            safeColor: banner ? _safeFirebaseBannerColor(banner.color) : null,
+        });
+
+        // Actions principales toujours visibles ; le reste (lien, déplacement, suppression) dans « ⋯ ».
+        const primaryActionsHtml = idx => `
+            <button type="button" class="card-btn primary" data-action="present-firebase" data-fb-idx="${idx}">${icon('play')}<span class="card-btn-label">Présenter</span></button>
+            <button type="button" class="card-btn" data-action="present-presenter-firebase" data-fb-idx="${idx}" aria-label="Mode présentateur" title="Ouvrir directement en mode présentateur (notes, salle, minuteur)">${icon('presentation')}<span class="card-btn-label">Présentateur</span></button>
+            <button type="button" class="card-btn" data-action="edit-firebase" data-fb-idx="${idx}">${icon('edit')}<span class="card-btn-label">Éditer</span></button>`;
+        const cardMenuHtml = (p, idx) => menuHtml(`Autres actions : ${p.title}`, [
+            (p.public && uid) ? menuItemHtml('link', 'Copier le lien de partage', `data-action="copy-link-firebase" data-fb-uid="${esc(uid)}" data-fb-id="${esc(p.id)}"`) : '',
+            menuItemHtml('tag', 'Changer de cours', `data-action="move-firebase" data-fb-idx="${idx}"`),
+            menuItemHtml('trash', 'Supprimer…', `data-action="delete-firebase" data-fb-idx="${idx}"`, true),
+        ].join(''));
+        const stateChipHtml = (p, idx) => `<button type="button" class="chip chip--state${p.public ? ' chip--state-public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public). Cliquer pour la rendre privée.' : 'Privée : seul vous la voyez. Cliquer pour la rendre visible des étudiants.'}" aria-pressed="${p.public ? 'true' : 'false'}">${p.public ? icon('eye') + ' Visible étudiants' : icon('lock') + ' Privé'}</button>`;
+        const selectBoxFor = p => _firebaseSelectionMode ? `
                 <label class="pres-select-box">
-                    <input type="checkbox" class="pres-select-checkbox" data-fb-select-id="${escAttr(p.id)}" ${_firebaseSelectedIds.has(p.id) ? 'checked' : ''}>
+                    <input type="checkbox" class="pres-select-checkbox" data-fb-select-id="${escAttr(p.id)}" aria-label="Sélectionner ${escAttr(p.title)}" ${_firebaseSelectedIds.has(p.id) ? 'checked' : ''}>
                 </label>` : '';
+
+        // compact : vue « Par cours » (la bannière est dans l'en-tête du groupe, pas répétée sur chaque carte).
+        // Une seule ligne de méta, en texte discret ; seul l'état garde sa puce (couleur + icône + libellé).
+        const renderCard = ({ p, idx }, compact) => {
             // Glisser-déposer pour réordonner les séances : uniquement pertinent en vue "Par
             // cours" (regroupement d'ensemble ou drill-down), où data-fb-id identifie la carte
             // indépendamment de son index (invalidé par un ré-rendu).
-            const draggableAttr = _firebaseViewMode === 'course' ? ` draggable="true" data-fb-id="${escAttr(p.id)}"` : '';
-            return `
-            <article class="pres-card"${draggableAttr}>
+            const draggableAttr = _firebaseViewMode === 'course' || compact ? ` draggable="true" data-fb-id="${escAttr(p.id)}"` : '';
+            const bits = [compact ? '' : p.course, p.seance != null ? `Séance ${p.seance}` : '', p.level, _fmtDate(p.modified)].filter(Boolean);
+            const metaText = `<span class="pres-meta-text">${bits.map(esc).join(' · ')}</span>`;
+
+            if (_firebaseLayout === 'list') {
+                return `
+            <article class="pres-card pres-row"${draggableAttr}>
+                ${selectBoxFor(p)}
+                <h3 class="pres-title pres-row-title">${esc(p.title)}</h3>
+                ${stateChipHtml(p, idx)}
+                ${metaText}
+                <div class="pres-actions pres-actions--row">${primaryActionsHtml(idx)}</div>
+                ${cardMenuHtml(p, idx)}
+            </article>`;
+            }
+
+            let coverHtml = '';
+            if (!compact) {
+                const banner = _resolveFirebaseBanner(p);
+                const titleText = p.thumb?.text || p.title || '';
+                const { safeImage, safeColor } = bannerParts(banner);
+                let coverStyle;
+                let plainCover = false;
+                if (safeImage) coverStyle = `background:center/cover no-repeat url("${safeImage}")`;
+                else if (safeColor) coverStyle = `background:${safeColor}`;
+                else {
+                    const thumbBg = p.thumb?.bg;
+                    plainCover = !thumbBg;
+                    coverStyle = thumbBg ? `background:${thumbBg}` : _toneStyle(titleText || p.title);
+                }
+                // Priorité d'affichage dans la vignette : image de bandeau (rien par-dessus, pour
+                // ne pas surcharger) > icône emoji du bandeau > texte extrait de la 1ère slide >
+                // icône SVG générique.
+                const coverInner = safeImage ? '' : (banner?.icon
+                    ? `<span class="cover-icon cover-icon--emoji" aria-hidden="true">${esc(banner.icon)}</span>`
+                    : (titleText ? `<span class="pres-thumb-title">${esc(titleText)}</span>` : `<span class="cover-icon" aria-hidden="true">${icon('slide')}</span>`));
+                coverHtml = `
                 <div class="pres-cover${plainCover ? ' pres-cover--plain' : ''}${safeImage ? ' pres-cover--banner' : ''}" style="${escAttr(coverStyle)}">
-                    ${selectBoxHtml}
+                    ${selectBoxFor(p)}
                     ${coverInner}
-                </div>
+                </div>`;
+            }
+            return `
+            <article class="pres-card${compact ? ' pres-card--compact' : ''}"${draggableAttr}>
+                ${coverHtml}
                 <div class="pres-content">
-                    <h3 class="pres-title">${esc(p.title)}</h3>
-                    <div class="pres-meta">
-                        <button type="button" class="chip chip--state${p.public ? ' chip--state-public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public). Cliquer pour la rendre privée.' : 'Privée : seul vous la voyez. Cliquer pour la rendre visible des étudiants.'}" aria-pressed="${p.public ? 'true' : 'false'}">${p.public ? icon('eye') + ' Visible étudiants' : icon('lock') + ' Privé'}</button>
-                        <span class="chip">${icon('clock')} ${_fmtDate(p.modified)}</span>
-                        ${p.course ? `<span class="chip chip--course">${esc(p.course)}</span>` : ''}
-                        ${p.level ? `<span class="chip">${esc(p.level)}</span>` : ''}
-                        ${p.seance != null ? `<span class="chip chip--seance">Séance ${p.seance}</span>` : ''}
-                        <button type="button" class="pres-card-move-btn" data-action="move-firebase" data-fb-idx="${idx}" title="Changer de cours">&#x1F3F7;</button>
+                    <div class="pres-card-head">
+                        ${compact ? selectBoxFor(p) : ''}
+                        <h3 class="pres-title">${esc(p.title)}</h3>
+                        ${cardMenuHtml(p, idx)}
                     </div>
-                    <div class="pres-actions">
-                        <button type="button" class="card-btn primary" data-action="present-firebase" data-fb-idx="${idx}">${icon('play')} Présenter</button>
-                        <button type="button" class="card-btn" data-action="present-presenter-firebase" data-fb-idx="${idx}" title="Ouvrir directement en mode présentateur (notes, salle, minuteur)">${icon('presentation')} Mode présentateur</button>
-                        <button type="button" class="card-btn" data-action="edit-firebase" data-fb-idx="${idx}">${icon('edit')} Éditer</button>
-                        ${p.public && uid ? `<button type="button" class="card-btn" data-action="copy-link-firebase" data-fb-uid="${esc(uid)}" data-fb-id="${esc(p.id)}" title="Copier le lien de partage">${icon('link')} Lien</button>` : ''}
-                    </div>
-                    <div class="pres-actions pres-actions-single">
-                        <button type="button" class="card-btn warn" data-action="delete-firebase" data-fb-idx="${idx}">${icon('trash')} Supprimer</button>
-                    </div>
+                    <div class="pres-meta-line">${stateChipHtml(p, idx)}${metaText}</div>
+                    <div class="pres-actions pres-actions--row">${primaryActionsHtml(idx)}</div>
                 </div>
             </article>`;
         };
 
-        const courseActionsHtml = (mode, key) => (mode === 'course' && key) ? `
-            <button type="button" class="firebase-course-rename-btn" data-action="rename-course-firebase" data-course="${escAttr(key)}">renommer</button>
-            <button type="button" class="firebase-course-rename-btn" data-action="edit-course-banner-firebase" data-course="${escAttr(key)}">bandeau</button>
-            <button type="button" class="firebase-course-rename-btn" data-action="export-course-firebase" data-course="${escAttr(key)}">exporter</button>
-            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : la liste des présentations de ce cours rendues visibles des étudiants, chacun choisit celle à consulter">${icon('link')} Lien Moodle du catalogue</button>` : ''}
-            ${uid ? `<button type="button" class="firebase-course-rename-btn" data-action="copy-course-room-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : les étudiants rejoignent toujours la même salle en direct, quelle que soit la présentation projetée pour ce cours">${icon('radio')} Lien de la salle en direct</button>` : ''}
-        ` : '';
+        const gridClass = compact => `pres-grid${compact ? ' pres-grid--compact' : ''}${_firebaseLayout === 'list' ? ' pres-grid--list' : ''}`;
+        const cardsHtml = (items, compact) => items.map(entry => renderCard(entry, compact)).join('');
+
+        // Actions d'un cours : un seul menu « ⋯ » dans l'en-tête (libellés explicites, audit UX A3).
+        const courseMenuHtml = (mode, key, withSelectAll) => (mode === 'course' && key) ? menuHtml(`Actions du cours ${key}`, [
+            menuItemHtml('pencil', 'Renommer le cours', `data-action="rename-course-firebase" data-course="${escAttr(key)}"`),
+            menuItemHtml('image', 'Bandeau du cours', `data-action="edit-course-banner-firebase" data-course="${escAttr(key)}"`),
+            menuItemHtml('download', 'Exporter le cours', `data-action="export-course-firebase" data-course="${escAttr(key)}"`),
+            withSelectAll ? menuItemHtml('check', 'Tout sélectionner', `data-action="select-all-course-firebase" data-course="${escAttr(key)}"`) : '',
+            uid ? menuItemHtml('link', 'Lien Moodle du catalogue', `data-action="copy-course-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : la liste des présentations de ce cours rendues visibles des étudiants"`) : '',
+            uid ? menuItemHtml('users', 'Lien de la salle en direct', `data-action="copy-course-room-link-firebase" data-course="${escAttr(key)}" title="Copie le lien à coller dans Moodle : les étudiants rejoignent toujours la même salle en direct, quelle que soit la présentation"`) : '',
+        ].join('')) : '';
+
+        // Bandeau du cours montré une seule fois, en miniature, dans l'en-tête du groupe.
+        const courseThumbHtml = (mode, key) => {
+            if (mode !== 'course' || !key) return '';
+            const { safeImage, safeColor } = bannerParts(_firebaseCourseBanners[key]);
+            if (safeImage) return `<span class="firebase-course-thumb firebase-course-thumb--image" aria-hidden="true" style="${escAttr(`background:center/cover no-repeat url("${safeImage}")`)}"></span>`;
+            if (safeColor) return `<span class="firebase-course-thumb" aria-hidden="true" style="${escAttr(`background:${safeColor}`)}"></span>`;
+            return '';
+        };
+        const groupTitleHtml = (mode, g) => `<button type="button" class="firebase-course-title" data-action="firebase-drill" data-group-mode="${mode}" data-group-key="${esc(g.key)}" title="Ouvrir ce groupe">${courseThumbHtml(mode, g.key)}<span class="firebase-course-name">${esc(g.label)}</span><span class="firebase-group-count">${g.items.length}</span></button>`;
 
         // Drill-down actif : en-tête « Retour » + grille à plat des seules présentations de
         // ce groupe, recalculées à chaque rendu depuis la liste filtrée (les actions de
@@ -1178,43 +1280,42 @@
             const groups = _groupFirebaseByMode(mode, filtered);
             const current = groups.find(g => g.key === key);
             const items = current ? current.items : [];
-            const selectAllHtml = (mode === 'course' && key) ? `
-                <button type="button" class="firebase-course-rename-btn" data-action="select-all-course-firebase" data-course="${escAttr(key)}">tout sélectionner</button>
-            ` : '';
+            const compact = mode === 'course';
             host.innerHTML = `
                 <div class="firebase-drill-header">
                     <button type="button" class="firebase-drill-back" data-action="firebase-drill-back">&larr; Retour</button>
+                    ${courseThumbHtml(mode, key)}
                     <span class="firebase-drill-title">${esc(current ? current.label : _firebaseDrillGroup.label)}</span>
-                    ${courseActionsHtml(mode, key)}
-                    ${selectAllHtml}
+                    ${courseMenuHtml(mode, key, true)}
                 </div>
-                <div class="pres-grid"${mode === 'course' ? ` data-group-key="${escAttr(key)}"` : ''}>${items.length ? items.map(renderCard).join('') : '<div class="firebase-empty">Aucun résultat pour cette recherche.</div>'}</div>
+                <div class="${gridClass(compact)}"${mode === 'course' ? ` data-group-key="${escAttr(key)}"` : ''}>${items.length ? cardsHtml(items, compact) : '<div class="firebase-empty">Aucun résultat pour cette recherche.</div>'}</div>
             `;
             return;
         }
 
         if (_firebaseViewMode === 'flat') {
-            host.innerHTML = `<div class="pres-grid">${filtered.map(renderCard).join('')}</div>`;
+            host.innerHTML = `<div class="${gridClass(false)}">${cardsHtml(filtered, false)}</div>`;
             return;
         }
 
         const mode = _firebaseViewMode;
         const groups = _groupFirebaseByMode(mode, filtered);
         const showHeadings = groups.length > 1 || (groups.length === 1 && groups[0].key);
+        const compact = mode === 'course';
 
         host.innerHTML = groups.map(g => `
-            ${showHeadings ? `<h4 class="firebase-course-heading" data-action="firebase-drill" data-group-mode="${mode}" data-group-key="${esc(g.key)}">
-                <span>${esc(g.label)} <span class="firebase-group-count">(${g.items.length})</span></span>
-                ${courseActionsHtml(mode, g.key)}
-            </h4>` : ''}
-            <div class="pres-grid"${mode === 'course' ? ` data-group-key="${escAttr(g.key)}"` : ''}>${g.items.map(renderCard).join('')}</div>
+            ${showHeadings ? `<div class="firebase-course-heading">
+                ${groupTitleHtml(mode, g)}
+                ${courseMenuHtml(mode, g.key, false)}
+            </div>` : ''}
+            <div class="${gridClass(compact)}"${mode === 'course' ? ` data-group-key="${escAttr(g.key)}"` : ''}>${cardsHtml(g.items, compact)}</div>
         `).join('');
     }
 
     // Une bannière image garde son format d'origine (jamais recadrée) : le cadre prend le ratio
     // réel de l'image une fois mesurée ; 4:1 en attendant (repli CSS de .pres-cover--banner).
     function _fitBannerCovers(root) {
-        root.querySelectorAll('.pres-cover--banner:not([data-fitted])').forEach(el => {
+        root.querySelectorAll('.pres-cover--banner:not([data-fitted]), .firebase-course-thumb--image:not([data-fitted])').forEach(el => {
             el.dataset.fitted = '1';
             const m = /url\(["']?([^"')]+)["']?\)/.exec(el.style.backgroundImage || '');
             if (!m) return;
@@ -1471,7 +1572,7 @@
 
     // Handle Firebase action clicks (delegated)
     document.addEventListener('click', e => {
-        const target = e.target.closest('[data-action^="present-firebase"],[data-action="present-presenter-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="toggle-public-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="copy-course-link-firebase"],[data-action="copy-course-room-link-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
+        const target = e.target.closest('[data-action^="present-firebase"],[data-action="present-presenter-firebase"],[data-action^="edit-firebase"],[data-action^="delete-firebase"],[data-action^="copy-link-firebase"],[data-action="toggle-public-firebase"],[data-action="move-firebase"],[data-action="rename-course-firebase"],[data-action="edit-course-banner-firebase"],[data-action="export-course-firebase"],[data-action="copy-course-link-firebase"],[data-action="copy-course-room-link-firebase"],[data-action="select-all-course-firebase"],[data-action="firebase-view-mode"],[data-action="firebase-layout"],[data-action="firebase-drill"],[data-action="firebase-drill-back"],[data-action="firebase-toggle-select"],[data-action="firebase-bulk-edit"],[data-action="firebase-bulk-export"],[data-action="firebase-bulk-clear"]');
         if (!target) return;
         const action = target.dataset.action;
         const idx = Number(target.dataset.fbIdx);
@@ -1520,10 +1621,15 @@
             _firebaseDrillGroup = null;
             renderFirebaseDecks();
         }
+        else if (action === 'firebase-layout') {
+            _firebaseLayout = target.dataset.layout === 'list' ? 'list' : 'grid';
+            try { localStorage.setItem(LAYOUT_KEY, _firebaseLayout); } catch (_) {}
+            renderFirebaseDecks();
+        }
         else if (action === 'firebase-drill') {
             const mode = target.dataset.groupMode || 'course';
             const key = target.dataset.groupKey || '';
-            const labelEl = target.querySelector('span');
+            const labelEl = target.querySelector('.firebase-course-name') || target.querySelector('span');
             const label = labelEl ? labelEl.textContent.replace(/\s*\(\d+\)\s*$/, '').trim() : (key || 'Sans cours');
             _firebaseDrillGroup = { mode, key, label };
             renderFirebaseDecks();
@@ -1536,11 +1642,7 @@
             const uid = target.dataset.fbUid;
             const id  = target.dataset.fbId;
             const url = _buildShareUrl(uid, id);
-            navigator.clipboard?.writeText(url).then(() => {
-                const orig = target.textContent;
-                target.textContent = 'Copié !';
-                setTimeout(() => { target.textContent = orig; }, 2000);
-            }).catch(() => OEIDialog.prompt('Copiez ce lien (Ctrl+C) :', { title: 'Lien de partage', value: url, confirmLabel: 'Fermer' }));
+            navigator.clipboard?.writeText(url).then(() => _flashCopied(target)).catch(() => OEIDialog.prompt('Copiez ce lien (Ctrl+C) :', { title: 'Lien de partage', value: url, confirmLabel: 'Fermer' }));
         }
     });
 

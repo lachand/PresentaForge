@@ -18,7 +18,7 @@
     <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js">
     <link rel="stylesheet" href="../shared/slides/signature-base.css?v=3">
     <link rel="stylesheet" href="../shared/slides/ui-primitives.css?v=10">
-    <link rel="stylesheet" href="../shared/slides/slides-index.css?v=16">
+    <link rel="stylesheet" href="../shared/slides/slides-index.css?v=17">
     <link rel="stylesheet" href="../shared/slides/signature-presentaforge.css?v=2">
 </head>
 <body>
@@ -137,13 +137,17 @@
                 </div>
             </div>
             <div class="firebase-tools" id="firebase-tools">
-                <input type="search" id="firebase-search" class="local-filter-input" placeholder="Rechercher par titre ou cours…">
-                <div class="firebase-view-switcher" role="tablist" aria-label="Mode d'affichage">
-                    <button type="button" class="firebase-view-tab active" data-action="firebase-view-mode" data-view-mode="course">Par cours</button>
-                    <button type="button" class="firebase-view-tab" data-action="firebase-view-mode" data-view-mode="flat">Par présentation</button>
-                    <button type="button" class="firebase-view-tab" data-action="firebase-view-mode" data-view-mode="level">Par niveau</button>
-                    <button type="button" class="firebase-view-tab" data-action="firebase-view-mode" data-view-mode="tag">Par tag</button>
-                    <button type="button" class="firebase-view-tab" id="btn-firebase-select-mode" data-action="firebase-toggle-select">Sélectionner</button>
+                <div class="firebase-view-switcher" role="group" aria-label="Regrouper par">
+                    <button type="button" class="firebase-view-tab active" data-action="firebase-view-mode" data-view-mode="course" aria-pressed="true">Par cours</button>
+                    <button type="button" class="firebase-view-tab" data-action="firebase-view-mode" data-view-mode="flat" aria-pressed="false">Par présentation</button>
+                    <button type="button" class="firebase-view-tab" data-action="firebase-view-mode" data-view-mode="level" aria-pressed="false">Par niveau</button>
+                    <button type="button" class="firebase-view-tab" data-action="firebase-view-mode" data-view-mode="tag" aria-pressed="false">Par tag</button>
+                </div>
+                <input type="search" id="firebase-search" class="local-filter-input" placeholder="Rechercher par titre ou cours…" aria-label="Rechercher une présentation Firebase">
+                <button type="button" class="firebase-tool-btn" id="btn-firebase-select-mode" data-action="firebase-toggle-select" aria-pressed="false">Sélectionner</button>
+                <div class="firebase-view-switcher" role="group" aria-label="Affichage">
+                    <button type="button" class="firebase-view-tab firebase-layout-btn active" data-action="firebase-layout" data-layout="grid" aria-pressed="true" aria-label="Affichage en grille" title="Grille"><span data-oei-icon="grid" aria-hidden="true"></span></button>
+                    <button type="button" class="firebase-view-tab firebase-layout-btn" data-action="firebase-layout" data-layout="list" aria-pressed="false" aria-label="Affichage en liste" title="Liste"><span data-oei-icon="list" aria-hidden="true"></span></button>
                 </div>
             </div>
             <div id="firebase-grid"></div>
@@ -212,6 +216,7 @@
 <script src="../shared/slides/storage.js?v=2"></script>
 <script src="../shared/slides/deck-blob-store.js?v=1"></script>
 <script src="../shared/slides/editor-dialog.js?v=6"></script>
-<script src="index-main.js?v=21"></script>
+<script src="../shared/slides/ui-toast.js?v=1"></script>
+<script src="index-main.js?v=22"></script>
 </body>
 </html>
