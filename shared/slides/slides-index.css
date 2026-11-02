@@ -394,15 +394,23 @@ body {
 }
 .pres-card-move-btn:hover { background: var(--surface-container-high); }
 .cover-icon--emoji { width: auto; height: auto; font-size: 1.75rem; line-height: 1; }
-.cover-kicker--public { color: var(--tertiary); }
-.cover-kicker--btn {
-    border: none; background: none; padding: 0; margin: 0;
-    font: inherit; letter-spacing: inherit; text-transform: inherit;
-    color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-    cursor: pointer;
+/* Texte posé sur une bannière ou un aperçu de slide : fond opaque, jamais du texte nu sur l'image. */
+.pres-cover:not(.pres-cover--plain) .cover-kicker,
+.pres-cover:not(.pres-cover--plain) .pres-thumb-title {
+    background: color-mix(in srgb, black 62%, transparent);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    padding: 2px 6px;
 }
-.cover-kicker--btn:hover { text-decoration: underline; }
-.cover-kicker--btn.cover-kicker--public { color: var(--tertiary); text-shadow: none; }
+/* État de visibilité (bouton) : hors de la vignette pour ne pas masquer l'image ; couleur + icône + libellé. */
+.chip.chip--state {
+    border: 1px solid currentColor; cursor: pointer;
+    color: var(--inactif); background: var(--inactif-fond);
+    font-family: inherit; font-weight: 600;
+}
+.chip.chip--state.chip--state-public { color: var(--ok); background: var(--ok-fond); }
+.chip.chip--state:hover { text-decoration: underline; }
+.chip.chip--state:focus-visible { outline: 2px solid var(--cote); outline-offset: 2px; }
 .chip--course { background: var(--primary-fixed); color: var(--on-primary-fixed-variant); }
 .chip--seance { background: var(--secondary-fixed); color: var(--on-secondary-fixed-variant); }
 .firebase-loading {
@@ -514,7 +522,8 @@ body {
 .pres-card[draggable="true"] { cursor: grab; }
 .pres-card.is-dragging { opacity: 0.4; cursor: grabbing; }
 .pres-cover {
-    height: 96px;
+    aspect-ratio: 16 / 9;
+    container-type: inline-size;
     background: linear-gradient(140deg,
         color-mix(in srgb, var(--cover, var(--primary)) 90%, #001020),
         color-mix(in srgb, var(--cover, var(--primary)) 40%, #020810));
@@ -537,7 +546,8 @@ body {
 }
 .pres-slide-mini-inner {
     width: 1280px; height: 720px;
-    transform: scale(0.1875); transform-origin: top left;
+    transform: scale(0.1875); /* repli : carte de 240 px */
+    transform: scale(tan(atan2(100cqw, 1280px))); transform-origin: top left;
     pointer-events: none;
 }
 .pres-cover .cover-kicker,
@@ -587,6 +597,8 @@ body {
     padding: 10px 12px 10px 16px;
 }
 .pres-cover--plain::after { display: none; }
+.pres-cover--banner { aspect-ratio: 4 / 1; }
+.pres-cover--banner::after { display: none; }
 .pres-cover--plain .cover-kicker {
     font-family: var(--font-mono);
     font-weight: 500; opacity: 1;
@@ -596,13 +608,11 @@ body {
     border-radius: var(--radius-sm);
     padding: 1px 6px;
 }
-.pres-cover--plain .cover-kicker--btn { text-shadow: none; }
-.pres-cover--plain .cover-kicker--public { color: var(--ok); border-color: currentColor; }
 .pres-cover--plain .pres-thumb-title {
     font-family: var(--font-editorial);
     color: var(--ink); text-shadow: none;
     text-align: left; -webkit-line-clamp: 2;
-    padding-top: 6px;
+    margin-top: auto; padding-top: 6px;
     border-top: 1px solid var(--cover-tone);
 }
 .pres-cover--plain .cover-icon:not(.cover-icon--emoji) {
@@ -722,7 +732,7 @@ body {
 }
 .template-card:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 2px; }
 .template-card-cover {
-    height: 96px; flex-shrink: 0;
+    aspect-ratio: 16 / 9; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     position: relative; overflow: hidden;
 }

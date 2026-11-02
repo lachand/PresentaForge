@@ -1135,14 +1135,14 @@
             const draggableAttr = _firebaseViewMode === 'course' ? ` draggable="true" data-fb-id="${escAttr(p.id)}"` : '';
             return `
             <article class="pres-card"${draggableAttr}>
-                <div class="pres-cover${plainCover ? ' pres-cover--plain' : ''}" style="${escAttr(coverStyle)}">
+                <div class="pres-cover${plainCover ? ' pres-cover--plain' : ''}${safeImage ? ' pres-cover--banner' : ''}" style="${escAttr(coverStyle)}">
                     ${selectBoxHtml}
-                    <button type="button" class="cover-kicker cover-kicker--btn ${p.public ? 'cover-kicker--public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public). Cliquer pour la rendre privée.' : 'Privée : seul vous la voyez. Cliquer pour la rendre visible des étudiants.'}" aria-pressed="${p.public ? 'true' : 'false'}">${p.public ? icon('eye') + ' Visible étudiants' : icon('lock') + ' Privé'}</button>
                     ${coverInner}
                 </div>
                 <div class="pres-content">
                     <h3 class="pres-title">${esc(p.title)}</h3>
                     <div class="pres-meta">
+                        <button type="button" class="chip chip--state${p.public ? ' chip--state-public' : ''}" data-action="toggle-public-firebase" data-fb-idx="${idx}" title="${p.public ? 'Visible des étudiants (lien de cours, partage public). Cliquer pour la rendre privée.' : 'Privée : seul vous la voyez. Cliquer pour la rendre visible des étudiants.'}" aria-pressed="${p.public ? 'true' : 'false'}">${p.public ? icon('eye') + ' Visible étudiants' : icon('lock') + ' Privé'}</button>
                         <span class="chip">${icon('clock')} ${_fmtDate(p.modified)}</span>
                         ${p.course ? `<span class="chip chip--course">${esc(p.course)}</span>` : ''}
                         ${p.level ? `<span class="chip">${esc(p.level)}</span>` : ''}
@@ -1210,6 +1210,27 @@
             <div class="pres-grid"${mode === 'course' ? ` data-group-key="${escAttr(g.key)}"` : ''}>${g.items.map(renderCard).join('')}</div>
         `).join('');
     }
+
+    // Une bannière image garde son format d'origine (jamais recadrée) : le cadre prend le ratio
+    // réel de l'image une fois mesurée ; 4:1 en attendant (repli CSS de .pres-cover--banner).
+    function _fitBannerCovers(root) {
+        root.querySelectorAll('.pres-cover--banner:not([data-fitted])').forEach(el => {
+            el.dataset.fitted = '1';
+            const m = /url\(["']?([^"')]+)["']?\)/.exec(el.style.backgroundImage || '');
+            if (!m) return;
+            const img = new Image();
+            img.onload = () => {
+                if (img.naturalWidth && img.naturalHeight) el.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+            };
+            img.src = m[1];
+        });
+    }
+    (() => {
+        const grid = document.getElementById('firebase-grid');
+        if (grid && typeof MutationObserver === 'function') {
+            new MutationObserver(() => _fitBannerCovers(grid)).observe(grid, { childList: true, subtree: true });
+        }
+    })();
 
     async function loadFirebaseDecks() {
         const host = document.getElementById('firebase-grid');
