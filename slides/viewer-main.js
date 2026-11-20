@@ -2227,8 +2227,19 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 _contrastBtn?.classList.toggle('active', n !== null);
                 _contrastBtn?.setAttribute('aria-pressed', n !== null ? 'true' : 'false');
             }
+            // Le menu est en position: fixed (voir slides-viewer.css) : .pv-toolbar-actions
+            // a overflow-x: auto, donc un menu en absolute y était rogné (slider interne).
+            // On le positionne ici par rapport au viewport, d'après le bouton contraste.
+            function positionContrastMenu() {
+                if (!_contrastBtn || !_contrastMenu) return;
+                const rect = _contrastBtn.getBoundingClientRect();
+                _contrastMenu.style.top = (rect.bottom + 4) + 'px';
+                _contrastMenu.style.left = Math.max(8, rect.left) + 'px';
+                _contrastMenu.style.right = 'auto';
+            }
             function closeContrastMenu() {
                 _contrastMenu?.classList.add('hidden');
+                if (_contrastMenu) { _contrastMenu.style.top = ''; _contrastMenu.style.left = ''; _contrastMenu.style.right = ''; }
                 _contrastBtn?.setAttribute('aria-expanded', 'false');
             }
             _contrastBtn?.addEventListener('click', e => {
@@ -2236,11 +2247,19 @@ import { createSessionReportRuntime } from './viewer/session-report-runtime.js';
                 const willOpen = _contrastMenu?.classList.contains('hidden');
                 if (willOpen) {
                     _contrastMenu.classList.remove('hidden');
+                    positionContrastMenu();
                     _contrastBtn.setAttribute('aria-expanded', 'true');
                 } else {
                     closeContrastMenu();
                 }
             });
+            // Redimensionnement / scroll pendant l'ouverture : on recale le menu sur le bouton.
+            window.addEventListener('resize', () => {
+                if (_contrastMenu && !_contrastMenu.classList.contains('hidden')) positionContrastMenu();
+            });
+            window.addEventListener('scroll', () => {
+                if (_contrastMenu && !_contrastMenu.classList.contains('hidden')) positionContrastMenu();
+            }, true);
             _contrastMenuItems.forEach(itemBtn => {
                 itemBtn.addEventListener('click', () => {
                     const n = Number(itemBtn.dataset.preset);

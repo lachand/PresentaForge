@@ -19,12 +19,37 @@
         // ── Menu « Plus » de la barre présentateur (P-B1) ──────────────
         var moreBtn = document.getElementById('pv-btn-more');
         var moreMenu = document.getElementById('pv-more-menu');
+        // Le menu est en position: fixed (voir slides-viewer.css) : .pv-toolbar-actions
+        // a overflow-x: auto, donc un menu en absolute y était rogné (slider interne).
+        // On le positionne ici par rapport au viewport, d'après le bouton « + ».
+        function positionMoreMenu() {
+            if (!moreBtn || !moreMenu) return;
+            var rect = moreBtn.getBoundingClientRect();
+            moreMenu.style.top = (rect.bottom + 4) + 'px';
+            moreMenu.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
+            moreMenu.style.left = 'auto';
+        }
         function setMoreOpen(open) {
             if (!moreBtn || !moreMenu) return;
             moreMenu.classList.toggle('hidden', !open);
             moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-            if (open) moreMenu.querySelector('button')?.focus();
+            if (open) {
+                positionMoreMenu();
+                moreMenu.querySelector('button')?.focus();
+            } else {
+                moreMenu.style.top = '';
+                moreMenu.style.right = '';
+                moreMenu.style.left = '';
+            }
         }
+        // Fenêtre redimensionnée ou contenu scrollé (y compris le scroll horizontal de
+        // la toolbar) pendant que le menu est ouvert : on le recale sur le bouton.
+        window.addEventListener('resize', function () {
+            if (moreMenu && !moreMenu.classList.contains('hidden')) positionMoreMenu();
+        });
+        window.addEventListener('scroll', function () {
+            if (moreMenu && !moreMenu.classList.contains('hidden')) positionMoreMenu();
+        }, true);
         if (moreBtn && moreMenu) {
             moreBtn.addEventListener('click', function (e) {
                 e.stopPropagation();

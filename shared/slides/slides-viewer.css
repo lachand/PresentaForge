@@ -1032,10 +1032,13 @@
             display: inline-flex;
         }
         .pv-contrast-menu {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
+            /* fixed + top/left posés en JS (viewer-main.js) : même raison que
+               .pv-more-menu — .pv-toolbar-actions est un conteneur scrollable
+               (overflow-x: auto) qui rognait le menu en absolute. */
+            position: fixed;
             z-index: 20;
+            max-height: calc(100vh - 16px);
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 2px;
@@ -2872,8 +2875,14 @@ body.viewer-review { background: #0f1117; color: #e2e8f0; overflow-y: auto; }
 
 /* ── Barre présentateur : menu « Plus » + bouton « Terminer » (audit UX 2026-10, P-B1/P-B2) ── */
 .pv-more { position: relative; }
+/* position: fixed + top/right posés en JS à l'ouverture (presenter-supplemental.js) :
+   en absolute, le menu débordait sous .pv-more mais .pv-toolbar-actions a
+   overflow-x: auto (donc overflow-y calculé en auto) → le menu était rogné par la
+   barre et n'apparaissait que comme un slider interne. Aucun ancêtre de .pv-more
+   n'a transform/filter/backdrop-filter, donc fixed = viewport. */
 .pv-more-menu {
-    position: absolute; top: calc(100% + 4px); right: 0; z-index: 30;
+    position: fixed; z-index: 30;
+    max-height: calc(100vh - 16px); overflow-y: auto;
     display: flex; flex-direction: column; gap: 2px; padding: 4px; min-width: 210px;
     border-radius: var(--radius-md, 0.75rem);
     background: var(--surface-container-highest, #e3e1e9);
