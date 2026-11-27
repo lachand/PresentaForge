@@ -150,7 +150,12 @@
             if (el.dataset.timerBound) return;
             el.dataset.timerBound = '1';
             const dur = parseInt(el.dataset.duration) || 300;
-            let remaining = dur, interval = null, running = false;
+            // Présentateur : l'échéance `endsAt` (Date.now()) est la référence, jamais un
+            // décrément par tick - un setInterval throttlé (onglet caché / fenêtre minimisée)
+            // ne fait donc plus dériver le minuteur. `remaining` n'est que l'affichage (s entières).
+            let remaining = dur, remainingMs = dur * 1000, endsAt = 0, interval = null, running = false;
+            // Vue passive (audience / élève) : décompte local entre deux messages du présentateur.
+            let followEnd = 0, followTimer = null;
             const display = el.querySelector(`.${P}-timer-display`);
             const btnStart = el.querySelector(`.${P}-timer-start`);
             const btnPause = el.querySelector(`.${P}-timer-pause`);
@@ -163,6 +168,8 @@
             };
             const publishTimerState = (extraState = {}) => emitAudienceElementState(el, 'timer', Object.assign({
                 remaining,
+                remainingMs,
+                endsAt: running ? endsAt : 0,
                 running: !!running,
                 ended: remaining <= 0,
                 startVisible: !running,
@@ -179,6 +186,19 @@
                 btnStart.style.pointerEvents = 'none';
                 if (btnPause) { btnPause.disabled = true; btnPause.style.pointerEvents = 'none'; }
                 if (btnReset) { btnReset.disabled = true; btnReset.style.pointerEvents = 'none'; }
+                const stopFollow = () => {
+                    if (followTimer) { clearInterval(followTimer); followTimer = null; }
+                };
+                const followTick = () => {
+                    if (!el.isConnected) { stopFollow(); return; }
+                    const ms = Math.max(0, followEnd - Date.now());
+                    remaining = Math.ceil(ms / 1000);
+                    display.textContent = fmt(remaining);
+                    if (ms <= 0) {
+                        stopFollow(); running = false;
+                        display.classList.add(`${P}-timer-ended`);
+                    }
+                };
                 subscribeAudienceElementState(el, 'timer', state => {
                     const sync = (state && typeof state === 'object') ? state : {};
                     const nextRemaining = Number(sync.remaining);
@@ -186,7 +206,18 @@
                         remaining = Math.max(0, Math.trunc(nextRemaining));
                     }
                     running = !!sync.running;
-                    display.textContent = fmt(remaining);
+                    // Temps restant en ms au moment de l'envoi (pas d'horodatage absolu : évite
+                    // tout décalage d'horloge entre machines) -> décompte local fluide.
+                    const nextMs = Number(sync.remainingMs);
+                    const msLeft = Number.isFinite(nextMs) ? Math.max(0, nextMs) : remaining * 1000;
+                    stopFollow();
+                    if (running && sync.ended !== true && msLeft > 0) {
+                        followEnd = Date.now() + msLeft;
+                        followTimer = setInterval(followTick, 250);
+                        followTick();
+                    } else {
+                        display.textContent = fmt(remaining);
+                    }
                     if (sync.ended === true || remaining <= 0) display.classList.add(`${P}-timer-ended`);
                     else display.classList.remove(`${P}-timer-ended`);
                     if (typeof sync.startVisible === 'boolean') btnStart.style.display = sync.startVisible ? '' : 'none';
@@ -196,10 +227,13 @@
                 return;
             }
             const tick = () => {
-                remaining = Math.max(0, remaining - 1);
+                const ms = Math.max(0, endsAt - Date.now());
+                const next = Math.ceil(ms / 1000);
+                if (ms > 0 && next === remaining) return;
+                remaining = next; remainingMs = ms;
                 display.textContent = fmt(remaining);
                 publishTimerState();
-                if (remaining <= 0) {
+                if (ms <= 0) {
                     clearInterval(interval); running = false;
                     btnStart.style.display = ''; btnPause.style.display = 'none';
                     display.classList.add(`${P}-timer-ended`);
@@ -210,21 +244,27 @@
                 e.stopPropagation(); e.preventDefault();
                 if (!running && remaining > 0) {
                     running = true; display.classList.remove(`${P}-timer-ended`);
-                    interval = setInterval(tick, 1000);
+                    endsAt = Date.now() + remainingMs;
+                    interval = setInterval(tick, 250);
                     btnStart.style.display = 'none'; btnPause.style.display = '';
                     publishTimerState({ running: true });
                 }
             });
             btnPause.addEventListener('click', (e) => {
                 e.stopPropagation(); e.preventDefault();
+                if (running) {
+                    remainingMs = Math.max(0, endsAt - Date.now());
+                    remaining = Math.ceil(remainingMs / 1000);
+                }
                 clearInterval(interval); running = false;
+                display.textContent = fmt(remaining);
                 btnStart.style.display = ''; btnPause.style.display = 'none';
                 publishTimerState({ running: false });
             });
             btnReset.addEventListener('click', (e) => {
                 e.stopPropagation(); e.preventDefault();
                 clearInterval(interval); running = false;
-                remaining = dur; display.textContent = fmt(dur);
+                remaining = dur; remainingMs = dur * 1000; display.textContent = fmt(dur);
                 display.classList.remove(`${P}-timer-ended`);
                 btnStart.style.display = ''; btnPause.style.display = 'none';
                 publishTimerState({ running: false, ended: false });

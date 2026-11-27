@@ -177,11 +177,17 @@ export function sendActiveRoomActivities(params) {
         const entries = Array.isArray(activeTimers) ? activeTimers : Object.values(activeTimers);
         entries.forEach(timer => {
             if (!timer || typeof timer !== 'object') return;
+            // En marche : restant recalculé depuis l'échéance (le snapshot peut dater de
+            // plusieurs secondes si le présentateur est throttlé).
+            const msLeft = (timer.running && Number(timer.endsAt) > 0)
+                ? Math.max(0, Number(timer.endsAt) - Date.now())
+                : (Number.isFinite(Number(timer.remainingMs)) ? Number(timer.remainingMs) : Number(timer.remaining) * 1000);
             safeSend(conn, {
                 type: ROOM_MSG.TIMER_STATE,
                 elementId: timer.elementId || '',
                 slideIndex: timer.slideIndex,
-                remaining: timer.remaining,
+                remaining: Math.ceil(msLeft / 1000),
+                remainingMs: msLeft,
                 running: !!timer.running,
                 ended: !!timer.ended,
             });

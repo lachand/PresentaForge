@@ -484,6 +484,7 @@
                     elementId: typeof msg.elementId === 'string' ? msg.elementId : '',
                     state: {
                         remaining: Number.isFinite(remaining) ? Math.max(0, Math.trunc(remaining)) : 0,
+                        remainingMs: Number.isFinite(Number(msg.remainingMs)) ? Math.max(0, Number(msg.remainingMs)) : undefined,
                         running: !!msg.running,
                         ended: !!msg.ended,
                     },

@@ -122,6 +122,7 @@
                     elementId,
                     slideIndex,
                     remaining: Number(payloadState.remaining) || 0,
+                    remainingMs: Number.isFinite(Number(payloadState.remainingMs)) ? Math.max(0, Number(payloadState.remainingMs)) : (Number(payloadState.remaining) || 0) * 1000,
                     running: !!payloadState.running,
                     ended: !!payloadState.ended,
                 };
@@ -137,6 +138,10 @@
                     elementId,
                     slideIndex,
                     remaining: timerPayload.remaining,
+                    remainingMs: timerPayload.remainingMs,
+                    // Échéance absolue (horloge présentateur) : permet à sendActiveRoomActivities
+                    // de recalculer le restant réel pour un retardataire.
+                    endsAt: timerPayload.running ? Date.now() + timerPayload.remainingMs : 0,
                     running: timerPayload.running,
                     ended: timerPayload.ended,
                 };

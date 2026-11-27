@@ -378,6 +378,7 @@
         [ROOM_MSG.TIMER_STATE]: msg => isString(msg.elementId || '', 160)
             && isNonNegInt(msg.slideIndex)
             && isNumber(msg.remaining)
+            && (msg.remainingMs == null || isNumber(msg.remainingMs))
             && isBoolean(msg.running)
             && isBoolean(msg.ended),
         [ROOM_MSG.TIMER_ADHOC_START]: msg => isString(msg.timerId || '', 120)
